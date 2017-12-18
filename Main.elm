@@ -6,17 +6,17 @@ import Html.Attributes exposing (width, height, style)
 import Task exposing (Task)
 import Time exposing (Time)
 import Math.Matrix4 as Mat4 exposing (Mat4)
-import Math.Vector3 as Vec3 exposing (Vec3, vec3)
+import Math.Vector3 as Vec3 exposing (Vec3, vec3, getX, getY, getZ)
 import WebGL exposing (Mesh, Shader, Entity)
 import Window
 
 
 numVertices : Int
-numVertices = 1000
+numVertices = 3000
 
 
 scale : Float
-scale = 1 / 25
+scale = 1
 
 
 type alias LorenzConfig =
@@ -73,23 +73,9 @@ init =
 lorenz : LorenzConfig -> Mesh Vertex
 lorenz config =
     let
-        σ = config.sigma
-        β = config.beta
-        ρ = config.rho
-        -- δt = config.dt / 1000
-        δt = config.stepSize
         x0 = 0.1
         y0 = 0.1
         z0 = 0.1
-        getNext =
-            (\(x, y, z) ->
-                let
-                    δx = σ * (y - x) * δt
-                    δy = ( x * (ρ - z) - y ) * δt
-                    δz = ( x * y - β * z ) * δt
-                in
-                    (x + δx, y + δt, z + δz)
-            )
         vertices = List.range 1 numVertices
            |> List.foldl (\_ positions ->
                    let
@@ -97,21 +83,37 @@ lorenz config =
                        maybePrev = (List.drop (len - 1) positions) |> List.head
                    in
                        case maybePrev of
-                           Just prev -> positions ++ [ getNext prev ]
-                           Nothing -> [ (x0, y0, z0 ) ]
+                           Just prev -> positions ++ [ prev |> step config  ]
+                           Nothing -> [ vec3 x0 y0 z0 ]
                ) []
     in
         vertices
-            |> List.map
-                (\(x, y, z) ->
-                    triangleAt x y z
-                )
+            |> List.map triangleAt
             |> WebGL.triangles
 
 
-triangleAt : Float -> Float -> Float -> ( Vertex, Vertex, Vertex )
-triangleAt x y z =
+step : LorenzConfig -> Vec3 -> Vec3
+step config v =
     let
+        ( x, y, z ) = ( getX v, getY v, getZ v )
+        σ = config.sigma
+        β = config.beta
+        ρ = config.rho
+        -- δt = config.dt / 1000
+        δt = config.stepSize
+        δx = σ * (y - x) * δt
+        δy = ( x * (ρ - z) - y ) * δt
+        δz = ( x * y - β * z ) * δt
+    in
+        vec3 (x + δx) (y + δt) (z + δz)
+
+
+triangleAt : Vec3 -> ( Vertex, Vertex, Vertex )
+triangleAt v =
+    let
+        x = getX v
+        y = getY v
+        z = getZ v
         tw = 3 / 400 / scale
         th = 3 / 400 / scale
     in
@@ -142,7 +144,7 @@ perspective : Float -> Mat4
 perspective t =
     Mat4.identity
         |> Mat4.scale3 scale scale scale
-        |> Mat4.translate3 -10 -10 0
+        --|> Mat4.translate3 -10 -10 0
 --    Mat4.mul
 --        (Mat4.makePerspective 45 1 0.01 100)
 --        (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0))
@@ -151,8 +153,8 @@ perspective t =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ AnimationFrame.diffs Animate
-        , Window.resizes Resize
+        -- [ AnimationFrame.diffs Animate
+        [ Window.resizes Resize
         ]
 
 
