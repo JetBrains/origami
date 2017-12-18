@@ -22,6 +22,7 @@ type alias Model =
     , stepSize : Float
     , stepsPerFrame : Int
     , paused : Bool
+    , dt : Time
     }
 
 type alias Vertex =
@@ -45,6 +46,7 @@ init =
         , stepSize = 0.002
         , stepsPerFrame = 3
         , paused = False
+        , dt = 0
         }
     , Cmd.batch
         [ Task.perform Resize Window.size
@@ -52,12 +54,23 @@ init =
     )
 
 
-lorenz : Model -> Time -> ( Vertex, Vertex, Vertex )
-lorenz _ _ =
-    ( Vertex (vec3 0 0 0) (vec3 1 0 0)
-    , Vertex (vec3 1 1 0) (vec3 0 1 0)
-    , Vertex (vec3 1 -1 0) (vec3 0 0 1)
-    )
+lorenz : Model -> Mesh Vertex
+lorenz model =
+    let
+        σ = model.sigma
+        β = model.beta
+        ρ = model.rho
+        δt = model.dt
+    in
+        List.range 1 numVertices
+            |> List.map
+                (\i -> ( Vertex (vec3 0 0 0) (vec3 1 0 0)
+                       , Vertex (vec3 1 (toFloat (numVertices - i) / toFloat numVertices) 0) (vec3 0 1 0)
+                       , Vertex (vec3 1 -1 0) (vec3 0 0 1)
+                       )
+                )
+            |> WebGL.triangles
+
 
 view : Model -> Html Msg
 view model =
@@ -74,8 +87,8 @@ view model =
                 [ WebGL.entity
                     vertexShader
                     fragmentShader
-                    (WebGL.triangles [ lorenz model 10000 ])
-                    { perspective = perspective 100 }
+                    (lorenz model)
+                    { perspective = perspective 10000 }
                 ]
             ]
 
@@ -99,7 +112,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Animate dt ->
-            ( { model | sigma = dt}
+            ( { model | sigma = dt, dt = dt }
             , Cmd.none
             )
         _ -> ( model, Cmd.none )
