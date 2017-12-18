@@ -12,7 +12,11 @@ import Window
 
 
 numVertices : Int
-numVertices = 500
+numVertices = 300
+
+
+scale : Float
+scale = 1 / 25
 
 
 type alias Model =
@@ -60,7 +64,8 @@ lorenz model =
         σ = model.sigma
         β = model.beta
         ρ = model.rho
-        δt = model.stepSize -- model.dt
+        -- δt = model.dt / 1000
+        δt = model.stepSize * 130
         x0 = 0.1
         y0 = 0.1
         z0 = 0.1
@@ -73,33 +78,34 @@ lorenz model =
                 in
                     (x + δx, y + δt, z + δz)
             )
+        vertices = List.range 1 numVertices
+           |> List.foldl (\_ positions ->
+                   let
+                       len = List.length positions
+                       maybePrev = (List.drop (len - 1) positions) |> List.head
+                   in
+                       case maybePrev of
+                           Just prev -> positions ++ [ getNext prev ]
+                           Nothing -> [ (x0, y0, z0 ) ]
+               ) []
     in
-        List.range 1 numVertices
-            |> List.foldl (\_ positions ->
-                    let
-                        len = List.length positions
-                        maybePrev = (List.drop (len - 1) positions) |> List.head
-                    in
-                        case maybePrev of
-                            Just prev -> positions ++ [ getNext prev ]
-                            Nothing -> [ (x0, y0, z0 ) ]
-                ) []
+        vertices
             |> List.map
                 (\(x, y, z) ->
-                    triangleAt x y
+                    triangleAt x y z
                 )
             |> WebGL.triangles
 
 
-triangleAt : Float -> Float -> ( Vertex, Vertex, Vertex )
-triangleAt x y =
+triangleAt : Float -> Float -> Float -> ( Vertex, Vertex, Vertex )
+triangleAt x y z =
     let
-        tw = 3 / 400
-        th = 3 / 400
+        tw = 3 / 400 / scale
+        th = 3 / 400 / scale
     in
-        ( Vertex (vec3 x (y + th / 2) 0) (vec3 1 0 0)
-        , Vertex (vec3 (x + tw) (y + th / 2) 0) (vec3 0 1 0)
-        , Vertex (vec3 (x + tw / 2) (y - th / 2) 0) (vec3 0 0 1)
+        ( Vertex (vec3 x (y + th / 2) z) (vec3 1 0 0)
+        , Vertex (vec3 (x + tw) (y + th / 2) z) (vec3 0 1 0)
+        , Vertex (vec3 (x + tw / 2) (y - th / 2) z) (vec3 0 0 1)
         )
 
 view : Model -> Html Msg
@@ -108,7 +114,7 @@ view model =
         a = "foo"
     in
         div [ ]
-            [ text (toString model.sigma ++ a)
+            [ text (toString model.dt ++ a)
             , WebGL.toHtml
                 [ width 800
                 , height 800
@@ -126,6 +132,8 @@ view model =
 perspective : Float -> Mat4
 perspective t =
     Mat4.identity
+        |> Mat4.scale3 scale scale scale
+        |> Mat4.translate3 -10 -10 0
 --    Mat4.mul
 --        (Mat4.makePerspective 45 1 0.01 100)
 --        (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0))
