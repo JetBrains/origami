@@ -12,7 +12,7 @@ import Window
 
 
 numVertices : Int
-numVertices = 5000
+numVertices = 1000
 
 
 scale : Float
@@ -31,7 +31,7 @@ type alias LorenzConfig =
 type alias Model =
     { config : LorenzConfig
     , paused : Bool
-    , dt : Time
+    , fps : Int
     , lorenz : Mesh Vertex
     }
 
@@ -61,7 +61,7 @@ init =
         (
             { config = lorenzConfig
             , paused = False
-            , dt = 0
+            , fps = 0
             , lorenz = lorenz lorenzConfig
             }
         , Cmd.batch
@@ -122,23 +122,20 @@ triangleAt x y z =
 
 view : Model -> Html Msg
 view model =
-    let
-        a = "foo"
-    in
-        div [ ]
-            [ text (toString model.dt ++ a)
-            , WebGL.toHtml
-                [ width 800
-                , height 800
-                , style [ ( "display", "block" ) ]
-                ]
-                [ WebGL.entity
-                    vertexShader
-                    fragmentShader
-                    model.lorenz
-                    { perspective = perspective 1 }
-                ]
+    div [ ]
+        [ text (toString model.fps ++ "FPS")
+        , WebGL.toHtml
+            [ width 800
+            , height 800
+            , style [ ( "display", "block" ) ]
             ]
+            [ WebGL.entity
+                vertexShader
+                fragmentShader
+                model.lorenz
+                { perspective = perspective 1 }
+            ]
+        ]
 
 
 perspective : Float -> Mat4
@@ -163,7 +160,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Animate dt ->
-            ( { model | dt = dt }
+            ( { model | fps = floor (1000 / dt)  }
             , Cmd.none
             )
         _ -> ( model, Cmd.none )
