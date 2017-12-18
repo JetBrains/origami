@@ -65,26 +65,20 @@ lorenz model =
     in
         List.range 1 numVertices
             |> List.map
-                (\i ->
-                    let
---                        x = 1 - (toFloat i / toFloat numVertices) * 2
---                        tw = 3 / 400
---                        th = 3 / 400
-                        x = 1 - (toFloat i / toFloat numVertices) * 2
-                        tw = 3 / 400
-                        th = 3 / 800
-                    in
---                        ( Vertex (vec3 -1 1 0) (vec3 1 0 0)
---                        , Vertex (vec3 1 1 0) (vec3 0 1 0)
---                        , Vertex (vec3 0 -1 0) (vec3 0 0 1)
---                        )
-                        ( Vertex (vec3 x th 0) (vec3 1 0 0)
-                        , Vertex (vec3 (x + tw) th 0) (vec3 0 1 0)
-                        , Vertex (vec3 (x + (tw / 2)) -th 0) (vec3 0 0 1)
-                        )
-                )
+                (\i -> triangleAt (1 - (toFloat i / toFloat numVertices) * 2) 0)
             |> WebGL.triangles
 
+
+triangleAt : Float -> Float -> ( Vertex, Vertex, Vertex )
+triangleAt x y =
+    let
+        tw = 3 / 400
+        th = 3 / 400
+    in
+        ( Vertex (vec3 x (y + th / 2) 0) (vec3 1 0 0)
+        , Vertex (vec3 (x + tw) (y + th / 2) 0) (vec3 0 1 0)
+        , Vertex (vec3 (x + tw / 2) (y - th / 2) 0) (vec3 0 0 1)
+        )
 
 view : Model -> Html Msg
 view model =
