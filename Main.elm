@@ -12,21 +12,27 @@ import Window
 
 
 numVertices : Int
-numVertices = 300
+numVertices = 5000
 
 
 scale : Float
 scale = 1 / 25
 
 
-type alias Model =
+type alias LorenzConfig =
     { sigma : Float
     , beta : Float
     , rho : Float
     , stepSize : Float
     , stepsPerFrame : Int
+    }
+
+
+type alias Model =
+    { config : LorenzConfig
     , paused : Bool
     , dt : Time
+    , lorenz : Mesh Vertex
     }
 
 type alias Vertex =
@@ -43,29 +49,35 @@ type Msg
 
 init : ( Model, Cmd Msg )
 init =
-    (
-        { sigma = 10
-        , beta = 8 / 3
-        , rho = 28
-        , stepSize = 0.002
-        , stepsPerFrame = 3
-        , paused = False
-        , dt = 0
-        }
-    , Cmd.batch
-        [ Task.perform Resize Window.size
-        ]
-    )
-
-
-lorenz : Model -> Mesh Vertex
-lorenz model =
     let
-        σ = model.sigma
-        β = model.beta
-        ρ = model.rho
-        -- δt = model.dt / 1000
-        δt = model.stepSize * 130
+        lorenzConfig =
+            { sigma = 10
+            , beta = 8 / 3
+            , rho = 28
+            , stepSize = 0.002
+            , stepsPerFrame = 3
+            }
+    in
+        (
+            { config = lorenzConfig
+            , paused = False
+            , dt = 0
+            , lorenz = lorenz lorenzConfig
+            }
+        , Cmd.batch
+            [ Task.perform Resize Window.size
+            ]
+        )
+
+
+lorenz : LorenzConfig -> Mesh Vertex
+lorenz config =
+    let
+        σ = config.sigma
+        β = config.beta
+        ρ = config.rho
+        -- δt = config.dt / 1000
+        δt = config.stepSize
         x0 = 0.1
         y0 = 0.1
         z0 = 0.1
@@ -123,7 +135,7 @@ view model =
                 [ WebGL.entity
                     vertexShader
                     fragmentShader
-                    (lorenz model)
+                    model.lorenz
                     { perspective = perspective 1 }
                 ]
             ]
