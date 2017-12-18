@@ -153,8 +153,8 @@ perspective t =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        -- [ AnimationFrame.diffs Animate
-        [ Window.resizes Resize
+        [ AnimationFrame.diffs Animate
+        , Window.resizes Resize
         ]
 
 
