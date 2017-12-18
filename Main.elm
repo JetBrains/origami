@@ -60,12 +60,34 @@ lorenz model =
         σ = model.sigma
         β = model.beta
         ρ = model.rho
-        δt = model.dt
-
+        δt = model.stepSize -- model.dt
+        x0 = 0.1
+        y0 = 0.1
+        z0 = 0.1
+        getNext =
+            (\(x, y, z) ->
+                let
+                    δx = σ * (y - x) * δt
+                    δy = ( x * (ρ - z) - y ) * δt
+                    δz = ( x * y - β * z ) * δt
+                in
+                    (x + δx, y + δt, z + δz)
+            )
     in
         List.range 1 numVertices
+            |> List.foldl (\_ positions ->
+                    let
+                        len = List.length positions
+                        maybePrev = (List.drop (len - 1) positions) |> List.head
+                    in
+                        case maybePrev of
+                            Just prev -> positions ++ [ getNext prev ]
+                            Nothing -> [ (x0, y0, z0 ) ]
+                ) []
             |> List.map
-                (\i -> triangleAt (1 - (toFloat i / toFloat numVertices) * 2) 0)
+                (\(x, y, z) ->
+                    triangleAt x y
+                )
             |> WebGL.triangles
 
 
@@ -121,7 +143,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Animate dt ->
-            ( { model | sigma = dt, dt = dt }
+            ( { model | dt = dt }
             , Cmd.none
             )
         _ -> ( model, Cmd.none )
