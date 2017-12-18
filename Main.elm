@@ -61,13 +61,27 @@ lorenz model =
         β = model.beta
         ρ = model.rho
         δt = model.dt
+
     in
         List.range 1 numVertices
             |> List.map
-                (\i -> ( Vertex (vec3 0 0 0) (vec3 1 0 0)
-                       , Vertex (vec3 1 (toFloat (numVertices - i) / toFloat numVertices) 0) (vec3 0 1 0)
-                       , Vertex (vec3 1 -1 0) (vec3 0 0 1)
-                       )
+                (\i ->
+                    let
+--                        x = 1 - (toFloat i / toFloat numVertices) * 2
+--                        tw = 3 / 400
+--                        th = 3 / 400
+                        x = 1 - (toFloat i / toFloat numVertices) * 2
+                        tw = 3 / 400
+                        th = 3 / 800
+                    in
+--                        ( Vertex (vec3 -1 1 0) (vec3 1 0 0)
+--                        , Vertex (vec3 1 1 0) (vec3 0 1 0)
+--                        , Vertex (vec3 0 -1 0) (vec3 0 0 1)
+--                        )
+                        ( Vertex (vec3 x th 0) (vec3 1 0 0)
+                        , Vertex (vec3 (x + tw) th 0) (vec3 0 1 0)
+                        , Vertex (vec3 (x + (tw / 2)) -th 0) (vec3 0 0 1)
+                        )
                 )
             |> WebGL.triangles
 
@@ -80,24 +94,25 @@ view model =
         div [ ]
             [ text (toString model.sigma ++ a)
             , WebGL.toHtml
-                [ width 400
-                , height 400
+                [ width 800
+                , height 800
                 , style [ ( "display", "block" ) ]
                 ]
                 [ WebGL.entity
                     vertexShader
                     fragmentShader
                     (lorenz model)
-                    { perspective = perspective 10000 }
+                    { perspective = perspective 1 }
                 ]
             ]
 
 
 perspective : Float -> Mat4
 perspective t =
-    Mat4.mul
-        (Mat4.makePerspective 45 1 0.01 100)
-        (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0))
+    Mat4.identity
+--    Mat4.mul
+--        (Mat4.makePerspective 45 1 0.01 100)
+--        (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0))
 
 
 subscriptions : Model -> Sub Msg
