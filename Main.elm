@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import AnimationFrame
-import Html exposing (Html, text, div, input)
+import Html exposing (Html, text, div, input, br)
 import Html.Attributes as A exposing (width, height, style, type_, min, max)
 import Html.Events exposing (onInput)
 import Task exposing (Task)
@@ -130,9 +130,9 @@ triangleAt v =
 view : Model -> Html Msg
 view ({ config, lorenz } as model) =
     div [ ]
-        ( [ text (toString model.fps ++ "FPS") ]
-          ++ controls model
-          ++ [ WebGL.toHtml
+        ( text (toString model.fps ++ "FPS")
+          :: controls model
+          :: WebGL.toHtml
                 [ width 800
                 , height 800
                 , style [ ( "display", "block" ) ]
@@ -143,54 +143,64 @@ view ({ config, lorenz } as model) =
                     model.lorenz
                     { perspective = perspective 1 }
                 ]
-          ]
+          :: []
         )
 
 
-controls : Model -> List (Html Msg)
+controls : Model -> Html Msg
 controls ({ config, lorenz } as model) =
-    [ input [ type_ "range", A.min "10", A.max "10000"
-            , onInput (\iStr ->
-                AdjustVertices (String.toInt iStr
-                                |> Result.withDefault model.numVertices)) ]
-            [ text ("vertices : " ++ toString model.numVertices) ]
-    , input [ type_ "range", A.min "0", A.max "100"
-            , onInput (\fStr ->
-                ChangeConfig { config
-                                | sigma = String.toFloat fStr
-                                        |> Result.withDefault config.sigma
-                                }
-                )
-            ]
-            [ text ("sigma : " ++ toString model.config.sigma) ]
-    , input [ type_ "range", A.min "0", A.max "15"
-            , onInput (\fStr ->
-                ChangeConfig { config
-                                | beta = String.toFloat fStr
-                                        |> Result.withDefault config.beta
-                                }
-                )
-            ]
-            [ text ("beta : " ++ toString model.config.beta) ]
-    , input [ type_ "range", A.min "0", A.max "100"
-            , onInput (\fStr ->
-                ChangeConfig { config
-                                | rho = String.toFloat fStr
-                                        |> Result.withDefault config.rho
-                                }
-                )
-            ]
-            [ text ("rho : " ++ toString model.config.rho) ]
-    , input [ type_ "range", A.min "0", A.max "1"
-            , onInput (\fStr ->
-                ChangeConfig { config
-                                | stepSize = String.toFloat fStr
-                                        |> Result.withDefault config.stepSize
-                                }
-                )
-            ]
-            [ text ("step : " ++ toString model.config.stepSize) ]
-    ]
+    div [ ]
+        [ text ("vertices : " ++ toString model.numVertices)
+        , input [ type_ "range", A.min "10", A.max "10000"
+                , onInput (\iStr ->
+                    AdjustVertices (String.toInt iStr
+                                    |> Result.withDefault model.numVertices)) ]
+                [ ]
+        , br [] []
+        , text ("sigma : " ++ toString model.config.sigma)
+        , input [ type_ "range", A.min "0", A.max "100"
+                , onInput (\fStr ->
+                    ChangeConfig { config
+                                    | sigma = String.toFloat fStr
+                                            |> Result.withDefault config.sigma
+                                    }
+                    )
+                ]
+                [ ]
+        , br [] []
+        , text ("beta : " ++ toString model.config.beta)
+        , input [ type_ "range", A.min "0", A.max "15"
+                , onInput (\fStr ->
+                    ChangeConfig { config
+                                    | beta = String.toFloat fStr
+                                            |> Result.withDefault config.beta
+                                    }
+                    )
+                ]
+                [ ]
+        , br [] []
+        , text ("rho : " ++ toString model.config.rho)
+        , input [ type_ "range", A.min "0", A.max "100"
+                , onInput (\fStr ->
+                    ChangeConfig { config
+                                    | rho = String.toFloat fStr
+                                            |> Result.withDefault config.rho
+                                    }
+                    )
+                ]
+                [  ]
+        , br [] []
+        , text ("step : " ++ toString model.config.stepSize)
+        , input [ type_ "range", A.min "0", A.max "1"
+                , onInput (\fStr ->
+                    ChangeConfig { config
+                                    | stepSize = String.toFloat fStr
+                                            |> Result.withDefault config.stepSize
+                                    }
+                    )
+                ]
+                [ ]
+        ]
 
 
 perspective : Float -> Mat4
@@ -219,11 +229,18 @@ update msg model =
             , Cmd.none
             )
         AdjustVertices verticesCount ->
-            ( { model | numVertices = verticesCount }
+            ( { model
+              | numVertices = verticesCount
+              , lorenz = model.config
+                |> lorenz model.numVertices }
             , Cmd.none
             )
         ChangeConfig newConfig ->
-            ( { model | config = newConfig }
+            ( { model
+              | config = newConfig
+              , lorenz = newConfig
+                |> lorenz model.numVertices
+              }
             , Cmd.none
             )
         _ -> ( model, Cmd.none )
