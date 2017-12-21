@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import AnimationFrame
 import Html exposing (Html, text, div, input, br)
-import Html.Attributes as A exposing (width, height, style, type_, min, max)
+import Html.Attributes as A exposing (width, height, style, type_, min, max, step)
 import Html.Events exposing (onInput)
 import Task exposing (Task)
 import Time exposing (Time)
@@ -151,14 +151,14 @@ controls : Model -> Html Msg
 controls ({ config, lorenz } as model) =
     div [ ]
         [ text ("vertices : " ++ toString model.numVertices)
-        , input [ type_ "range", A.min "10", A.max "10000"
+        , input [ type_ "range", A.min "10", A.max "10000", A.step "30"
                 , onInput (\iStr ->
                     AdjustVertices (String.toInt iStr
                                     |> Result.withDefault model.numVertices)) ]
                 [ ]
         , br [] []
         , text ("sigma : " ++ toString model.config.sigma)
-        , input [ type_ "range", A.min "0", A.max "100"
+        , input [ type_ "range", A.min "0", A.max "100", A.step "0.1"
                 , onInput (\fStr ->
                     ChangeConfig { config
                                     | sigma = String.toFloat fStr
@@ -169,7 +169,7 @@ controls ({ config, lorenz } as model) =
                 [ ]
         , br [] []
         , text ("beta : " ++ toString model.config.beta)
-        , input [ type_ "range", A.min "0", A.max "15"
+        , input [ type_ "range", A.min "0", A.max "15", A.step "0.01"
                 , onInput (\fStr ->
                     ChangeConfig { config
                                     | beta = String.toFloat fStr
@@ -180,7 +180,7 @@ controls ({ config, lorenz } as model) =
                 [ ]
         , br [] []
         , text ("rho : " ++ toString model.config.rho)
-        , input [ type_ "range", A.min "0", A.max "100"
+        , input [ type_ "range", A.min "0", A.max "100", A.step "0.5"
                 , onInput (\fStr ->
                     ChangeConfig { config
                                     | rho = String.toFloat fStr
@@ -191,7 +191,7 @@ controls ({ config, lorenz } as model) =
                 [  ]
         , br [] []
         , text ("step : " ++ toString model.config.stepSize)
-        , input [ type_ "range", A.min "0", A.max "1"
+        , input [ type_ "range", A.min "0", A.max "1", A.step "0.001"
                 , onInput (\fStr ->
                     ChangeConfig { config
                                     | stepSize = String.toFloat fStr
