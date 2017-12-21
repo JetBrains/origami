@@ -29,6 +29,7 @@ type alias Model =
     { config : LorenzConfig
     , paused : Bool
     , fps : Int
+    , theta : Float
     , lorenz : Mesh Vertex
     , numVertices : Int
     }
@@ -45,6 +46,7 @@ type Msg
     | Resize Window.Size
     | ChangeConfig LorenzConfig
     | AdjustVertices Int
+    | Rotate Float
     | Pause
     | Start
 
@@ -65,6 +67,7 @@ init =
             { config = lorenzConfig
             , paused = False
             , fps = 0
+            , theta = 0
             , lorenz = lorenzConfig |> lorenz numVertices
             , numVertices = numVertices
             }
@@ -141,7 +144,7 @@ view ({ config, lorenz } as model) =
                     vertexShader
                     fragmentShader
                     model.lorenz
-                    { perspective = perspective 1 }
+                    { perspective = perspective 1 model.theta }
                 ]
           :: []
         )
@@ -155,6 +158,13 @@ controls ({ config, lorenz } as model) =
                 , onInput (\iStr ->
                     AdjustVertices (String.toInt iStr
                                     |> Result.withDefault model.numVertices)) ]
+                [ ]
+        , br [] []
+        , text ("theta : " ++ toString model.theta)
+        , input [ type_ "range", A.min "0", A.max "260", A.step "0.1"
+                , onInput (\fStr ->
+                    Rotate (String.toFloat fStr
+                            |> Result.withDefault model.theta)) ]
                 [ ]
         , br [] []
         , text ("sigma : " ++ toString model.config.sigma)
@@ -203,10 +213,11 @@ controls ({ config, lorenz } as model) =
         ]
 
 
-perspective : Float -> Mat4
-perspective t =
+perspective : Float -> Float -> Mat4
+perspective t theta =
     Mat4.identity
         |> Mat4.scale3 scale scale scale
+        |> Mat4.rotate theta (vec3 1 0 0)
         --|> Mat4.translate3 -10 -10 0
 --    Mat4.mul
 --        (Mat4.makePerspective 45 1 0.01 100)
@@ -243,7 +254,12 @@ update msg model =
               }
             , Cmd.none
             )
+        Rotate theta ->
+            ( { model | theta = theta  }
+            , Cmd.none
+            )
         _ -> ( model, Cmd.none )
+
 
 main : Program Never Model Msg
 main =
