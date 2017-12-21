@@ -1,18 +1,15 @@
 module Main exposing (main)
 
 import AnimationFrame
-import Html exposing (Html, text, div)
-import Html.Attributes exposing (width, height, style)
+import Html exposing (Html, text, div, input)
+import Html.Attributes as A exposing (width, height, style, type_, min, max)
+import Html.Events exposing (onInput)
 import Task exposing (Task)
 import Time exposing (Time)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3, getX, getY, getZ)
 import WebGL exposing (Mesh, Shader, Entity)
 import Window
-
-
-numVertices : Int
-numVertices = 3000
 
 
 scale : Float
@@ -33,16 +30,21 @@ type alias Model =
     , paused : Bool
     , fps : Int
     , lorenz : Mesh Vertex
+    , numVertices : Int
     }
+
 
 type alias Vertex =
     { position : Vec3
     , color : Vec3
     }
 
+
 type Msg
     = Animate Time
     | Resize Window.Size
+    | ChangeConfig LorenzConfig
+    | AdjustVertices Int
     | Pause
     | Start
 
@@ -50,6 +52,7 @@ type Msg
 init : ( Model, Cmd Msg )
 init =
     let
+        numVertices = 1000
         lorenzConfig =
             { sigma = 10
             , beta = 8 / 3
@@ -62,7 +65,8 @@ init =
             { config = lorenzConfig
             , paused = False
             , fps = 0
-            , lorenz = lorenz lorenzConfig
+            , lorenz = lorenzConfig |> lorenz numVertices
+            , numVertices = numVertices
             }
         , Cmd.batch
             [ Task.perform Resize Window.size
@@ -70,8 +74,8 @@ init =
         )
 
 
-lorenz : LorenzConfig -> Mesh Vertex
-lorenz config =
+lorenz : Int -> LorenzConfig -> Mesh Vertex
+lorenz numVertices config =
     let
         x0 = 0.1
         y0 = 0.1
@@ -122,22 +126,71 @@ triangleAt v =
         , Vertex (vec3 (x + tw / 2) (y - th / 2) z) (vec3 0 0 1)
         )
 
+
 view : Model -> Html Msg
-view model =
+view ({ config, lorenz } as model) =
     div [ ]
-        [ text (toString model.fps ++ "FPS")
-        , WebGL.toHtml
-            [ width 800
-            , height 800
-            , style [ ( "display", "block" ) ]
+        ( [ text (toString model.fps ++ "FPS") ]
+          ++ controls model
+          ++ [ WebGL.toHtml
+                [ width 800
+                , height 800
+                , style [ ( "display", "block" ) ]
+                ]
+                [ WebGL.entity
+                    vertexShader
+                    fragmentShader
+                    model.lorenz
+                    { perspective = perspective 1 }
+                ]
+          ]
+        )
+
+
+controls : Model -> List (Html Msg)
+controls ({ config, lorenz } as model) =
+    [ input [ type_ "range", A.min "10", A.max "10000"
+            , onInput (\iStr ->
+                AdjustVertices (String.toInt iStr
+                                |> Result.withDefault model.numVertices)) ]
+            [ text ("vertices : " ++ toString model.numVertices) ]
+    , input [ type_ "range", A.min "0", A.max "100"
+            , onInput (\fStr ->
+                ChangeConfig { config
+                                | sigma = String.toFloat fStr
+                                        |> Result.withDefault config.sigma
+                                }
+                )
             ]
-            [ WebGL.entity
-                vertexShader
-                fragmentShader
-                model.lorenz
-                { perspective = perspective 1 }
+            [ text ("sigma : " ++ toString model.config.sigma) ]
+    , input [ type_ "range", A.min "0", A.max "15"
+            , onInput (\fStr ->
+                ChangeConfig { config
+                                | beta = String.toFloat fStr
+                                        |> Result.withDefault config.beta
+                                }
+                )
             ]
-        ]
+            [ text ("beta : " ++ toString model.config.beta) ]
+    , input [ type_ "range", A.min "0", A.max "100"
+            , onInput (\fStr ->
+                ChangeConfig { config
+                                | rho = String.toFloat fStr
+                                        |> Result.withDefault config.rho
+                                }
+                )
+            ]
+            [ text ("rho : " ++ toString model.config.rho) ]
+    , input [ type_ "range", A.min "0", A.max "1"
+            , onInput (\fStr ->
+                ChangeConfig { config
+                                | stepSize = String.toFloat fStr
+                                        |> Result.withDefault config.stepSize
+                                }
+                )
+            ]
+            [ text ("step : " ++ toString model.config.stepSize) ]
+    ]
 
 
 perspective : Float -> Mat4
@@ -163,6 +216,14 @@ update msg model =
     case msg of
         Animate dt ->
             ( { model | fps = floor (1000 / dt)  }
+            , Cmd.none
+            )
+        AdjustVertices verticesCount ->
+            ( { model | numVertices = verticesCount }
+            , Cmd.none
+            )
+        ChangeConfig newConfig ->
+            ( { model | config = newConfig }
             , Cmd.none
             )
         _ -> ( model, Cmd.none )
