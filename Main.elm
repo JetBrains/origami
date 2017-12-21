@@ -67,7 +67,7 @@ init =
             { config = lorenzConfig
             , paused = False
             , fps = 0
-            , theta = 0
+            , theta = 0.1
             , lorenz = lorenzConfig |> lorenz numVertices
             , numVertices = numVertices
             }
@@ -83,6 +83,7 @@ lorenz numVertices config =
         x0 = 0.1
         y0 = 0.1
         z0 = 0.1
+        -- vertices = Debug.log "vertices" (List.range 1 numVertices
         vertices = List.range 1 numVertices
            |> List.foldl (\_ positions ->
                    let
@@ -153,21 +154,20 @@ view ({ config, lorenz } as model) =
 controls : Model -> Html Msg
 controls ({ config, lorenz } as model) =
     div [ ]
-        [ text ("vertices : " ++ toString model.numVertices)
-        , input [ type_ "range", A.min "10", A.max "10000", A.step "30"
+        [ input [ type_ "range", A.min "10", A.max "10000", A.step "30"
                 , onInput (\iStr ->
                     AdjustVertices (String.toInt iStr
                                     |> Result.withDefault model.numVertices)) ]
                 [ ]
+        , text ("vertices : " ++ toString model.numVertices)
         , br [] []
-        , text ("theta : " ++ toString model.theta)
-        , input [ type_ "range", A.min "0", A.max "260", A.step "0.1"
+        , input [ type_ "range", A.min "0", A.max "1", A.step "0.01"
                 , onInput (\fStr ->
                     Rotate (String.toFloat fStr
                             |> Result.withDefault model.theta)) ]
                 [ ]
+        , text ("theta : " ++ toString model.theta)
         , br [] []
-        , text ("sigma : " ++ toString model.config.sigma)
         , input [ type_ "range", A.min "0", A.max "100", A.step "0.1"
                 , onInput (\fStr ->
                     ChangeConfig { config
@@ -177,8 +177,8 @@ controls ({ config, lorenz } as model) =
                     )
                 ]
                 [ ]
+        , text ("sigma : " ++ toString model.config.sigma)
         , br [] []
-        , text ("beta : " ++ toString model.config.beta)
         , input [ type_ "range", A.min "0", A.max "15", A.step "0.01"
                 , onInput (\fStr ->
                     ChangeConfig { config
@@ -188,8 +188,8 @@ controls ({ config, lorenz } as model) =
                     )
                 ]
                 [ ]
+        , text ("beta : " ++ toString model.config.beta)
         , br [] []
-        , text ("rho : " ++ toString model.config.rho)
         , input [ type_ "range", A.min "0", A.max "100", A.step "0.5"
                 , onInput (\fStr ->
                     ChangeConfig { config
@@ -198,9 +198,9 @@ controls ({ config, lorenz } as model) =
                                     }
                     )
                 ]
-                [  ]
+                [ ]
+        , text ("rho : " ++ toString model.config.rho)
         , br [] []
-        , text ("step : " ++ toString model.config.stepSize)
         , input [ type_ "range", A.min "0", A.max "1", A.step "0.001"
                 , onInput (\fStr ->
                     ChangeConfig { config
@@ -210,17 +210,32 @@ controls ({ config, lorenz } as model) =
                     )
                 ]
                 [ ]
+        , text ("step : " ++ toString model.config.stepSize)
         ]
 
 
 perspective : Float -> Float -> Mat4
 perspective t theta =
-    Mat4.identity
-        |> Mat4.scale3 scale scale scale
-        |> Mat4.rotate theta (vec3 1 0 0)
-        --|> Mat4.translate3 -10 -10 0
+--    Mat4.identity
+--        |> Mat4.scale3 scale scale scale
+--        |> Mat4.rotate theta (vec3 1 0 0)
+--        --|> Mat4.translate3 -10 -10 0
+
+    Mat4.mul
+        (Mat4.mul
+            (Mat4.makePerspective 45 1 0.01 100)
+            (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0)))
+        (Mat4.mul
+            (Mat4.makeRotate (3 * theta) (vec3 0 1 0))
+            (Mat4.makeRotate (2 * theta) (vec3 1 0 0)))
+
+
 --    Mat4.mul
---        (Mat4.makePerspective 45 1 0.01 100)
+--        (Mat4.mul
+--            (Mat4.mul
+--                (Mat4.makeRotate (3 * theta) (vec3 0 1 0))
+--                (Mat4.makeRotate (2 * theta) (vec3 1 0 0)))
+--            (Mat4.makePerspective 45 1 0.01 100))
 --        (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0))
 
 
