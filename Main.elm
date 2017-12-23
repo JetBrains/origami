@@ -13,7 +13,7 @@ import Window
 
 
 scale : Float
-scale = 1
+scale = 0.5
 
 
 type alias LorenzConfig =
@@ -54,12 +54,12 @@ type Msg
 init : ( Model, Cmd Msg )
 init =
     let
-        numVertices = 1000
+        numVertices = 2000
         lorenzConfig =
             { sigma = 10
             , beta = 8 / 3
             , rho = 28
-            , stepSize = 0.002
+            , stepSize = 0.005
             , stepsPerFrame = 3
             }
     in
@@ -81,8 +81,8 @@ lorenz : Int -> LorenzConfig -> Mesh Vertex
 lorenz numVertices config =
     let
         x0 = 0.1
-        y0 = 0.1
-        z0 = 0.1
+        y0 = 0
+        z0 = 0
         -- vertices = Debug.log "vertices" (List.range 1 numVertices
         vertices = List.range 1 numVertices
            |> List.foldl (\_ positions ->
@@ -113,15 +113,15 @@ step config v =
         δy = ( x * (ρ - z) - y ) * δt
         δz = ( x * y - β * z ) * δt
     in
-        vec3 (x + δx) (y + δt) (z + δz)
+        vec3 (x + δx) (y + δy) (z + δz)
 
 
 triangleAt : Vec3 -> ( Vertex, Vertex, Vertex )
 triangleAt v =
     let
-        x = getX v
-        y = getY v
-        z = getZ v
+        x = getX v / 10
+        y = getY v / 10
+        z = getZ v / 100
         tw = 3 / 400 / scale
         th = 3 / 400 / scale
     in
@@ -225,9 +225,7 @@ perspective t theta =
         (Mat4.mul
             (Mat4.makePerspective 45 1 0.01 100)
             (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0)))
-        (Mat4.mul
-            (Mat4.makeRotate (3 * theta) (vec3 0 1 0))
-            (Mat4.makeRotate (2 * theta) (vec3 1 0 0)))
+        ((Mat4.makeRotate (3 * theta) (vec3 0 1 0)))
 
 
 --    Mat4.mul
