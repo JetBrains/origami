@@ -2,5 +2,6 @@
 elm-stuff
 # elm-repl generated files
 repl-temp-*
-
+# node modules installation folder
+node_modules
 .idea

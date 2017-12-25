@@ -1,0 +1,27 @@
+{
+  "name": "lorenz-elm-webgl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "elm-webpack-loader": "^4.4.0",
+    "rpd": "^3.0.0-beta.1",
+    "webpack": "^3.10.0",
+    "webpack-dev-server": "^2.9.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "./node_modules/.bin/webpack-dev-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shamansir/lorenz-elm-webgl.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shamansir/lorenz-elm-webgl/issues"
+  },
+  "homepage": "https://github.com/shamansir/lorenz-elm-webgl#readme"
+}
