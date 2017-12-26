@@ -1,18 +1,15 @@
 // index.js
 'use strict';
 
-require('./node_modules/rpd/src/render/svg.css');
-require('./node_modules/rpd/src/render/shared.js');
-require('./node_modules/rpd/src/render/svg.js');
+// include main style
+require('./index.css');
 
-require('./node_modules/rpd/src/style/ableton/svg.css');
-require('./node_modules/rpd/src/style/ableton/svg.js');
+// Prepare RPD-patch
+require('./patch.js');
 
-var Rpd = require('./node_modules/rpd/src/rpd.js');
-console.log(Rpd);
-
+// initialize Elm Application
 var Elm = require('./Main.elm');
-var mountNode = document.getElementById('elm-app');
+var mountNode = document.getElementById('elm-target');
 
 // The third value on embed are the initial values for incomming ports into Elm
 var app = Elm.Main.embed(mountNode);
