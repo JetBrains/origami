@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import AnimationFrame
 import Html exposing (Html, text, div, input, br)
@@ -237,11 +237,24 @@ perspective t theta =
 --        (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0))
 
 
+port pause : (() -> msg) -> Sub msg
+
+port start : (() -> msg) -> Sub msg
+
+port rotate : (Float -> msg) -> Sub msg
+
+port modify : (LorenzConfig -> msg) -> Sub msg
+
+
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
+        , rotate Rotate
+        , modify ChangeConfig
+        , pause (\_ -> Pause)
+        , start (\_ -> Start)
         ]
 
 
