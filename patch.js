@@ -25,9 +25,17 @@ Rpd.renderNext('svg', document.getElementById('patch-target'),
 var patch = Rpd.addPatch('Lorenz').resizeCanvas(800, 800);
 
 var sigmaNode = patch.addNode('util/knob', 'Sigma').move(60, 10);
+sigmaNode.inlets['min'].receive(0);
+sigmaNode.inlets['max'].receive(100);
 var betaNode = patch.addNode('util/knob', 'Beta').move(60, 100);
+betaNode.inlets['min'].receive(0);
+betaNode.inlets['max'].receive(15);
 var rhoNode = patch.addNode('util/knob', 'Rho').move(60, 200);
+rhoNode.inlets['min'].receive(0);
+rhoNode.inlets['max'].receive(100);
 var stepNode = patch.addNode('util/knob', 'Step').move(60, 300);
+stepNode.inlets['min'].receive(0);
+stepNode.inlets['max'].receive(1);
 
 var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
     inlets: {
