@@ -81,16 +81,26 @@ build numVertices config =
                 in
                     case maybePrev of
                         Just prev -> positions ++ [ prev |> step config  ]
-                        Nothing -> [ vec3 x0 y0 z0 ]
+                        Nothing -> [ ( vec3 x0 y0 z0, vec3 x0 y0 z0 ) ]
             ) []
     in
         vertices
             |> List.map triangleAt
+            |> flattenTriangles
             |> WebGL.triangles
 
 
-step : Config -> Vec3 -> Vec3
-step config v =
+flattenTriangles : List ( Triangle, Triangle ) -> List Triangle
+flattenTriangles src =
+    src |>
+        List.foldl
+            (\( firstInPair, secondInPair ) allTriangles ->
+                allTriangles ++ [ firstInPair ] ++ [ secondInPair ]) []
+
+
+
+step : Config -> ( Vec3, Vec3 ) -> ( Vec3, Vec3 )
+step config ( _, v ) =
     let
         ( x, y, z ) = ( getX v, getY v, getZ v )
         σ = config.sigma
@@ -102,11 +112,11 @@ step config v =
         δy = ( x * (ρ - z) - y ) * δt
         δz = ( x * y - β * z ) * δt
     in
-        vec3 (x + δx) (y + δy) (z + δz)
+        ( v, vec3 (x + δx) (y + δy) (z + δz) )
 
 
-triangleAt : Vec3 -> Triangle
-triangleAt v =
+triangleAt : ( Vec3, Vec3 ) -> ( Triangle, Triangle )
+triangleAt ( prevV, v ) =
     let
         x = getX v / 10
         y = getY v / 10
@@ -114,9 +124,14 @@ triangleAt v =
         tw = 3 / 400 / scale
         th = 3 / 400 / scale
     in
-        ( Vertex (vec3 x (y + th / 2) z) (vec3 1 0 0)
-        , Vertex (vec3 (x + tw) (y + th / 2) z) (vec3 0 1 0)
-        , Vertex (vec3 (x + tw / 2) (y - th / 2) z) (vec3 0 0 1)
+        ( ( Vertex (vec3 x (y + th / 2) z) (vec3 1 0 0)
+          , Vertex (vec3 (x + tw) (y + th / 2) z) (vec3 0 1 0)
+          , Vertex (vec3 (x + tw / 2) (y - th / 2) z) (vec3 0 0 1)
+          )
+        , ( Vertex (vec3 x (y + th / 2) z) (vec3 1 0 0)
+          , Vertex (vec3 (x + tw) (y + th / 2) z) (vec3 0 1 0)
+          , Vertex (vec3 (x + tw / 2) (y - th / 2) z) (vec3 0 0 1)
+          )
         )
 
 
