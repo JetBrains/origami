@@ -71,11 +71,11 @@ controls numVertices theta config =
         , input [ type_ "range", A.min "0", A.max "1", A.step "0.001"
                 , onInput (\fStr ->
                     ChangeConfig { config
-                                 | stepSize = String.toFloat fStr
-                                     |> Result.withDefault config.stepSize
+                                 | step = String.toFloat fStr
+                                     |> Result.withDefault config.step
                                  }
                     )
                 ]
                 [ ]
-        , text ("step : " ++ toString config.stepSize)
+        , text ("step : " ++ toString config.step)
         ]

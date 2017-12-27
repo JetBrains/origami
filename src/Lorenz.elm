@@ -22,7 +22,7 @@ type alias Config =
     { sigma : Float
     , beta : Float
     , rho : Float
-    , stepSize : Float
+    , step : Float
     }
 
 
@@ -45,7 +45,7 @@ init =
     { sigma = 10
     , beta = 8 / 3
     , rho = 28
-    , stepSize = 0.005
+    , step = 0.005
     }
 
 
@@ -89,7 +89,7 @@ step config v =
         β = config.beta
         ρ = config.rho
         -- δt = config.dt / 1000
-        δt = config.stepSize
+        δt = config.step
         δx = σ * (y - x) * δt
         δy = ( x * (ρ - z) - y ) * δt
         δz = ( x * y - β * z ) * δt
