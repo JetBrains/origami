@@ -17,39 +17,47 @@ require('./node_modules/rpd/src/toolkit/util/svg.js');
 window.Rpd = require('./node_modules/rpd/src/rpd.js');
 console.log(Rpd);
 
+var elmLorenz = null;
+
 Rpd.renderNext('svg', document.getElementById('patch-target'),
                 { style: 'ableton' });
 
 var patch = Rpd.addPatch('Lorenz').resizeCanvas(800, 800);
 
-// add Metro Node, it may generate `bang` signal with the requested time interval
-var metroNode = patch.addNode('util/metro', 'Metro').move(40, 10);
+var sigmaNode = patch.addNode('util/knob', 'Sigma').move(60, 10);
+var betaNode = patch.addNode('util/knob', 'Beta').move(60, 100);
+var rhoNode = patch.addNode('util/knob', 'Rho').move(60, 200);
+var stepNode = patch.addNode('util/knob', 'Step').move(60, 300);
 
-// add Random Generator Node that will generate random numbers on every `bang` signal
-var randomGenNode = patch.addNode('util/random', 'Random').move(130, 20);
-randomGenNode.inlets['max'].receive(26); // set maximum value of the generated numbers
-
-// add Log Node, which will log last results of the Random Generator Node
-var logRandomNode = patch.addNode('util/log', 'Log').move(210, 60);
-randomGenNode.outlets['random'].connect(logRandomNode.inlets['what']);
-
-// define the type of the node which multiplies the incoming value by two
-var multiplyTwoNode = patch.addNode('core/basic', '* 2', {
+var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
+    inlets: {
+        'sigma' : { type: 'util/number', 'default': 10 },
+        'beta' : { type: 'util/number', 'default': 2.6 },
+        'rho' : { type: 'util/number', 'default': 28 },
+        'step' : { type: 'util/number', 'default': 0.005 }
+    },
     process: function(inlets) {
-        return {
-            'result': (inlets.multiplier || 0) * 2
-        }
+        if (elmLorenz) {
+            elmLorenz.ports.modify.send({
+                sigma: inlets.sigma || 10,
+                beta: inlets.beta || 26,
+                rho: inlets.rho || 28,
+                step: inlets.step || 0.005
+            });
+        };
     }
 }).move(240, 10);
-var multiplierInlet = multiplyTwoNode.addInlet('util/number', 'multiplier');
-var resultOutlet = multiplyTwoNode.addOutlet('util/number', 'result');
 
-// connect Random Generator output to the multiplying node
-var logMultiplyNode = patch.addNode('util/log', 'Log').move(370, 20);
-resultOutlet.connect(logMultiplyNode.inlets['what']);
+var sigmaInlet = lorenzNode.inlets['sigma'];
+var betaInlet = lorenzNode.inlets['beta'];
+var rhoInlet = lorenzNode.inlets['rho'];
+var stepInlet = lorenzNode.inlets['step'];
 
-// connect Random Generator output to the multiplying node
-randomGenNode.outlets['random'].connect(multiplierInlet);
+sigmaNode.outlets['number'].connect(sigmaInlet);
+betaNode.outlets['number'].connect(betaInlet);
+rhoNode.outlets['number'].connect(rhoInlet);
+stepNode.outlets['number'].connect(stepInlet);
 
-// finally connect Metro node to Random Generator, so the sequence starts
-metroNode.outlets['bang'].connect(randomGenNode.inlets['bang']);
+module.exports = function(elmLorenzInstance) {
+    elmLorenz = elmLorenzInstance;
+}
