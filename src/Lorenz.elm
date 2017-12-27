@@ -55,7 +55,7 @@ makeEntity mesh theta =
         vertexShader
         fragmentShader
         mesh
-        ( uniforms 1 theta )
+        ( uniforms theta )
 
 
 build : Int -> Config -> Mesh Vertex
@@ -112,8 +112,8 @@ triangleAt v =
         )
 
 
-uniforms : Float -> Float -> Uniforms
-uniforms t theta =
+uniforms : Float -> Uniforms
+uniforms theta =
     { rotation =
                 Mat4.makeRotate (3 * theta) (vec3 0 1 0)
     , perspective =
