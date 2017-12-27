@@ -1,6 +1,6 @@
 module Lorenz exposing
     ( Config
-    , Vertex
+    , LorenzMesh
     , init
     , makeEntity
     , build
@@ -16,6 +16,12 @@ import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
 scale : Float
 scale = 1
+
+
+type alias Triangle = ( Vertex, Vertex, Vertex )
+
+
+type alias LorenzMesh = Mesh Vertex
 
 
 type alias Config =
@@ -49,7 +55,7 @@ init =
     }
 
 
-makeEntity : Mesh Vertex -> Float -> Entity
+makeEntity : LorenzMesh -> Float -> Entity
 makeEntity mesh theta =
     WebGL.entity
         vertexShader
@@ -58,7 +64,7 @@ makeEntity mesh theta =
         ( uniforms theta )
 
 
-build : Int -> Config -> Mesh Vertex
+build : Int -> Config -> LorenzMesh
 build numVertices config =
     let
         x0 = 0.1
@@ -66,15 +72,15 @@ build numVertices config =
         z0 = 0
         -- vertices = Debug.log "vertices" (List.range 1 numVertices
         vertices = List.range 1 numVertices
-           |> List.foldl (\_ positions ->
-                   let
-                       len = List.length positions
-                       maybePrev = (List.drop (len - 1) positions) |> List.head
-                   in
-                       case maybePrev of
-                           Just prev -> positions ++ [ prev |> step config  ]
-                           Nothing -> [ vec3 x0 y0 z0 ]
-               ) []
+            |> List.foldl (\_ positions ->
+                let
+                    len = List.length positions
+                    maybePrev = (List.drop (len - 1) positions) |> List.head
+                in
+                    case maybePrev of
+                        Just prev -> positions ++ [ prev |> step config  ]
+                        Nothing -> [ vec3 x0 y0 z0 ]
+            ) []
     in
         vertices
             |> List.map triangleAt
@@ -97,7 +103,7 @@ step config v =
         vec3 (x + δx) (y + δy) (z + δz)
 
 
-triangleAt : Vec3 -> ( Vertex, Vertex, Vertex )
+triangleAt : Vec3 -> Triangle
 triangleAt v =
     let
         x = getX v / 10
@@ -114,10 +120,10 @@ triangleAt v =
 
 uniforms : Float -> Uniforms
 uniforms theta =
-    { rotation =
-                Mat4.makeRotate (3 * theta) (vec3 0 1 0)
-    , perspective =
-                Mat4.makePerspective 95 1.5 0.1 3000
+    { rotation
+        = Mat4.makeRotate (3 * theta) (vec3 0 1 0)
+    , perspective
+        = Mat4.makePerspective 95 1.5 0.1 3000
     , camera = Mat4.makeLookAt (vec3 1 0.5 -0.8) (vec3 -0.5 0.1 0) (vec3 0 1 0)
     , shade = 0.8
     }

@@ -19,7 +19,7 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , lorenz : Mesh Lorenz.Vertex
+    , lorenz : Lorenz.LorenzMesh
     , numVertices : Int
     }
 
@@ -78,6 +78,7 @@ update msg model =
                 |> Lorenz.build model.numVertices }
             , Cmd.none
             )
+
         ChangeConfig newConfig ->
             ( { model
               | config = newConfig
@@ -86,10 +87,12 @@ update msg model =
               }
             , Cmd.none
             )
+
         Rotate theta ->
             ( { model | theta = theta  }
             , Cmd.none
             )
+
         _ -> ( model, Cmd.none )
 
 
