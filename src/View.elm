@@ -17,7 +17,7 @@ view ({ config, lorenz } as model) =
         ( text (toString model.fps ++ "FPS")
           :: controls model
           :: WebGL.toHtml
-                [ width 800
+                [ width 1550
                 , height 800
                 , style [ ( "display", "block" ) ]
                 ]
@@ -42,9 +42,9 @@ uniforms t theta =
      rotation =
                 Mat4.makeRotate (3 * theta) (vec3 0 1 0)
     , perspective =
-                Mat4.makePerspective 45 1 0.01 100
+                Mat4.makePerspective 95 1.5 0.1 3000
 
-    , camera = Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0)
+    , camera = Mat4.makeLookAt (vec3 1 0.5 -0.8) (vec3 -0.5 0.1 0) (vec3 0 1 0)
     , shade = 0.8
 
     }

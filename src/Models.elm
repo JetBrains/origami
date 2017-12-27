@@ -11,7 +11,7 @@ import Configs exposing (..)
 
 
 scale : Float
-scale = 0.5
+scale = 1
 
 
 
