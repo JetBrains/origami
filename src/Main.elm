@@ -16,6 +16,7 @@ import Lorenz
 type alias Model =
     { config : Lorenz.Config
     , paused : Bool
+    , autoRotate : Bool
     , fps : Int
     , theta : Float
     , lorenz : Mesh Lorenz.Vertex
@@ -42,6 +43,7 @@ init =
         (
             { config = lorenzConfig
             , paused = False
+            , autoRotate = True
             , fps = 0
             , theta = 0.1
             , lorenz = lorenzConfig |> Lorenz.build numVertices
@@ -57,7 +59,15 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Animate dt ->
-            ( { model | fps = floor (1000 / dt), theta = model.theta +  dt / 4000 }
+            ( if model.autoRotate then
+                { model
+                | fps = floor (1000 / dt)
+                , theta = model.theta + dt / 4000
+                }
+              else
+                { model
+                | fps = floor (1000 / dt)
+                }
             , Cmd.none
             )
 
@@ -111,7 +121,7 @@ view { config, lorenz, numVertices, theta, fps } =
                 (config |>
                     Controls.controls numVertices theta)
           :: WebGL.toHtml
-              [ width 1550
+              [ width 800
               , height 800
               , style [ ( "display", "block" ) ]
               ]
