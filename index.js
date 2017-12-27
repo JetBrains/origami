@@ -8,7 +8,7 @@ require('./index.css');
 require('./patch.js');
 
 // initialize Elm Application
-var Elm = require('./Main.elm');
+var Elm = require('./src/Main.elm');
 var mountNode = document.getElementById('elm-target');
 
 // The third value on embed are the initial values for incomming ports into Elm
