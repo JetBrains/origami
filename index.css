@@ -11,3 +11,10 @@ body {
 .rpd-background {
     fill: transparent !important;
 }
+
+.fps {
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: white;
+}

@@ -1,7 +1,7 @@
 port module Main exposing (main)
 
-import Html exposing (Html, text, div)
-import Html.Attributes exposing (width, height, style)
+import Html exposing (Html, text, div, span)
+import Html.Attributes exposing (width, height, style, class)
 import AnimationFrame
 import Time exposing (Time)
 import Window
@@ -126,12 +126,11 @@ mapControls controlsMsg =
 view : Model -> Html Msg
 view model =
     div [ ]
-        ( -- text (toString fps ++ "FPS")
-       --   :: Html.map mapControls
-         --       (config |>
-         --           Controls.controls numVertices theta)
-         -- ::  WebGL.toHtml
-             WebGL.toHtml
+        ( span [ class "fps" ] [ toString model.fps ++ "FPS" |> text ]
+        --    :: Html.map mapControls
+        --     (config |>
+        --           Controls.controls numVertices theta)
+           :: WebGL.toHtml
               [ width (Tuple.first model.size)
               , height (Tuple.second model.size)
               , style [ ( "display", "block" ), ("background-color", "#12181C") ]
