@@ -15,7 +15,7 @@ import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
 
 thickness : Float
-thickness = 0.0075
+thickness = 0.03
 
 
 type alias Triangle = ( Vertex, Vertex, Vertex )

@@ -35,7 +35,7 @@ rhoNode.inlets['min'].receive(0);
 rhoNode.inlets['max'].receive(100);
 var stepNode = patch.addNode('util/knob', 'Step').move(60, 300);
 stepNode.inlets['min'].receive(0);
-stepNode.inlets['max'].receive(1);
+stepNode.inlets['max'].receive(0.1);
 
 var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
     inlets: {
