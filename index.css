@@ -1,5 +1,13 @@
 body {
     margin: 0;
-    display: flex;
-    flex-direction: row;
+}
+
+#patch-target {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.rpd-background {
+    fill: transparent !important;
 }
