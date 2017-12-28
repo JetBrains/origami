@@ -18,6 +18,10 @@ scale : Float
 scale = 0.5
 
 
+thickness : Float
+thickness = 0.0075
+
+
 type alias Triangle = ( Vertex, Vertex, Vertex )
 
 
@@ -85,7 +89,8 @@ build numVertices config =
             ) []
     in
         vertices
-            |> List.map triangleAt
+            |> List.map scaleVertexPairs -- TODO: do it with camera matrix!
+            |> List.map trianglePairAt
             |> flattenTriangles
             |> WebGL.triangles
 
@@ -115,22 +120,40 @@ step config ( _, v ) =
         ( v, vec3 (x + δx) (y + δy) (z + δz) )
 
 
-triangleAt : ( Vec3, Vec3 ) -> ( Triangle, Triangle )
-triangleAt ( prevV, v ) =
+scaleVertexPairs : ( Vec3, Vec3 ) -> ( Vec3, Vec3 )
+scaleVertexPairs ( v1, v2 ) =
+    ( vec3 (getX v1 / 10) (getY v1 / 10) (getZ v1 / 100)
+    , vec3 (getX v2 / 10) (getY v2 / 10) (getZ v2 / 100)
+    )
+
+
+trianglePairAt : ( Vec3, Vec3 ) -> ( Triangle, Triangle )
+trianglePairAt ( prevV, v ) =
     let
-        x = getX v / 10
-        y = getY v / 10
-        z = getZ v / 100
-        tw = 3 / 400 / scale
-        th = 3 / 400 / scale
+        ( prevX, prevY, prevZ ) = ( getX prevV, getY prevV, getZ prevV )
+        ( x, y, z ) = ( getX v, getY v, getZ v )
+        tw = thickness * scale
+        th = thickness * scale
+        -- first triangle, first vertex
+        t1v1 = vec3 x (y + th / 2) z
+        -- first triangle, second vertex
+        t1v2 = vec3 (x + tw) (y + th / 2) z
+        -- first triangle, third vertex
+        t1v3 = vec3 (x + tw / 2) (y - th / 2) z
+        -- second triangle, first vertex
+        t2v1 = vec3 x (y + th / 2) z
+        -- second triangle, second vertex
+        t2v2 = vec3 (x + tw) (y + th / 2) z
+        -- second triangle, third vertex
+        t2v3 = vec3 (x + tw / 2) (y - th / 2) z
     in
-        ( ( Vertex (vec3 x (y + th / 2) z) (vec3 1 0 0)
-          , Vertex (vec3 (x + tw) (y + th / 2) z) (vec3 0 1 0)
-          , Vertex (vec3 (x + tw / 2) (y - th / 2) z) (vec3 0 0 1)
+        ( ( Vertex t1v1 (vec3 1 0 0)
+          , Vertex t1v2 (vec3 0 1 0)
+          , Vertex t1v3 (vec3 0 0 1)
           )
-        , ( Vertex (vec3 x (y + th / 2) z) (vec3 1 0 0)
-          , Vertex (vec3 (x + tw) (y + th / 2) z) (vec3 0 1 0)
-          , Vertex (vec3 (x + tw / 2) (y - th / 2) z) (vec3 0 0 1)
+        , ( Vertex t2v1 (vec3 1 0 0)
+          , Vertex t2v2 (vec3 0 1 0)
+          , Vertex t2v2 (vec3 0 0 1)
           )
         )
 
