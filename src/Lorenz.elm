@@ -14,10 +14,6 @@ import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
 
-scale : Float
-scale = 0.5
-
-
 thickness : Float
 thickness = 0.0075
 
@@ -132,8 +128,8 @@ trianglePairAt ( prevV, v ) =
     let
         ( prevX, prevY, prevZ ) = ( getX prevV, getY prevV, getZ prevV )
         ( x, y, z ) = ( getX v, getY v, getZ v )
-        tw = thickness * scale
-        th = thickness * scale
+        tw = thickness
+        th = thickness
         -- first triangle, first vertex
         t1v1 = vec3 x (y + th / 2) z
         -- first triangle, second vertex
