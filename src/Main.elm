@@ -21,6 +21,7 @@ type alias Model =
     , theta : Float
     , lorenz : Lorenz.LorenzMesh
     , numVertices : Int
+    , size : ( Int, Int )
     }
 
 
@@ -48,6 +49,7 @@ init =
             , theta = 0.1
             , lorenz = lorenzConfig |> Lorenz.build numVertices
             , numVertices = numVertices
+            , size = ( 0, 0 )
             }
         , Cmd.batch
             [ Task.perform Resize Window.size
@@ -93,6 +95,11 @@ update msg model =
             , Cmd.none
             )
 
+        Resize { width, height } ->
+            ( { model | size = ( width, height ) }
+            , Cmd.none
+            )
+
         _ -> ( model, Cmd.none )
 
 
@@ -117,20 +124,21 @@ mapControls controlsMsg =
 
 
 view : Model -> Html Msg
-view { config, lorenz, numVertices, theta, fps } =
+view model =
     div [ ]
-        ( text (toString fps ++ "FPS")
-          :: Html.map mapControls
-                (config |>
-                    Controls.controls numVertices theta)
-          :: WebGL.toHtml
-              [ width 800
-              , height 800
-              , style [ ( "display", "block" ) ]
+        ( -- text (toString fps ++ "FPS")
+       --   :: Html.map mapControls
+         --       (config |>
+         --           Controls.controls numVertices theta)
+         -- ::  WebGL.toHtml
+             WebGL.toHtml
+              [ width (Tuple.first model.size)
+              , height (Tuple.second model.size)
+              , style [ ( "display", "block" ), ("background-color", "#12181C") ]
               ]
               [ Lorenz.makeEntity
-                  lorenz
-                  theta
+                  model.lorenz
+                  model.theta
               ]
           :: []
         )

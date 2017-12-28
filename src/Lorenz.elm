@@ -15,7 +15,7 @@ import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
 
 scale : Float
-scale = 1
+scale = 0.5
 
 
 type alias Triangle = ( Vertex, Vertex, Vertex )
@@ -43,6 +43,8 @@ type alias Uniforms =
     , perspective : Mat4
     , camera : Mat4
     , shade : Float
+    , cameraTranslate : Mat4
+    , cameraRotate : Mat4
     }
 
 
@@ -126,6 +128,8 @@ uniforms theta =
         = Mat4.makePerspective 95 1.5 0.1 3000
     , camera = Mat4.makeLookAt (vec3 1 0.5 -0.8) (vec3 -0.5 0.1 0) (vec3 0 1 0)
     , shade = 0.8
+    , cameraTranslate = Mat4.makeTranslate (vec3 (1/3) (1/80) (-1/16))
+    , cameraRotate = Mat4.makeRotate (2) (vec3 1 0 0)
     }
 
 
@@ -134,12 +138,14 @@ vertexShader =
     [glsl|
         attribute vec3 position;
         attribute vec3 color;
+        uniform mat4 cameraTranslate;
+        uniform mat4 cameraRotate;
         uniform mat4 perspective;
         uniform mat4 camera;
         uniform mat4 rotation;
         varying vec3 vcolor;
         void main () {
-            gl_Position = perspective * camera * rotation * vec4(position, 1.0);
+            gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate  *  vec4(position, 1.0);
             vcolor = color;
         }
     |]
