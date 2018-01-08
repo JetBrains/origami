@@ -36,7 +36,6 @@ type alias Config =
 
 type alias Vertex =
     { position : Vec3
-    , color : Vec3
     }
 
 
@@ -162,43 +161,32 @@ calculateNormals vertices idx v =
 
 trianglePairAt : Vec3 -> ( Triangle, Triangle )
 trianglePairAt v =
-    ( ( Vertex (vec3 1 1 1) (vec3 1 0 0)
-      , Vertex (vec3 1 1 1) (vec3 0 1 0)
-      , Vertex (vec3 1 1 1) (vec3 0 0 1)
-      )
-    , ( Vertex (vec3 1 1 1) (vec3 1 0 0)
-      , Vertex (vec3 1 1 1) (vec3 0 1 0)
-      , Vertex (vec3 1 1 1) (vec3 0 0 1)
-      )
-    )
-
---    let
---        ( prevX, prevY, prevZ ) = ( getX prevV, getY prevV, getZ prevV )
---        ( x, y, z ) = ( getX v, getY v, getZ v )
---        tw = thickness
---        th = thickness
---        -- first triangle, first vertex
---        t1v1 = vec3 x (y + th / 2) z
---        -- first triangle, second vertex
---        t1v2 = vec3 (x + tw) (y + th / 2) z
---        -- first triangle, third vertex
---        t1v3 = vec3 (x + tw / 2) (y - th / 2) z
---        -- second triangle, first vertex
---        t2v1 = vec3 x (y + th / 2) z
---        -- second triangle, second vertex
---        t2v2 = vec3 (x + tw) (y + th / 2) z
---        -- second triangle, third vertex
---        t2v3 = vec3 (x + tw / 2) (y - th / 2) z
---    in
---        ( ( Vertex t1v1 (vec3 1 0 0)
---          , Vertex t1v2 (vec3 0 1 0)
---          , Vertex t1v3 (vec3 0 0 1)
---          )
---        , ( Vertex t2v1 (vec3 1 0 0)
---          , Vertex t2v2 (vec3 0 1 0)
---          , Vertex t2v2 (vec3 0 0 1)
---          )
---        )
+    let
+        ( x, y, z ) = ( getX v, getY v, getZ v )
+        tw = thickness
+        th = thickness
+        -- first triangle, first vertex
+        t1v1 = vec3 x (y + th / 2) z
+        -- first triangle, second vertex
+        t1v2 = vec3 (x + tw) (y + th / 2) z
+        -- first triangle, third vertex
+        t1v3 = vec3 (x + tw / 2) (y - th / 2) z
+        -- second triangle, first vertex
+        t2v1 = vec3 x (y + th / 2) z
+        -- second triangle, second vertex
+        t2v2 = vec3 (x + tw) (y + th / 2) z
+        -- second triangle, third vertex
+        t2v3 = vec3 (x + tw / 2) (y - th / 2) z
+    in
+        ( ( Vertex t1v1
+          , Vertex t1v2
+          , Vertex t1v3
+          )
+        , ( Vertex t2v1
+          , Vertex t2v2
+          , Vertex t2v2
+          )
+        )
 
 
 uniforms : Float -> Uniforms
@@ -218,7 +206,6 @@ vertexShader : Shader Vertex Uniforms { vcolor : Vec3 }
 vertexShader =
     [glsl|
         attribute vec3 position;
-        attribute vec3 color;
         uniform mat4 cameraTranslate;
         uniform mat4 cameraRotate;
         uniform mat4 perspective;
@@ -227,7 +214,7 @@ vertexShader =
         varying vec3 vcolor;
         void main () {
             gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate  *  vec4(position, 1.0);
-            vcolor = color;
+            vcolor = vec3(1.0, 1.0, 1.0);
         }
     |]
 
