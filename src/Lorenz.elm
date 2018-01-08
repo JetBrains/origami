@@ -34,6 +34,13 @@ type alias Config =
     }
 
 
+type alias Normals =
+    { position : Vec3
+    , prevNormal : Vec3
+    , sumNormal : Vec3
+    }
+
+
 type alias Vertex =
     { position : Vec3
     }
@@ -97,7 +104,6 @@ build config =
     in
         scaledVertices
             |> Array.indexedMap (calculateNormals scaledVertices)
-            |> Array.map sumNormals
             |> Array.map trianglePairAt
             |> flattenTriangles
             |> WebGL.triangles
@@ -132,12 +138,7 @@ scaleVertex : Vec3 -> Vec3
 scaleVertex v = vec3 (getX v / 10) (getY v / 10) (getZ v / 100)
 
 
-sumNormals : ( Vec3, Vec3 ) -> Vec3
-sumNormals ( prevNorm, nextNorm ) =
-    Vec3.add prevNorm nextNorm |> Vec3.normalize
-
-
-calculateNormals : Array.Array Vec3 -> Int -> Vec3 -> ( Vec3, Vec3 )
+calculateNormals : Array.Array Vec3 -> Int -> Vec3 -> Normals
 calculateNormals vertices idx v =
     let
         ( prevV, nextV ) = case ( vertices |> Array.get (idx - 1)
@@ -156,12 +157,16 @@ calculateNormals vertices idx v =
             , Vec3.cross nextV nextDir |> Vec3.normalize
             )
     in
-        ( prevNorm, nextNorm )
+        { position = v
+        , sumNormal = Vec3.add prevNorm nextNorm |> Vec3.normalize
+        , prevNormal = prevNorm
+        }
 
 
-trianglePairAt : Vec3 -> ( Triangle, Triangle )
-trianglePairAt v =
+trianglePairAt : Normals -> ( Triangle, Triangle )
+trianglePairAt { sumNormal, prevNormal, position } =
     let
+        v = position
         ( x, y, z ) = ( getX v, getY v, getZ v )
         tw = thickness
         th = thickness
