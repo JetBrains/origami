@@ -39,6 +39,7 @@ type alias WithNormals =
     , position : Vec3
     , prevPosition : Vec3
     , prevNormal : Vec3
+    , prevSumNormal : Maybe Vec3
     , sumNormal : Vec3
     }
 
@@ -103,9 +104,12 @@ build config =
         scaledVertices = vertices
              |> List.map scaleVertex -- TODO: do it with camera matrix!
              |> Array.fromList
-    in
-        scaledVertices
+        verticesWithSumNormals = scaledVertices
             |> Array.indexedMap (calculateNormals scaledVertices)
+        verticesWithBothSumNormals = verticesWithSumNormals
+            |> Array.indexedMap (addPrevSumNormals verticesWithSumNormals)
+    in
+        verticesWithBothSumNormals
             |> Array.map trianglePairAt
             |> flattenTriangles
             |> WebGL.triangles
@@ -140,6 +144,16 @@ scaleVertex : Vec3 -> Vec3
 scaleVertex v = vec3 (getX v / 10) (getY v / 10) (getZ v / 100)
 
 
+addPrevSumNormals : Array.Array WithNormals -> Int -> WithNormals -> WithNormals
+addPrevSumNormals verticesWithNormals idx v =
+    let
+        maybePrev = verticesWithNormals |> Array.get (idx - 1)
+    in
+        { v
+        | prevSumNormal = maybePrev |> Maybe.map (\prev -> prev.sumNormal)
+        }
+
+
 calculateNormals : Array.Array Vec3 -> Int -> Vec3 -> WithNormals
 calculateNormals vertices idx v =
     let
@@ -164,15 +178,18 @@ calculateNormals vertices idx v =
         , sumNormal = Vec3.add prevNorm nextNorm |> Vec3.normalize
         , prevPosition = prevV
         , prevNormal = prevNorm
+        , prevSumNormal = Nothing -- will added later
         }
 
 
 trianglePairAt : WithNormals -> ( Triangle, Triangle )
-trianglePairAt { prevPosition, prevNormal, position, sumNormal, index } =
+trianglePairAt { prevPosition, prevNormal, prevSumNormal, position, sumNormal, index } =
     let
         v = position
         p1 = prevPosition
-        p2 = Vec3.add p1 prevNormal |> Vec3.scale thickness
+        p2 = case prevSumNormal of
+            Just prevSumNormal -> Vec3.add p1 prevSumNormal |> Vec3.scale thickness
+            Nothing -> Vec3.add p1 prevNormal |> Vec3.scale thickness
         p3 = position
         p4 = Vec3.add p3 sumNormal |> Vec3.scale thickness
     in
