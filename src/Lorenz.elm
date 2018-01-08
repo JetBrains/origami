@@ -15,10 +15,6 @@ import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
 
-thickness : Float
-thickness = 1
-
-
 type alias Triangle = ( Vertex, Vertex, Vertex )
 
 
@@ -31,6 +27,7 @@ type alias Config =
     , rho : Float
     , step : Float
     , numVertices : Int
+    , thickness : Float
     }
 
 
@@ -66,6 +63,7 @@ init =
     , rho = 28
     , step = 0.005
     , numVertices = 2000
+    , thickness = 1
     }
 
 
@@ -110,7 +108,7 @@ build config =
             |> Array.indexedMap (addPrevSumNormals verticesWithSumNormals)
     in
         verticesWithBothSumNormals
-            |> Array.map trianglePairAt
+            |> Array.map (trianglePairAt config.thickness)
             |> flattenTriangles
             |> WebGL.triangles
 
@@ -182,8 +180,8 @@ calculateNormals vertices idx v =
         }
 
 
-trianglePairAt : WithNormals -> ( Triangle, Triangle )
-trianglePairAt { prevPosition, prevNormal, prevSumNormal, position, sumNormal, index } =
+trianglePairAt : Float -> WithNormals -> ( Triangle, Triangle )
+trianglePairAt thickness { prevPosition, prevNormal, prevSumNormal, position, sumNormal, index } =
     let
         v = position
         p1 = prevPosition
