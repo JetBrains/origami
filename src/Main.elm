@@ -60,6 +60,9 @@ init =
                 [ ( LorenzConfig lorenzConfig
                   , LorenzLayer (lorenzConfig |> Lorenz.build)
                   )
+                , ( LorenzConfig lorenzConfig
+                  , LorenzLayer (lorenzConfig |> Lorenz.build)
+                  )
                 , ( NoConfig
                   , TriangleLayer Triangle.mesh
                   )
@@ -138,11 +141,12 @@ mapControls model controlsMsg =
 mergeLayers : Float -> Array ( LayerConfig, Layer ) -> List WebGL.Entity
 mergeLayers theta layers =
     Array.toList
-        (layers |> Array.map
-            (\(_, layer) ->
-                case layer of
-                    LorenzLayer lorenz -> Lorenz.makeEntity lorenz theta
-                    TriangleLayer triangle -> Triangle.entity theta
+        (layers |> Array.indexedMap
+            (\index (_, layer) ->
+                case ( index, layer )  of
+                    ( 0, LorenzLayer lorenz ) -> Lorenz.makeEntity lorenz ( theta * 2 )
+                    ( _, LorenzLayer lorenz ) -> Lorenz.makeEntity lorenz theta
+                    ( _, TriangleLayer _ ) -> Triangle.entity theta
             )
         )
 
