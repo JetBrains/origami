@@ -35,7 +35,8 @@ type alias Config =
 
 
 type alias WithNormals =
-    { position : Vec3
+    { index : Int
+    , position : Vec3
     , prevPosition : Vec3
     , prevNormal : Vec3
     , sumNormal : Vec3
@@ -158,7 +159,8 @@ calculateNormals vertices idx v =
             , Vec3.cross nextV nextDir |> Vec3.normalize
             )
     in
-        { position = v
+        { index = idx
+        , position = v
         , sumNormal = Vec3.add prevNorm nextNorm |> Vec3.normalize
         , prevPosition = prevV
         , prevNormal = prevNorm
@@ -166,7 +168,7 @@ calculateNormals vertices idx v =
 
 
 trianglePairAt : WithNormals -> ( Triangle, Triangle )
-trianglePairAt { sumNormal, prevNormal, position, prevPosition } =
+trianglePairAt { prevPosition, prevNormal, position, sumNormal, index } =
     let
         v = position
         p1 = prevPosition
@@ -174,15 +176,27 @@ trianglePairAt { sumNormal, prevNormal, position, prevPosition } =
         p3 = position
         p4 = Vec3.add p3 sumNormal |> Vec3.scale thickness
     in
-        ( ( Vertex p1
-          , Vertex p2
-          , Vertex p3
-          )
-        , ( Vertex p3
-          , Vertex p2
-          , Vertex p4
-          )
-        )
+        case index % 2 of
+            0 -> -- even
+                ( ( Vertex p1
+                  , Vertex p2
+                  , Vertex p3
+                  )
+                , ( Vertex p3
+                  , Vertex p2
+                  , Vertex p4
+                  )
+                )
+            _ -> -- odd
+                ( ( Vertex p2
+                  , Vertex p1
+                  , Vertex p4
+                  )
+                , ( Vertex p4
+                  , Vertex p1
+                  , Vertex p3
+                  )
+                )
 
 
 uniforms : Float -> Uniforms
