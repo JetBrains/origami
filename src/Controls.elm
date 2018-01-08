@@ -13,8 +13,7 @@ import Lorenz exposing (Config)
 
 
 type Msg
-    = AdjustVertices Int
-    | ChangeConfig Config
+    = ChangeConfig Config
     | Rotate Float
 
 
@@ -23,8 +22,12 @@ controls numVertices theta config =
     div [ ]
         [ input [ type_ "range", A.min "10", A.max "10000", A.step "30"
                 , onInput (\iStr ->
-                    AdjustVertices (String.toInt iStr
-                                    |> Result.withDefault numVertices)) ]
+                    ChangeConfig { config
+                                 | numVertices = String.toInt iStr
+                                     |> Result.withDefault numVertices
+                                 }
+                    )
+                ]
                 [ ]
         , text ("vertices : " ++ toString numVertices)
         , br [] []

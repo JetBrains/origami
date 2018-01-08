@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Array exposing (Array)
 import Html exposing (Html, text, div, span)
 import Html.Attributes exposing (width, height, style, class)
 import AnimationFrame
@@ -11,16 +12,27 @@ import WebGL exposing (Mesh)
 
 import Controls
 import Lorenz
+import Triangle
+
+
+type LayerConfig
+    = LorenzConfig Lorenz.Config
+    -- | CanvasConfig
+    | NoConfig
+
+
+type Layer
+    = LorenzLayer Lorenz.LorenzMesh
+    | TriangleLayer Triangle.TriangleMesh
+    -- | CanvasLayer (\_ -> )
 
 
 type alias Model =
-    { config : Lorenz.Config
-    , paused : Bool
+    { paused : Bool
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , lorenz : Lorenz.LorenzMesh
-    , numVertices : Int
+    , layers : Array ( LayerConfig, Layer )
     , size : ( Int, Int )
     }
 
@@ -28,8 +40,7 @@ type alias Model =
 type Msg
     = Animate Time
     | Resize Window.Size
-    | ChangeConfig Lorenz.Config
-    | AdjustVertices Int
+    | ModifyLayer Int LayerConfig
     | Rotate Float
     | Pause
     | Start
@@ -38,17 +49,21 @@ type Msg
 init : ( Model, Cmd Msg )
 init =
     let
-        numVertices = 2000
         lorenzConfig = Lorenz.init
     in
         (
-            { config = lorenzConfig
-            , paused = False
+            { paused = False
             , autoRotate = True
             , fps = 0
             , theta = 0.1
-            , lorenz = lorenzConfig |> Lorenz.build numVertices
-            , numVertices = numVertices
+            , layers = Array.fromList
+                [ ( LorenzConfig lorenzConfig
+                  , LorenzLayer (lorenzConfig |> Lorenz.build)
+                  )
+                , ( NoConfig
+                  , TriangleLayer Triangle.mesh
+                  )
+                ]
             , size = ( 0, 0 )
             }
         , Cmd.batch
@@ -73,22 +88,18 @@ update msg model =
             , Cmd.none
             )
 
-        AdjustVertices verticesCount ->
-            ( { model
-              | numVertices = verticesCount
-              , lorenz = model.config
-                |> Lorenz.build model.numVertices }
-            , Cmd.none
-            )
-
-        ChangeConfig newConfig ->
-            ( { model
-              | config = newConfig
-              , lorenz = newConfig
-                |> Lorenz.build model.numVertices
-              }
-            , Cmd.none
-            )
+        ModifyLayer index layerConfig ->
+            let
+                layer = case layerConfig of
+                    LorenzConfig lorenzConfig -> LorenzLayer (lorenzConfig |> Lorenz.build)
+                    NoConfig -> TriangleLayer Triangle.mesh
+            in
+                ( { model
+                  | layers = model.layers
+                      |> Array.set index ( layerConfig, layer )
+                  }
+                  , Cmd.none
+                )
 
         Rotate theta ->
             ( { model | theta = theta  }
@@ -104,23 +115,36 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     Sub.batch
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
         , rotate Rotate
-        , modify ChangeConfig
+        , modify (\lorenzConfig ->
+            ModifyLayer 0 (LorenzConfig lorenzConfig)
+          )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
         ]
 
 
-mapControls : Controls.Msg -> Msg
-mapControls controlsMsg =
+mapControls : Model -> Controls.Msg -> Msg
+mapControls model controlsMsg =
     case controlsMsg of
-        Controls.AdjustVertices n -> AdjustVertices n
-        Controls.ChangeConfig cfg -> ChangeConfig cfg
+        Controls.ChangeConfig cfg -> ModifyLayer 0 (LorenzConfig cfg)
         Controls.Rotate th -> Rotate th
+
+
+mergeLayers : Float -> Array ( LayerConfig, Layer ) -> List WebGL.Entity
+mergeLayers theta layers =
+    Array.toList
+        (layers |> Array.map
+            (\(_, layer) ->
+                case layer of
+                    LorenzLayer lorenz -> Lorenz.makeEntity lorenz theta
+                    TriangleLayer triangle -> Triangle.entity theta
+            )
+        )
 
 
 view : Model -> Html Msg
@@ -135,10 +159,7 @@ view model =
               , height (Tuple.second model.size)
               , style [ ( "display", "block" ), ("background-color", "#12181C") ]
               ]
-              [ Lorenz.makeEntity
-                  model.lorenz
-                  model.theta
-              ]
+              (model.layers |> mergeLayers model.theta)
           :: []
         )
 
