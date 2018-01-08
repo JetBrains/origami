@@ -16,7 +16,7 @@ import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
 
 thickness : Float
-thickness = 0.03
+thickness = 1
 
 
 type alias Triangle = ( Vertex, Vertex, Vertex )
@@ -34,8 +34,9 @@ type alias Config =
     }
 
 
-type alias Normals =
+type alias WithNormals =
     { position : Vec3
+    , prevPosition : Vec3
     , prevNormal : Vec3
     , sumNormal : Vec3
     }
@@ -138,7 +139,7 @@ scaleVertex : Vec3 -> Vec3
 scaleVertex v = vec3 (getX v / 10) (getY v / 10) (getZ v / 100)
 
 
-calculateNormals : Array.Array Vec3 -> Int -> Vec3 -> Normals
+calculateNormals : Array.Array Vec3 -> Int -> Vec3 -> WithNormals
 calculateNormals vertices idx v =
     let
         ( prevV, nextV ) = case ( vertices |> Array.get (idx - 1)
@@ -159,37 +160,27 @@ calculateNormals vertices idx v =
     in
         { position = v
         , sumNormal = Vec3.add prevNorm nextNorm |> Vec3.normalize
+        , prevPosition = prevV
         , prevNormal = prevNorm
         }
 
 
-trianglePairAt : Normals -> ( Triangle, Triangle )
-trianglePairAt { sumNormal, prevNormal, position } =
+trianglePairAt : WithNormals -> ( Triangle, Triangle )
+trianglePairAt { sumNormal, prevNormal, position, prevPosition } =
     let
         v = position
-        ( x, y, z ) = ( getX v, getY v, getZ v )
-        tw = thickness
-        th = thickness
-        -- first triangle, first vertex
-        t1v1 = vec3 x (y + th / 2) z
-        -- first triangle, second vertex
-        t1v2 = vec3 (x + tw) (y + th / 2) z
-        -- first triangle, third vertex
-        t1v3 = vec3 (x + tw / 2) (y - th / 2) z
-        -- second triangle, first vertex
-        t2v1 = vec3 x (y + th / 2) z
-        -- second triangle, second vertex
-        t2v2 = vec3 (x + tw) (y + th / 2) z
-        -- second triangle, third vertex
-        t2v3 = vec3 (x + tw / 2) (y - th / 2) z
+        p1 = prevPosition
+        p2 = Vec3.add p1 prevNormal |> Vec3.scale thickness
+        p3 = position
+        p4 = Vec3.add p3 sumNormal |> Vec3.scale thickness
     in
-        ( ( Vertex t1v1
-          , Vertex t1v2
-          , Vertex t1v3
+        ( ( Vertex p1
+          , Vertex p2
+          , Vertex p3
           )
-        , ( Vertex t2v1
-          , Vertex t2v2
-          , Vertex t2v2
+        , ( Vertex p3
+          , Vertex p2
+          , Vertex p4
           )
         )
 
