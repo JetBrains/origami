@@ -29,6 +29,7 @@ type alias Config =
     , beta : Float
     , rho : Float
     , step : Float
+    , numVertices : Int
     }
 
 
@@ -54,6 +55,7 @@ init =
     , beta = 8 / 3
     , rho = 28
     , step = 0.005
+    , numVertices = 2000
     }
 
 
@@ -66,14 +68,14 @@ makeEntity mesh theta =
         ( uniforms theta )
 
 
-build : Int -> Config -> LorenzMesh
-build numVertices config =
+build : Config -> LorenzMesh
+build config =
     let
         x0 = 0.1
         y0 = 0
         z0 = 0
         -- vertices = Debug.log "vertices" (List.range 1 numVertices
-        vertices = List.range 1 numVertices
+        vertices = List.range 1 config.numVertices
             |> List.foldl (\_ positions ->
                 let
                     len = List.length positions
