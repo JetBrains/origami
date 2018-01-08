@@ -6,6 +6,7 @@ module Lorenz exposing
     , build
     )
 
+import Array
 
 import WebGL exposing (Mesh)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3, getX, getY, getZ)
@@ -75,35 +76,45 @@ build config =
         y0 = 0
         z0 = 0
         -- vertices = Debug.log "vertices" (List.range 1 numVertices
+--        vertices = List.range 1 config.numVertices
+--            |> List.foldr (\_ positions ->
+--                let
+--                    len = List.length positions
+--                    maybePrev = (List.drop (len - 1) positions) |> List.head
+--                in
+--                    case maybePrev of
+--                        Just prev -> positions ++ [ prev |> step config ]
+--                        Nothing -> [ ( vec3 x0 y0 z0, vec3 x0 y0 z0 ) ]
+--            ) []
         vertices = List.range 1 config.numVertices
-            |> List.foldl (\_ positions ->
-                let
-                    len = List.length positions
-                    maybePrev = (List.drop (len - 1) positions) |> List.head
-                in
-                    case maybePrev of
-                        Just prev -> positions ++ [ prev |> step config  ]
-                        Nothing -> [ ( vec3 x0 y0 z0, vec3 x0 y0 z0 ) ]
+            |> List.foldr (\_ positions ->
+                case positions of
+                    [] -> [ vec3 x0 y0 z0 ]
+                    prev :: _ -> (prev |> step config) :: positions
             ) []
+        scaledVertices = vertices
+             |> List.map scaleVertex -- TODO: do it with camera matrix!
+             |> Array.fromList
     in
-        vertices
-            |> List.map scaleVertexPairs -- TODO: do it with camera matrix!
-            |> List.map trianglePairAt
+        scaledVertices
+            |> Array.indexedMap (calculateNormals scaledVertices)
+            |> Array.map sumNormals
+            |> Array.map trianglePairAt
             |> flattenTriangles
             |> WebGL.triangles
 
 
-flattenTriangles : List ( Triangle, Triangle ) -> List Triangle
+flattenTriangles : Array.Array ( Triangle, Triangle ) -> List Triangle
 flattenTriangles src =
     src |>
-        List.foldl
+        Array.foldl
             (\( firstInPair, secondInPair ) allTriangles ->
                 allTriangles ++ [ firstInPair ] ++ [ secondInPair ]) []
 
 
 
-step : Config -> ( Vec3, Vec3 ) -> ( Vec3, Vec3 )
-step config ( _, v ) =
+step : Config -> Vec3 -> Vec3
+step config v =
     let
         ( x, y, z ) = ( getX v, getY v, getZ v )
         σ = config.sigma
@@ -115,45 +126,79 @@ step config ( _, v ) =
         δy = ( x * (ρ - z) - y ) * δt
         δz = ( x * y - β * z ) * δt
     in
-        ( v, vec3 (x + δx) (y + δy) (z + δz) )
+        vec3 (x + δx) (y + δy) (z + δz)
 
 
-scaleVertexPairs : ( Vec3, Vec3 ) -> ( Vec3, Vec3 )
-scaleVertexPairs ( v1, v2 ) =
-    ( vec3 (getX v1 / 10) (getY v1 / 10) (getZ v1 / 100)
-    , vec3 (getX v2 / 10) (getY v2 / 10) (getZ v2 / 100)
+scaleVertex : Vec3 -> Vec3
+scaleVertex v = vec3 (getX v / 10) (getY v / 10) (getZ v / 100)
+
+
+sumNormals : ( Vec3, Vec3 ) -> Vec3
+sumNormals ( prevNorm, nextNorm ) =
+    Vec3.add prevNorm nextNorm |> Vec3.normalize
+
+
+calculateNormals : Array.Array Vec3 -> Int -> Vec3 -> ( Vec3, Vec3 )
+calculateNormals vertices idx v =
+    let
+        ( prevV, nextV ) = case ( vertices |> Array.get (idx - 1)
+                                , vertices |> Array.get (idx + 1)
+                                ) of
+            ( Just prev, Just next ) -> ( prev, next )
+            ( Nothing, Just next ) -> ( v, next )
+            ( Just prev, Nothing ) -> ( prev, v )
+            _ -> ( v, v )
+        ( prevDir, nextDir ) =
+            ( Vec3.direction v prevV
+            , Vec3.direction nextV v
+            )
+        ( prevNorm, nextNorm ) =
+            ( Vec3.cross prevV prevDir |> Vec3.normalize
+            , Vec3.cross nextV nextDir |> Vec3.normalize
+            )
+    in
+        ( prevNorm, nextNorm )
+
+
+trianglePairAt : Vec3 -> ( Triangle, Triangle )
+trianglePairAt v =
+    ( ( Vertex (vec3 1 1 1) (vec3 1 0 0)
+      , Vertex (vec3 1 1 1) (vec3 0 1 0)
+      , Vertex (vec3 1 1 1) (vec3 0 0 1)
+      )
+    , ( Vertex (vec3 1 1 1) (vec3 1 0 0)
+      , Vertex (vec3 1 1 1) (vec3 0 1 0)
+      , Vertex (vec3 1 1 1) (vec3 0 0 1)
+      )
     )
 
-
-trianglePairAt : ( Vec3, Vec3 ) -> ( Triangle, Triangle )
-trianglePairAt ( prevV, v ) =
-    let
-        ( prevX, prevY, prevZ ) = ( getX prevV, getY prevV, getZ prevV )
-        ( x, y, z ) = ( getX v, getY v, getZ v )
-        tw = thickness
-        th = thickness
-        -- first triangle, first vertex
-        t1v1 = vec3 x (y + th / 2) z
-        -- first triangle, second vertex
-        t1v2 = vec3 (x + tw) (y + th / 2) z
-        -- first triangle, third vertex
-        t1v3 = vec3 (x + tw / 2) (y - th / 2) z
-        -- second triangle, first vertex
-        t2v1 = vec3 x (y + th / 2) z
-        -- second triangle, second vertex
-        t2v2 = vec3 (x + tw) (y + th / 2) z
-        -- second triangle, third vertex
-        t2v3 = vec3 (x + tw / 2) (y - th / 2) z
-    in
-        ( ( Vertex t1v1 (vec3 1 0 0)
-          , Vertex t1v2 (vec3 0 1 0)
-          , Vertex t1v3 (vec3 0 0 1)
-          )
-        , ( Vertex t2v1 (vec3 1 0 0)
-          , Vertex t2v2 (vec3 0 1 0)
-          , Vertex t2v2 (vec3 0 0 1)
-          )
-        )
+--    let
+--        ( prevX, prevY, prevZ ) = ( getX prevV, getY prevV, getZ prevV )
+--        ( x, y, z ) = ( getX v, getY v, getZ v )
+--        tw = thickness
+--        th = thickness
+--        -- first triangle, first vertex
+--        t1v1 = vec3 x (y + th / 2) z
+--        -- first triangle, second vertex
+--        t1v2 = vec3 (x + tw) (y + th / 2) z
+--        -- first triangle, third vertex
+--        t1v3 = vec3 (x + tw / 2) (y - th / 2) z
+--        -- second triangle, first vertex
+--        t2v1 = vec3 x (y + th / 2) z
+--        -- second triangle, second vertex
+--        t2v2 = vec3 (x + tw) (y + th / 2) z
+--        -- second triangle, third vertex
+--        t2v3 = vec3 (x + tw / 2) (y - th / 2) z
+--    in
+--        ( ( Vertex t1v1 (vec3 1 0 0)
+--          , Vertex t1v2 (vec3 0 1 0)
+--          , Vertex t1v3 (vec3 0 0 1)
+--          )
+--        , ( Vertex t2v1 (vec3 1 0 0)
+--          , Vertex t2v2 (vec3 0 1 0)
+--          , Vertex t2v2 (vec3 0 0 1)
+--          )
+--        )
 
 
 uniforms : Float -> Uniforms
