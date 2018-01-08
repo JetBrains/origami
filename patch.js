@@ -50,7 +50,8 @@ var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
                 sigma: inlets.sigma || 10,
                 beta: inlets.beta || 2.6,
                 rho: inlets.rho || 28,
-                step: inlets.step || 0.005
+                step: inlets.step || 0.005,
+                numVertices : 2000
             });
         };
     }
