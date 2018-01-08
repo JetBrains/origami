@@ -60,9 +60,9 @@ init =
                 [ ( LorenzConfig lorenzConfig
                   , LorenzLayer (lorenzConfig |> Lorenz.build)
                   )
-                , ( LorenzConfig lorenzConfig
-                  , LorenzLayer (lorenzConfig |> Lorenz.build)
-                  )
+--                , ( LorenzConfig lorenzConfig
+--                  , LorenzLayer (lorenzConfig |> Lorenz.build)
+--                  )
                 , ( NoConfig
                   , TriangleLayer Triangle.mesh
                   )
