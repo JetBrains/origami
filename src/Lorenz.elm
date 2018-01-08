@@ -186,10 +186,10 @@ trianglePairAt thickness { prevPosition, prevNormal, prevSumNormal, position, su
         v = position
         p1 = prevPosition
         p2 = case prevSumNormal of
-            Just prevSumNormal -> Vec3.add p1 prevSumNormal |> Vec3.scale thickness
-            Nothing -> Vec3.add p1 prevNormal |> Vec3.scale thickness
+            Just prevSumNormal -> Vec3.add p1 (prevSumNormal |> Vec3.scale thickness)
+            Nothing -> Vec3.add p1 (prevNormal |> Vec3.scale thickness)
         p3 = position
-        p4 = Vec3.add p3 sumNormal |> Vec3.scale thickness
+        p4 = Vec3.add p3 (sumNormal |> Vec3.scale thickness)
     in
         case index % 2 of
             0 -> -- even
