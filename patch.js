@@ -36,13 +36,21 @@ rhoNode.inlets['max'].receive(100);
 var stepNode = patch.addNode('util/knob', 'Step').move(60, 300);
 stepNode.inlets['min'].receive(0);
 stepNode.inlets['max'].receive(0.1);
+var thicknessNode = patch.addNode('util/knob', 'Thickness').move(60, 400);
+thicknessNode.inlets['min'].receive(0.1);
+thicknessNode.inlets['max'].receive(2);
+var numVerticesNode = patch.addNode('util/knob', 'NumVertices').move(60, 500);
+numVerticesNode.inlets['min'].receive(100);
+numVerticesNode.inlets['max'].receive(2000);
 
 var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
     inlets: {
         'sigma' : { type: 'util/number', 'default': 10 },
         'beta' : { type: 'util/number', 'default': 2.6 },
         'rho' : { type: 'util/number', 'default': 28 },
-        'step' : { type: 'util/number', 'default': 0.005 }
+        'step' : { type: 'util/number', 'default': 0.005 },
+        'thickness': { type: 'util/number', 'default': 1 },
+        'numVertices': { type: 'util/number', 'default': 2000 }
     },
     process: function(inlets) {
         if (elmLorenz) {
@@ -51,7 +59,8 @@ var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
                 beta: inlets.beta || 2.6,
                 rho: inlets.rho || 28,
                 step: inlets.step || 0.005,
-                numVertices : 2000
+                thickness: inlets.thickness || 1.0,
+                numVertices : Math.floor(inlets.numVertices) || 2000
             });
         };
     }
@@ -61,11 +70,22 @@ var sigmaInlet = lorenzNode.inlets['sigma'];
 var betaInlet = lorenzNode.inlets['beta'];
 var rhoInlet = lorenzNode.inlets['rho'];
 var stepInlet = lorenzNode.inlets['step'];
+var thicknessInlet = lorenzNode.inlets['thickness'];
+var numVerticesInlet = lorenzNode.inlets['numVertices'];
 
 sigmaNode.outlets['number'].connect(sigmaInlet);
 betaNode.outlets['number'].connect(betaInlet);
 rhoNode.outlets['number'].connect(rhoInlet);
 stepNode.outlets['number'].connect(stepInlet);
+thicknessNode.outlets['number'].connect(thicknessInlet);
+numVerticesNode.outlets['number'].connect(numVerticesInlet);
+
+sigmaInlet.receive(10);
+betaInlet.receive(2.6);
+rhoInlet.receive(28);
+stepInlet.receive(0.005);
+thicknessInlet.receive(1.0);
+numVerticesInlet.receive(2000);
 
 module.exports = function(elmLorenzInstance) {
     elmLorenz = elmLorenzInstance;
