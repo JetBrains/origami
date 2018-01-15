@@ -6,7 +6,7 @@ module Lorenz exposing
     , build
     )
 
-import Array
+import Array exposing (Array)
 
 import WebGL exposing (Mesh)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3, getX, getY, getZ)
@@ -43,6 +43,7 @@ type alias WithNormals =
 
 type alias Vertex =
     { position : Vec3
+    , color : Vec3
     }
 
 
@@ -142,7 +143,7 @@ scaleVertex : Vec3 -> Vec3
 scaleVertex v = vec3 (getX v / 10) (getY v / 10) (getZ v / 100)
 
 
-addPrevSumNormals : Array.Array WithNormals -> Int -> WithNormals -> WithNormals
+addPrevSumNormals : Array WithNormals -> Int -> WithNormals -> WithNormals
 addPrevSumNormals verticesWithNormals idx v =
     let
         maybePrev = verticesWithNormals |> Array.get (idx - 1)
@@ -152,7 +153,7 @@ addPrevSumNormals verticesWithNormals idx v =
         }
 
 
-calculateNormals : Array.Array Vec3 -> Int -> Vec3 -> WithNormals
+calculateNormals : Array Vec3 -> Int -> Vec3 -> WithNormals
 calculateNormals vertices idx v =
     let
         ( prevV, nextV ) = case ( vertices |> Array.get (idx - 1)
@@ -176,7 +177,7 @@ calculateNormals vertices idx v =
         , sumNormal = Vec3.add prevNorm nextNorm |> Vec3.normalize
         , prevPosition = prevV
         , prevNormal = prevNorm
-        , prevSumNormal = Nothing -- will added later
+        , prevSumNormal = Nothing -- will be added later
         }
 
 
@@ -193,23 +194,23 @@ trianglePairAt thickness { prevPosition, prevNormal, prevSumNormal, position, su
     in
         case index % 2 of
             0 -> -- even
-                ( ( Vertex p1
-                  , Vertex p2
-                  , Vertex p3
+                ( ( Vertex p1 red
+                  , Vertex p2 red
+                  , Vertex p3 red
                   )
-                , ( Vertex p3
-                  , Vertex p2
-                  , Vertex p4
+                , ( Vertex p3 yellow
+                  , Vertex p2 yellow
+                  , Vertex p4 yellow
                   )
                 )
             _ -> -- odd
-                ( ( Vertex p2
-                  , Vertex p1
-                  , Vertex p4
+                ( ( Vertex p2 blue
+                  , Vertex p1 blue
+                  , Vertex p4 blue
                   )
-                , ( Vertex p4
-                  , Vertex p1
-                  , Vertex p3
+                , ( Vertex p4 green
+                  , Vertex p1 green
+                  , Vertex p3 green
                   )
                 )
 
@@ -231,6 +232,7 @@ vertexShader : Shader Vertex Uniforms { vcolor : Vec3 }
 vertexShader =
     [glsl|
         attribute vec3 position;
+        attribute vec3 color;
         uniform mat4 cameraTranslate;
         uniform mat4 cameraRotate;
         uniform mat4 perspective;
@@ -239,7 +241,7 @@ vertexShader =
         varying vec3 vcolor;
         void main () {
             gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate  *  vec4(position, 1.0);
-            vcolor = vec3(1.0, 1.0, 1.0);
+            vcolor = color;
         }
     |]
 
@@ -255,3 +257,19 @@ fragmentShader =
         }
     |]
 
+
+red : Vec3
+red =
+    vec3 1 0 0
+
+green : Vec3
+green =
+    vec3 0 1 0
+
+blue : Vec3
+blue =
+    vec3 0 0 1
+
+yellow : Vec3
+yellow =
+    vec3 1 0 1
