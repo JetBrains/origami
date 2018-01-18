@@ -8,6 +8,7 @@ import Time exposing (Time)
 import Window
 import Task exposing (Task)
 import WebGL exposing (Mesh)
+import WebGL.Settings.Blend as Blend
 
 
 import Controls
@@ -15,14 +16,40 @@ import Lorenz
 import Triangle
 
 
-type LayerConfig
-    = LorenzConfig Lorenz.Config
-    -- | CanvasConfig
-    | NoConfig
+type Blend
+    = Default
+    | Add
+    | Subtract
+    | Multiply
+    | Darken
+    | ColourBurn
+    | LinearBurn
+    | Lighten
+    | Screen
+    | ColourDodge
+    | LinearDodge
+    | Overlay
+    | SoftLight
+    | HardLight
+    | VividLight
+    | LinearLight
+    | PinLight
+    | Difference
+    | Exclusion
+    | Custom
+        { r : Float
+        , g : Float
+        , b : Float
+        , color : Blend.Blender
+        , alpha : Blend.Blender
+        }
+
+
+
 
 
 type Layer
-    = LorenzLayer Lorenz.LorenzMesh
+    = LorenzLayer Lorenz.LorenzMesh Lorenz.Config
     | TriangleLayer Triangle.TriangleMesh
     -- | CanvasLayer (\_ -> )
 
@@ -32,7 +59,7 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , layers : Array ( LayerConfig, Layer )
+    , layers : Array Layer
     , size : ( Int, Int )
     }
 
@@ -40,7 +67,7 @@ type alias Model =
 type Msg
     = Animate Time
     | Resize Window.Size
-    | ModifyLayer Int LayerConfig
+    | ModifyLayer Int Blend (Maybe Lorenz.Config)
     | Rotate Float
     | Pause
     | Start
@@ -57,15 +84,8 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ ( LorenzConfig lorenzConfig
-                  , LorenzLayer (lorenzConfig |> Lorenz.build)
-                  )
---                , ( LorenzConfig lorenzConfig
---                  , LorenzLayer (lorenzConfig |> Lorenz.build)
---                  )
-                , ( NoConfig
-                  , TriangleLayer Triangle.mesh
-                  )
+                [ LorenzLayer (lorenzConfig |> Lorenz.build) lorenzConfig
+                , TriangleLayer Triangle.mesh
                 ]
             , size = ( 0, 0 )
             }
@@ -91,15 +111,15 @@ update msg model =
             , Cmd.none
             )
 
-        ModifyLayer index layerConfig ->
+        ModifyLayer index blend layerConfig ->
             let
                 layer = case layerConfig of
-                    LorenzConfig lorenzConfig -> LorenzLayer (lorenzConfig |> Lorenz.build)
-                    NoConfig -> TriangleLayer Triangle.mesh
+                    Just lorenzConfig -> LorenzLayer (lorenzConfig |> Lorenz.build) lorenzConfig
+                    Nothing -> TriangleLayer Triangle.mesh
             in
                 ( { model
                   | layers = model.layers
-                      |> Array.set index ( layerConfig, layer )
+                      |> Array.set index layer
                   }
                   , Cmd.none
                 )
@@ -124,7 +144,7 @@ subscriptions model =
         , Window.resizes Resize
         , rotate Rotate
         , modify (\lorenzConfig ->
-            ModifyLayer 0 (LorenzConfig lorenzConfig)
+            ModifyLayer 0 Default (Just lorenzConfig)
           )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
@@ -134,18 +154,18 @@ subscriptions model =
 mapControls : Model -> Controls.Msg -> Msg
 mapControls model controlsMsg =
     case controlsMsg of
-        Controls.ChangeConfig cfg -> ModifyLayer 0 (LorenzConfig cfg)
+        Controls.ChangeConfig cfg -> ModifyLayer 0 Default (Just cfg)
         Controls.Rotate th -> Rotate th
 
 
-mergeLayers : Float -> Array ( LayerConfig, Layer ) -> List WebGL.Entity
+mergeLayers : Float -> Array Layer -> List WebGL.Entity
 mergeLayers theta layers =
     Array.toList
         (layers |> Array.indexedMap
-            (\index (_, layer) ->
+            (\index layer ->
                 case ( index, layer )  of
-                    ( 0, LorenzLayer lorenz ) -> Lorenz.makeEntity lorenz ( theta * 2 )
-                    ( _, LorenzLayer lorenz ) -> Lorenz.makeEntity lorenz theta
+                    ( 0, LorenzLayer lorenz _ ) -> Lorenz.makeEntity lorenz ( theta * 2 )
+                    ( _, LorenzLayer lorenz _ ) -> Lorenz.makeEntity lorenz theta
                     ( _, TriangleLayer _ ) -> Triangle.entity theta
             )
         )
