@@ -8,49 +8,18 @@ import Time exposing (Time)
 import Window
 import Task exposing (Task)
 import WebGL exposing (Mesh)
-import WebGL.Settings.Blend as Blend
+import WebGL.Settings.DepthTest as DepthTest
 
 
 import Controls
 import Lorenz
 import Triangle
-
-
-type Blend
-    = Default
-    | Add
-    | Subtract
-    | Multiply
-    | Darken
-    | ColourBurn
-    | LinearBurn
-    | Lighten
-    | Screen
-    | ColourDodge
-    | LinearDodge
-    | Overlay
-    | SoftLight
-    | HardLight
-    | VividLight
-    | LinearLight
-    | PinLight
-    | Difference
-    | Exclusion
-    | Custom
-        { r : Float
-        , g : Float
-        , b : Float
-        , color : Blend.Blender
-        , alpha : Blend.Blender
-        }
-
-
-
+import Blend exposing (Blend(..), produce)
 
 
 type Layer
-    = LorenzLayer Lorenz.LorenzMesh
-    | TriangleLayer Triangle.TriangleMesh
+    = LorenzLayer Blend Lorenz.LorenzMesh
+    | TriangleLayer Blend Triangle.TriangleMesh
     -- | CanvasLayer (\_ -> )
 
 
@@ -84,8 +53,8 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ LorenzLayer (lorenzConfig |> Lorenz.build)
-                , TriangleLayer Triangle.mesh
+                [ LorenzLayer Default (lorenzConfig |> Lorenz.build)
+                , TriangleLayer Default Triangle.mesh
                 ]
             , size = ( 0, 0 )
             }
@@ -114,8 +83,10 @@ update msg model =
         ModifyLayer index blend layerConfig ->
             let
                 layer = case layerConfig of
-                    Just lorenzConfig -> LorenzLayer (lorenzConfig |> Lorenz.build)
-                    Nothing -> TriangleLayer Triangle.mesh
+                    Just lorenzConfig ->
+                        LorenzLayer blend (lorenzConfig |> Lorenz.build)
+                    Nothing ->
+                        TriangleLayer blend Triangle.mesh
             in
                 ( { model
                   | layers = model.layers
@@ -164,9 +135,11 @@ mergeLayers theta layers =
         (layers |> Array.indexedMap
             (\index layer ->
                 case ( index, layer )  of
-                    ( 0, LorenzLayer lorenz ) -> Lorenz.makeEntity lorenz ( theta * 2 )
-                    ( _, LorenzLayer lorenz ) -> Lorenz.makeEntity lorenz theta
-                    ( _, TriangleLayer _ ) -> Triangle.entity theta
+                    ( 0, LorenzLayer blend lorenz ) ->
+                        Lorenz.makeEntity ( theta * 2 ) [ DepthTest.default, produce blend ] lorenz
+                    ( _, LorenzLayer blend lorenz ) ->
+                        Lorenz.makeEntity theta [ DepthTest.default, produce blend ] lorenz
+                    ( _, TriangleLayer _ _ ) -> Triangle.entity theta
             )
         )
 

@@ -11,6 +11,7 @@ import Array exposing (Array)
 import WebGL exposing (Mesh)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3, getX, getY, getZ)
 import WebGL exposing (Mesh, Shader, Entity)
+import WebGL.Settings exposing (Setting)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
@@ -68,9 +69,10 @@ init =
     }
 
 
-makeEntity : LorenzMesh -> Float -> Entity
-makeEntity mesh theta =
-    WebGL.entity
+makeEntity : Float -> List Setting -> LorenzMesh -> Entity
+makeEntity theta settings mesh =
+    WebGL.entityWith
+        settings
         vertexShader
         fragmentShader
         mesh
