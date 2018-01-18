@@ -49,7 +49,7 @@ type Blend
 
 
 type Layer
-    = LorenzLayer Lorenz.LorenzMesh Lorenz.Config
+    = LorenzLayer Lorenz.LorenzMesh
     | TriangleLayer Triangle.TriangleMesh
     -- | CanvasLayer (\_ -> )
 
@@ -84,7 +84,7 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ LorenzLayer (lorenzConfig |> Lorenz.build) lorenzConfig
+                [ LorenzLayer (lorenzConfig |> Lorenz.build)
                 , TriangleLayer Triangle.mesh
                 ]
             , size = ( 0, 0 )
@@ -114,7 +114,7 @@ update msg model =
         ModifyLayer index blend layerConfig ->
             let
                 layer = case layerConfig of
-                    Just lorenzConfig -> LorenzLayer (lorenzConfig |> Lorenz.build) lorenzConfig
+                    Just lorenzConfig -> LorenzLayer (lorenzConfig |> Lorenz.build)
                     Nothing -> TriangleLayer Triangle.mesh
             in
                 ( { model
@@ -164,8 +164,8 @@ mergeLayers theta layers =
         (layers |> Array.indexedMap
             (\index layer ->
                 case ( index, layer )  of
-                    ( 0, LorenzLayer lorenz _ ) -> Lorenz.makeEntity lorenz ( theta * 2 )
-                    ( _, LorenzLayer lorenz _ ) -> Lorenz.makeEntity lorenz theta
+                    ( 0, LorenzLayer lorenz ) -> Lorenz.makeEntity lorenz ( theta * 2 )
+                    ( _, LorenzLayer lorenz ) -> Lorenz.makeEntity lorenz theta
                     ( _, TriangleLayer _ ) -> Triangle.entity theta
             )
         )
