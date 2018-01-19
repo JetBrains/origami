@@ -14,7 +14,7 @@ import WebGL.Settings.DepthTest as DepthTest
 import Controls
 import Lorenz
 import Triangle
-import Blend exposing (Blend(..), produce)
+import Blend exposing (Blend, produce, default)
 
 
 type Layer
@@ -53,8 +53,8 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ LorenzLayer Default (lorenzConfig |> Lorenz.build)
-                , TriangleLayer Default Triangle.mesh
+                [ LorenzLayer default (lorenzConfig |> Lorenz.build)
+                , TriangleLayer default Triangle.mesh
                 ]
             , size = ( 0, 0 )
             }
@@ -115,7 +115,7 @@ subscriptions model =
         , Window.resizes Resize
         , rotate Rotate
         , modify (\lorenzConfig ->
-            ModifyLayer 0 Default (Just lorenzConfig)
+            ModifyLayer 0 default (Just lorenzConfig)
           )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
@@ -125,7 +125,7 @@ subscriptions model =
 mapControls : Model -> Controls.Msg -> Msg
 mapControls model controlsMsg =
     case controlsMsg of
-        Controls.ChangeConfig cfg -> ModifyLayer 0 Default (Just cfg)
+        Controls.ChangeConfig cfg -> ModifyLayer 0 default (Just cfg)
         Controls.Rotate th -> Rotate th
 
 
