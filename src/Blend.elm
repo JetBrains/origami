@@ -1,6 +1,7 @@
 module Blend exposing
     ( Blend
     , produce
+    , default
     )
 
 
@@ -30,6 +31,14 @@ type alias Blend
       , colorEq : Equation
       , alphaEq : Equation
       }
+
+
+default : Blend
+default =
+    { color = Nothing
+    , colorEq = ( 0, 1, 0 ) -- add one zero
+    , alphaEq = ( 0, 1, 0 ) -- add one zero
+    }
 
 
 
