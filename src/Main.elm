@@ -14,7 +14,15 @@ import WebGL.Settings.DepthTest as DepthTest
 import Controls
 import Lorenz
 import Triangle
-import Blend exposing (Blend, produce, default)
+import Blend exposing (Blend)
+
+
+type alias LayerIndex = Int
+
+
+type LayerConfig
+    = NoConfig
+    | LorenzConfig Lorenz.Config
 
 
 type Layer
@@ -36,7 +44,8 @@ type alias Model =
 type Msg
     = Animate Time
     | Resize Window.Size
-    | ModifyLayer Int Blend (Maybe Lorenz.Config)
+    | Configure LayerIndex LayerConfig
+    | ChangeBlend LayerIndex Blend
     | Rotate Float
     | Pause
     | Start
@@ -53,8 +62,8 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ LorenzLayer default (lorenzConfig |> Lorenz.build)
-                , TriangleLayer default Triangle.mesh
+                [ LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
+                , TriangleLayer Blend.default Triangle.mesh
                 ]
             , size = ( 0, 0 )
             }
@@ -80,13 +89,17 @@ update msg model =
             , Cmd.none
             )
 
-        ModifyLayer index blend layerConfig ->
+        Configure index maybeConfig ->
             let
-                layer = case layerConfig of
-                    Just lorenzConfig ->
-                        LorenzLayer blend (lorenzConfig |> Lorenz.build)
-                    Nothing ->
-                        TriangleLayer blend Triangle.mesh
+                curBlend = model.layers
+                    |> Array.get index
+                    |> Maybe.map getBlend
+                    |> Maybe.withDefault Blend.default
+                layer = case maybeConfig of
+                    NoConfig ->
+                        TriangleLayer curBlend Triangle.mesh
+                    LorenzConfig lorenzConfig ->
+                        LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
             in
                 ( { model
                   | layers = model.layers
@@ -94,6 +107,26 @@ update msg model =
                   }
                   , Cmd.none
                 )
+
+        ChangeBlend index newBlend ->
+            case model.layers |> Array.get index of
+                Just layer ->
+                    let
+                        newLayer =
+                            case layer of
+                                TriangleLayer _ mesh ->
+                                    TriangleLayer newBlend mesh
+                                LorenzLayer _ mesh ->
+                                    LorenzLayer newBlend mesh
+                    in
+                        ( { model
+                           | layers = model.layers
+                               |> Array.set index newLayer
+                           }
+                           , Cmd.none
+                           )
+                Nothing ->
+                    ( model , Cmd.none )
 
         Rotate theta ->
             ( { model | theta = theta  }
@@ -108,6 +141,13 @@ update msg model =
         _ -> ( model, Cmd.none )
 
 
+getBlend : Layer -> Blend
+getBlend layer =
+    case layer of
+        LorenzLayer blend _ -> blend
+        TriangleLayer blend _ -> blend
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
@@ -115,7 +155,12 @@ subscriptions model =
         , Window.resizes Resize
         , rotate Rotate
         , modify (\lorenzConfig ->
-            ModifyLayer 0 default (Just lorenzConfig)
+            -- FIXME: Congigure all Lorenz layers
+            -- model.layers |> Array.map (\layer ) |> Sub.batch
+            Configure 0 (LorenzConfig lorenzConfig)
+          )
+        , changeBlend (\{ layer, blend } ->
+            ChangeBlend layer blend
           )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
@@ -125,23 +170,24 @@ subscriptions model =
 mapControls : Model -> Controls.Msg -> Msg
 mapControls model controlsMsg =
     case controlsMsg of
-        Controls.ChangeConfig cfg -> ModifyLayer 0 default (Just cfg)
+        Controls.Configure cfg -> Configure 0 (LorenzConfig cfg)
         Controls.Rotate th -> Rotate th
 
 
 mergeLayers : Float -> Array Layer -> List WebGL.Entity
 mergeLayers theta layers =
-    Array.toList
-        (layers |> Array.indexedMap
-            (\index layer ->
-                case ( index, layer )  of
-                    ( 0, LorenzLayer blend lorenz ) ->
-                        Lorenz.makeEntity ( theta * 2 ) [ DepthTest.default, produce blend ] lorenz
-                    ( _, LorenzLayer blend lorenz ) ->
-                        Lorenz.makeEntity theta [ DepthTest.default, produce blend ] lorenz
-                    ( _, TriangleLayer _ _ ) -> Triangle.entity theta
-            )
+    layers |> Array.indexedMap
+        (\index layer ->
+            case layer of
+                LorenzLayer blend lorenz ->
+                    Lorenz.makeEntity
+                        (if index == 0 then ( theta * 2 ) else theta)
+                        [ DepthTest.default, Blend.produce blend ]
+                        lorenz
+                TriangleLayer blend _ ->
+                    Triangle.entity theta [ DepthTest.default, Blend.produce blend ]
         )
+    |> Array.toList
 
 
 view : Model -> Html Msg
