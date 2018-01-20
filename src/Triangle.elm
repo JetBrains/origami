@@ -8,13 +8,14 @@ module Triangle exposing
    Rotating triangle, that is a "hello world" of the WebGL
 -}
 
-import AnimationFrame
-import Html exposing (Html)
-import Html.Attributes exposing (width, height, style)
+-- import AnimationFrame
+-- import Html exposing (Html)
+-- import Html.Attributes exposing (width, height, style)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (vec3, Vec3)
-import Time exposing (Time)
+-- import Time exposing (Time)
 import WebGL exposing (Mesh, Shader)
+import WebGL.Settings exposing (Setting)
 
 
 type alias TriangleMesh = Mesh Vertex
@@ -30,9 +31,10 @@ type alias TriangleMesh = Mesh Vertex
 --         }
 
 
-entity : Float -> WebGL.Entity
-entity t =
-    WebGL.entity
+entity : Float -> List Setting -> WebGL.Entity
+entity t settings =
+    WebGL.entityWith
+        settings
         vertexShader
         fragmentShader
         mesh

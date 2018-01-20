@@ -13,7 +13,7 @@ import Lorenz exposing (Config)
 
 
 type Msg
-    = ChangeConfig Config
+    = Configure Config
     | Rotate Float
 
 
@@ -22,10 +22,10 @@ controls numVertices theta config =
     div [ ]
         [ input [ type_ "range", A.min "10", A.max "10000", A.step "30"
                 , onInput (\iStr ->
-                    ChangeConfig { config
-                                 | numVertices = String.toInt iStr
-                                     |> Result.withDefault numVertices
-                                 }
+                    Configure { config
+                              | numVertices = String.toInt iStr
+                                  |> Result.withDefault numVertices
+                              }
                     )
                 ]
                 [ ]
@@ -40,10 +40,10 @@ controls numVertices theta config =
         , br [] []
         , input [ type_ "range", A.min "0", A.max "100", A.step "0.1"
                 , onInput (\fStr ->
-                    ChangeConfig { config
-                                 | sigma = String.toFloat fStr
-                                     |> Result.withDefault config.sigma
-                                 }
+                    Configure { config
+                              | sigma = String.toFloat fStr
+                                  |> Result.withDefault config.sigma
+                              }
                     )
                 ]
                 [ ]
@@ -51,10 +51,10 @@ controls numVertices theta config =
         , br [] []
         , input [ type_ "range", A.min "0", A.max "15", A.step "0.01"
                 , onInput (\fStr ->
-                    ChangeConfig { config
-                                 | beta = String.toFloat fStr
-                                     |> Result.withDefault config.beta
-                                 }
+                    Configure { config
+                              | beta = String.toFloat fStr
+                                   |> Result.withDefault config.beta
+                              }
                     )
                 ]
                 [ ]
@@ -62,10 +62,10 @@ controls numVertices theta config =
         , br [] []
         , input [ type_ "range", A.min "0", A.max "100", A.step "0.5"
                 , onInput (\fStr ->
-                    ChangeConfig { config
-                                 | rho = String.toFloat fStr
-                                     |> Result.withDefault config.rho
-                                 }
+                    Configure { config
+                              | rho = String.toFloat fStr
+                                  |> Result.withDefault config.rho
+                              }
                     )
                 ]
                 [ ]
@@ -73,10 +73,10 @@ controls numVertices theta config =
         , br [] []
         , input [ type_ "range", A.min "0", A.max "1", A.step "0.001"
                 , onInput (\fStr ->
-                    ChangeConfig { config
-                                 | step = String.toFloat fStr
-                                     |> Result.withDefault config.step
-                                 }
+                    Configure { config
+                              | step = String.toFloat fStr
+                                  |> Result.withDefault config.step
+                              }
                     )
                 ]
                 [ ]
