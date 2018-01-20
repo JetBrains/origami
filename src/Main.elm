@@ -28,6 +28,7 @@ type LayerConfig
 type Layer
     = LorenzLayer Blend Lorenz.LorenzMesh
     | TriangleLayer Blend Triangle.TriangleMesh
+    | TextLayer Blend
     -- | CanvasLayer (\_ -> )
 
 
@@ -118,6 +119,8 @@ update msg model =
                                     TriangleLayer newBlend mesh
                                 LorenzLayer _ mesh ->
                                     LorenzLayer newBlend mesh
+                                TextLayer _ ->
+                                    TextLayer newBlend
                     in
                         ( { model
                            | layers = model.layers
@@ -146,6 +149,7 @@ getBlend layer =
     case layer of
         LorenzLayer blend _ -> blend
         TriangleLayer blend _ -> blend
+        TextLayer blend -> blend
 
 
 subscriptions : Model -> Sub Msg
@@ -155,8 +159,16 @@ subscriptions model =
         , Window.resizes Resize
         , rotate Rotate
         , modify (\lorenzConfig ->
-            -- FIXME: Congigure all Lorenz layers
-            -- model.layers |> Array.map (\layer ) |> Sub.batch
+            -- FIXME: Congigure all Lorenz layers (pass index with "modify" port?)
+            -- model.layers
+            --     |> Array.indexedMap (\index layer ->
+            --         case layer of
+            --             LorenzLayer _ _ -> Just index
+            --             _ -> Nothing
+            --         )
+            --     |> Array.filter (Maybe.map (\_ -> True))
+            --     |> Array.map (\index -> Configure index (LorenzConfig lorenzConfig))
+            --     |> Sub.batch
             Configure 0 (LorenzConfig lorenzConfig)
           )
         , changeBlend (\{ layer, blend } ->
@@ -185,6 +197,9 @@ mergeLayers theta layers =
                         [ DepthTest.default, Blend.produce blend ]
                         lorenz
                 TriangleLayer blend _ ->
+                    Triangle.entity theta [ DepthTest.default, Blend.produce blend ]
+                TextLayer blend ->
+                    -- FIXME: replace with text
                     Triangle.entity theta [ DepthTest.default, Blend.produce blend ]
         )
     |> Array.toList
