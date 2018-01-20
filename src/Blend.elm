@@ -1,5 +1,7 @@
 module Blend exposing
     ( Blend
+    , Color
+    , Equation
     , produce
     , default
     )
@@ -26,8 +28,11 @@ import WebGL.Settings.Blend as B
 type alias Equation = ( Int, Int, Int ) -- ( 0..3, 0..15, 0..15 )
 
 
+type alias Color = { r : Float, g : Float, b : Float, a : Float }
+
+
 type alias Blend
-    = { color: Maybe { r : Float, g : Float, b : Float, a : Float }
+    = { color: Maybe Color
       , colorEq : Equation
       , alphaEq : Equation
       }
