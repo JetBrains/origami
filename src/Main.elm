@@ -178,3 +178,9 @@ port start : (() -> msg) -> Sub msg
 port rotate : (Float -> msg) -> Sub msg
 
 port modify : (Lorenz.Config -> msg) -> Sub msg
+
+port changeBlend :
+    ( { layer : Int
+      , blend : Blend
+      }
+    -> msg) -> Sub msg
