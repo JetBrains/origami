@@ -1,3 +1,11 @@
+var registerToolkit = function() {
+
+Rpd.channeltype('jb/layers', {
+    show: function(v) {
+        return howMuch('layer', 'layers')(v.values);
+    }
+});
+
 var MAX_LAYERS = 9;
 
 var LAYERS_INLETS = {};
@@ -39,3 +47,9 @@ Rpd.nodetype('jb/layers', {
         }
     }
 });
+
+};
+
+module.exports = function() {
+    registerToolkit();
+};
