@@ -61,7 +61,7 @@ produce { color, colorEq, alphaEq } =
 
 factorOf : Int -> Maybe B.Factor
 factorOf n =
-    if (n >= 0) && (n <= 15) then
+    if (n >= 0) && (n <= 14) then
         Just (case n of
             0 -> B.zero
             1 -> B.one

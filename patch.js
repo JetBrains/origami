@@ -66,6 +66,8 @@ var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
     }
 }).move(240, 10);
 
+patch.addNode('jb/layers').move(60, 600);
+
 var sigmaInlet = lorenzNode.inlets['sigma'];
 var betaInlet = lorenzNode.inlets['beta'];
 var rhoInlet = lorenzNode.inlets['rho'];
