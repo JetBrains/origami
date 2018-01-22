@@ -5,7 +5,7 @@
 require('./index.css');
 
 // Prepare JB-Toolkit
-require('./toolkit.js');
+var registerToolkit = require('./toolkit.js');
 
 // Prepare RPD-patch
 var startPatch = require('./patch.js');
@@ -17,4 +17,5 @@ var mountNode = document.getElementById('elm-target');
 // The third value on embed are the initial values for incomming ports into Elm
 var app = Elm.Main.embed(mountNode);
 
+registerToolkit(app);
 startPatch(app);
