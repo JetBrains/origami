@@ -26,6 +26,7 @@ Rpd.noderenderer('jb/layers', 'svg', {
                             .attr('data-test', '1');
     },
     always: function(bodyElm, inlets) {
+        // TODO: Embed Elm App inside?
         var layersCount = parseInt(inlets.count);
         console.log(layersCount);
         d3.select(bodyElm).selectAll("*").remove();
@@ -33,9 +34,6 @@ Rpd.noderenderer('jb/layers', 'svg', {
             bodyElm.appendChild(createLayerBlendControls(i).node());
         }
         console.log(layersCount);
-        //lastForms = inlets.forms;
-        //if (lastForms && lastForms.length)
-        //myP5.redraw();
     }
 });
 
@@ -81,71 +79,70 @@ function createLayerBlendControls(layerId) {
     var state = {
         layer: layerId,
         blend: {
-            r: 0, g: 0, b: 0, a: 0,
+            color : { r: 0, g: 0, b: 0, a: 0 },
             colorEq: [ 0, 1, 0 ], // ( 0..3, 0..15, 0..15 )
-            alphaEq: [ 0, 1, 0 ]
+            alphaEq: [ 0, 1, 0 ]  // ( 0..3, 0..15, 0..15 )
         }
     }
-    root.append('g')
+
+    root.append('g').attr('data-layer-blend', 'color')
         .call(function(colorRoot) {
-            colorRoot.append('g')
-                .call(function(funcRoot) {
-                    eqFuncMap.map(function(funcName, i) {
-                        funcRoot.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                                .attr('transform', 'translate(' + (i * 30) + ',0)')
-                                .text(funcName);
-                    });
-                });
-            colorRoot.append('g')
-                .attr('transform', 'translate(0,12)')
-                .call(function(factor1Root) {
-                    eqFactorMap.map(function(factorName, i) {
-                        factor1Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                                   .attr('transform', 'translate(' + (i * 30) + ',0)')
-                                   .text(factorName);
-                    });
-                });
-            colorRoot.append('g')
-                .attr('transform', 'translate(0,24)')
-                .call(function(factor2Root) {
-                    eqFactorMap.map(function(factorName, i) {
-                        factor2Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                                   .attr('transform', 'translate(' + (i * 30) + ',0)')
-                                   .text(factorName);
-                    });
-                });
+            colorRoot.append('g').attr('data-blend', 'eq')
+                     .call(mapTextOver(eqFuncMap, 30, eqFuncClick('color', state)));
+            colorRoot.append('g').attr('data-blend', 'factor1')
+                     .attr('transform', 'translate(0,12)')
+                     .call(mapTextOver(eqFactorMap, 30, eqFactorClick('color', 1, state)));
+            colorRoot.append('g').attr('data-blend', 'factor2')
+                     .attr('transform', 'translate(0,24)')
+                     .call(mapTextOver(eqFactorMap, 30, eqFactorClick('color', 2, state)));
         });
-    root.append('g')
+
+    root.append('g').attr('data-layer-blend', 'alpha')
         .attr('transform', 'translate(0,40)')
         .call(function(alphaRoot) {
-            alphaRoot.append('g')
-                .call(function(funcRoot) {
-                    eqFuncMap.map(function(funcName, i) {
-                        funcRoot.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                                .attr('transform', 'translate(' + (i * 30) + ',0)')
-                                .text(funcName);
-                    });
-                });
-            alphaRoot.append('g')
-                .attr('transform', 'translate(0,12)')
-                .call(function(factor1Root) {
-                    eqFactorMap.map(function(factorName, i) {
-                        factor1Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                                .attr('transform', 'translate(' + (i * 30) + ',0)')
-                                .text(factorName);
-                    });
-                });
-            alphaRoot.append('g')
-                .attr('transform', 'translate(0,24)')
-                .call(function(factor2Root) {
-                    eqFactorMap.map(function(factorName, i) {
-                        factor2Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                                .attr('transform', 'translate(' + (i * 30) + ',0)')
-                                .text(factorName);
-                    });
-                });
+            alphaRoot.append('g').attr('data-blend', 'eq')
+                     .call(mapTextOver(eqFuncMap, 30, eqFuncClick('alpha', state)));
+            alphaRoot.append('g').attr('data-blend', 'factor1')
+                     .attr('transform', 'translate(0,12)')
+                     .call(mapTextOver(eqFactorMap, 30, eqFactorClick('alpha', 1, state)));
+            alphaRoot.append('g').attr('data-blend', 'factor2')
+                     .attr('transform', 'translate(0,24)')
+                     .call(mapTextOver(eqFactorMap, 30, eqFactorClick('alpha', 2, state)));
         });
+
     return root;
+}
+
+function eqFuncClick(blendType, state) {
+    return function(node, index) {
+        return function() {
+            state.blend[blendType + 'Eq'][0] = index;
+            console.log(state);
+            if (elmLorenz) elmLorenz.ports.changeBlend.send(state);
+        }
+    }
+}
+
+function eqFactorClick(blendType, factorId, state) {
+    return function(node, index) {
+        return function() {
+            state.blend[blendType + 'Eq'][factorId] = index;
+            console.log(state);
+            if (elmLorenz) elmLorenz.ports.changeBlend.send(state);
+        }
+    }
+}
+
+function mapTextOver(list, shiftX, onClick) {
+    return function(root) {
+        list.map(function(text, i) {
+            var textNode =
+                root.append('text').attr('fill', 'white').style('cursor', 'pointer')
+                    .attr('transform', 'translate(' + (i * shiftX) + ',0)')
+                    .text(text).node();
+            Kefir.fromEvents(textNode, 'click').onValue(onClick(textNode, i));
+        });
+    }
 }
 
 module.exports = function(elmLorenzInstance) {
