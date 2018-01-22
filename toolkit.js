@@ -7,6 +7,7 @@ console.log(Rpd);
 var SVG_XMLNS = "http://www.w3.org/2000/svg";
 
 var elmLorenz = null;
+var layersNode = null;
 
 Rpd.nodetype('jb/layers', {
     title: 'Layers',
@@ -21,12 +22,17 @@ Rpd.noderenderer('jb/layers', 'svg', {
     size: { width: 500, height: 300 },
     pivot: { x: 0.03, y: 0.03 },
     first: function(bodyElm) {
-        d3.select(bodyElm).append('text')
-                            .text('Test')
-                            .attr('data-test', '1');
+        console.log(layersNode);
+        if (layersNode) {
+            layersNode.embed(bodyElm);
+        }
+        // d3.select(bodyElm).append('text')
+        //                     .text('Test')
+        //                     .attr('data-test', '1');
     },
     always: function(bodyElm, inlets) {
         // TODO: Embed Elm App inside?
+        return;
         var layersCount = parseInt(inlets.count);
         console.log(layersCount);
         d3.select(bodyElm).selectAll("*").remove();
@@ -145,6 +151,7 @@ function mapTextOver(list, shiftX, onClick) {
     }
 }
 
-module.exports = function(elmLorenzInstance) {
+module.exports = function(elmLorenzInstance, layersNodeInstance) {
     elmLorenz = elmLorenzInstance;
+    layersNode = layersNodeInstance;
 }
