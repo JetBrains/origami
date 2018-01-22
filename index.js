@@ -4,12 +4,12 @@
 // include main style
 require('./index.css');
 
-// Prepare JB-Toolkit
-var registerToolkit = require('./toolkit.js');
-
 // initialize Elm Application
 var Lorenz = require('./src/Main.elm');
 var mountNode = document.getElementById('elm-target');
+
+// Prepare JB-Toolkit
+var registerToolkit = require('./toolkit.js');
 
 // The third value on embed are the initial values for incomming ports into Elm
 var app = Lorenz.Main.embed(mountNode);

@@ -66,7 +66,7 @@ var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
     }
 }).move(240, 10);
 
-patch.addNode('jb/layers').move(300, 300);
+var layersNode = patch.addNode('jb/layers').move(300, 300);
 
 var sigmaInlet = lorenzNode.inlets['sigma'];
 var betaInlet = lorenzNode.inlets['beta'];
@@ -88,6 +88,8 @@ rhoInlet.receive(28);
 stepInlet.receive(0.005);
 thicknessInlet.receive(1.0);
 numVerticesInlet.receive(2000);
+
+layersNode.inlets['count'].receive(3);
 
 module.exports = function(elmLorenzInstance) {
     elmLorenz = elmLorenzInstance;
