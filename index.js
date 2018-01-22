@@ -7,15 +7,18 @@ require('./index.css');
 // Prepare JB-Toolkit
 var registerToolkit = require('./toolkit.js');
 
-// Prepare RPD-patch
-var startPatch = require('./patch.js');
-
 // initialize Elm Application
-var Elm = require('./src/Main.elm');
+var Lorenz = require('./src/Main.elm');
 var mountNode = document.getElementById('elm-target');
 
 // The third value on embed are the initial values for incomming ports into Elm
-var app = Elm.Main.embed(mountNode);
+var app = Lorenz.Main.embed(mountNode);
 
-registerToolkit(app);
+var BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
+
+registerToolkit(app, BlendsNode);
+
+// Prepare RPD-patch
+var startPatch = require('./patch.js');
+
 startPatch(app);
