@@ -50,7 +50,10 @@ renderEq : String -> B.Equation -> Svg Msg
 renderEq eqType ( func, factor1, factor2 ) =
     g
         [ class ("equation equation-" ++ eqType) ]
-        [ ]
+        [ text_ [] [ B.labelOfFunc func |> text ]
+        , text_ [] [ B.labelOfFactor factor1 |> text ]
+        , text_ [] [ B.labelOfFactor factor2 |> text ]
+        ]
 
 
 

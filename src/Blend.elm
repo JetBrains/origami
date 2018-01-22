@@ -4,6 +4,8 @@ module Blend exposing
     , Equation
     , produce
     , default
+    , labelOfFunc
+    , labelOfFactor
     )
 
 
@@ -95,3 +97,33 @@ blenderOf ( f, f1, f2 ) =
             1 -> B.customSubtract f1_ f2_
             2 -> B.customReverseSubtract f1_ f2_
             _ -> B.customAdd f1_ f2_
+
+
+labelOfFunc : Int -> String
+labelOfFunc n =
+    case n of
+        0 -> "+" -- B.customAdd f1_ f2_
+        1 -> "-" -- B.customSubtract f1_ f2_
+        2 -> "R-" -- B.customReverseSubtract f1_ f2_
+        _ -> "?" -- B.customAdd f1_ f2_
+
+
+labelOfFactor : Int -> String
+labelOfFactor n =
+    case n of
+        0 -> "0" -- B.zero
+        1 -> "1" -- B.one
+        2 -> "sC" -- B.srcColor
+        3 -> "1-sC" -- B.oneMinusSrcColor
+        4 -> "dC" -- B.dstColor
+        5 -> "1-dC" -- B.oneMinusDstColor
+        6 -> "sA" -- B.srcAlpha
+        7 -> "1-sA" -- B.oneMinusSrcAlpha
+        8 -> "dA" -- B.dstAlpha
+        9 -> "1-dA" -- B.oneMinusDstAlpha
+        10 -> "AS" -- B.srcAlphaSaturate
+        11 -> "CC" -- B.constantColor
+        12 -> "1-CC" -- B.oneMinusConstantColor
+        13 -> "CA" -- B.constantAlpha
+        14 -> "1-CA" -- B.oneMinusConstantAlpha
+        _ -> "?"
