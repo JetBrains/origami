@@ -18,8 +18,8 @@ Rpd.nodetype('jb/layers', {
 });
 
 Rpd.noderenderer('jb/layers', 'svg', {
-    size: { width: 55, height: 30 },
-    /* pivot: { x: 0, y: 0 }, */
+    size: { width: 500, height: 300 },
+    pivot: { x: 0.03, y: 0.03 },
     first: function(bodyElm) {
         d3.select(bodyElm).append('text')
                             .text('Test')
@@ -76,7 +76,8 @@ eqFactorMap = [
 // _ -> B.zero)
 
 function createLayerBlendControls(layerId) {
-    var root = d3.select(document.createElementNS(SVG_XMLNS, 'g')).attr('data-layer', layerId);
+    var root = d3.select(document.createElementNS(SVG_XMLNS, 'g')).attr('data-layer', layerId)
+                 .attr('transform', 'translate(0, ' + (layerId * 100) + ')');
     var state = {
         layer: layerId,
         blend: {
@@ -85,46 +86,65 @@ function createLayerBlendControls(layerId) {
             alphaEq: [ 0, 1, 0 ]
         }
     }
-    root.append('g').call(function(colorRoot) {
-        colorRoot.append('g').call(function(funcRoot) {
-            eqFuncMap.map(function(funcName) {
-                funcRoot.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                        .text(funcName);
-            });
+    root.append('g')
+        .call(function(colorRoot) {
+            colorRoot.append('g')
+                .call(function(funcRoot) {
+                    eqFuncMap.map(function(funcName, i) {
+                        funcRoot.append('text').attr('fill', 'white').style('cursor', 'pointer')
+                                .attr('transform', 'translate(' + (i * 30) + ',0)')
+                                .text(funcName);
+                    });
+                });
+            colorRoot.append('g')
+                .attr('transform', 'translate(0,12)')
+                .call(function(factor1Root) {
+                    eqFactorMap.map(function(factorName, i) {
+                        factor1Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
+                                   .attr('transform', 'translate(' + (i * 30) + ',0)')
+                                   .text(factorName);
+                    });
+                });
+            colorRoot.append('g')
+                .attr('transform', 'translate(0,24)')
+                .call(function(factor2Root) {
+                    eqFactorMap.map(function(factorName, i) {
+                        factor2Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
+                                   .attr('transform', 'translate(' + (i * 30) + ',0)')
+                                   .text(factorName);
+                    });
+                });
         });
-        colorRoot.append('g').call(function(factor1Root) {
-            eqFactorMap.map(function(factorName) {
-                factor1Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                           .text(factorName);
-            });
+    root.append('g')
+        .attr('transform', 'translate(0,40)')
+        .call(function(alphaRoot) {
+            alphaRoot.append('g')
+                .call(function(funcRoot) {
+                    eqFuncMap.map(function(funcName, i) {
+                        funcRoot.append('text').attr('fill', 'white').style('cursor', 'pointer')
+                                .attr('transform', 'translate(' + (i * 30) + ',0)')
+                                .text(funcName);
+                    });
+                });
+            alphaRoot.append('g')
+                .attr('transform', 'translate(0,12)')
+                .call(function(factor1Root) {
+                    eqFactorMap.map(function(factorName, i) {
+                        factor1Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
+                                .attr('transform', 'translate(' + (i * 30) + ',0)')
+                                .text(factorName);
+                    });
+                });
+            alphaRoot.append('g')
+                .attr('transform', 'translate(0,24)')
+                .call(function(factor2Root) {
+                    eqFactorMap.map(function(factorName, i) {
+                        factor2Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
+                                .attr('transform', 'translate(' + (i * 30) + ',0)')
+                                .text(factorName);
+                    });
+                });
         });
-        colorRoot.append('g').call(function(factor2Root) {
-            eqFactorMap.map(function(factorName) {
-                factor2Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                           .text(factorName);
-            });
-        });
-    });
-    root.append('g').call(function(alphaRoot) {
-        alphaRoot.append('g').call(function(funcRoot) {
-            eqFuncMap.map(function(funcName) {
-                funcRoot.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                        .text(funcName);
-            });
-        });
-        alphaRoot.append('g').call(function(factor1Root) {
-            eqFactorMap.map(function(factorName) {
-                factor1Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                           .text(factorName);
-            });
-        });
-        alphaRoot.append('g').call(function(factor2Root) {
-            eqFactorMap.map(function(factorName) {
-                factor2Root.append('text').attr('fill', 'white').style('cursor', 'pointer')
-                           .text(factorName);
-            });
-        });
-    });
     return root;
 }
 

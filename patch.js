@@ -22,7 +22,7 @@ var elmLorenz = null;
 Rpd.renderNext('svg', document.getElementById('patch-target'),
                 { style: 'ableton' });
 
-var patch = Rpd.addPatch('Lorenz').resizeCanvas(800, 800);
+var patch = Rpd.addPatch('Lorenz').resizeCanvas(1400, 800);
 
 var sigmaNode = patch.addNode('util/knob', 'Sigma').move(60, 10);
 sigmaNode.inlets['min'].receive(0);
@@ -66,7 +66,7 @@ var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
     }
 }).move(240, 10);
 
-patch.addNode('jb/layers').move(60, 600);
+patch.addNode('jb/layers').move(300, 300);
 
 var sigmaInlet = lorenzNode.inlets['sigma'];
 var betaInlet = lorenzNode.inlets['beta'];
