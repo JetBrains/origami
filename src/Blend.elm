@@ -25,7 +25,7 @@ import WebGL.Settings.Blend as B
 -}
 
 
-type alias Equation = ( Int, Int, Int ) -- ( 0..3, 0..15, 0..15 )
+type alias Equation = ( Int, Int, Int ) -- ( 0..2, 0..15, 0..15 )
 
 
 type alias Color = { r : Float, g : Float, b : Float, a : Float }
