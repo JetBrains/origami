@@ -127,7 +127,8 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ChangeBlend layerId newBlend ->
-            { model | blends = model.blends |> Dict.insert layerId newBlend } ! []
+            { model | blends = model.blends |> Dict.insert layerId newBlend }
+            ! [ sendNewBlend { layer = layerId, blend = newBlend }]
         ChangeLayerCount newCount ->
             { model
             | layerCount = newCount
@@ -178,3 +179,8 @@ port changeBlend :
       , blend : B.Blend
       }
     -> msg) -> Sub msg
+
+port sendNewBlend :
+    { layer: Int
+    , blend: B.Blend
+    } -> Cmd msg
