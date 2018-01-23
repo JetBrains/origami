@@ -1,9 +1,11 @@
 port module BlendsNode exposing (..)
 
 import Dict
+import Array
 import Html
 import Svg exposing (..)
-import Svg.Attributes exposing (..)
+import Svg.Attributes as SA exposing (..)
+import Svg.Events as SE exposing (..)
 
 import Blend as B
 
@@ -24,37 +26,81 @@ type Msg
     | Resize ( Int, Int )
 
 
+move : Int -> Int -> Svg.Attribute Msg
+move x y =
+    transform ("translate(" ++ toString x ++ ", " ++ toString y ++ ")")
+
+
 renderBlendFrom : Blends -> Int -> Svg Msg
 renderBlendFrom blends idx =
-    blends
-        |> Dict.get idx
-        |> Maybe.withDefault B.default
-        |> renderBlend idx
+    g
+        [ class ("layer layer-" ++ toString idx)
+        , move 0 (idx * 100)
+        ]
+        [ text ("Layer " ++ toString idx)
+        , blends
+            |> Dict.get idx
+            |> Maybe.withDefault B.default
+            |> renderBlend idx
+        ]
 
 
 renderBlend : Int -> B.Blend -> Svg Msg
 renderBlend idx blend =
     g
-        [ class "blend" ]
+        [ class "blend", move 0 10 ]
         [ rect [ width "10", height "10", fill (getFill blend) ] []
         , g
-            [ class "color-eq" ]
-            [ renderEq "color" blend.colorEq ]
+            [ class "color-eq", move 0 15 ]
+            [ blend.colorEq |> renderEq "color"
+              (\eq -> ChangeBlend idx { blend | colorEq = eq }) ]
         , g
-            [ class "alpha-eq" ]
-            [ renderEq "alpha" blend.alphaEq ]
+            [ class "alpha-eq", move 0 55 ]
+            [ blend.alphaEq |> renderEq "alpha"
+              (\eq -> ChangeBlend idx { blend | alphaEq = eq }) ]
         ]
 
 
-renderEq : String -> B.Equation -> Svg Msg
-renderEq eqType ( func, factor1, factor2 ) =
-    g
-        [ class ("equation equation-" ++ eqType) ]
-        [ text_ [] [ B.labelOfFunc func |> text ]
-        , text_ [] [ B.labelOfFactor factor1 |> text ]
-        , text_ [] [ B.labelOfFactor factor2 |> text ]
+renderEq : String -> (B.Equation -> Msg) -> B.Equation -> Svg Msg
+renderEq eqType upd ( func, factor1, factor2 ) =
+    let
+        updFunc = (\newFunc -> upd ( newFunc, factor1, factor2 ))
+        updFact1 = (\newFact1 -> upd ( func, newFact1, factor2 ))
+        updFact2 = (\newFact2 -> upd ( func, factor1, newFact2 ))
+    in
+        g
+            [ class ("equation equation-" ++ eqType) ]
+            [ g [ class "func" ]
+                ( B.allFuncs |> Array.indexedMap (renderFunc updFunc func) |> Array.toList )
+            , g [ class "factor-1", move 0 12 ]
+                ( B.allFactors |> Array.indexedMap (renderFactor updFact1 factor1) |> Array.toList )
+            , g [ class "factor-2", move 0 24 ]
+                ( B.allFactors |> Array.indexedMap (renderFactor updFact2 factor2) |> Array.toList )
+            ]
+
+
+renderFunc : (Int -> Msg) -> Int -> Int -> a -> Svg Msg
+renderFunc select curN n _ =
+    text_
+        [ SA.style "cursor: pointer;"
+        , fill (if (n == curN) then "blue" else "white")
+        , move (n * 15) 0
+        , SE.onClick (select n)
+        ]
+        [ B.labelOfFunc n |> text
         ]
 
+
+renderFactor : (Int -> Msg) -> Int -> Int -> a -> Svg Msg
+renderFactor select curN n _ =
+    text_
+        [ SA.style "cursor: pointer;"
+        , fill (if (n == curN) then "blue" else "white")
+        , move (n * 15) 0
+        , SE.onClick (select n)
+        ]
+        [ B.labelOfFactor n |> text
+        ]
 
 
 getFill : B.Blend -> String

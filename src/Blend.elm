@@ -4,9 +4,14 @@ module Blend exposing
     , Equation
     , produce
     , default
+    , allFuncs
+    , allFactors
     , labelOfFunc
     , labelOfFactor
     )
+
+
+import Array
 
 
 import WebGL.Settings exposing (Setting)
@@ -48,6 +53,35 @@ default =
     }
 
 
+allFuncs : Array.Array (B.Factor -> B.Factor -> B.Blender)
+allFuncs =
+    Array.fromList
+        [ B.customAdd
+        , B.customSubtract
+        , B.customReverseSubtract
+        ]
+
+
+allFactors : Array.Array B.Factor
+allFactors =
+    Array.fromList
+        [ B.zero
+        , B.one
+        , B.srcColor
+        , B.oneMinusSrcColor
+        , B.dstColor
+        , B.oneMinusDstColor
+        , B.srcAlpha
+        , B.oneMinusSrcAlpha
+        , B.dstAlpha
+        , B.oneMinusDstAlpha
+        , B.srcAlphaSaturate
+        , B.constantColor
+        , B.oneMinusConstantColor
+        , B.constantAlpha
+        , B.oneMinusConstantAlpha
+        ]
+
 
 produce : Blend -> Setting
 produce { color, colorEq, alphaEq } =
@@ -61,42 +95,14 @@ produce { color, colorEq, alphaEq } =
             }
 
 
-factorOf : Int -> Maybe B.Factor
-factorOf n =
-    if (n >= 0) && (n <= 14) then
-        Just (case n of
-            0 -> B.zero
-            1 -> B.one
-            2 -> B.srcColor
-            3 -> B.oneMinusSrcColor
-            4 -> B.dstColor
-            5 -> B.oneMinusDstColor
-            6 -> B.srcAlpha
-            7 -> B.oneMinusSrcAlpha
-            8 -> B.dstAlpha
-            9 -> B.oneMinusDstAlpha
-            10 -> B.srcAlphaSaturate
-            11 -> B.constantColor
-            12 -> B.oneMinusConstantColor
-            13 -> B.constantAlpha
-            14 -> B.oneMinusConstantAlpha
-            _ -> B.zero)
-    else
-        Nothing
-
-
-
 blenderOf : Equation -> B.Blender
 blenderOf ( f, f1, f2 ) =
     let
-        f1_ = factorOf f1 |> Maybe.withDefault B.one
-        f2_ = factorOf f1 |> Maybe.withDefault B.zero
+        f_  = allFuncs |> Array.get f |> Maybe.withDefault B.customAdd
+        f1_ = allFactors |> Array.get f1 |> Maybe.withDefault B.one
+        f2_ = allFactors |> Array.get f2 |> Maybe.withDefault B.zero
     in
-        case f of
-            0 -> B.customAdd f1_ f2_
-            1 -> B.customSubtract f1_ f2_
-            2 -> B.customReverseSubtract f1_ f2_
-            _ -> B.customAdd f1_ f2_
+        f_ f1_ f2_
 
 
 labelOfFunc : Int -> String
