@@ -34,10 +34,11 @@ move x y =
 renderBlendFrom : Blends -> Int -> Svg Msg
 renderBlendFrom blends idx =
     g
-        [ class ("layer layer-" ++ toString idx)
-        , move 0 (idx * 100)
+        [ SA.style "alignment-baseline: hanging;"
+        , class ("layer layer-" ++ toString idx)
+        , move 0 (idx * 130)
         ]
-        [ text ("Layer " ++ toString idx)
+        [ text_ [ fill "black" ] [ text ("Layer " ++ toString idx) ]
         , blends
             |> Dict.get idx
             |> Maybe.withDefault B.default
@@ -49,13 +50,16 @@ renderBlend : Int -> B.Blend -> Svg Msg
 renderBlend idx blend =
     g
         [ class "blend", move 0 10 ]
-        [ rect [ width "10", height "10", fill (getFill blend) ] []
+        [ rect [ width "10", height "10", fill (getFill blend)
+               , stroke "black", strokeWidth "1", rx "3", ry "3", move 1 4 ] []
+        , text_ [ fill "black", move 15 5 ] [ text "Color EQ" ]
         , g
-            [ class "color-eq", move 0 15 ]
+            [ class "color-eq", move 15 15 ]
             [ blend.colorEq |> renderEq "color"
               (\eq -> ChangeBlend idx { blend | colorEq = eq }) ]
+        , text_ [ fill "black", move 15 55 ] [ text "Alpha EQ" ]
         , g
-            [ class "alpha-eq", move 0 55 ]
+            [ class "alpha-eq", move 15 65 ]
             [ blend.alphaEq |> renderEq "alpha"
               (\eq -> ChangeBlend idx { blend | alphaEq = eq }) ]
         ]
@@ -84,7 +88,7 @@ renderFunc select curN n _ =
     text_
         [ SA.style "cursor: pointer;"
         , fill (if (n == curN) then "blue" else "white")
-        , move (n * 15) 0
+        , move (n * 30) 0
         , SE.onClick (select n)
         ]
         [ B.labelOfFunc n |> text
@@ -96,7 +100,7 @@ renderFactor select curN n _ =
     text_
         [ SA.style "cursor: pointer;"
         , fill (if (n == curN) then "blue" else "white")
-        , move (n * 15) 0
+        , move (n * 30) 0
         , SE.onClick (select n)
         ]
         [ B.labelOfFactor n |> text

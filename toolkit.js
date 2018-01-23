@@ -23,13 +23,13 @@ Rpd.nodetype('jb/layers', {
 });
 
 Rpd.noderenderer('jb/layers', 'svg', {
-    size: { width: 500, height: 300 },
+    size: { width: 500, height: 400 },
     pivot: { x: 0.03, y: 0.03 },
     first: function(bodyElm) {
         console.log(layersNode);
         if (layersNodeApp) {
             layersNode = layersNodeApp.embed(bodyElm);
-            layersNode.ports.resize.send([ 500, 500 ]);
+            layersNode.ports.resize.send([ 500, 400 ]);
         }
         // d3.select(bodyElm).append('text')
         //                     .text('Test')

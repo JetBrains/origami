@@ -18,3 +18,7 @@ body {
     top: 0;
     color: white;
 }
+
+.rpd-node.rpd-jb-layers .rpd-process text {
+    dominant-baseline: hanging;
+}
