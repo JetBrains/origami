@@ -30,6 +30,11 @@ Rpd.noderenderer('jb/layers', 'svg', {
         if (layersNodeApp) {
             layersNode = layersNodeApp.embed(bodyElm);
             layersNode.ports.resize.send([ 500, 400 ]);
+            if (elmLorenz) {
+                layersNode.ports.sendNewBlend.subscribe(function(state) {
+                    elmLorenz.ports.changeBlend.send(state);
+                })
+            }
         }
         // d3.select(bodyElm).append('text')
         //                     .text('Test')
