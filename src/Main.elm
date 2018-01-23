@@ -64,6 +64,7 @@ init =
             , theta = 0.1
             , layers = Array.fromList
                 [ LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
+                , LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
                 , TriangleLayer Blend.default Triangle.mesh
                 ]
             , size = ( 0, 0 )
@@ -159,16 +160,6 @@ subscriptions model =
         , Window.resizes Resize
         , rotate Rotate
         , modify (\lorenzConfig ->
-            -- FIXME: Congigure all Lorenz layers (pass index with "modify" port?)
-            -- model.layers
-            --     |> Array.indexedMap (\index layer ->
-            --         case layer of
-            --             LorenzLayer _ _ -> Just index
-            --             _ -> Nothing
-            --         )
-            --     |> Array.filter (Maybe.map (\_ -> True))
-            --     |> Array.map (\index -> Configure index (LorenzConfig lorenzConfig))
-            --     |> Sub.batch
             Configure 0 (LorenzConfig lorenzConfig)
           )
         , changeBlend (\{ layer, blend } ->
@@ -193,7 +184,7 @@ mergeLayers theta layers =
             case layer of
                 LorenzLayer blend lorenz ->
                     Lorenz.makeEntity
-                        (if index == 0 then ( theta * 2 ) else theta)
+                        (theta * (toFloat index + 1))
                         [ DepthTest.default, Blend.produce blend ]
                         lorenz
                 TriangleLayer blend _ ->
