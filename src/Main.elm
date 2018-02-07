@@ -13,6 +13,7 @@ import WebGL.Settings.DepthTest as DepthTest
 
 import Controls
 import Lorenz
+import Fractal
 import Triangle
 import Blend exposing (Blend)
 
@@ -23,10 +24,12 @@ type alias LayerIndex = Int
 type LayerConfig
     = NoConfig
     | LorenzConfig Lorenz.Config
+    | FractalConfig Fractal.Config
 
 
 type Layer
     = LorenzLayer Blend Lorenz.LorenzMesh
+    | FractalLayer Blend Fractal.FractalMesh
     | TriangleLayer Blend Triangle.TriangleMesh
     | TextLayer Blend
     -- | CanvasLayer (\_ -> )
@@ -102,6 +105,8 @@ update msg model =
                         TriangleLayer curBlend Triangle.mesh
                     LorenzConfig lorenzConfig ->
                         LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
+                    FractalConfig fractalConfig ->
+                        FractalLayer curBlend (fractalConfig |> Fractal.build)
             in
                 ( { model
                   | layers = model.layers
@@ -120,6 +125,8 @@ update msg model =
                                     TriangleLayer newBlend mesh
                                 LorenzLayer _ mesh ->
                                     LorenzLayer newBlend mesh
+                                FractalLayer _ mesh ->
+                                    FractalLayer newBlend mesh
                                 TextLayer _ ->
                                     TextLayer newBlend
                     in
@@ -149,6 +156,7 @@ getBlend : Layer -> Blend
 getBlend layer =
     case layer of
         LorenzLayer blend _ -> blend
+        FractalLayer blend _ -> blend
         TriangleLayer blend _ -> blend
         TextLayer blend -> blend
 
@@ -187,6 +195,10 @@ mergeLayers theta layers =
                         (theta * (toFloat index + 1))
                         [ DepthTest.default, Blend.produce blend ]
                         lorenz
+                FractalLayer blend fractal ->
+                    Fractal.makeEntity
+                        [ DepthTest.default, Blend.produce blend ]
+                        fractal
                 TriangleLayer blend _ ->
                     Triangle.entity theta [ DepthTest.default, Blend.produce blend ]
                 TextLayer blend ->
