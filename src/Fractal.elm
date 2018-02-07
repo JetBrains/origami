@@ -8,6 +8,7 @@ module Fractal exposing
 
 import Math.Vector3 as Vec3 exposing (vec3, Vec3)
 import Math.Vector2 as Vec2 exposing (vec2, Vec2)
+import Math.Matrix4 as Mat4 exposing (Mat4)
 import WebGL exposing (Mesh, Shader, Entity)
 import WebGL.Settings exposing (Setting)
 
@@ -37,42 +38,52 @@ type alias Vertex =
 
 
 type alias Uniforms =
-    { ambientColor : Vec2
-    , aoIntensity : Float
-    , aoSpread : Float
-    , background1Color : Vec3
-    , background2Color : Vec3
+    { scale : Float
+    , power : Float
+    , surfaceDetail : Float
+    , surfaceSmoothness : Float
     , boundingRadius : Float
-    , cameraFocalLength : Float
-    , cameraPitch : Float
-    , cameraPosition : Vec3
+    , offset : Vec3
+    , shift : Vec3
+
     , cameraRoll : Float
+    , cameraPitch : Float
     , cameraYaw : Float
+    , cameraFocalLength : Float
+    , cameraPosition : Vec3
+
+    , colorIterations : Int
     , color1 : Vec3
     , color1Intensity : Float
     , color2 : Vec3
     , color2Intensity : Float
     , color3 : Vec3
     , color3Intensity : Float
-    , colorIterations : Int
-    , fog : Float
-    , fogFalloff : Float
+    , transparent : Int -- Bool, False
     , gamma : Float
+
+    , light : Vec3
+    , ambientColor : Vec2
+    , background1Color : Vec3
+    , background2Color : Vec3
     , innerGlowColor : Vec3
     , innerGlowIntensity : Float
-    , light : Vec3
-    , offset : Vec3
     , outerGlowColor : Vec3
     , outerGlowIntensity : Float
-    , outputSize : Vec2
-    , power : Float
-    , scale : Float
-    , shift : Vec3
-    , size : Vec2
-    , specularExponent : Float
+    , fog : Float
+    , fogFalloff : Float
     , specularity : Float
-    , surfaceDetail : Float
-    , surfaceSmoothness : Float
+    , specularExponent : Float
+
+    , size : Vec2
+    , outputSize : Vec2
+    , aoIntensity : Float
+    , aoSpread : Float
+
+    , objectRotation : Mat4 -- Mat3, [0,0,0]
+    , fractalRotation1 : Mat4 -- Mat3, [0,0,0]
+    , fractalRotation2 : Mat4 -- Mat3, [0,0,0]
+    , depthMap : Int -- Bool, False
     }
 
 
@@ -106,42 +117,53 @@ defaultOptions =
 
 defaultUniforms : Uniforms
 defaultUniforms =
-    { ambientColor = vec2 0.5 0.3
-    , aoIntensity = 0.15
-    , aoSpread = 9
-    , background1Color = vec3 0.0 0.46 0.8
-    , background2Color = vec3 0 0 0
+    { scale = 2.0
+    , power = 8
+    , surfaceDetail = 0.6
+    , surfaceSmoothness = 0.8
     , boundingRadius = 5
-    , cameraFocalLength = 0.9
-    , cameraPitch = 0
-    , cameraPosition = vec3 0 0 -2.5
+    , offset = vec3 0 0 0
+    , shift = vec3 0 0 0
+
     , cameraRoll = 0
+    , cameraPitch = 0
     , cameraYaw = 0
+    , cameraFocalLength = 0.9
+    , cameraPosition = vec3 0 0 -2.5
+
+    , colorIterations = 4
     , color1 = vec3 1.0 1.0 1.0
     , color1Intensity = 0.45
     , color2 = vec3 0 0.53 0.8
     , color2Intensity = 0.3
     , color3 = vec3 1.0 0.53 0
     , color3Intensity = 0
-    , colorIterations = 4
-    , fog = 0
-    , fogFalloff = 0
+    , transparent = 0 -- False, Bool
     , gamma = 1
+
+    , light = vec3 -16.0 100.0 -60.0
+    , ambientColor = vec2 0.5 0.3
+    , background1Color = vec3 0.0 0.46 0.8
+    , background2Color = vec3 0 0 0
     , innerGlowColor = vec3 0.0 0.6 0.8
     , innerGlowIntensity = 0.1
-    , light = vec3 -16.0 100.0 -60.0
-    , offset = vec3 0 0 0
     , outerGlowColor = vec3 1 1 1
     , outerGlowIntensity = 0
-    , outputSize = vec2 800 600
-    , power = 8
-    , scale = 2.0
-    , shift = vec3 0 0 0
-    , size = vec2 400 300
-    , specularExponent = 4
+    , fog = 0
+    , fogFalloff = 0
     , specularity = 0.8
-    , surfaceDetail = 0.6
-    , surfaceSmoothness = 0.8
+    , specularExponent = 4
+
+    , size = vec2 400 300
+    , outputSize = vec2 800 600
+    , aoIntensity = 0.15
+    , aoSpread = 9
+
+    , objectRotation = Mat4.identity -- [0,0,0] Mat3
+    , fractalRotation1 = Mat4.identity -- [0,0,0] Mat3
+    , fractalRotation2 = Mat4.identity -- [0,0,0] Mat3
+    , depthMap = 0 -- False Bool
+
     }
 
 
@@ -234,7 +256,7 @@ uniform vec3  color2;               // {"label":"Colour 2",  "default":[0, 0.53,
 uniform float color2Intensity;      // {"label":"Colour 2 intensity", "default":0.3, "min":0, "max":3, "step":0.01, "group":"Colour"}
 uniform vec3  color3;               // {"label":"Colour 3",  "default":[1.0, 0.53, 0.0], "group":"Colour", "control":"color"}
 uniform float color3Intensity;      // {"label":"Colour 3 intensity", "default":0, "min":0, "max":3, "step":0.01, "group":"Colour"}
-uniform bool  transparent;          // {"label":"Transparent background", "default":false, "group":"Colour"}
+uniform int   transparent;          // {"label":"Transparent background", "default":false, "group":"Colour"}
 uniform float gamma;                // {"label":"Gamma correction", "default":1, "min":0.1, "max":2, "step":0.01, "group":"Colour"}
 
 uniform vec3  light;                // {"label":["Light x", "Light y", "Light z"], "default":[-16.0, 100.0, -60.0], "min":-300, "max":300,  "step":1,   "group":"Shading", "group_label":"Light position"}
@@ -255,10 +277,10 @@ uniform vec2  outputSize;           // {"default":[800, 600]}
 uniform float aoIntensity;          // {"label":"AO intensity",     "min":0, "max":1, "step":0.01, "default":0.15,  "group":"Shading", "group_label":"Ambient occlusion"}
 uniform float aoSpread;             // {"label":"AO spread",    "min":0, "max":20, "step":0.01, "default":9,  "group":"Shading"}
 
-uniform mat3  objectRotation;       // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Object rotation"}
-uniform mat3  fractalRotation1;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 1"}
-uniform mat3  fractalRotation2;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 2"}
-uniform bool  depthMap;             // {"label":"Depth map", "default": false, "value":1, "group":"Shading"}
+uniform mat4  objectRotation;       // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Object rotation"}
+uniform mat4  fractalRotation1;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 1"}
+uniform mat4  fractalRotation2;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 2"}
+uniform int   depthMap;             // {"label":"Depth map", "default": false, "value":1, "group":"Shading"}
 
 
 float aspectRatio = outputSize.x / outputSize.y;
@@ -282,9 +304,17 @@ mat3 rotationMatrixVector(vec3 v, float angle)
     float c = cos(radians(angle));
     float s = sin(radians(angle));
 
-    return mat3(c + (1.0 - c) * v.x * v.x, (1.0 - c) * v.x * v.y - s * v.z, (1.0 - c) * v.x * v.z + s * v.y,
-            (1.0 - c) * v.x * v.y + s * v.z, c + (1.0 - c) * v.y * v.y, (1.0 - c) * v.y * v.z - s * v.x,
-            (1.0 - c) * v.x * v.z - s * v.y, (1.0 - c) * v.y * v.z + s * v.x, c + (1.0 - c) * v.z * v.z);
+    return mat3(
+        c + (1.0 - c) * v.x * v.x,
+        (1.0 - c) * v.x * v.y - s * v.z,
+        (1.0 - c) * v.x * v.z + s * v.y,
+        (1.0 - c) * v.x * v.y + s * v.z,
+        c + (1.0 - c) * v.y * v.y,
+        (1.0 - c) * v.y * v.z - s * v.x,
+        (1.0 - c) * v.x * v.z - s * v.y,
+        (1.0 - c) * v.y * v.z + s * v.x,
+        c + (1.0 - c) * v.z * v.z
+    );
 }
 
 
@@ -507,12 +537,12 @@ vec4 render(vec2 pixel)
         color.rgb = mix(bg_color.rgb, color.rgb, exp(-pow(ray_length * exp(fogFalloff), 2.0)) * fog);
         glow = clamp(glowAmount * outerGlowIntensity * 3.0, 0.0, 1.0);
         color.rgb = mix(color.rgb, outerGlowColor, glow);
-        if (transparent) color = vec4(0.0);
+        if (transparent > 0) color = vec4(0.0);
     }
 
-    // if (depthMap) {
-    //     color.rgb = vec3(ray_length / 10.0);
-    // }
+    if (depthMap > 0) {
+        color.rgb = vec3(ray_length / 10.0);
+    }
 
     return color;
 }
