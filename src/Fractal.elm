@@ -33,7 +33,7 @@ type alias FractalMesh = Mesh Vertex
 
 
 type alias Vertex =
-    { vertexPosition : Vec3
+    { vPosition : Vec3
     }
 
 
@@ -99,7 +99,57 @@ makeEntity settings mesh =
 
 build : Config -> FractalMesh
 build config =
-    WebGL.triangles [ ( Vertex (vec3 0 0 0), Vertex (vec3 0 0 0), Vertex (vec3 0 0 0) ) ]
+    [ ( 0, 0 ), ( 90, 0 ), ( 180, 0 ), ( 270, 0 ), ( 0, 90 ), ( 0, 270 ) ]
+        |> List.concatMap rotatedFace
+        |> WebGL.triangles
+
+
+
+rotatedFace : ( Float, Float ) -> List ( Vertex, Vertex, Vertex )
+rotatedFace ( angleXZ, angleYZ ) =
+    let
+        transformMat =
+            List.foldr Mat4.mul
+                Mat4.identity
+                [ Mat4.makeTranslate (vec3 0 1 0)
+                , Mat4.makeRotate (degrees angleXZ) Vec3.j
+                , Mat4.makeRotate (degrees angleYZ) Vec3.i
+                , Mat4.makeTranslate (vec3 0 0 1)
+                ]
+
+        transform vertex =
+            { vertex
+                | vPosition =
+                    Mat4.transform
+                        transformMat
+                        vertex.vPosition
+            }
+
+        transformTriangle ( a, b, c ) =
+            ( transform a, transform b, transform c )
+    in
+        List.map transformTriangle square
+
+
+square : List ( Vertex, Vertex, Vertex )
+square =
+    let
+        topLeft =
+            Vertex (vec3 -1 1 0) -- vec2 0 1
+
+        topRight =
+            Vertex (vec3 1 1 0) -- vec2 1 1
+
+        bottomLeft =
+            Vertex (vec3 -1 -1 0) -- vec2 0 0
+
+        bottomRight =
+            Vertex (vec3 1 -1 0) -- vec2 1 0
+    in
+        [ ( topLeft, topRight, bottomLeft )
+        , ( bottomLeft, topRight, bottomRight )
+        ]
+
 
 
 defaultOptions : RenderOptions
@@ -172,7 +222,7 @@ vertexShader =
     [glsl|
 
         precision mediump float;
-        attribute vec3 vertexPosition;
+        attribute vec3 vPosition;
 
         varying float antialiasing;
         varying int aoIterations;
@@ -182,7 +232,7 @@ vertexShader =
         varying int stepLimit;
 
         void main () {
-            gl_Position = vec4(vertexPosition, 1.0);
+            gl_Position = vec4(vPosition, 1.0);
         }
 
     |]
