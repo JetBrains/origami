@@ -107,6 +107,12 @@ build config =
     [ ( 0, 0 ), ( 90, 0 ), ( 180, 0 ), ( 270, 0 ), ( 0, 90 ), ( 0, 270 ) ]
         |> List.concatMap rotatedFace
         |> WebGL.triangles
+    -- WebGL.triangleFan
+    --     [ Vertex (vec3 -1.0 -1.0 1.0)
+    --     , Vertex (vec3 -1.0 -1.0 1.0)
+    --     , Vertex (vec3 1.0 -1.0 1.0)
+    --     , Vertex (vec3 1.0 -1.0 1.0)
+    --     ]
 
 
 
@@ -193,11 +199,11 @@ defaultUniforms viewport =
     , offset = vec3 0 0 0
     , shift = vec3 0 0 0
 
-    , cameraRoll = 0
-    , cameraPitch = 0
-    , cameraYaw = 0
+    , cameraRoll = 0 -- FIXME: assign from global camera state
+    , cameraPitch = 0 -- FIXME: assign from global camera state
+    , cameraYaw = 0 -- FIXME: assign from global camera state
     , cameraFocalLength = 0.9
-    , cameraPosition = vec3 0 0 -2.5
+    , cameraPosition = vec3 0 0 -2.5 -- FIXME: assign from global camera state
 
     , colorIterations = 4
     , color1 = vec3 1.0 1.0 1.0
@@ -409,7 +415,7 @@ vec3 MengerSponge(vec3 w)
     float md = 10000.0;
     vec3 cd = v;
 
-    for (int i = 0; i < int(maxIterations); i++) {
+    for (int i = 0; i < 8; i++) {
         vec3 a = mod(3.0 * w * p, 3.0);
         p *= 3.0;
 
@@ -531,7 +537,7 @@ float ambientOcclusion(vec3 p, vec3 n, float eps)
     float k = aoIntensity / eps;    // Set intensity factor
     float d = 2.0 * eps;            // Start ray a little off the surface
 
-    for (int i = 0; i < int(aoIterations); ++i) {
+    for (int i = 0; i < 4; ++i) {
         o -= (d - MengerSponge(p + n * d).x) * k;
         d += eps;
         k *= 0.5;                   // AO contribution drops as we move further from the surface
@@ -562,7 +568,7 @@ vec4 render(vec2 pixel)
         ray_length = tmin;
         ray = cameraPosition + ray_length * ray_direction;
 
-        for (int i = 0; i < int(stepLimit); i++) {
+        for (int i = 0; i < 60; i++) {
             steps = i;
             dist = MengerSponge(ray);
             dist.x *= surfaceSmoothness;
@@ -644,13 +650,13 @@ void main()
 //    }
 //    color /= n;
     // #else
-    // color = render(gl_FragCoord.xy);
+    color = render(gl_FragCoord.xy);
     // #endif
 
-    //if (color.a < 0.00392) discard; // Less than 1/255
+    if (color.a < 0.00392) discard; // Less than 1/255
 
-    //gl_FragColor = vec4(pow(color.rgb, vec3(1.0 / gamma)), color.a);
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    gl_FragColor = vec4(pow(color.rgb, vec3(1.0 / gamma)), color.a);
+    //gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }
 
 |]
