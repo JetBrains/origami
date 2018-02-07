@@ -59,6 +59,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         lorenzConfig = Lorenz.init
+        fractalConfig = Fractal.init
     in
         (
             { paused = False
@@ -67,7 +68,8 @@ init =
             , theta = 0.1
             , layers = Array.fromList
                 [ LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
-                , LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
+                , FractalLayer Blend.default (fractalConfig |> Fractal.build)
+                --, LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
                 , TriangleLayer Blend.default Triangle.mesh
                 ]
             , size = ( 0, 0 )

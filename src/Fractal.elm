@@ -151,6 +151,12 @@ square =
         ]
 
 
+init : Config
+init =
+    { render = defaultOptions
+    , mesh = defaultUniforms
+    }
+
 
 defaultOptions : RenderOptions
 defaultOptions =
