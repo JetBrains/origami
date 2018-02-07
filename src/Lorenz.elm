@@ -15,6 +15,8 @@ import WebGL.Settings exposing (Setting)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
+import Viewport exposing (Viewport)
+
 
 type alias Triangle = ( Vertex, Vertex, Vertex )
 
@@ -49,13 +51,10 @@ type alias Vertex =
 
 
 type alias Uniforms =
-    { rotation : Mat4
-    , perspective : Mat4
-    , camera : Mat4
-    , shade : Float
-    , cameraTranslate : Mat4
-    , cameraRotate : Mat4
-    }
+    Viewport
+        { shade : Float
+        }
+
 
 
 init : Config
@@ -69,14 +68,14 @@ init =
     }
 
 
-makeEntity : Float -> List Setting -> LorenzMesh -> Entity
-makeEntity theta settings mesh =
+makeEntity : Viewport {} -> List Setting -> LorenzMesh -> Entity
+makeEntity viewport settings mesh =
     WebGL.entityWith
         settings
         vertexShader
         fragmentShader
         mesh
-        ( uniforms theta )
+        ( uniforms viewport )
 
 
 build : Config -> LorenzMesh
@@ -217,16 +216,17 @@ trianglePairAt thickness { prevPosition, prevNormal, prevSumNormal, position, su
                 )
 
 
-uniforms : Float -> Uniforms
-uniforms theta =
-    { rotation
-        = Mat4.makeRotate (3 * theta) (vec3 0 1 0)
-    , perspective
-        = Mat4.makePerspective 95 1.5 0.1 3000
-    , camera = Mat4.makeLookAt (vec3 1 0.5 -0.8) (vec3 -0.5 0.1 0) (vec3 0 1 0)
+uniforms : Viewport {} -> Uniforms
+uniforms viewport =
+    -- { viewport
+    -- | shade = 0.8
+    -- }
+    { rotation = viewport.rotation
+    , perspective = viewport.perspective
+    , camera = viewport.camera
     , shade = 0.8
-    , cameraTranslate = Mat4.makeTranslate (vec3 (1/3) (1/80) (-1/16))
-    , cameraRotate = Mat4.makeRotate (2) (vec3 1 0 0)
+    , cameraTranslate = viewport.cameraTranslate
+    , cameraRotate = viewport.cameraRotate
     }
 
 
