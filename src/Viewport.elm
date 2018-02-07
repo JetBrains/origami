@@ -11,6 +11,7 @@ import Math.Vector3 as Vec3 exposing (vec3)
 
 type alias State =
     { theta : Float
+    -- , t : Float
     }
 
 
