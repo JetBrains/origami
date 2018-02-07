@@ -3,6 +3,7 @@ module Fractal exposing
     , FractalMesh
     , makeEntity
     , build
+    , init
     )
 
 
