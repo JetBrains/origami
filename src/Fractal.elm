@@ -172,7 +172,7 @@ init =
 defaultOptions : RenderOptions
 defaultOptions =
     { maxIterations = 8      -- {"label":"Iterations", "min":1, "max":30, "step":1, "group_label":"Fractal parameters"}
-    , stepLimit = 60         -- {"label":"Max steps", "min":10, "max":300, "step":1}
+    , stepLimit = 91         -- {"label":"Max steps", "min":10, "max":300, "step":1}
 
     , aoIterations = 4       -- {"label":"AO iterations", "min":0, "max":10, "step":1}
 
@@ -191,36 +191,36 @@ defaultUniforms viewport =
     , cameraTranslate = viewport.cameraTranslate
     , cameraRotate = viewport.cameraRotate
 
-    , scale = 2.0
+    , scale = 1.0
     , power = 8
     , surfaceDetail = 0.6
-    , surfaceSmoothness = 0.8
+    , surfaceSmoothness = 0.6
     , boundingRadius = 5
     , offset = vec3 0 0 0
     , shift = vec3 0 0 0
 
     , cameraRoll = 0 -- FIXME: assign from global camera state
-    , cameraPitch = 0 -- FIXME: assign from global camera state
-    , cameraYaw = 0 -- FIXME: assign from global camera state
+    , cameraPitch = -31.5 -- FIXME: assign from global camera state
+    , cameraYaw = -42.5 -- FIXME: assign from global camera state
     , cameraFocalLength = 0.9
-    , cameraPosition = vec3 0 0 -2.5 -- FIXME: assign from global camera state
+    , cameraPosition = vec3 1.909264 1.37907 -2.195337 -- FIXME: assign from global camera state
 
     , colorIterations = 4
     , color1 = vec3 1.0 1.0 1.0
-    , color1Intensity = 0.45
-    , color2 = vec3 0 0.53 0.8
-    , color2Intensity = 0.3
-    , color3 = vec3 1.0 0.53 0
-    , color3Intensity = 0
+    , color1Intensity = 0.57
+    , color2 = vec3 0.67 0.79 0.81 -- 171 203 209
+    , color2Intensity = 1.16
+    , color3 = vec3 1.0 0.53 0 -- 255 137 0
+    , color3Intensity = 0.57
     , transparent = 0 -- False, Bool
     , gamma = 1
 
     , light = vec3 -16.0 100.0 -60.0
     , ambientColor = vec2 0.5 0.3
-    , background1Color = vec3 0.0 0.46 0.8
+    , background1Color = vec3 0.0 0.46 0.8 -- 0 116 206
     , background2Color = vec3 0 0 0
-    , innerGlowColor = vec3 0.0 0.6 0.8
-    , innerGlowIntensity = 0.1
+    , innerGlowColor = vec3 0.0 0.6 0.8 -- 0 154 206
+    , innerGlowIntensity = 0.12
     , outerGlowColor = vec3 1 1 1
     , outerGlowIntensity = 0
     , fog = 0
@@ -231,7 +231,7 @@ defaultUniforms viewport =
     , size = vec2 400 300
     , outputSize = vec2 800 600
     , aoIntensity = 0.15
-    , aoSpread = 9
+    , aoSpread = 9.2
 
     , objectRotation = Mat4.identity -- [0,0,0] Mat3
     , fractalRotation1 = Mat4.identity -- [0,0,0] Mat3
@@ -568,7 +568,7 @@ vec4 render(vec2 pixel)
         ray_length = tmin;
         ray = cameraPosition + ray_length * ray_direction;
 
-        for (int i = 0; i < 60; i++) {
+        for (int i = 0; i < 91; i++) {
             steps = i;
             dist = MengerSponge(ray);
             dist.x *= surfaceSmoothness;
