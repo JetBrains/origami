@@ -212,7 +212,7 @@ defaultUniforms viewport =
     , color2Intensity = 1.16
     , color3 = vec3 1.0 0.53 0 -- 255 137 0
     , color3Intensity = 0.57
-    , transparent = 0 -- False, Bool
+    , transparent = 1 -- False, Bool
     , gamma = 1
 
     , light = vec3 -16.0 100.0 -60.0
@@ -233,9 +233,9 @@ defaultUniforms viewport =
     , aoIntensity = 0.15
     , aoSpread = 9.2
 
-    , objectRotation = Mat4.identity -- [0,0,0] Mat3
-    , fractalRotation1 = Mat4.identity -- [0,0,0] Mat3
-    , fractalRotation2 = Mat4.identity -- [0,0,0] Mat3
+    , objectRotation = Mat4.makeRotate 0 (vec3 0 0 0) -- [0,0,0] Mat3
+    , fractalRotation1 = Mat4.makeRotate 0 (vec3 0 0 0)  -- [0,0,0] Mat3
+    , fractalRotation2 = Mat4.makeRotate 0 (vec3 0 0 0)  -- [0,0,0] Mat3
     , depthMap = 0 -- False Bool
 
     }
@@ -262,6 +262,12 @@ vertexShader =
         varying float stepLimit;
 
         void main () {
+            antialiasing = 0.5;
+            bailout = 4.0;
+            minRange = 6e-5;
+            stepLimit = 91.0;
+            aoIterations = 4.0;
+            maxIterations = 8.0;
             // gl_Position = vec4(vPosition * vec3(0.3, 0.3, 0.3), 1.0);
             gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate * vec4(vPosition, 1.0);
         }
@@ -363,6 +369,10 @@ uniform mat3  fractalRotation1;     // {"label":["Rotate x", "Rotate y", "Rotate
 uniform mat3  fractalRotation2;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 2"}
 uniform int   depthMap;             // {"label":"Depth map", "default": false, "value":1, "group":"Shading"}
 
+mat3 objectRotation_ = mat3(0, 0, 1, 0, 1, 0, 1, 0, 0);
+mat3 fractalRotation1_ = mat3(0, 0, 1, 0, 1, 0, 1, 0, 0);
+mat3 fractalRotation2_ = mat3(0, 0, 1, 0, 1, 0, 1, 0, 0);
+
 
 float aspectRatio = outputSize.x / outputSize.y;
 float fovfactor = 1.0 / sqrt(1.0 + cameraFocalLength * cameraFocalLength);
@@ -405,7 +415,7 @@ vec3 halfSpongeScale = vec3(0.5) * scale;
 // http://www.fractalforums.com/3d-fractal-generation/revenge-of-the-half-eaten-menger-sponge/msg21700/
 vec3 MengerSponge(vec3 w)
 {
-    w *= objectRotation;
+    w *= objectRotation_;
     w = (w * 0.5 + vec3(0.5)) * scale;  // scale [-1, 1] range to [0, 1]
 
     vec3 v = abs(w - halfSpongeScale) - halfSpongeScale;
@@ -420,7 +430,7 @@ vec3 MengerSponge(vec3 w)
         p *= 3.0;
 
         v = vec3(0.5) - abs(a - vec3(1.5)) + offset;
-        v *= fractalRotation1;
+        v *= fractalRotation1_;
 
         // distance inside the 3 axis aligned square tubes
         d1 = min(max(v.x, v.z), min(max(v.x, v.y), max(v.y, v.z))) / p;
