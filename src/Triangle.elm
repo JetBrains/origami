@@ -8,44 +8,25 @@ module Triangle exposing
    Rotating triangle, that is a "hello world" of the WebGL
 -}
 
--- import AnimationFrame
--- import Html exposing (Html)
--- import Html.Attributes exposing (width, height, style)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (vec3, Vec3)
--- import Time exposing (Time)
 import WebGL exposing (Mesh, Shader)
 import WebGL.Settings exposing (Setting)
+
+import Viewport exposing (Viewport)
 
 
 type alias TriangleMesh = Mesh Vertex
 
 
--- main : Program Never Time Time
--- main =
---     Html.program
---         { init = ( 0, Cmd.none )
---         , view = view
---         , subscriptions = (\model -> AnimationFrame.diffs Basics.identity)
---         , update = (\elapsed currentTime -> ( elapsed + currentTime, Cmd.none ))
---         }
-
-
-entity : Float -> List Setting -> WebGL.Entity
-entity t settings =
+entity : Viewport {} -> List Setting -> WebGL.Entity
+entity viewport settings =
     WebGL.entityWith
         settings
         vertexShader
         fragmentShader
         mesh
-        { perspective = perspective (t / 1000) }
-
-
-perspective : Float -> Mat4
-perspective t =
-    Mat4.mul
-        (Mat4.makePerspective 45 1 0.01 100)
-        (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0))
+        (uniforms viewport)
 
 
 
@@ -73,7 +54,13 @@ mesh =
 
 
 type alias Uniforms =
-    { perspective : Mat4 }
+    Viewport {}
+
+
+uniforms : Viewport {} -> Uniforms
+uniforms v =
+    -- { perspective = Mat4.mul v.perspective v.camera }
+    v
 
 
 vertexShader : Shader Vertex Uniforms { vcolor : Vec3 }
@@ -82,11 +69,18 @@ vertexShader =
 
         attribute vec3 position;
         attribute vec3 color;
+
+        uniform mat4 cameraTranslate;
+        uniform mat4 cameraRotate;
         uniform mat4 perspective;
+        uniform mat4 camera;
+        uniform mat4 rotation;
+
         varying vec3 vcolor;
 
         void main () {
-            gl_Position = perspective * vec4(position, 1.0);
+            //gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate * vec4(position, 1.0);
+            gl_Position = perspective * camera * rotation * vec4(position, 1.0);
             vcolor = color;
         }
 

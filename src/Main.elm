@@ -11,6 +11,7 @@ import WebGL exposing (Mesh)
 import WebGL.Settings.DepthTest as DepthTest
 
 
+import Viewport exposing (Viewport)
 import Controls
 import Lorenz
 import Fractal
@@ -188,23 +189,25 @@ mapControls model controlsMsg =
 
 mergeLayers : Float -> Array Layer -> List WebGL.Entity
 mergeLayers theta layers =
-    layers |> Array.indexedMap
-        (\index layer ->
+    let viewport = Viewport.find { theta = theta }
+    in layers |> Array.map
+        (\layer ->
             case layer of
                 LorenzLayer blend lorenz ->
                     Lorenz.makeEntity
-                        (theta * (toFloat index + 1))
+                        viewport
                         [ DepthTest.default, Blend.produce blend ]
                         lorenz
                 FractalLayer blend fractal ->
                     Fractal.makeEntity
+                        viewport
                         [ DepthTest.default, Blend.produce blend ]
                         fractal
                 TriangleLayer blend _ ->
-                    Triangle.entity theta [ DepthTest.default, Blend.produce blend ]
+                    Triangle.entity viewport [ DepthTest.default, Blend.produce blend ]
                 TextLayer blend ->
                     -- FIXME: replace with text
-                    Triangle.entity theta [ DepthTest.default, Blend.produce blend ]
+                    Triangle.entity viewport [ DepthTest.default, Blend.produce blend ]
         )
     |> Array.toList
 

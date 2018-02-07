@@ -13,10 +13,12 @@ import Math.Matrix4 as Mat4 exposing (Mat4)
 import WebGL exposing (Mesh, Shader, Entity)
 import WebGL.Settings exposing (Setting)
 
+import Viewport exposing (Viewport)
+
 
 type alias Config =
     { render : RenderOptions
-    , mesh : Uniforms
+    --, mesh : Uniforms
     }
 
 
@@ -39,6 +41,8 @@ type alias Vertex =
 
 
 type alias Uniforms =
+    Viewport
+
     { scale : Float
     , power : Float
     , surfaceDetail : Float
@@ -88,14 +92,14 @@ type alias Uniforms =
     }
 
 
-makeEntity :  List Setting -> FractalMesh -> Entity
-makeEntity settings mesh =
+makeEntity :  Viewport {} -> List Setting -> FractalMesh -> Entity
+makeEntity viewport settings mesh =
     WebGL.entityWith
         settings
         vertexShader
         fragmentShader
         mesh
-        defaultUniforms
+        (defaultUniforms viewport)
 
 
 build : Config -> FractalMesh
@@ -155,7 +159,7 @@ square =
 init : Config
 init =
     { render = defaultOptions
-    , mesh = defaultUniforms
+    ---, mesh = defaultUniforms
     }
 
 
@@ -172,9 +176,16 @@ defaultOptions =
     }
 
 
-defaultUniforms : Uniforms
-defaultUniforms =
-    { scale = 2.0
+defaultUniforms : Viewport {} -> Uniforms
+defaultUniforms viewport =
+    { rotation = viewport.rotation
+    , perspective = viewport.perspective
+    , camera = viewport.camera
+    -- , shade = viewport.shade
+    , cameraTranslate = viewport.cameraTranslate
+    , cameraRotate = viewport.cameraRotate
+
+    , scale = 2.0
     , power = 8
     , surfaceDetail = 0.6
     , surfaceSmoothness = 0.8
@@ -231,6 +242,12 @@ vertexShader =
         precision mediump float;
         attribute vec3 vPosition;
 
+        uniform mat4 cameraTranslate;
+        uniform mat4 cameraRotate;
+        uniform mat4 perspective;
+        uniform mat4 camera;
+        uniform mat4 rotation;
+
         varying float antialiasing;
         varying float aoIterations;
         varying float bailout;
@@ -239,7 +256,8 @@ vertexShader =
         varying float stepLimit;
 
         void main () {
-            gl_Position = vec4(vPosition * vec3(0.3, 0.3, 0.3), 1.0);
+            // gl_Position = vec4(vPosition * vec3(0.3, 0.3, 0.3), 1.0);
+            gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate * vec4(vPosition, 1.0);
         }
 
     |]
