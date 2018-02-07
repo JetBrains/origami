@@ -22,11 +22,11 @@ type alias Config =
 
 type alias RenderOptions =
     { antialiasing : Float
-    , aoIterations : Int
+    , aoIterations : Float
     , bailout : Float
-    , maxIterations : Int
+    , maxIterations : Float
     , minRange : Float
-    , stepLimit : Int
+    , stepLimit : Float
     }
 
 
@@ -232,11 +232,11 @@ vertexShader =
         attribute vec3 vPosition;
 
         varying float antialiasing;
-        varying int aoIterations;
+        varying float aoIterations;
         varying float bailout;
-        varying int maxIterations;
+        varying float maxIterations;
         varying float minRange;
-        varying int stepLimit;
+        varying float stepLimit;
 
         void main () {
             gl_Position = vec4(vPosition, 1.0);
@@ -253,11 +253,11 @@ fragmentShader =
 precision mediump float;
 
 varying float antialiasing;
-varying int aoIterations;
+varying float aoIterations;
 varying float bailout;
-varying int maxIterations;
+varying float maxIterations;
 varying float minRange;
-varying int stepLimit;
+varying float stepLimit;
 
 /**
 * Fractal Lab's uber 3D fractal shader
@@ -334,9 +334,9 @@ uniform vec2  outputSize;           // {"default":[800, 600]}
 uniform float aoIntensity;          // {"label":"AO intensity",     "min":0, "max":1, "step":0.01, "default":0.15,  "group":"Shading", "group_label":"Ambient occlusion"}
 uniform float aoSpread;             // {"label":"AO spread",    "min":0, "max":20, "step":0.01, "default":9,  "group":"Shading"}
 
-uniform mat4  objectRotation;       // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Object rotation"}
-uniform mat4  fractalRotation1;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 1"}
-uniform mat4  fractalRotation2;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 2"}
+uniform mat3  objectRotation;       // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Object rotation"}
+uniform mat3  fractalRotation1;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 1"}
+uniform mat3  fractalRotation2;     // {"label":["Rotate x", "Rotate y", "Rotate z"], "group":"Fractal", "control":"rotation", "default":[0,0,0], "min":-360, "max":360, "step":1, "group_label":"Fractal rotation 2"}
 uniform int   depthMap;             // {"label":"Depth map", "default": false, "value":1, "group":"Shading"}
 
 
@@ -472,14 +472,14 @@ vec3 generateNormal(vec3 z, float d)
 {
     float e = max(d * 0.5, MIN_NORM);
 
-    float dx1 = dE(z + vec3(e, 0, 0)).x;
-    float dx2 = dE(z - vec3(e, 0, 0)).x;
+    float dx1 = MengerSponge(z + vec3(e, 0, 0)).x;
+    float dx2 = MengerSponge(z - vec3(e, 0, 0)).x;
 
-    float dy1 = dE(z + vec3(0, e, 0)).x;
-    float dy2 = dE(z - vec3(0, e, 0)).x;
+    float dy1 = MengerSponge(z + vec3(0, e, 0)).x;
+    float dy2 = MengerSponge(z - vec3(0, e, 0)).x;
 
-    float dz1 = dE(z + vec3(0, 0, e)).x;
-    float dz2 = dE(z - vec3(0, 0, e)).x;
+    float dz1 = MengerSponge(z + vec3(0, 0, e)).x;
+    float dz2 = MengerSponge(z - vec3(0, 0, e)).x;
 
     return normalize(vec3(dx1 - dx2, dy1 - dy2, dz1 - dz2));
 }
@@ -513,8 +513,8 @@ float ambientOcclusion(vec3 p, vec3 n, float eps)
     float k = aoIntensity / eps;    // Set intensity factor
     float d = 2.0 * eps;            // Start ray a little off the surface
 
-    for (int i = 0; i < aoIterations; ++i) {
-        o -= (d - dE(p + n * d).x) * k;
+    for (int i = 0; i < int(aoIterations); ++i) {
+        o -= (d - MengerSponge(p + n * d).x) * k;
         d += eps;
         k *= 0.5;                   // AO contribution drops as we move further from the surface
     }
@@ -544,9 +544,9 @@ vec4 render(vec2 pixel)
         ray_length = tmin;
         ray = cameraPosition + ray_length * ray_direction;
 
-        for (int i = 0; i < stepLimit; i++) {
+        for (int i = 0; i < int(stepLimit); i++) {
             steps = i;
-            dist = dE(ray);
+            dist = MengerSponge(ray);
             dist.x *= surfaceSmoothness;
 
             // If we hit the surface on the previous step check again to make sure it wasn't
@@ -618,13 +618,13 @@ void main()
 
 
     // #ifdef antialiasing
-    for (float x = 0.0; x < 1.0; x += float(antialiasing)) {
-        for (float y = 0.0; y < 1.0; y += float(antialiasing)) {
-            color += render(gl_FragCoord.xy + vec2(x, y));
-            n += 1.0;
-        }
-    }
-    color /= n;
+//    for (float x = 0.0; x < 1.0; x += float(antialiasing)) {
+//        for (float y = 0.0; y < 1.0; y += float(antialiasing)) {
+//            color += render(gl_FragCoord.xy + vec2(x, y));
+//            n += 1.0;
+//        }
+//    }
+//    color /= n;
     // #else
     // color = render(gl_FragCoord.xy);
     // #endif
