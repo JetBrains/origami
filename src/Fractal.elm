@@ -1,9 +1,34 @@
-module Fractal exposing (..)
+module Fractal exposing
+    ( Config
+    , FractalMesh
+    , makeEntity
+    , build
+    )
 
 
-import Math.Vector3 as Vec3 exposing (Vec3)
-import Math.Vector2 as Vec2 exposing (Vec2)
-import WebGL exposing (Mesh, Shader)
+import Math.Vector3 as Vec3 exposing (vec3, Vec3)
+import Math.Vector2 as Vec2 exposing (vec2, Vec2)
+import WebGL exposing (Mesh, Shader, Entity)
+import WebGL.Settings exposing (Setting)
+
+
+type alias Config =
+    { render : RenderOptions
+    , mesh : Uniforms
+    }
+
+
+type alias RenderOptions =
+    { antialiasing : Float
+    , aoIterations : Int
+    , bailout : Float
+    , maxIterations : Int
+    , minRange : Float
+    , stepLimit : Int
+    }
+
+
+type alias FractalMesh = Mesh Vertex
 
 
 type alias Vertex =
@@ -51,12 +76,23 @@ type alias Uniforms =
     }
 
 
-halfPi = 1.570796 -- HALFPI
-minEpsilon = 6e-7 -- MIN_EPSILON
-minNorm = 1.5e-7  -- MIN_NORM
+makeEntity :  List Setting -> FractalMesh -> Entity
+makeEntity settings mesh =
+    WebGL.entityWith
+        settings
+        vertexShader
+        fragmentShader
+        mesh
+        defaultUniforms
 
 
-options =
+build : Config -> FractalMesh
+build config =
+    WebGL.triangles [ ( Vertex (vec3 0 0 0), Vertex (vec3 0 0 0), Vertex (vec3 0 0 0) ) ]
+
+
+defaultOptions : RenderOptions
+defaultOptions =
     { maxIterations = 8      -- {"label":"Iterations", "min":1, "max":30, "step":1, "group_label":"Fractal parameters"}
     , stepLimit = 60         -- {"label":"Max steps", "min":10, "max":300, "step":1}
 
@@ -68,12 +104,60 @@ options =
     }
 
 
-vertexShader : Shader Vertex Uniforms { }
+defaultUniforms : Uniforms
+defaultUniforms =
+    { ambientColor = vec2 0.5 0.3
+    , aoIntensity = 0.15
+    , aoSpread = 9
+    , background1Color = vec3 0.0 0.46 0.8
+    , background2Color = vec3 0 0 0
+    , boundingRadius = 5
+    , cameraFocalLength = 0.9
+    , cameraPitch = 0
+    , cameraPosition = vec3 0 0 -2.5
+    , cameraRoll = 0
+    , cameraYaw = 0
+    , color1 = vec3 1.0 1.0 1.0
+    , color1Intensity = 0.45
+    , color2 = vec3 0 0.53 0.8
+    , color2Intensity = 0.3
+    , color3 = vec3 1.0 0.53 0
+    , color3Intensity = 0
+    , colorIterations = 4
+    , fog = 0
+    , fogFalloff = 0
+    , gamma = 1
+    , innerGlowColor = vec3 0.0 0.6 0.8
+    , innerGlowIntensity = 0.1
+    , light = vec3 -16.0 100.0 -60.0
+    , offset = vec3 0 0 0
+    , outerGlowColor = vec3 1 1 1
+    , outerGlowIntensity = 0
+    , outputSize = vec2 800 600
+    , power = 8
+    , scale = 2.0
+    , shift = vec3 0 0 0
+    , size = vec2 400 300
+    , specularExponent = 4
+    , specularity = 0.8
+    , surfaceDetail = 0.6
+    , surfaceSmoothness = 0.8
+    }
+
+
+vertexShader : Shader Vertex Uniforms RenderOptions
 vertexShader =
     [glsl|
 
         precision mediump float;
         attribute vec3 vertexPosition;
+
+        varying float antialiasing;
+        varying int aoIterations;
+        varying float bailout;
+        varying int maxIterations;
+        varying float minRange;
+        varying int stepLimit;
 
         void main () {
             gl_Position = vec4(vertexPosition, 1.0);
@@ -82,12 +166,19 @@ vertexShader =
     |]
 
 
-fragmentShader : Shader {} Uniforms {}
+fragmentShader : Shader {} Uniforms RenderOptions
 fragmentShader =
 
     [glsl|
 
 precision mediump float;
+
+varying float antialiasing;
+varying int aoIterations;
+varying float bailout;
+varying int maxIterations;
+varying float minRange;
+varying int stepLimit;
 
 /**
 * Fractal Lab's uber 3D fractal shader
@@ -178,6 +269,11 @@ vec3  w = vec3(0, 0, 1);
 vec3  v = vec3(0, 1, 0);
 vec3  u = vec3(1, 0, 0);
 mat3  cameraRotation;
+
+
+float HALFPI = 1.570796;
+float MIN_EPSILON = 6e-7;
+float MIN_NORM = 1.5e-7;
 
 
 // Return rotation matrix for rotating around vector v by angle
