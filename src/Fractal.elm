@@ -262,8 +262,8 @@ vertexShader =
         varying float stepLimit;
 
         void main () {
-            gl_Position = vec4(vPosition * vec3(0.3, 0.3, 0.3), 1.0);
-            // gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate * vec4(vPosition, 1.0);
+            // gl_Position = vec4(vPosition * vec3(0.3, 0.3, 0.3), 1.0);
+            gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate * vec4(vPosition, 1.0);
         }
 
     |]
