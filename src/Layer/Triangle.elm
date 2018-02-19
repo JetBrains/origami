@@ -1,4 +1,4 @@
-module Triangle exposing
+module Layer.Triangle exposing
     ( TriangleMesh
     , mesh
     , entity

@@ -1,4 +1,4 @@
-module Lorenz exposing
+module Layer.Lorenz exposing
     ( Config
     , LorenzMesh
     , init
