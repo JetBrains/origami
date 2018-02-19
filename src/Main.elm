@@ -13,9 +13,9 @@ import WebGL.Settings.DepthTest as DepthTest
 
 import Viewport exposing (Viewport)
 import Controls
-import Lorenz
-import Fractal
-import Triangle
+import Layer.Lorenz
+import Layer.Fractal
+import Layer.Triangle
 import Blend exposing (Blend)
 
 

@@ -1,4 +1,4 @@
-module Fractal exposing
+module Layer.Fractal exposing
     ( Config
     , FractalMesh
     , makeEntity
