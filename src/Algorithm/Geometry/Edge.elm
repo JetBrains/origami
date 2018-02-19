@@ -1,7 +1,7 @@
-module VoronoiMath.Geometry.Edge exposing (..)
+module Algorithm.Geometry.Edge exposing (..)
 
 import Math.Vector2 exposing (getX, getY)
-import VoronoiMath.Model exposing (Edge, Triangle)
+import Algorithm.Voronoi.Model exposing (Edge, Triangle)
 
 
 -- draw : Edge -> Svg msg

@@ -1,4 +1,4 @@
-module VoronoiMath.Model exposing (..)
+module Algorithm.Voronoi.Model exposing (..)
 
 import Color exposing (Color)
 import Math.Vector2 exposing (Vec2, vec2)

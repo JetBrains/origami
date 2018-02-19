@@ -1,11 +1,11 @@
-module VoronoiMath.Geometry.Triangle exposing (..)
+module Algorithm.Geometry.Triangle exposing (..)
 
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
-import VoronoiMath.Geometry.Distance
-import VoronoiMath.Geometry.Edge
-import VoronoiMath.Geometry.Point
-import VoronoiMath.Geometry.Util
-import VoronoiMath.Model exposing (Edge, Point, Triangle)
+import Algorithm.Geometry.Distance as Distance
+import Algorithm.Geometry.Edge as Edge
+import Algorithm.Geometry.Point as Point
+import Algorithm.Geometry.Util as Util
+import Algorithm.Voronoi.Model as Model exposing (Edge, Point, Triangle)
 
 
 -- draw : Triangle -> Svg msg
@@ -73,20 +73,20 @@ circumcenter triangle =
         -- AB
         slopeAB : Maybe Float
         slopeAB =
-            Geometry.Util.perpendicularSlope a b
+            Util.perpendicularSlope a b
 
         slopeInterceptAB : Maybe Float
         slopeInterceptAB =
-            Geometry.Util.solveSlopeInterceptForB (Geometry.Util.midpoint a b) slopeAB
+            Util.solveSlopeInterceptForB (Util.midpoint a b) slopeAB
 
         -- BC
         slopeBC : Maybe Float
         slopeBC =
-            Geometry.Util.perpendicularSlope b c
+            Util.perpendicularSlope b c
 
         slopeInterceptBC : Maybe Float
         slopeInterceptBC =
-            Geometry.Util.solveSlopeInterceptForB (Geometry.Util.midpoint b c) slopeBC
+            Util.solveSlopeInterceptForB (Util.midpoint b c) slopeBC
 
         -- Solve for x
         x : Maybe Float
@@ -121,7 +121,7 @@ returns: [x1,y1 x2,y2 x3,y3 x1,y1]
 -}
 toString : Triangle -> String
 toString tri =
-    List.map Geometry.Point.toString [ tri.a, tri.b, tri.c, tri.a ]
+    List.map Point.toString [ tri.a, tri.b, tri.c, tri.a ]
         |> List.intersperse " "
         |> String.concat
 
@@ -130,7 +130,7 @@ toString tri =
 -}
 hasEdge : Triangle -> Edge -> Bool
 hasEdge triangle edge =
-    List.any (Geometry.Edge.isEqual edge) (getEdges triangle)
+    List.any (Edge.isEqual edge) (getEdges triangle)
 
 
 {-| Returns true if the triangles share at least one edge.
@@ -173,25 +173,25 @@ getDelaunayTriangle tri =
     in
     Model.Circle
         circCenter
-        (Geometry.Distance.distanceEuclidean (Maybe.withDefault (vec2 0 0) circCenter) tri.a.pos)
+        (Distance.distanceEuclidean (Maybe.withDefault (vec2 0 0) circCenter) tri.a.pos)
         |> Model.DelaunayTriangle tri
 
 
-averageColor : Triangle -> String
-averageColor tri =
-    let
-        a =
-            Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.a.color)
+-- averageColor : Triangle -> String
+-- averageColor tri =
+--     let
+--         a =
+--             Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.a.color)
 
-        b =
-            Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.b.color)
+--         b =
+--             Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.b.color)
 
-        c =
-            Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.c.color)
-    in
-    ColorHelper.colorToHex
-        (Color.rgb
-            (round (sqrt (Basics.toFloat ((a.red + b.red + c.red) ^ 2) / 3)))
-            (round (sqrt (Basics.toFloat ((a.green + b.green + c.green) ^ 2) / 3)))
-            (round (sqrt (Basics.toFloat ((a.blue + b.blue + c.blue) ^ 2) / 3)))
-        )
+--         c =
+--             Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.c.color)
+--     in
+--     ColorHelper.colorToHex
+--         (Color.rgb
+--             (round (sqrt (Basics.toFloat ((a.red + b.red + c.red) ^ 2) / 3)))
+--             (round (sqrt (Basics.toFloat ((a.green + b.green + c.green) ^ 2) / 3)))
+--             (round (sqrt (Basics.toFloat ((a.blue + b.blue + c.blue) ^ 2) / 3)))
+--         )

@@ -1,4 +1,4 @@
-module VoronoiMath.Geometry.Util exposing (..)
+module Algorithm.Geometry.Util exposing (..)
 
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
 

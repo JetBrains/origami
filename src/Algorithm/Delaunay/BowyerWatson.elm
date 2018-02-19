@@ -1,9 +1,9 @@
-module VoronoiMath.Delaunay.BowyerWatson exposing (addPoint)
+module Algorithm.Delaunay.BowyerWatson exposing (addPoint)
 
-import VoronoiMath.Delaunay.Triangle exposing (containsPoint)
-import VoronoiMath.Geometry.Edge
-import VoronoiMath.Geometry.Triangle
-import VoronoiMath.Model exposing (DelaunayTriangle, Edge, Model, Point, Triangle)
+import Algorithm.Delaunay.Triangle exposing (containsPoint)
+import Algorithm.Geometry.Edge
+import Algorithm.Geometry.Triangle
+import Algorithm.Voronoi.Model exposing (DelaunayTriangle, Edge, Model, Point, Triangle)
 
 
 {-| (Assuming a basic understanding of the Bowyer Watson algorithm)

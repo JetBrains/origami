@@ -1,8 +1,8 @@
-module VoronoiMath.Voronoi exposing (..)
+module Algorithm.Voronoi.Voronoi exposing (..)
 
-import VoronoiMath.Delaunay.Triangle
-import Geometry.Edge
-import Model exposing (DelaunayTriangle, Edge, Model, Point, VoronoiPolygon)
+import Algorithm.Delaunay.Triangle
+import Algorithm.Geometry.Edge
+import Algorithm.Voronoi.Model exposing (DelaunayTriangle, Edge, Model, Point, VoronoiPolygon)
 
 
 -- draw : Model -> List (Svg msg)

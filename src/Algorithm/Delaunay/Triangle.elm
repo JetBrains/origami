@@ -1,10 +1,10 @@
-module VoronoiMath.Delaunay.Triangle exposing (..)
+module Algorithm.Delaunay.Triangle exposing (..)
 
 
-import VoronoiMath.Geometry.Distance exposing (distanceEuclidean)
-import VoronoiMath.Geometry.Triangle
+import Algorithm.Geometry.Distance exposing (distanceEuclidean)
+import Algorithm.Geometry.Triangle
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
-import VoronoiMath.Model exposing (Circle, DelaunayTriangle, Edge, Model, Point, Triangle)
+import Algorithm.Model exposing (Circle, DelaunayTriangle, Edge, Model, Point, Triangle)
 
 
 -- View

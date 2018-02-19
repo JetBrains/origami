@@ -1,11 +1,11 @@
-module VoronoiMath.Update exposing (..)
+module Algorithm.Voronoi.Update exposing (..)
 
 import Color exposing (Color)
-import Constants
-import Delaunay.BowyerWatson
-import Geometry.Point
+import Algorithm.Delaunay.BowyerWatson
+import Algorithm.Geometry.Point
+import Algorithm.Voronoi.Model exposing (..)
+
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
-import Model exposing (..)
 import Random.Pcg exposing (..)
 
 
