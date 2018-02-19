@@ -1,24 +1,20 @@
 module VoronoiMath.Geometry.Edge exposing (..)
 
-import Color
-import ColorHelper
 import Math.Vector2 exposing (getX, getY)
-import Model exposing (Edge, Triangle)
-import Svg exposing (Svg, line)
-import Svg.Attributes exposing (..)
+import VoronoiMath.Model exposing (Edge, Triangle)
 
 
-draw : Edge -> Svg msg
-draw edge =
-    line
-        [ stroke "black"
-        , strokeWidth "0.5"
-        , x1 (Basics.toString (getX edge.a.pos))
-        , x2 (Basics.toString (getX edge.b.pos))
-        , y1 (Basics.toString (getY edge.a.pos))
-        , y2 (Basics.toString (getY edge.b.pos))
-        ]
-        []
+-- draw : Edge -> Svg msg
+-- draw edge =
+--     line
+--         [ stroke "black"
+--         , strokeWidth "0.5"
+--         , x1 (Basics.toString (getX edge.a.pos))
+--         , x2 (Basics.toString (getX edge.b.pos))
+--         , y1 (Basics.toString (getY edge.a.pos))
+--         , y2 (Basics.toString (getY edge.b.pos))
+--         ]
+--         []
 
 
 getUnique : List Edge -> List Edge
@@ -70,29 +66,29 @@ isEqual a b =
         False
 
 
-averageColor : Edge -> String
-averageColor edge =
-    let
-        a =
-            Color.toRgb (Maybe.withDefault (Color.rgb 255 0 0) edge.a.color)
+-- averageColor : Edge -> String
+-- averageColor edge =
+--     let
+--         a =
+--             Color.toRgb (Maybe.withDefault (Color.rgb 255 0 0) edge.a.color)
 
-        b =
-            Color.toRgb (Maybe.withDefault (Color.rgb 0 0 255) edge.b.color)
-    in
-    ColorHelper.colorToHex
-        (Color.rgb
-            (round (sqrt (Basics.toFloat ((a.red + b.red) ^ 2) / 2)))
-            (round (sqrt (Basics.toFloat ((a.green + b.green) ^ 2) / 2)))
-            (round (sqrt (Basics.toFloat ((a.blue + b.blue) ^ 2) / 2)))
-        )
+--         b =
+--             Color.toRgb (Maybe.withDefault (Color.rgb 0 0 255) edge.b.color)
+--     in
+--     ColorHelper.colorToHex
+--         (Color.rgb
+--             (round (sqrt (Basics.toFloat ((a.red + b.red) ^ 2) / 2)))
+--             (round (sqrt (Basics.toFloat ((a.green + b.green) ^ 2) / 2)))
+--             (round (sqrt (Basics.toFloat ((a.blue + b.blue) ^ 2) / 2)))
+--         )
 
 
-toString : Edge -> String
-toString edge =
-    Basics.toString (getX edge.a.pos)
-        ++ ","
-        ++ Basics.toString (getY edge.a.pos)
-        ++ " "
-        ++ Basics.toString (getX edge.b.pos)
-        ++ ","
-        ++ Basics.toString (getY edge.b.pos)
+-- toString : Edge -> String
+-- toString edge =
+--     Basics.toString (getX edge.a.pos)
+--         ++ ","
+--         ++ Basics.toString (getY edge.a.pos)
+--         ++ " "
+--         ++ Basics.toString (getX edge.b.pos)
+--         ++ ","
+--         ++ Basics.toString (getY edge.b.pos)

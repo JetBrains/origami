@@ -3,8 +3,6 @@ module VoronoiMath.Voronoi exposing (..)
 import VoronoiMath.Delaunay.Triangle
 import Geometry.Edge
 import Model exposing (DelaunayTriangle, Edge, Model, Point, VoronoiPolygon)
-import Svg exposing (Svg, polyline)
-import Svg.Attributes exposing (..)
 
 
 -- draw : Model -> List (Svg msg)
@@ -27,12 +25,12 @@ import Svg.Attributes exposing (..)
 --         []
 
 
-{-| Returns the points of a VoronoiPolygon in String form for drawing
-the triangle in Svg using a polyline.
--}
-toString : VoronoiPolygon -> String
-toString voronoi =
-    String.concat (List.intersperse " " (List.map (\edge -> Geometry.Edge.toString edge) voronoi.edges))
+-- {-| Returns the points of a VoronoiPolygon in String form for drawing
+-- the triangle in Svg using a polyline.
+-- -}
+-- toString : VoronoiPolygon -> String
+-- toString voronoi =
+--     String.concat (List.intersperse " " (List.map (\edge -> Geometry.Edge.toString edge) voronoi.edges))
 
 
 {-| For each triangle in our triangulation, connect the triangle circumcenter

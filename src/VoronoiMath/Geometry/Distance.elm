@@ -1,7 +1,7 @@
 module VoronoiMath.Geometry.Distance exposing (..)
 
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
-import Model exposing (Distance, Point)
+import VoronoiMath.Model exposing (Distance, Point)
 
 
 distance : Distance -> Vec2 -> Vec2 -> Float
