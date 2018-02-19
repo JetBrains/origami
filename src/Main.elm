@@ -27,12 +27,14 @@ type LayerConfig
     = NoConfig
     | LorenzConfig Lorenz.Config
     | FractalConfig Fractal.Config
+    | VoronoiConfig Voronoi.Config
 
 
 type Layer
     = LorenzLayer Blend Lorenz.LorenzMesh
     | FractalLayer Blend Fractal.FractalMesh
     | TriangleLayer Blend Triangle.TriangleMesh
+    | VoronoiLayer Blend Voronoi.VoronoiMesh
     | TextLayer Blend
     -- | CanvasLayer (\_ -> )
 
@@ -62,6 +64,7 @@ init =
     let
         lorenzConfig = Lorenz.init
         fractalConfig = Fractal.init
+        voronoiConfig = Voronoi.init
     in
         (
             { paused = False
@@ -70,7 +73,7 @@ init =
             , theta = 0.1
             , layers = Array.fromList
                 -- [ FractalLayer Blend.default (fractalConfig |> Fractal.build)
-                [ VoronoiLayer Blend.default Voronoi.mesh
+                [ VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
                 --, LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
                 , TriangleLayer Blend.default Triangle.mesh
                 ]
@@ -111,6 +114,8 @@ update msg model =
                         LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
                     FractalConfig fractalConfig ->
                         FractalLayer curBlend (fractalConfig |> Fractal.build)
+                    VoronoiConfig voronoiConfig ->
+                        VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
             in
                 ( { model
                   | layers = model.layers
@@ -131,6 +136,8 @@ update msg model =
                                     LorenzLayer newBlend mesh
                                 FractalLayer _ mesh ->
                                     FractalLayer newBlend mesh
+                                VoronoiLayer _ mesh ->
+                                    VoronoiLayer newBlend mesh
                                 TextLayer _ ->
                                     TextLayer newBlend
                     in
@@ -162,6 +169,7 @@ getBlend layer =
         LorenzLayer blend _ -> blend
         FractalLayer blend _ -> blend
         TriangleLayer blend _ -> blend
+        VoronoiLayer blend _ -> blend
         TextLayer blend -> blend
 
 
@@ -207,6 +215,11 @@ mergeLayers theta layers =
                         fractal
                 TriangleLayer blend _ ->
                     Triangle.makeEntity viewport [ DepthTest.default, Blend.produce blend ]
+                VoronoiLayer blend voronoi ->
+                    Voronoi.makeEntity
+                        viewport
+                        [ DepthTest.default, Blend.produce blend ]
+                        voronoi
                 TextLayer blend ->
                     -- FIXME: replace with text
                     Triangle.makeEntity viewport [ DepthTest.default, Blend.produce blend ]
