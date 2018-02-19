@@ -1,7 +1,7 @@
 module Algorithm.Geometry.Point exposing (..)
 
-import Math.Vector2 exposing (getX, getY, vec2)
-import Algorithm.Voronoi.Model exposing (Model, Point)
+import Math.Vector2 exposing (Vec2, getX, getY, vec2)
+import Math.Vector3 exposing (Vec3, vec3)
 
 
 -- View
@@ -35,6 +35,9 @@ import Algorithm.Voronoi.Model exposing (Model, Point)
 --         ]
 --         []
 
+
+type alias Point =
+    { pos : Vec2, color : Maybe Vec3 }
 
 
 -- Controller

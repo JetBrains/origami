@@ -1,20 +1,6 @@
 module Algorithm.Geometry.Distance exposing (..)
 
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
-import Algorithm.Voronoi.Model as Model exposing (Distance, Point)
-
-
-distance : Distance -> Vec2 -> Vec2 -> Float
-distance distForm a b =
-    case distForm of
-        Model.Euclidean ->
-            distanceEuclidean a b
-
-        Model.Manhattan ->
-            distanceManhattan a b
-
-        Model.Chebyshev ->
-            distanceChebyshev a b
 
 
 distanceEuclidean : Vec2 -> Vec2 -> Float
