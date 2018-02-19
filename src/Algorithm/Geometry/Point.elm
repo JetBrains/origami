@@ -1,7 +1,7 @@
-module VoronoiMath.Geometry.Point exposing (..)
+module Algorithm.Geometry.Point exposing (..)
 
 import Math.Vector2 exposing (getX, getY, vec2)
-import VoronoiMath.Model exposing (Model, Point)
+import Algorithm.Voronoi.Model exposing (Model, Point)
 
 
 -- View
