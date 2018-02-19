@@ -1,44 +1,39 @@
 module VoronoiMath.Geometry.Point exposing (..)
 
-import Color
-import ColorHelper exposing (colorToHex)
-import Constants exposing (..)
 import Math.Vector2 exposing (getX, getY, vec2)
-import Model exposing (Model, Point)
-import Svg exposing (Svg, circle, line, rect)
-import Svg.Attributes exposing (..)
+import VoronoiMath.Model exposing (Model, Point)
 
 
 -- View
 
 
-drawPoints : Model -> List (Svg msg)
-drawPoints model =
-    List.map draw model.points
+-- drawPoints : Model -> List (Svg msg)
+-- drawPoints model =
+--     List.map draw model.points
 
 
-draw : Point -> Svg msg
-draw point =
-    -- TODO: Don't draw maybe point
-    let
-        color =
-            Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) point.color)
-    in
-    circle
-        [ cx <| Basics.toString <| getX point.pos
-        , cy <| Basics.toString <| getY point.pos
-        , r "4"
-        , fill <|
-            colorToHex
-                (Color.rgb
-                    (round (Constants.pointColorMult * Basics.toFloat color.red))
-                    (round (Constants.pointColorMult * Basics.toFloat color.green))
-                    (round (Constants.pointColorMult * Basics.toFloat color.blue))
-                )
-        , stroke "black"
-        , strokeWidth "0.25"
-        ]
-        []
+-- draw : Point -> Svg msg
+-- draw point =
+--     -- TODO: Don't draw maybe point
+--     let
+--         color =
+--             Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) point.color)
+--     in
+--     circle
+--         [ cx <| Basics.toString <| getX point.pos
+--         , cy <| Basics.toString <| getY point.pos
+--         , r "4"
+--         , fill <|
+--             colorToHex
+--                 (Color.rgb
+--                     (round (Constants.pointColorMult * Basics.toFloat color.red))
+--                     (round (Constants.pointColorMult * Basics.toFloat color.green))
+--                     (round (Constants.pointColorMult * Basics.toFloat color.blue))
+--                 )
+--         , stroke "black"
+--         , strokeWidth "0.25"
+--         ]
+--         []
 
 
 

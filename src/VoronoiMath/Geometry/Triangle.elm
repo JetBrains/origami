@@ -1,26 +1,22 @@
 module VoronoiMath.Geometry.Triangle exposing (..)
 
-import Color
-import ColorHelper
-import Geometry.Distance
-import Geometry.Edge
-import Geometry.Point
-import Geometry.Util
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
-import Model exposing (Edge, Point, Triangle)
-import Svg exposing (Svg, polyline)
-import Svg.Attributes exposing (..)
+import VoronoiMath.Geometry.Distance
+import VoronoiMath.Geometry.Edge
+import VoronoiMath.Geometry.Point
+import VoronoiMath.Geometry.Util
+import VoronoiMath.Model exposing (Edge, Point, Triangle)
 
 
-draw : Triangle -> Svg msg
-draw triangle =
-    polyline
-        [ fill "none"
-        , stroke "gray"
-        , strokeWidth "0.1"
-        , points (toString triangle)
-        ]
-        []
+-- draw : Triangle -> Svg msg
+-- draw triangle =
+--     polyline
+--         [ fill "none"
+--         , stroke "gray"
+--         , strokeWidth "0.1"
+--         , points (toString triangle)
+--         ]
+--         []
 
 
 {-| Connects a point to an edge, forming a triangle.

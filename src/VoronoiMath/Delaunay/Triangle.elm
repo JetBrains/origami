@@ -1,61 +1,59 @@
 module VoronoiMath.Delaunay.Triangle exposing (..)
 
-import Constants exposing (size)
-import Geometry.Distance exposing (distanceEuclidean)
-import Geometry.Triangle
+
+import VoronoiMath.Geometry.Distance exposing (distanceEuclidean)
+import VoronoiMath.Geometry.Triangle
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
-import Model exposing (Circle, DelaunayTriangle, Edge, Model, Point, Triangle)
-import Svg exposing (Svg, g)
-import Svg.Attributes exposing (cx, cy, fill, r, stroke, strokeWidth)
+import VoronoiMath.Model exposing (Circle, DelaunayTriangle, Edge, Model, Point, Triangle)
 
 
 -- View
 
 
-drawDelaunay : List DelaunayTriangle -> List (Svg msg)
-drawDelaunay del =
-    [ drawTriangles del ]
+-- drawDelaunay : List DelaunayTriangle -> List (Svg msg)
+-- drawDelaunay del =
+--     [ drawTriangles del ]
 
 
-drawTriangles : List DelaunayTriangle -> Svg msg
-drawTriangles del =
-    g
-        [ Svg.Attributes.name "triangles" ]
-        (List.map
-            drawTriangle
-            del
-        )
+-- drawTriangles : List DelaunayTriangle -> Svg msg
+-- drawTriangles del =
+--     g
+--         [ Svg.Attributes.name "triangles" ]
+--         (List.map
+--             drawTriangle
+--             del
+--         )
 
 
-drawTriangle : DelaunayTriangle -> Svg msg
-drawTriangle del =
-    Geometry.Triangle.draw del.triangle
+-- drawTriangle : DelaunayTriangle -> Svg msg
+-- drawTriangle del =
+--     Geometry.Triangle.draw del.triangle
 
 
-drawCircles : List DelaunayTriangle -> Svg msg
-drawCircles del =
-    g
-        [ Svg.Attributes.name "circles" ]
-        (List.map drawCircle del)
+-- drawCircles : List DelaunayTriangle -> Svg msg
+-- drawCircles del =
+--     g
+--         [ Svg.Attributes.name "circles" ]
+--         (List.map drawCircle del)
 
 
-drawCircle : DelaunayTriangle -> Svg msg
-drawCircle del =
-    case del.circle.center of
-        Nothing ->
-            -- TODO: Return a maybe Svg.
-            g [] []
+-- drawCircle : DelaunayTriangle -> Svg msg
+-- drawCircle del =
+--     case del.circle.center of
+--         Nothing ->
+--             -- TODO: Return a maybe Svg.
+--             g [] []
 
-        Just center ->
-            Svg.circle
-                [ cx (Basics.toString (getX center))
-                , cy (Basics.toString (getY center))
-                , r (Basics.toString del.circle.radius)
-                , fill "none"
-                , stroke "grey"
-                , strokeWidth "0.25"
-                ]
-                []
+--         Just center ->
+--             Svg.circle
+--                 [ cx (Basics.toString (getX center))
+--                 , cy (Basics.toString (getY center))
+--                 , r (Basics.toString del.circle.radius)
+--                 , fill "none"
+--                 , stroke "grey"
+--                 , strokeWidth "0.25"
+--                 ]
+--                 []
 
 
 
