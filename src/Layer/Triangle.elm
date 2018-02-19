@@ -1,14 +1,13 @@
 module Layer.Triangle exposing
     ( TriangleMesh
     , mesh
-    , entity
+    , makeEntity
     )
 
 {-
    Rotating triangle, that is a "hello world" of the WebGL
 -}
 
-import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (vec3, Vec3)
 import WebGL exposing (Mesh, Shader)
 import WebGL.Settings exposing (Setting)
@@ -19,8 +18,8 @@ import Viewport exposing (Viewport)
 type alias TriangleMesh = Mesh Vertex
 
 
-entity : Viewport {} -> List Setting -> WebGL.Entity
-entity viewport settings =
+makeEntity : Viewport {} -> List Setting -> WebGL.Entity
+makeEntity viewport settings =
     WebGL.entityWith
         settings
         vertexShader

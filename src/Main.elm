@@ -10,13 +10,14 @@ import Task exposing (Task)
 import WebGL exposing (Mesh)
 import WebGL.Settings.DepthTest as DepthTest
 
-
 import Viewport exposing (Viewport)
-import Controls
-import Layer.Lorenz
-import Layer.Fractal
-import Layer.Triangle
 import Blend exposing (Blend)
+import Controls
+
+import Layer.Lorenz as Lorenz
+import Layer.Fractal as Fractal
+import Layer.Triangle as Triangle
+import Layer.Voronoi as Voronoi
 
 
 type alias LayerIndex = Int
@@ -68,8 +69,9 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ FractalLayer Blend.default (fractalConfig |> Fractal.build)
-                , LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
+                -- [ FractalLayer Blend.default (fractalConfig |> Fractal.build)
+                [ VoronoiLayer Blend.default Voronoi.mesh
+                --, LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
                 , TriangleLayer Blend.default Triangle.mesh
                 ]
             , size = ( 0, 0 )
@@ -204,10 +206,10 @@ mergeLayers theta layers =
                         [ DepthTest.default, Blend.produce blend ]
                         fractal
                 TriangleLayer blend _ ->
-                    Triangle.entity viewport [ DepthTest.default, Blend.produce blend ]
+                    Triangle.makeEntity viewport [ DepthTest.default, Blend.produce blend ]
                 TextLayer blend ->
                     -- FIXME: replace with text
-                    Triangle.entity viewport [ DepthTest.default, Blend.produce blend ]
+                    Triangle.makeEntity viewport [ DepthTest.default, Blend.produce blend ]
         )
     |> Array.toList
 

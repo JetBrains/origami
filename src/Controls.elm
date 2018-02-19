@@ -9,7 +9,7 @@ import Html exposing (Html, text, div, input, br)
 import Html.Attributes as A exposing (width, height, style, type_, min, max, step)
 
 
-import Lorenz exposing (Config)
+import Layer.Lorenz exposing (Config)
 
 
 type Msg
