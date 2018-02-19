@@ -1,11 +1,15 @@
 module Algorithm.Geometry.Triangle exposing (..)
 
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
+
 import Algorithm.Geometry.Distance as Distance
-import Algorithm.Geometry.Edge as Edge
-import Algorithm.Geometry.Point as Point
+import Algorithm.Geometry.Edge as Edge exposing (Edge)
+import Algorithm.Geometry.Point as Point exposing (Point)
 import Algorithm.Geometry.Util as Util
-import Algorithm.Voronoi.Model as Model exposing (Edge, Point, Triangle)
+
+
+type alias Triangle =
+    { a : Point, b : Point, c : Point }
 
 
 -- draw : Triangle -> Svg msg
@@ -160,21 +164,6 @@ compareTriangle a b =
         True
     else
         False
-
-
-{-| Turns a triangle into a DelaunayTriangle which
-contains information about the circumcenter and radius.
--}
-getDelaunayTriangle : Triangle -> Model.DelaunayTriangle
-getDelaunayTriangle tri =
-    let
-        circCenter =
-            findCircumcenter tri
-    in
-    Model.Circle
-        circCenter
-        (Distance.distanceEuclidean (Maybe.withDefault (vec2 0 0) circCenter) tri.a.pos)
-        |> Model.DelaunayTriangle tri
 
 
 -- averageColor : Triangle -> String

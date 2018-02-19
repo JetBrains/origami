@@ -1,7 +1,11 @@
 module Algorithm.Geometry.Edge exposing (..)
 
 import Math.Vector2 exposing (getX, getY)
-import Algorithm.Voronoi.Model exposing (Edge, Triangle)
+import Algorithm.Geometry.Point exposing (Point)
+
+
+type alias Edge =
+    { a : Point, b : Point }
 
 
 -- draw : Edge -> Svg msg
