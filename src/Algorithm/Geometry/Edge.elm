@@ -1,6 +1,6 @@
 module Algorithm.Geometry.Edge exposing (..)
 
-import Math.Vector2 exposing (getX, getY)
+
 import Algorithm.Geometry.Point exposing (Point)
 
 

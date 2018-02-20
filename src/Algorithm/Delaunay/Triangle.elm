@@ -2,12 +2,15 @@ module Algorithm.Delaunay.Triangle exposing (..)
 
 
 import Algorithm.Geometry.Distance exposing (distanceEuclidean)
-import Algorithm.Geometry.Triangle
+import Algorithm.Geometry.Triangle as Triangle exposing (Triangle)
+import Algorithm.Geometry.Circle exposing (Circle)
+import Algorithm.Geometry.Point exposing (Point)
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
 --import Algorithm.Model exposing (Circle, DelaunayTriangle, Edge, Model, Point, Triangle)
 
 
--- View
+type alias DelaunayTriangle =
+    { triangle : Triangle, circle : Circle }
 
 
 -- drawDelaunay : List DelaunayTriangle -> List (Svg msg)
@@ -56,8 +59,19 @@ import Math.Vector2 exposing (Vec2, getX, getY, vec2)
 --                 []
 
 
-
--- Controller
+{-| Turns a triangle into a DelaunayTriangle which
+contains information about the circumcenter and radius.
+-}
+getDelaunayTriangle : Triangle -> DelaunayTriangle
+getDelaunayTriangle tri =
+    let
+        circCenter =
+            Triangle.findCircumcenter tri
+    in
+    Circle
+        circCenter
+        (distanceEuclidean (Maybe.withDefault (vec2 0 0) circCenter) tri.a.pos)
+        |> DelaunayTriangle tri
 
 
 {-| Returns true if the triangles share at least one edge.
@@ -65,8 +79,8 @@ import Math.Vector2 exposing (Vec2, getX, getY, vec2)
 isNeighbor : DelaunayTriangle -> DelaunayTriangle -> Bool
 isNeighbor a b =
     List.any
-        (Geometry.Triangle.hasEdge a.triangle)
-        (Geometry.Triangle.getEdges b.triangle)
+        (Triangle.hasEdge a.triangle)
+        (Triangle.getEdges b.triangle)
 
 
 {-| Returns a list of all triangles that are neighbors to the passed triangle.
@@ -79,7 +93,7 @@ neighbors triangle triangles =
             List.filter
                 (\x ->
                     Basics.not
-                        (Geometry.Triangle.compareTriangle
+                        (Triangle.compareTriangle
                             triangle.triangle
                             x.triangle
                         )
@@ -94,19 +108,19 @@ neighbors triangle triangles =
 {-| Returns the 'supertriangle' that encompasses all of our valid points
 that we will be adding.
 -}
-defaultTriangles : List DelaunayTriangle
-defaultTriangles =
-    [ Geometry.Triangle.getDelaunayTriangle
+defaultTriangles : Float -> List DelaunayTriangle
+defaultTriangles size =
+    [ getDelaunayTriangle
         (Triangle
             (Point (vec2 0 0) Nothing)
-            (Point (vec2 0 Constants.size) Nothing)
-            (Point (vec2 Constants.size Constants.size) Nothing)
+            (Point (vec2 0 size) Nothing)
+            (Point (vec2 size size) Nothing)
         )
-    , Geometry.Triangle.getDelaunayTriangle
+    , getDelaunayTriangle
         (Triangle
             (Point (vec2 0 0) Nothing)
-            (Point (vec2 Constants.size 0) Nothing)
-            (Point (vec2 Constants.size Constants.size) Nothing)
+            (Point (vec2 size 0) Nothing)
+            (Point (vec2 size size) Nothing)
         )
     ]
 
