@@ -23,9 +23,13 @@ triangles.
 -}
 addPoint : Float -> Point -> List DelaunayTriangle -> List DelaunayTriangle
 addPoint size point triangles =
+
     if triangles == [] then
-        goodTriangles point (defaultTriangles size)
-            |> retriangulatePolygonalHole point (badTriangleEdges point (defaultTriangles size))
+        let
+            defTriangles = defaultTriangles size
+        in
+        goodTriangles point defTriangles
+            |> retriangulatePolygonalHole point (badTriangleEdges point defTriangles)
     else
         goodTriangles point triangles
             |> retriangulatePolygonalHole point (badTriangleEdges point triangles)
@@ -43,7 +47,6 @@ retriangulatePolygonalHole point edges triangles =
             )
             edges
         )
-
 
 
 -- Utils

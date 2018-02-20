@@ -13,52 +13,6 @@ type alias DelaunayTriangle =
     { triangle : Triangle, circle : Circle }
 
 
--- drawDelaunay : List DelaunayTriangle -> List (Svg msg)
--- drawDelaunay del =
---     [ drawTriangles del ]
-
-
--- drawTriangles : List DelaunayTriangle -> Svg msg
--- drawTriangles del =
---     g
---         [ Svg.Attributes.name "triangles" ]
---         (List.map
---             drawTriangle
---             del
---         )
-
-
--- drawTriangle : DelaunayTriangle -> Svg msg
--- drawTriangle del =
---     Geometry.Triangle.draw del.triangle
-
-
--- drawCircles : List DelaunayTriangle -> Svg msg
--- drawCircles del =
---     g
---         [ Svg.Attributes.name "circles" ]
---         (List.map drawCircle del)
-
-
--- drawCircle : DelaunayTriangle -> Svg msg
--- drawCircle del =
---     case del.circle.center of
---         Nothing ->
---             -- TODO: Return a maybe Svg.
---             g [] []
-
---         Just center ->
---             Svg.circle
---                 [ cx (Basics.toString (getX center))
---                 , cy (Basics.toString (getY center))
---                 , r (Basics.toString del.circle.radius)
---                 , fill "none"
---                 , stroke "grey"
---                 , strokeWidth "0.25"
---                 ]
---                 []
-
-
 {-| Turns a triangle into a DelaunayTriangle which
 contains information about the circumcenter and radius.
 -}
