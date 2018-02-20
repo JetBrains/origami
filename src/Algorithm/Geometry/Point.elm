@@ -4,43 +4,9 @@ import Math.Vector2 exposing (Vec2, getX, getY, vec2)
 import Math.Vector3 exposing (Vec3, vec3)
 
 
--- View
-
-
--- drawPoints : Model -> List (Svg msg)
--- drawPoints model =
---     List.map draw model.points
-
-
--- draw : Point -> Svg msg
--- draw point =
---     -- TODO: Don't draw maybe point
---     let
---         color =
---             Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) point.color)
---     in
---     circle
---         [ cx <| Basics.toString <| getX point.pos
---         , cy <| Basics.toString <| getY point.pos
---         , r "4"
---         , fill <|
---             colorToHex
---                 (Color.rgb
---                     (round (Constants.pointColorMult * Basics.toFloat color.red))
---                     (round (Constants.pointColorMult * Basics.toFloat color.green))
---                     (round (Constants.pointColorMult * Basics.toFloat color.blue))
---                 )
---         , stroke "black"
---         , strokeWidth "0.25"
---         ]
---         []
-
 
 type alias Point =
     { pos : Vec2, color : Maybe Vec3 }
-
-
--- Controller
 
 
 roundPoint : Point -> Point

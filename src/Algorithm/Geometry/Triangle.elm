@@ -163,23 +163,3 @@ compareTriangle a b =
         True
     else
         False
-
-
--- averageColor : Triangle -> String
--- averageColor tri =
---     let
---         a =
---             Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.a.color)
-
---         b =
---             Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.b.color)
-
---         c =
---             Color.toRgb (Maybe.withDefault (Color.rgb 255 255 255) tri.c.color)
---     in
---     ColorHelper.colorToHex
---         (Color.rgb
---             (round (sqrt (Basics.toFloat ((a.red + b.red + c.red) ^ 2) / 3)))
---             (round (sqrt (Basics.toFloat ((a.green + b.green + c.green) ^ 2) / 3)))
---             (round (sqrt (Basics.toFloat ((a.blue + b.blue + c.blue) ^ 2) / 3)))
---         )
