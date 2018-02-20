@@ -5,19 +5,13 @@ import Math.Vector3 exposing (Vec3, vec3)
 import Random.Pcg exposing (..)
 
 import Algorithm.Geometry.Point exposing (Point)
-import Algorithm.Geometry.Triangle exposing (Triangle, findCircumcenter)
+import Algorithm.Delaunay.Triangle exposing (DelaunayTriangle)
 import Algorithm.Geometry.Distance as Distance
 import Algorithm.Geometry.Edge exposing (Edge)
-import Algorithm.Geometry.Circle exposing (Circle)
 
 
 type alias VoronoiPolygon =
     { edges : List Edge, color : Maybe Vec3 }
-
-
-type alias DelaunayTriangle =
-    { triangle : Triangle, circle : Circle }
-
 
 
 type alias Model =
@@ -25,6 +19,7 @@ type alias Model =
     , points : List Point
     , triangles : List DelaunayTriangle
     , seed : Seed
+    , size : Float
     }
 
 
@@ -40,22 +35,8 @@ init =
     , points = []
     , triangles = []
     , seed = initialSeed 3178909195
+    , size = 500
     }
-
-
-{-| Turns a triangle into a DelaunayTriangle which
-contains information about the circumcenter and radius.
--}
-getDelaunayTriangle : Triangle -> Model.DelaunayTriangle
-getDelaunayTriangle tri =
-    let
-        circCenter =
-            findCircumcenter tri
-    in
-    Model.Circle
-        circCenter
-        (Distance.distanceEuclidean (Maybe.withDefault (vec2 0 0) circCenter) tri.a.pos)
-        |> Model.DelaunayTriangle tri
 
 
 distance : Distance -> Vec2 -> Vec2 -> Float

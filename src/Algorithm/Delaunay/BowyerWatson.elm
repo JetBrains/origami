@@ -1,11 +1,14 @@
 module Algorithm.Delaunay.BowyerWatson exposing (addPoint)
 
-import Algorithm.Delaunay.Triangle exposing (containsPoint)
-import Algorithm.Geometry.Edge exposing (Edge)
+import Algorithm.Delaunay.Triangle as DelaunayTriangle exposing
+    ( DelaunayTriangle
+    , getDelaunayTriangle
+    , defaultTriangles
+    , containsPoint
+    )
+import Algorithm.Geometry.Edge as Edge exposing (Edge)
 import Algorithm.Geometry.Point exposing (Point)
-import Algorithm.Geometry.Triangle exposing (Triangle)
-
-import Algorithm.Voronoi.Model exposing (DelaunayTriangle)
+import Algorithm.Geometry.Triangle as Triangle exposing (Triangle, retriangulate)
 
 
 {-| (Assuming a basic understanding of the Bowyer Watson algorithm)
@@ -18,11 +21,11 @@ We do that by connecting the point to the unique edges of the bad
 triangles.
 
 -}
-addPoint : Point -> List DelaunayTriangle -> List DelaunayTriangle
-addPoint point triangles =
+addPoint : Float -> Point -> List DelaunayTriangle -> List DelaunayTriangle
+addPoint size point triangles =
     if triangles == [] then
-        goodTriangles point Delaunay.Triangle.defaultTriangles
-            |> retriangulatePolygonalHole point (badTriangleEdges point Delaunay.Triangle.defaultTriangles)
+        goodTriangles point (defaultTriangles size)
+            |> retriangulatePolygonalHole point (badTriangleEdges point (defaultTriangles size))
     else
         goodTriangles point triangles
             |> retriangulatePolygonalHole point (badTriangleEdges point triangles)
@@ -36,7 +39,7 @@ retriangulatePolygonalHole point edges triangles =
         triangles
         (List.map
             (\edge ->
-                Geometry.Triangle.getDelaunayTriangle (Geometry.Triangle.retriangulate point edge)
+                getDelaunayTriangle (retriangulate point edge)
             )
             edges
         )
@@ -56,10 +59,10 @@ However, if an edge is included only once, then it is included.
 badTriangleEdges : Point -> List DelaunayTriangle -> List Edge
 badTriangleEdges point triangles =
     List.map
-        (\tri -> Geometry.Triangle.getEdges tri.triangle)
+        (\tri -> Triangle.getEdges tri.triangle)
         (badTriangles point triangles)
         |> List.concat
-        |> Geometry.Edge.getUnique
+        |> Edge.getUnique
 
 
 {-| Returns triangles that contain the point.

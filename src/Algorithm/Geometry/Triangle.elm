@@ -2,7 +2,6 @@ module Algorithm.Geometry.Triangle exposing (..)
 
 import Math.Vector2 exposing (Vec2, getX, getY, vec2)
 
-import Algorithm.Geometry.Distance as Distance
 import Algorithm.Geometry.Edge as Edge exposing (Edge)
 import Algorithm.Geometry.Point as Point exposing (Point)
 import Algorithm.Geometry.Util as Util
