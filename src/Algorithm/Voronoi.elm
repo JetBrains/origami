@@ -18,8 +18,9 @@ type alias Color = Vec3
 
 
 type Msg
-    = ToggleDistance
-    | AddPoint
+    = SetDistance Distance
+    | AddRandomPoint
+    | AddPoint Point
     | ChangeSize Float
 
 
@@ -48,9 +49,9 @@ build size pointCount distance =
         initial = init |> update (ChangeSize size)
     in
     -- FIXME: just pass random point with AddPoint and so build them before
-    --        same with ToggleDistance, leave AddPointRandom though
+    --        (or it has no sense?)
     List.range 0 pointCount |>
-        List.foldr (\_ model -> model |> update AddPoint) initial
+        List.foldr (\_ model -> model |> update AddRandomPoint) initial
 
 
 init : Voronoi
@@ -66,19 +67,18 @@ init =
 update : Msg -> Voronoi -> Voronoi
 update msg model =
     case msg of
-        ToggleDistance ->
-            case model.distance of
-                Euclidean ->
-                    { model | distance = Manhattan }
+        SetDistance distance ->
+            { model | distance = distance }
 
-                Manhattan ->
-                    { model | distance = Chebyshev }
+        AddPoint point ->
+            model |> addPoint point
 
-                Chebyshev ->
-                    { model | distance = Euclidean }
-
-        AddPoint ->
-            model |> addPoint (getRandomUniquePoint model)
+        AddRandomPoint ->
+            let
+                random = getRandomUniquePoint model
+            in
+            { model | seed = Tuple.second random }
+                |> addPoint (Tuple.first random)
 
         ChangeSize size ->
             { model | size = size }
@@ -154,21 +154,17 @@ connectTriangles a b =
         Nothing
 
 
-addPoint : ( Point, Seed ) -> Voronoi -> Voronoi
-addPoint random model =
-    let
-        point =
-            Tuple.first random
-    in
+addPoint : Point -> Voronoi -> Voronoi
+addPoint point model =
     { model
         | points = point :: model.points
         , triangles = BowyerWatson.addPoint model.size point model.triangles
     }
 
 
-updateSeed : ( Point, Seed ) -> Voronoi -> Voronoi
-updateSeed random model =
-    { model | seed = Tuple.second random }
+updateSeed : Seed -> Voronoi -> Voronoi
+updateSeed seed model =
+    { model | seed = seed }
 
 
 {-| Get a random point that is not being occupied by another point.
@@ -176,15 +172,15 @@ updateSeed random model =
 getRandomUniquePoint : Voronoi -> ( Point, Seed )
 getRandomUniquePoint model =
     let
-        point =
-            randomPoint model
+        random =
+            randomPoint model.size model.seed
     in
-    if pointIsUnique model.points (Tuple.first point) then
+    if pointIsUnique model.points (Tuple.first random) then
         -- Make sure to change the seed
         -- so we don't keep trying the same point.
-        getRandomUniquePoint (model |> updateSeed point)
+        getRandomUniquePoint (model |> updateSeed (Tuple.second random))
     else
-        point
+        random
 
 
 {-| Checks if a list of points contains a point's current location.
@@ -194,13 +190,13 @@ pointIsUnique points newPoint =
     List.any (\point -> point.pos == newPoint.pos) points
 
 
-randomPoint : Voronoi -> ( Point, Seed )
-randomPoint model =
+randomPoint : Float -> Seed -> ( Point, Seed )
+randomPoint size seed =
     let
-        ( point, seed ) =
-            step (pointGenerator model.size) model.seed
+        ( point, newSeed ) =
+            step (pointGenerator size) seed
     in
-    ( roundPoint point, seed )
+    ( roundPoint point, newSeed )
 
 
 
