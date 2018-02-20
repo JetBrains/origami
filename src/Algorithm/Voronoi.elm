@@ -42,6 +42,17 @@ type Distance
     | Chebyshev
 
 
+build : Float -> Int -> Distance -> Voronoi
+build size pointCount distance =
+    let
+        initial = init |> update (ChangeSize size)
+    in
+    -- FIXME: just pass random point with AddPoint and so build them before
+    --        same with ToggleDistance, leave AddPointRandom though
+    List.range 0 pointCount |>
+        List.foldr (\_ model -> model |> update AddPoint) initial
+
+
 init : Voronoi
 init =
     { distance = Euclidean
@@ -67,7 +78,7 @@ update msg model =
                     { model | distance = Euclidean }
 
         AddPoint ->
-            addPoint model.size (getRandomUniquePoint model) model
+            model |> addPoint (getRandomUniquePoint model)
 
         ChangeSize size ->
             { model | size = size }
@@ -114,10 +125,10 @@ so that it's no longer the neighbor for any other triangles.
 -}
 getVoronoiRecurse : List VoronoiPolygon -> DelaunayTriangle -> List DelaunayTriangle -> List VoronoiPolygon
 getVoronoiRecurse voronoi triangle triangles =
-    let
-        delaunayNeighbors =
-            neighbors triangle triangles
-    in
+    -- let
+    --     delaunayNeighbors =
+    --         neighbors triangle triangles
+    -- in
     List.append
         [ VoronoiPolygon (List.filterMap (connectTriangles triangle) triangles) Nothing ]
         (Maybe.withDefault voronoi
@@ -143,15 +154,15 @@ connectTriangles a b =
         Nothing
 
 
-addPoint : Float -> ( Point, Seed ) -> Voronoi -> Voronoi
-addPoint size random model =
+addPoint : ( Point, Seed ) -> Voronoi -> Voronoi
+addPoint random model =
     let
         point =
             Tuple.first random
     in
     { model
         | points = point :: model.points
-        , triangles = BowyerWatson.addPoint size point model.triangles
+        , triangles = BowyerWatson.addPoint model.size point model.triangles
     }
 
 
