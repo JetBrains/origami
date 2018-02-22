@@ -16,7 +16,6 @@ import Controls
 
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
-import Layer.Triangle as Triangle
 import Layer.Voronoi as Voronoi
 import Layer.FSS as FSS
 import Layer.Template as Template
@@ -26,8 +25,7 @@ type alias LayerIndex = Int
 
 
 type LayerConfig
-    = NoConfig
-    | LorenzConfig Lorenz.Config
+    = LorenzConfig Lorenz.Config
     | FractalConfig Fractal.Config
     | VoronoiConfig Voronoi.Config
     --| FSSConfig FSS.Config
@@ -37,7 +35,6 @@ type LayerConfig
 type Layer
     = LorenzLayer Blend Lorenz.LorenzMesh
     | FractalLayer Blend Fractal.FractalMesh
-    | TriangleLayer Blend Triangle.TriangleMesh
     | VoronoiLayer Blend Voronoi.VoronoiMesh
     | TemplateLayer Blend Template.TemplateMesh
     --| FSSLayer Blend (Maybe FSS.Mesh)
@@ -82,7 +79,6 @@ init =
                 -- [ FractalLayer Blend.default (fractalConfig |> Fractal.build)
                 [ VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
                 --, LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
-                , TriangleLayer Blend.default Triangle.mesh
                 , TemplateLayer Blend.default (templateConfig |> Template.build)
                 ]
             , size = ( 0, 0 )
@@ -116,8 +112,6 @@ update msg model =
                     |> Maybe.map getBlend
                     |> Maybe.withDefault Blend.default
                 layer = case maybeConfig of
-                    NoConfig ->
-                        TriangleLayer curBlend Triangle.mesh
                     LorenzConfig lorenzConfig ->
                         LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
                     FractalConfig fractalConfig ->
@@ -140,8 +134,6 @@ update msg model =
                     let
                         newLayer =
                             case layer of
-                                TriangleLayer _ mesh ->
-                                    TriangleLayer newBlend mesh
                                 TemplateLayer _ mesh ->
                                     TemplateLayer newBlend mesh
                                 LorenzLayer _ mesh ->
@@ -180,7 +172,6 @@ getBlend layer =
     case layer of
         LorenzLayer blend _ -> blend
         FractalLayer blend _ -> blend
-        TriangleLayer blend _ -> blend
         TemplateLayer blend _ -> blend
         VoronoiLayer blend _ -> blend
         TextLayer blend -> blend
@@ -226,13 +217,11 @@ mergeLayers theta layers =
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
                         fractal
-                TemplateLayer blend fractal ->
+                TemplateLayer blend template ->
                     Template.makeEntity
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
-                        fractal
-                TriangleLayer blend _ ->
-                    Triangle.makeEntity viewport [ DepthTest.default, Blend.produce blend ]
+                        template
                 VoronoiLayer blend voronoi ->
                     Voronoi.makeEntity
                         viewport
@@ -240,7 +229,10 @@ mergeLayers theta layers =
                         voronoi
                 TextLayer blend ->
                     -- FIXME: replace with text
-                    Triangle.makeEntity viewport [ DepthTest.default, Blend.produce blend ]
+                    Template.makeEntity
+                        viewport
+                        [ DepthTest.default, Blend.produce blend ]
+                        (Template.init |> Template.build)
         )
     |> Array.toList
 
