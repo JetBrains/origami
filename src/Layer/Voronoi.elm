@@ -1,14 +1,14 @@
 module Layer.Voronoi exposing (..)
 
 
-import WebGL exposing (Mesh, Shader)
+import WebGL
 import WebGL.Settings exposing (Setting)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3, getX, getY, getZ)
 
 import Viewport exposing (Viewport)
 
 
-type alias VoronoiMesh = Mesh Vertex
+type alias Mesh = WebGL.Mesh Vertex
 
 
 type alias Config =
@@ -20,7 +20,7 @@ init : Config
 init = {}
 
 
-makeEntity : Viewport {} -> List Setting -> VoronoiMesh -> WebGL.Entity
+makeEntity : Viewport {} -> List Setting -> Mesh -> WebGL.Entity
 makeEntity viewport settings mesh =
     WebGL.entityWith
         settings
@@ -40,7 +40,7 @@ type alias Vertex =
     }
 
 
-build : Config -> VoronoiMesh
+build : Config -> Mesh
 build _ =
     WebGL.triangles
         [ ( Vertex (vec3 0 0 0) (vec3 1 0 0)
@@ -63,7 +63,7 @@ uniforms v =
     v
 
 
-vertexShader : Shader Vertex Uniforms { vcolor : Vec3 }
+vertexShader : WebGL.Shader Vertex Uniforms { vcolor : Vec3 }
 vertexShader =
     [glsl|
 
@@ -88,7 +88,7 @@ vertexShader =
     |]
 
 
-fragmentShader : Shader {} Uniforms { vcolor : Vec3 }
+fragmentShader : WebGL.Shader {} Uniforms { vcolor : Vec3 }
 fragmentShader =
     [glsl|
 
