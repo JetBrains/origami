@@ -25,21 +25,21 @@ type alias LayerIndex = Int
 
 
 type LayerConfig
-    -- FIXME: use type variable for that
+    -- FIXME: use type variable for that, or just a function!
     = LorenzConfig Lorenz.Config
     | FractalConfig Fractal.Config
     | VoronoiConfig Voronoi.Config
-    --| FSSConfig FSS.Config
+    | FssConfig FSS.Config
     | TemplateConfig Template.Config
 
 
 type Layer
-    -- FIXME: use type variable for that
+    -- FIXME: use type variable for that, or just a function!
     = LorenzLayer Blend Lorenz.Mesh
     | FractalLayer Blend Fractal.Mesh
     | VoronoiLayer Blend Voronoi.Mesh
     | TemplateLayer Blend Template.Mesh
-    --| FSSLayer Blend (Maybe FSS.Mesh)
+    | FssLayer Blend FSS.Mesh
     | TextLayer Blend
     -- | CanvasLayer (\_ -> )
 
@@ -107,27 +107,29 @@ update msg model =
             , Cmd.none
             )
 
-        Configure index maybeConfig ->
+        Configure index config ->
             let
                 curBlend = model.layers
                     |> Array.get index
                     |> Maybe.map getBlend
                     |> Maybe.withDefault Blend.default
-                layer = case maybeConfig of
+                layer = case config of
                     LorenzConfig lorenzConfig ->
                         LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
                     FractalConfig fractalConfig ->
                         FractalLayer curBlend (fractalConfig |> Fractal.build)
                     VoronoiConfig voronoiConfig ->
                         VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
+                    FssConfig fssConfig ->
+                        FssLayer curBlend (fssConfig |> FSS.build)
                     TemplateConfig templateConfig ->
                         TemplateLayer curBlend (templateConfig |> Template.build)
             in
                 ( { model
-                  | layers = model.layers
-                      |> Array.set index layer
-                  }
-                  , Cmd.none
+                | layers = model.layers
+                    |> Array.set index layer
+                }
+                , Cmd.none
                 )
 
         ChangeBlend index newBlend ->
@@ -144,6 +146,8 @@ update msg model =
                                     FractalLayer newBlend mesh
                                 VoronoiLayer _ mesh ->
                                     VoronoiLayer newBlend mesh
+                                FssLayer _ mesh ->
+                                    FssLayer newBlend mesh
                                 TextLayer _ ->
                                     TextLayer newBlend
                     in
@@ -176,6 +180,7 @@ getBlend layer =
         FractalLayer blend _ -> blend
         TemplateLayer blend _ -> blend
         VoronoiLayer blend _ -> blend
+        FssLayer blend _ -> blend
         TextLayer blend -> blend
 
 
@@ -229,6 +234,11 @@ mergeLayers theta layers =
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
                         voronoi
+                FssLayer blend fss ->
+                    FSS.makeEntity
+                        viewport
+                        [ DepthTest.default, Blend.produce blend ]
+                        fss
                 TextLayer blend ->
                     -- FIXME: replace with text
                     Template.makeEntity
