@@ -1,7 +1,13 @@
-module Layer.Template exposing (..)
+module Layer.Template exposing
+    ( Config
+    , Mesh
+    , makeEntity
+    , build
+    , init
+    )
 
 import Math.Vector3 as Vec3 exposing (vec3, Vec3)
-import WebGL exposing (Mesh, Shader)
+import WebGL
 import WebGL.Settings exposing (Setting)
 
 import Viewport exposing (Viewport)
@@ -10,14 +16,14 @@ import Viewport exposing (Viewport)
 type alias Config = {}
 
 
-type alias TemplateMesh = Mesh Vertex
+type alias Mesh = WebGL.Mesh Vertex
 
 
 init : Config
 init = {}
 
 
-makeEntity : Viewport {} -> List Setting -> TemplateMesh -> WebGL.Entity
+makeEntity : Viewport {} -> List Setting -> Mesh -> WebGL.Entity
 makeEntity viewport settings mesh =
     WebGL.entityWith
         settings
@@ -37,7 +43,7 @@ type alias Vertex =
     }
 
 
-build : Config -> Mesh Vertex
+build : Config -> Mesh
 build config =
     WebGL.triangles
         [ ( Vertex (vec3 0 0 0) (vec3 1 0 0)
@@ -61,7 +67,7 @@ uniforms v =
     v
 
 
-vertexShader : Shader Vertex Uniforms { vcolor : Vec3 }
+vertexShader : WebGL.Shader Vertex Uniforms { vcolor : Vec3 }
 vertexShader =
     [glsl|
 
@@ -86,7 +92,7 @@ vertexShader =
     |]
 
 
-fragmentShader : Shader {} Uniforms { vcolor : Vec3 }
+fragmentShader : WebGL.Shader {} Uniforms { vcolor : Vec3 }
 fragmentShader =
     [glsl|
 

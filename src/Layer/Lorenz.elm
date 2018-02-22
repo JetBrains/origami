@@ -1,6 +1,6 @@
 module Layer.Lorenz exposing
     ( Config
-    , LorenzMesh
+    , Mesh
     , init
     , makeEntity
     , build
@@ -8,9 +8,8 @@ module Layer.Lorenz exposing
 
 import Array exposing (Array)
 
-import WebGL exposing (Mesh)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3, getX, getY, getZ)
-import WebGL exposing (Mesh, Shader, Entity)
+import WebGL
 import WebGL.Settings exposing (Setting)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
@@ -21,7 +20,7 @@ import Viewport exposing (Viewport)
 type alias Triangle = ( Vertex, Vertex, Vertex )
 
 
-type alias LorenzMesh = Mesh Vertex
+type alias Mesh = WebGL.Mesh Vertex
 
 
 type alias Config =
@@ -68,7 +67,7 @@ init =
     }
 
 
-makeEntity : Viewport {} -> List Setting -> LorenzMesh -> Entity
+makeEntity : Viewport {} -> List Setting -> Mesh -> WebGL.Entity
 makeEntity viewport settings mesh =
     WebGL.entityWith
         settings
@@ -78,7 +77,7 @@ makeEntity viewport settings mesh =
         ( uniforms viewport )
 
 
-build : Config -> LorenzMesh
+build : Config -> Mesh
 build config =
     let
         x0 = 0.1
@@ -230,7 +229,7 @@ uniforms viewport =
     }
 
 
-vertexShader : Shader Vertex Uniforms { vcolor : Vec3 }
+vertexShader : WebGL.Shader Vertex Uniforms { vcolor : Vec3 }
 vertexShader =
     [glsl|
         attribute vec3 position;
@@ -248,7 +247,7 @@ vertexShader =
     |]
 
 
-fragmentShader : Shader {} Uniforms { vcolor : Vec3 }
+fragmentShader : WebGL.Shader {} Uniforms { vcolor : Vec3 }
 fragmentShader =
     [glsl|
         precision mediump float;

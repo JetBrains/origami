@@ -25,6 +25,7 @@ type alias LayerIndex = Int
 
 
 type LayerConfig
+    -- FIXME: use type variable for that
     = LorenzConfig Lorenz.Config
     | FractalConfig Fractal.Config
     | VoronoiConfig Voronoi.Config
@@ -33,10 +34,11 @@ type LayerConfig
 
 
 type Layer
-    = LorenzLayer Blend Lorenz.LorenzMesh
-    | FractalLayer Blend Fractal.FractalMesh
-    | VoronoiLayer Blend Voronoi.VoronoiMesh
-    | TemplateLayer Blend Template.TemplateMesh
+    -- FIXME: use type variable for that
+    = LorenzLayer Blend Lorenz.Mesh
+    | FractalLayer Blend Fractal.Mesh
+    | VoronoiLayer Blend Voronoi.Mesh
+    | TemplateLayer Blend Template.Mesh
     --| FSSLayer Blend (Maybe FSS.Mesh)
     | TextLayer Blend
     -- | CanvasLayer (\_ -> )

@@ -1,6 +1,6 @@
 module Layer.Fractal exposing
     ( Config
-    , FractalMesh
+    , Mesh
     , makeEntity
     , build
     , init
@@ -10,7 +10,7 @@ module Layer.Fractal exposing
 import Math.Vector3 as Vec3 exposing (vec3, Vec3)
 import Math.Vector2 as Vec2 exposing (vec2, Vec2)
 import Math.Matrix4 as Mat4 exposing (Mat4)
-import WebGL exposing (Mesh, Shader, Entity)
+import WebGL
 import WebGL.Settings exposing (Setting)
 
 import Viewport exposing (Viewport)
@@ -32,7 +32,7 @@ type alias RenderOptions =
     }
 
 
-type alias FractalMesh = Mesh Vertex
+type alias Mesh = WebGL.Mesh Vertex
 
 
 type alias Vertex =
@@ -92,7 +92,7 @@ type alias Uniforms =
     }
 
 
-makeEntity :  Viewport {} -> List Setting -> FractalMesh -> Entity
+makeEntity :  Viewport {} -> List Setting -> Mesh -> WebGL.Entity
 makeEntity viewport settings mesh =
     WebGL.entityWith
         settings
@@ -102,7 +102,7 @@ makeEntity viewport settings mesh =
         (defaultUniforms viewport)
 
 
-build : Config -> FractalMesh
+build : Config -> Mesh
 build config =
     [ ( 0, 0 ), ( 90, 0 ), ( 180, 0 ), ( 270, 0 ), ( 0, 90 ), ( 0, 270 ) ]
         |> List.concatMap rotatedFace
@@ -241,7 +241,7 @@ defaultUniforms viewport =
     }
 
 
-vertexShader : Shader Vertex Uniforms RenderOptions
+vertexShader : WebGL.Shader Vertex Uniforms RenderOptions
 vertexShader =
     [glsl|
 
@@ -275,7 +275,7 @@ vertexShader =
     |]
 
 
-fragmentShader : Shader {} Uniforms RenderOptions
+fragmentShader : WebGL.Shader {} Uniforms RenderOptions
 fragmentShader =
 
     [glsl|
