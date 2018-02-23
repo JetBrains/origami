@@ -1,6 +1,7 @@
 module Layer.FSS exposing
     ( Config
     , Mesh
+    , SerializedMesh
     , makeEntity
     , build
     , init
@@ -17,6 +18,9 @@ type alias Config = {}
 
 
 type alias Mesh = WebGL.Mesh Vertex
+
+
+type alias SerializedMesh = {}
 
 
 init : Config
