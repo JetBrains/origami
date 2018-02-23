@@ -8,6 +8,7 @@ import Time exposing (Time)
 import Window
 import Task exposing (Task)
 import WebGL exposing (Mesh)
+import WebGL.Settings exposing (Setting)
 import WebGL.Settings.DepthTest as DepthTest
 
 import Viewport exposing (Viewport)
@@ -24,24 +25,24 @@ import Layer.Template as Template
 type alias LayerIndex = Int
 
 
-type LayerConfig
-    -- FIXME: use type variable for that, or just a function!
-    = LorenzConfig Lorenz.Config
-    | FractalConfig Fractal.Config
-    | VoronoiConfig Voronoi.Config
-    | FssConfig FSS.Config
-    | TemplateConfig Template.Config
+type LayerKind
+    = Lorenz
+    | Fractal
+    | Voronoi
+    | FSS
+    | Template
 
 
-type Layer
-    -- FIXME: use type variable for that, or just a function!
-    = LorenzLayer Blend Lorenz.Mesh
-    | FractalLayer Blend Fractal.Mesh
-    | VoronoiLayer Blend Voronoi.Mesh
-    | TemplateLayer Blend Template.Mesh
-    | FssLayer Blend FSS.Mesh
-    | TextLayer Blend
-    -- | CanvasLayer (\_ -> )
+type LayerConfig cfg = LayerConfig LayerKind cfg
+
+
+type Layer mesh = Layer (LayerKind -> Blend -> mesh)
+
+
+type MeshBuilder mesh cfg = MeshBuilder (cfg -> mesh)
+
+
+type EntityMaker mesh = EntityMaker (Viewport {} -> List Setting -> mesh -> WebGL.Entity)
 
 
 type alias Model =
@@ -79,10 +80,10 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                -- [ FractalLayer Blend.default (fractalConfig |> Fractal.build)
-                [ VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
-                --, LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
-                , TemplateLayer Blend.default (templateConfig |> Template.build)
+                -- [ Layer Blend.default (fractalConfig |> Fractal.build)
+                [ Layer Blend.default (voronoiConfig |> Voronoi.build)
+                --, Layer Blend.default (lorenzConfig |> Lorenz.build)
+                , Layer Blend.default (templateConfig |> Template.build)
                 ]
             , size = ( 0, 0 )
             }
@@ -115,17 +116,8 @@ update msg model =
                     |> Maybe.map getBlend
                     |> Maybe.withDefault Blend.default
                 layer = case config of
-                    -- FIXME: simplify
-                    LorenzConfig lorenzConfig ->
-                        LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
-                    FractalConfig fractalConfig ->
-                        FractalLayer curBlend (fractalConfig |> Fractal.build)
-                    VoronoiConfig voronoiConfig ->
-                        VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
-                    FssConfig fssConfig ->
-                        FssLayer curBlend (fssConfig |> FSS.build)
-                    TemplateConfig templateConfig ->
-                        TemplateLayer curBlend (templateConfig |> Template.build)
+                    LayerConfig kind config ->
+                        Layer curBlend (config |> Lorenz.build)
             in
                 ( { model
                 | layers = model.layers
@@ -140,19 +132,7 @@ update msg model =
                     let
                         newLayer =
                             case layer of
-                                -- FIXME: simplify
-                                TemplateLayer _ mesh ->
-                                    TemplateLayer newBlend mesh
-                                LorenzLayer _ mesh ->
-                                    LorenzLayer newBlend mesh
-                                FractalLayer _ mesh ->
-                                    FractalLayer newBlend mesh
-                                VoronoiLayer _ mesh ->
-                                    VoronoiLayer newBlend mesh
-                                FssLayer _ mesh ->
-                                    FssLayer newBlend mesh
-                                TextLayer _ ->
-                                    TextLayer newBlend
+                                Layer kind _ mesh -> Layer kind newBlend mesh
                     in
                         ( { model
                            | layers = model.layers
@@ -176,15 +156,23 @@ update msg model =
         _ -> ( model, Cmd.none )
 
 
-configureFirst : Model -> LayerConfig -> (Layer -> Bool) -> Msg
+getBlend : Layer a -> Blend
+getBlend layer =
+    case layer of
+        Layer _ blend _ -> blend
+
+
+configureFirst : Model -> LayerConfig -> (LayerKind -> Bool) -> Msg
 configureFirst { layers } config f =
     layers
         |> Array.foldl
             (\layer (lastIdx, indices) ->
                 ( lastIdx + 1
-                , if f layer
-                    then lastIdx :: indices
-                    else indices
+                , case layer of
+                    Layer kind _ _ ->
+                        if f kind
+                        then lastIdx :: indices
+                        else indices
                 )
             )
             (0, [])
@@ -192,17 +180,6 @@ configureFirst { layers } config f =
         |> List.head
         |> Maybe.withDefault 0
         |> (\idx -> Configure idx config)
-
-
-getBlend : Layer -> Blend
-getBlend layer =
-    case layer of
-        LorenzLayer blend _ -> blend
-        FractalLayer blend _ -> blend
-        TemplateLayer blend _ -> blend
-        VoronoiLayer blend _ -> blend
-        FssLayer blend _ -> blend
-        TextLayer blend -> blend
 
 
 subscriptions : Model -> Sub Msg
@@ -215,17 +192,13 @@ subscriptions model =
             ChangeBlend layer blend
         )
         , modifyLorenz (\lorenzConfig ->
-            configureFirst model (LorenzConfig lorenzConfig) (\layer ->
-                case layer of
-                    LorenzLayer _ _ -> True
-                    _ -> False
+            configureFirst model (LayerConfig Lorenz lorenzConfig) (\kind ->
+                kind == Lorenz
             )
         )
         , changeFss (\fssConfig ->
-            configureFirst model (FssConfig fssConfig) (\layer ->
-                case layer of
-                    FssLayer _ _ -> True
-                    _ -> False
+            configureFirst model (LayerConfig FSS fssConfig) (\kind ->
+                kind == FSS
             )
         )
         , receiveFss (\serializedMesh ->
@@ -239,8 +212,22 @@ subscriptions model =
 mapControls : Model -> Controls.Msg -> Msg
 mapControls model controlsMsg =
     case controlsMsg of
-        Controls.Configure cfg -> Configure 0 (LorenzConfig cfg)
+        Controls.Configure cfg -> Configure 0 (LayerConfig Lorenz cfg)
         Controls.Rotate th -> Rotate th
+
+
+-- findBuilder kind =
+--     case kind of
+--         Voronoi -> MeshBuilder Voronoi.build
+--         Lorenz -> MeshBuilder Lorenz.build
+--         _ -> Template.build
+
+
+findEntityMaker kind =
+    case kind of
+        Voronoi -> EntityMaker Voronoi.makeEntity
+        Lorenz -> EntityMaker Lorenz.makeEntity
+        _ -> EntityMaker Template.makeEntity
 
 
 mergeLayers : Float -> Array Layer -> List WebGL.Entity
@@ -249,38 +236,45 @@ mergeLayers theta layers =
     in layers |> Array.map
         (\layer ->
             case layer of
-                -- FIXME: simplify
-                LorenzLayer blend lorenz ->
-                    Lorenz.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        lorenz
-                FractalLayer blend fractal ->
-                    Fractal.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        fractal
-                TemplateLayer blend template ->
-                    Template.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        template
-                VoronoiLayer blend voronoi ->
-                    Voronoi.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        voronoi
-                FssLayer blend fss ->
-                    FSS.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        fss
-                TextLayer blend ->
-                    -- FIXME: replace with text
-                    Template.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        (Template.init |> Template.build)
+                Layer kind blend mesh ->
+                    let
+                        (EntityMaker maker) = findEntityMaker kind
+                    in
+                        maker
+                            viewport
+                            [ DepthTest.default, Blend.produce blend ]
+                            mesh
+                -- LorenzLayer blend lorenz ->
+                --     Lorenz.makeEntity
+                --         viewport
+                --         [ DepthTest.default, Blend.produce blend ]
+                --         lorenz
+                -- FractalLayer blend fractal ->
+                --     Fractal.makeEntity
+                --         viewport
+                --         [ DepthTest.default, Blend.produce blend ]
+                --         fractal
+                -- TemplateLayer blend template ->
+                --     Template.makeEntity
+                --         viewport
+                --         [ DepthTest.default, Blend.produce blend ]
+                --         template
+                -- VoronoiLayer blend voronoi ->
+                --     Voronoi.makeEntity
+                --         viewport
+                --         [ DepthTest.default, Blend.produce blend ]
+                --         voronoi
+                -- FssLayer blend fss ->
+                --     FSS.makeEntity
+                --         viewport
+                --         [ DepthTest.default, Blend.produce blend ]
+                --         fss
+                -- TextLayer blend ->
+                --     -- FIXME: replace with text
+                --     Template.makeEntity
+                --         viewport
+                --         [ DepthTest.default, Blend.produce blend ]
+                --         (Template.init |> Template.build)
         )
     |> Array.toList
 
