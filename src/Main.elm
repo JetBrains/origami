@@ -59,6 +59,7 @@ type Msg
     | Resize Window.Size
     | Configure LayerIndex LayerConfig
     | ChangeBlend LayerIndex Blend
+    | RebuildFss FSS.SerializedMesh
     | Rotate Float
     | Pause
     | Start
@@ -226,6 +227,9 @@ subscriptions model =
                     FssLayer _ _ -> True
                     _ -> False
             )
+        )
+        , receiveFss (\serializedMesh ->
+            RebuildFss serializedMesh
         )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
