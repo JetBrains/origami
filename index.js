@@ -21,4 +21,6 @@ registerToolkit(app, BlendsNode);
 // Prepare RPD-patch
 var startPatch = require('./patch.js');
 
+require('./fss.js');
+
 startPatch(app);
