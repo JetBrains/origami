@@ -114,6 +114,7 @@ update msg model =
                     |> Maybe.map getBlend
                     |> Maybe.withDefault Blend.default
                 layer = case config of
+                    -- FIXME: simplify
                     LorenzConfig lorenzConfig ->
                         LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
                     FractalConfig fractalConfig ->
@@ -138,6 +139,7 @@ update msg model =
                     let
                         newLayer =
                             case layer of
+                                -- FIXME: simplify
                                 TemplateLayer _ mesh ->
                                     TemplateLayer newBlend mesh
                                 LorenzLayer _ mesh ->
@@ -173,6 +175,24 @@ update msg model =
         _ -> ( model, Cmd.none )
 
 
+configureFirst : Model -> LayerConfig -> (Layer -> Bool) -> Msg
+configureFirst { layers } config f =
+    layers
+        |> Array.foldl
+            (\layer (lastIdx, indices) ->
+                ( lastIdx + 1
+                , if f layer
+                    then lastIdx :: indices
+                    else indices
+                )
+            )
+            (0, [])
+        |> Tuple.second
+        |> List.head
+        |> Maybe.withDefault 0
+        |> (\idx -> Configure idx config)
+
+
 getBlend : Layer -> Blend
 getBlend layer =
     case layer of
@@ -190,12 +210,23 @@ subscriptions model =
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
         , rotate Rotate
-        , modify (\lorenzConfig ->
-            Configure 0 (LorenzConfig lorenzConfig)
-          )
         , changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
-          )
+        )
+        , modifyLorenz (\lorenzConfig ->
+            configureFirst model (LorenzConfig lorenzConfig) (\layer ->
+                case layer of
+                    LorenzLayer _ _ -> True
+                    _ -> False
+            )
+        )
+        , changeFss (\fssConfig ->
+            configureFirst model (FssConfig fssConfig) (\layer ->
+                case layer of
+                    FssLayer _ _ -> True
+                    _ -> False
+            )
+        )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
         ]
@@ -214,6 +245,7 @@ mergeLayers theta layers =
     in layers |> Array.map
         (\layer ->
             case layer of
+                -- FIXME: simplify
                 LorenzLayer blend lorenz ->
                     Lorenz.makeEntity
                         viewport
@@ -282,7 +314,13 @@ port start : (() -> msg) -> Sub msg
 
 port rotate : (Float -> msg) -> Sub msg
 
-port modify : (Lorenz.Config -> msg) -> Sub msg
+port modifyLorenz : (Lorenz.Config -> msg) -> Sub msg
+
+-- TODO: port to affect camera
+
+port changeFss : (FSS.Config -> msg) -> Sub msg
+
+port receiveFss : (FSS.SerializedMesh -> msg) -> Sub msg
 
 port changeBlend :
     ( { layer : Int

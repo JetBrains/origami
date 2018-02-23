@@ -54,7 +54,7 @@ var lorenzNode = patch.addNode('core/basic', 'Lorenz', {
     },
     process: function(inlets) {
         if (elmLorenz) {
-            elmLorenz.ports.modify.send({
+            elmLorenz.ports.modifyLorenz.send({
                 sigma: inlets.sigma || 10,
                 beta: inlets.beta || 2.6,
                 rho: inlets.rho || 28,
