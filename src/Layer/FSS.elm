@@ -1,7 +1,7 @@
 module Layer.FSS exposing
     ( Config
     , Mesh
-    , SerializedMesh
+    , SerializedScene
     , makeEntity
     , build
     , init
@@ -21,8 +21,72 @@ type alias Config = {}
 type alias Mesh = WebGL.Mesh Vertex
 
 
-type alias SerializedMesh = {}
+-- Serialization
 
+type alias SColor =
+    { rgba : List Float
+    , hex : String
+    , opacity : Float
+    }
+
+
+type alias SLight =
+    { ambient : SColor
+    , diffuse : SColor
+    , position : List Float
+    , ray : List Float
+    }
+
+
+
+type alias SMaterial =
+    { ambient : SColor
+    , diffuse : SColor
+    , slave : SColor
+    }
+
+
+type alias SPlane =
+    { width : Int
+    , height : Int
+    , triangles : List STriangle
+    , vertices : List SVertex
+    }
+
+
+type alias STriangle =
+    { a : SVertex
+    , b : SVertex
+    , c : SVertex
+    , centroid : List Float
+    , color : SColor
+    , normal : List Float
+    , u : List Float
+    , v : List Float
+    , vertices : List SVertex
+    }
+
+
+type alias SVertex =
+    { position : List Float
+    }
+
+
+type alias SMesh =
+    { geometry : SPlane
+    , material : SMaterial
+    , position : List Float
+    , side : Int
+    }
+
+type alias SerializedScene =
+    { lights : List SLight
+    , meshes : List SMesh
+    }
+
+
+
+-- Base logic
 
 init : Config
 init = {}

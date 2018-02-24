@@ -59,7 +59,7 @@ type Msg
     | Resize Window.Size
     | Configure LayerIndex LayerConfig
     | ChangeBlend LayerIndex Blend
-    | RebuildFss FSS.SerializedMesh
+    | RebuildFss FSS.SerializedScene
     | Rotate Float
     | Pause
     | Start
@@ -324,7 +324,7 @@ port modifyLorenz : (Lorenz.Config -> msg) -> Sub msg
 
 port changeFss : (FSS.Config -> msg) -> Sub msg
 
-port receiveFss : (FSS.SerializedMesh -> msg) -> Sub msg
+port receiveFss : (FSS.SerializedScene -> msg) -> Sub msg
 
 port changeBlend :
     ( { layer : Int

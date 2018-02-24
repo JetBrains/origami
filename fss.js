@@ -1,3 +1,5 @@
+window.FSSAvoidFloat32Array = true;
+
 require('./node_modules/flat-surface-shader/source/Core');
 require('./node_modules/flat-surface-shader/source/Vector3');
 require('./node_modules/flat-surface-shader/source/Vector4');
@@ -42,6 +44,7 @@ function startFss(port) {
     //resize();
     //animate();
 
+    console.log(scene);
     port.send(scene);
 }
 
