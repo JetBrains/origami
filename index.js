@@ -5,22 +5,23 @@
 require('./index.css');
 
 // initialize Elm Application
-var Lorenz = require('./src/Main.elm');
-var mountNode = document.getElementById('elm-target');
+const Lorenz = require('./src/Main.elm');
+const mountNode = document.getElementById('elm-target');
 
 // Prepare JB-Toolkit
-var registerToolkit = require('./toolkit.js');
+const registerToolkit = require('./toolkit.js');
 
 // The third value on embed are the initial values for incomming ports into Elm
-var app = Lorenz.Main.embed(mountNode);
+const app = Lorenz.Main.embed(mountNode);
 
-var BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
+const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
 
 registerToolkit(app, BlendsNode);
 
 // Prepare RPD-patch
-var startPatch = require('./patch.js');
+const startPatch = require('./patch.js');
 
-require('./fss.js');
+const startFss = require('./fss.js');
 
 startPatch(app);
+startFss(app.ports.receiveFss/*, app.ports.changeFss*/);
