@@ -54,6 +54,9 @@ type alias SPlane =
     }
 
 
+type alias SSide = Int
+
+
 type alias STriangle =
     { a : SVertex
     , b : SVertex
@@ -76,7 +79,7 @@ type alias SMesh =
     { geometry : SPlane
     , material : SMaterial
     , position : List Float
-    , side : Int
+    , side : SSide
     }
 
 
@@ -117,23 +120,56 @@ type alias Vertex =
     }
 
 
+defaultVertex : Vertex
+defaultVertex =
+    { aAmbient = vec4 0 0 0 0
+    , aCentroid = vec3 0 0 0
+    , aDiffuse = vec4 0 0 0 0
+    , aNormal = vec3 0 0 0
+    , aPosition = vec3 0 0 0
+    , aSide = 0
+    }
+
+
 build : Config -> Maybe SerializedScene -> Mesh
 build config maybeScene =
     WebGL.triangles
         (maybeScene
             |> Maybe.map (\scene ->
                 case List.head scene.meshes of
-                    Just mesh -> convertTriangles mesh.geometry.triangles
+                    Just mesh ->
+                        convertTriangles
+                            mesh.material
+                            mesh.side
+                            mesh.geometry.triangles
                     Nothing -> []
             )
             |> Maybe.withDefault [ ])
 
 
 
-convertTriangles : List STriangle -> List ( Vertex, Vertex, Vertex )
-convertTriangles src =
-    []
+convertTriangles : SMaterial -> SSide -> List STriangle -> List ( Vertex, Vertex, Vertex )
+convertTriangles material side src =
+    src |>
+        List.map
+            (\sTriangle ->
+                case sTriangle.vertices of
+                    a::b::c::_ ->
+                        ( a |> convertVertex material side
+                        , b |> convertVertex material side
+                        , c |> convertVertex material side
+                        )
+                    _ ->
+                        ( defaultVertex
+                        , defaultVertex
+                        , defaultVertex
+                        )
+            )
 
+
+convertVertex : SMaterial -> SSide -> SVertex -> Vertex
+convertVertex material side src =
+    defaultVertex
 
 
 -- Shaders
