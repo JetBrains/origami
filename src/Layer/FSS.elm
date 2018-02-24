@@ -79,6 +79,7 @@ type alias SMesh =
     , side : Int
     }
 
+
 type alias SerializedScene =
     { lights : List SLight
     , meshes : List SMesh
@@ -117,10 +118,21 @@ type alias Vertex =
 
 
 build : Config -> Maybe SerializedScene -> Mesh
-build config scene =
+build config maybeScene =
     WebGL.triangles
-        [
-        ]
+        (maybeScene
+            |> Maybe.map (\scene ->
+                case List.head scene.meshes of
+                    Just mesh -> convertTriangles mesh.geometry.triangles
+                    Nothing -> []
+            )
+            |> Maybe.withDefault [ ])
+
+
+
+convertTriangles : List STriangle -> List ( Vertex, Vertex, Vertex )
+convertTriangles src =
+    []
 
 
 

@@ -73,6 +73,7 @@ init =
         fractalConfig = Fractal.init
         voronoiConfig = Voronoi.init
         templateConfig = Template.init
+        fssConfig = FSS.init
     in
         (
             { paused = False
@@ -80,9 +81,10 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                -- [ FractalLayer Blend.default (fractalConfig |> Fractal.build)
                 [ VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
+                , FssLayer Blend.default Nothing (FSS.build fssConfig Nothing)
                 --, LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
+                --, FractalLayer Blend.default (fractalConfig |> Fractal.build)
                 , TemplateLayer Blend.default (templateConfig |> Template.build)
                 ]
             , size = ( 0, 0 )
