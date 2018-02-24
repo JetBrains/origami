@@ -116,8 +116,8 @@ type alias Vertex =
     }
 
 
-build : Config -> Mesh
-build config =
+build : Config -> Maybe SerializedScene -> Mesh
+build config scene =
     WebGL.triangles
         [
         ]

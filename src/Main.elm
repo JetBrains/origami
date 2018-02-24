@@ -39,8 +39,9 @@ type Layer
     | FractalLayer Blend Fractal.Mesh
     | VoronoiLayer Blend Voronoi.Mesh
     | TemplateLayer Blend Template.Mesh
-    | FssLayer Blend FSS.Mesh
+    | FssLayer Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | TextLayer Blend
+    | Unknown
     -- | CanvasLayer (\_ -> )
 
 
@@ -109,30 +110,30 @@ update msg model =
             )
 
         Configure index config ->
-            let
-                curBlend = model.layers
-                    |> Array.get index
-                    |> Maybe.map getBlend
-                    |> Maybe.withDefault Blend.default
-                layer = case config of
-                    -- FIXME: simplify
-                    LorenzConfig lorenzConfig ->
-                        LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
-                    FractalConfig fractalConfig ->
-                        FractalLayer curBlend (fractalConfig |> Fractal.build)
-                    VoronoiConfig voronoiConfig ->
-                        VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
-                    FssConfig fssConfig ->
-                        FssLayer curBlend (fssConfig |> FSS.build)
-                    TemplateConfig templateConfig ->
-                        TemplateLayer curBlend (templateConfig |> Template.build)
-            in
-                ( { model
-                | layers = model.layers
-                    |> Array.set index layer
-                }
-                , Cmd.none
-                )
+            case model.layers |> Array.get index of
+                Just layer ->
+                    let
+                        newLayer = case ( layer, config ) of
+                            -- FIXME: simplify
+                            ( LorenzLayer curBlend _, LorenzConfig lorenzConfig ) ->
+                                LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
+                            ( FractalLayer curBlend _, FractalConfig fractalConfig ) ->
+                                FractalLayer curBlend (fractalConfig |> Fractal.build)
+                            ( VoronoiLayer curBlend _, VoronoiConfig voronoiConfig ) ->
+                                VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
+                            ( FssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
+                                FssLayer curBlend maybeScene (maybeScene |> FSS.build fssConfig)
+                            ( TemplateLayer curBlend _, TemplateConfig templateConfig ) ->
+                                TemplateLayer curBlend (templateConfig |> Template.build)
+                            _ -> Unknown
+                    in
+                        ( { model
+                          | layers = model.layers
+                              |> Array.set index newLayer
+                          }
+                        , Cmd.none
+                        )
+                Nothing -> ( model, Cmd.none )
 
         ChangeBlend index newBlend ->
             case model.layers |> Array.get index of
@@ -149,10 +150,11 @@ update msg model =
                                     FractalLayer newBlend mesh
                                 VoronoiLayer _ mesh ->
                                     VoronoiLayer newBlend mesh
-                                FssLayer _ mesh ->
-                                    FssLayer newBlend mesh
+                                FssLayer _ scene mesh ->
+                                    FssLayer newBlend scene mesh
                                 TextLayer _ ->
                                     TextLayer newBlend
+                                _ -> Unknown
                     in
                         ( { model
                            | layers = model.layers
@@ -176,6 +178,19 @@ update msg model =
         _ -> ( model, Cmd.none )
 
 
+changeAll : (Layer -> Maybe Layer) -> Model -> Model
+changeAll f model =
+    { model |
+        layers =
+            model.layers |>
+                Array.map (\layer ->
+                    case f layer of
+                        Just newLayer -> newLayer
+                        Nothing -> layer
+                )
+    }
+
+
 configureFirst : Model -> LayerConfig -> (Layer -> Bool) -> Msg
 configureFirst { layers } config f =
     layers
@@ -192,17 +207,6 @@ configureFirst { layers } config f =
         |> List.head
         |> Maybe.withDefault 0
         |> (\idx -> Configure idx config)
-
-
-getBlend : Layer -> Blend
-getBlend layer =
-    case layer of
-        LorenzLayer blend _ -> blend
-        FractalLayer blend _ -> blend
-        TemplateLayer blend _ -> blend
-        VoronoiLayer blend _ -> blend
-        FssLayer blend _ -> blend
-        TextLayer blend -> blend
 
 
 subscriptions : Model -> Sub Msg
@@ -224,7 +228,7 @@ subscriptions model =
         , changeFss (\fssConfig ->
             configureFirst model (FssConfig fssConfig) (\layer ->
                 case layer of
-                    FssLayer _ _ -> True
+                    FssLayer _ _ _ -> True
                     _ -> False
             )
         )
@@ -270,7 +274,7 @@ mergeLayers theta layers =
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
                         voronoi
-                FssLayer blend fss ->
+                FssLayer blend serialized fss ->
                     FSS.makeEntity
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
@@ -280,6 +284,11 @@ mergeLayers theta layers =
                     Template.makeEntity
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
+                        (Template.init |> Template.build)
+                Unknown ->
+                    Template.makeEntity
+                        viewport
+                        [ DepthTest.default, Blend.produce Blend.default ]
                         (Template.init |> Template.build)
         )
     |> Array.toList
