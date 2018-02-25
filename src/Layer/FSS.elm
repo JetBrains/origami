@@ -247,10 +247,16 @@ vertexShader =
         attribute vec4 aDiffuse;
 
         // Uniforms
+        uniform mat4 cameraTranslate;
+        uniform mat4 cameraRotate;
+        uniform mat4 perspective;
+        uniform mat4 camera;
+        uniform mat4 rotation;
+
         uniform vec3 uResolution;
-        uniform vec3 uLightPosition[LIGHTS];
-        uniform vec4 uLightAmbient[LIGHTS];
-        uniform vec4 uLightDiffuse[LIGHTS];
+        uniform vec3 uLightPosition[3];
+        uniform vec4 uLightAmbient[3];
+        uniform vec4 uLightDiffuse[3];
 
         // Varyings
         varying vec4 vColor;
@@ -267,7 +273,7 @@ vertexShader =
             vec3 position = aPosition;
 
             // Iterate through lights
-            for (int i = 0; i < LIGHTS; i++) {
+            for (int i = 0; i < 3; i++) {
                 vec3 lightPosition = uLightPosition[i];
                 vec4 lightAmbient = uLightAmbient[i];
                 vec4 lightDiffuse = uLightDiffuse[i];
