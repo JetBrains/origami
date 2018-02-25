@@ -236,6 +236,8 @@ vertexShader =
         // Lights
         //#define LIGHTS + lights
 
+        int LIGHTS = 0;
+
         // Attributes
         attribute float aSide;
         attribute vec3 aPosition;
@@ -257,10 +259,12 @@ vertexShader =
         void main() {
 
             // Create color
-            vColor = vec4(0.0);
+            //vColor = vec4(0.0);
+            vColor = vec4(1.0, 1.0, 1.0, 1.0);
 
             // Calculate the vertex position
-            vec3 position = aPosition / uResolution * 2.0;
+            //vec3 position = aPosition / uResolution * 2.0;
+            vec3 position = aPosition;
 
             // Iterate through lights
             for (int i = 0; i < LIGHTS; i++) {
@@ -287,10 +291,12 @@ vertexShader =
             }
 
             // Clamp color
-            vColor = clamp(vColor, 0.0, 1.0);
+            //vColor = clamp(vColor, 0.0, 1.0);
+            vColor = vec4(1.0, 1.0, 1.0, 1.0);
 
             // Set gl_Position
-            gl_Position = vec4(position, 1.0);
+            //gl_Position = vec4(position, 1.0);
+            gl_Position = perspective * camera * rotation * vec4(position, 1.0);
 
         }
 
