@@ -35,11 +35,11 @@ type LayerConfig
 
 type Layer
     -- FIXME: use type variable for that, or just a function!
-    = LorenzLayer Blend Lorenz.Mesh
-    | FractalLayer Blend Fractal.Mesh
-    | VoronoiLayer Blend Voronoi.Mesh
-    | TemplateLayer Blend Template.Mesh
-    | FssLayer Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    = LorenzLayer Lorenz.Config Blend Lorenz.Mesh
+    | FractalLayer Fractal.Config Blend Fractal.Mesh
+    | VoronoiLayer Voronoi.Config Blend Voronoi.Mesh
+    | TemplateLayer Template.Config Blend Template.Mesh
+    | FssLayer FSS.Config Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | TextLayer Blend
     | Unknown
     -- | CanvasLayer (\_ -> )
@@ -69,9 +69,9 @@ type Msg
 init : ( Model, Cmd Msg )
 init =
     let
-        lorenzConfig = Lorenz.init
-        fractalConfig = Fractal.init
-        voronoiConfig = Voronoi.init
+        -- lorenzConfig = Lorenz.init
+        -- fractalConfig = Fractal.init
+        -- voronoiConfig = Voronoi.init
         templateConfig = Template.init
         fssConfig = FSS.init
     in
@@ -81,11 +81,11 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
-                , FssLayer Blend.default Nothing (FSS.build fssConfig Nothing)
+                [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
+                , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
                 --, LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
                 --, FractalLayer Blend.default (fractalConfig |> Fractal.build)
-                , TemplateLayer Blend.default (templateConfig |> Template.build)
+                --, VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
                 ]
             , size = ( 0, 0 )
             }
@@ -117,16 +117,19 @@ update msg model =
                     let
                         newLayer = case ( layer, config ) of
                             -- FIXME: simplify
-                            ( LorenzLayer curBlend _, LorenzConfig lorenzConfig ) ->
-                                LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
-                            ( FractalLayer curBlend _, FractalConfig fractalConfig ) ->
-                                FractalLayer curBlend (fractalConfig |> Fractal.build)
-                            ( VoronoiLayer curBlend _, VoronoiConfig voronoiConfig ) ->
-                                VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
-                            ( FssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
-                                FssLayer curBlend maybeScene (maybeScene |> FSS.build fssConfig)
-                            ( TemplateLayer curBlend _, TemplateConfig templateConfig ) ->
-                                TemplateLayer curBlend (templateConfig |> Template.build)
+                            ( LorenzLayer _ curBlend _, LorenzConfig lorenzConfig ) ->
+                                LorenzLayer lorenzConfig curBlend (lorenzConfig |> Lorenz.build)
+                            ( FractalLayer _ curBlend _, FractalConfig fractalConfig ) ->
+                                FractalLayer fractalConfig curBlend (fractalConfig |> Fractal.build)
+                            ( VoronoiLayer _ curBlend _, VoronoiConfig voronoiConfig ) ->
+                                VoronoiLayer voronoiConfig curBlend (voronoiConfig |> Voronoi.build)
+                            ( FssLayer _ curBlend maybeScene _, FssConfig fssConfig ) ->
+                                let
+                                    newMesh = (maybeScene |> FSS.build fssConfig)
+                                in
+                                    FssLayer fssConfig curBlend maybeScene newMesh
+                            ( TemplateLayer _ curBlend _, TemplateConfig templateConfig ) ->
+                                TemplateLayer templateConfig curBlend (templateConfig |> Template.build)
                             _ -> Unknown
                     in
                         ( { model
@@ -144,16 +147,16 @@ update msg model =
                         newLayer =
                             case layer of
                                 -- FIXME: simplify
-                                TemplateLayer _ mesh ->
-                                    TemplateLayer newBlend mesh
-                                LorenzLayer _ mesh ->
-                                    LorenzLayer newBlend mesh
-                                FractalLayer _ mesh ->
-                                    FractalLayer newBlend mesh
-                                VoronoiLayer _ mesh ->
-                                    VoronoiLayer newBlend mesh
-                                FssLayer _ scene mesh ->
-                                    FssLayer newBlend scene mesh
+                                TemplateLayer cfg _ mesh ->
+                                    TemplateLayer cfg newBlend mesh
+                                LorenzLayer cfg _ mesh ->
+                                    LorenzLayer cfg newBlend mesh
+                                FractalLayer cfg _ mesh ->
+                                    FractalLayer cfg newBlend mesh
+                                VoronoiLayer cfg _ mesh ->
+                                    VoronoiLayer cfg newBlend mesh
+                                FssLayer cfg _ scene mesh ->
+                                    FssLayer cfg newBlend scene mesh
                                 TextLayer _ ->
                                     TextLayer newBlend
                                 _ -> Unknown
@@ -174,6 +177,22 @@ update msg model =
 
         Resize { width, height } ->
             ( { model | size = ( width, height ) }
+            , Cmd.none
+            )
+
+        RebuildFss serializedScene ->
+            ( model
+                |> changeAll
+                    (\layer ->
+                        case layer of
+                            FssLayer cfg blend _ mesh ->
+                                let
+                                    maybeScene = Just serializedScene
+                                    newMesh = maybeScene |> FSS.build cfg
+                                in
+                                    FssLayer cfg blend maybeScene newMesh |> Just
+                            _ -> Nothing
+                    )
             , Cmd.none
             )
 
@@ -223,14 +242,14 @@ subscriptions model =
         , modifyLorenz (\lorenzConfig ->
             configureFirst model (LorenzConfig lorenzConfig) (\layer ->
                 case layer of
-                    LorenzLayer _ _ -> True
+                    LorenzLayer _ _ _ -> True
                     _ -> False
             )
         )
         , changeFss (\fssConfig ->
             configureFirst model (FssConfig fssConfig) (\layer ->
                 case layer of
-                    FssLayer _ _ _ -> True
+                    FssLayer _ _ _ _ -> True
                     _ -> False
             )
         )
@@ -256,27 +275,27 @@ mergeLayers theta layers =
         (\layer ->
             case layer of
                 -- FIXME: simplify
-                LorenzLayer blend lorenz ->
+                LorenzLayer _ blend lorenz ->
                     Lorenz.makeEntity
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
                         lorenz
-                FractalLayer blend fractal ->
+                FractalLayer _ blend fractal ->
                     Fractal.makeEntity
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
                         fractal
-                TemplateLayer blend template ->
+                TemplateLayer _ blend template ->
                     Template.makeEntity
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
                         template
-                VoronoiLayer blend voronoi ->
+                VoronoiLayer _ blend voronoi ->
                     Voronoi.makeEntity
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
                         voronoi
-                FssLayer blend serialized fss ->
+                FssLayer _ blend serialized fss ->
                     FSS.makeEntity
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
