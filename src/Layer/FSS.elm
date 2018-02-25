@@ -54,7 +54,7 @@ type alias SPlane =
     }
 
 
-type alias SSide = Int
+type alias SSide = Float
 
 
 type alias STriangle =
@@ -112,8 +112,8 @@ makeEntity viewport settings mesh =
 
 type alias Vertex =
     { aAmbient : Vec4
-    , aCentroid : Vec3
     , aDiffuse : Vec4
+    , aCentroid : Vec3
     , aNormal : Vec3
     , aPosition : Vec3
     , aSide : Float
@@ -155,9 +155,9 @@ convertTriangles material side src =
             (\sTriangle ->
                 case sTriangle.vertices of
                     a::b::c::_ ->
-                        ( a |> convertVertex material side
-                        , b |> convertVertex material side
-                        , c |> convertVertex material side
+                        ( a |> convertVertex material sTriangle side
+                        , b |> convertVertex material sTriangle side
+                        , c |> convertVertex material sTriangle side
                         )
                     _ ->
                         ( defaultVertex
@@ -167,9 +167,34 @@ convertTriangles material side src =
             )
 
 
-convertVertex : SMaterial -> SSide -> SVertex -> Vertex
-convertVertex material side src =
-    defaultVertex
+convertVertex : SMaterial -> STriangle -> SSide -> SVertex -> Vertex
+convertVertex material triangle side v =
+    { aSide = side
+    , aAmbient = v4fromList material.ambient.rgba
+    , aDiffuse = v4fromList material.diffuse.rgba
+    , aPosition = v3fromList v.position
+    , aCentroid = v3fromList triangle.centroid
+    , aNormal = v3fromList triangle.normal
+    }
+
+
+v3fromList : List Float -> Vec3
+v3fromList list =
+    case list of
+        a::b::c::_ -> vec3 a b c
+        a::b::_ -> vec3 a b 0
+        [a] -> vec3 a 0 0
+        _ -> vec3 0 0 0
+
+
+v4fromList : List Float -> Vec4
+v4fromList list =
+    case list of
+        a::b::c::d::_ -> vec4 a b c d
+        a::b::c::_ -> vec4 a b c 0
+        a::b::_ -> vec4 a b 0 0
+        [a] -> vec4 a 0 0 0
+        _ -> vec4 0 0 0 0
 
 
 -- Shaders
