@@ -30,7 +30,6 @@ makeEntity viewport settings mesh =
         (uniforms viewport)
 
 
-
 -- Mesh
 
 

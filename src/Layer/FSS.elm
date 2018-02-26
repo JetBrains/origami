@@ -8,6 +8,7 @@ module Layer.FSS exposing
     )
 
 import Math.Matrix4 as Mat4 exposing (Mat4)
+import Math.Vector2 as Vec2
 import Math.Vector3 as Vec3 exposing (vec3, Vec3)
 import Math.Vector4 as Vec4 exposing (vec4, Vec4)
 import WebGL
@@ -37,7 +38,6 @@ type alias SLight =
     , position : List Float
     , ray : List Float
     }
-
 
 
 type alias SMaterial =
@@ -90,22 +90,25 @@ type alias SerializedScene =
     }
 
 
-
 -- Base logic
 
 init : Config
 init = {}
 
 
-makeEntity : Viewport {} -> List Setting -> Mesh -> WebGL.Entity
-makeEntity viewport settings mesh =
-    WebGL.entityWith
-        settings
-        vertexShader
-        fragmentShader
-        mesh
-        (uniforms viewport)
-
+makeEntity : Viewport {} -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
+makeEntity viewport maybeScene settings mesh =
+    let
+        lights = maybeScene
+            |> Maybe.map (\scene -> scene.lights)
+            |> Maybe.withDefault []
+    in
+        WebGL.entityWith
+            settings
+            vertexShader
+            fragmentShader
+            mesh
+            (uniforms viewport lights)
 
 
 -- Mesh
@@ -211,22 +214,92 @@ type alias Uniforms =
         }
 
 
-uniforms : Viewport {} -> Uniforms
-uniforms v =
-    -- { perspective = Mat4.mul v.perspective v.camera }
-    { uResolution = vec3 0 0 0
+uniforms : Viewport {} -> List SLight -> Uniforms
+uniforms v lights =
+    let
+        adaptedLights = lights |> adaptLights
+        width = Vec2.getX v.size
+        height = Vec2.getY v.size
+    in
+        -- { perspective = Mat4.mul v.perspective v.camera }
+        { uResolution = vec3 width height width
 
-    , uLightAmbient = Mat4.identity
-    , uLightDiffuse = Mat4.identity
-    , uLightPosition = Mat4.identity
+        , uLightAmbient = adaptedLights.ambient
+        , uLightDiffuse = adaptedLights.diffuse
+        , uLightPosition = adaptedLights.position
 
-    , rotation = v.rotation
-    , perspective = v.perspective
-    , camera = v.camera
-    --, shade = 0.8
-    , cameraTranslate = v.cameraTranslate
-    , cameraRotate = v.cameraRotate
+        , rotation = v.rotation
+        , perspective = v.perspective
+        , camera = v.camera
+        --, shade = 0.8
+        , cameraTranslate = v.cameraTranslate
+        , cameraRotate = v.cameraRotate
+
+        , size = v.size
+        }
+
+
+type alias LRow = { ambient : Vec4, diffuse : Vec4, position : Vec3 }
+
+
+getRows : SLight -> LRow
+getRows light =
+    { ambient =
+        case light.ambient.rgba of
+            r::g::b::a::_ -> vec4 r g b a
+            _ -> vec4 0 0 0 0
+    , diffuse =
+        case light.diffuse.rgba of
+            r::g::b::a::_ -> vec4 r g b a
+            _ -> vec4 0 0 0 0
+    , position =
+        case light.position of
+            x::y::z::_ -> vec3 x y z
+            _ -> vec3 0 0 0
     }
+
+
+adaptLights : List SLight -> { ambient : Mat4, diffuse : Mat4, position : Mat4 }
+adaptLights srcLights =
+    let
+        emptyRows =
+            { ambient = vec4 0 0 0 0
+            , diffuse = vec4 0 0 0 0
+            , position = vec3 0 0 0
+            }
+        lightRows = srcLights |> List.map getRows
+    in
+        case lightRows of
+            a::b::c::d::_ ->
+                let
+                    ( aa, ba, ca, da ) = ( a.ambient, b.ambient, c.ambient, d.ambient )
+                    ( ad, bd, cd, dd ) = ( a.diffuse, b.diffuse, c.diffuse, d.diffuse )
+                    ( ap, bp, cp, dp ) = ( a.position, b.position, c.position, d.position )
+                in
+                    { ambient = Mat4.fromRecord
+                        { m11 = Vec4.getX aa, m12 = Vec4.getY aa, m13 = Vec4.getZ aa, m14 = Vec4.getW aa
+                        , m21 = Vec4.getX ba, m22 = Vec4.getY ba, m23 = Vec4.getZ ba, m24 = Vec4.getW ba
+                        , m31 = Vec4.getX ca, m32 = Vec4.getY ca, m33 = Vec4.getZ ca, m34 = Vec4.getW ca
+                        , m41 = Vec4.getX da, m42 = Vec4.getY da, m43 = Vec4.getZ da, m44 = Vec4.getW da
+                        }
+                    , diffuse = Mat4.fromRecord
+                        { m11 = Vec4.getX ad, m12 = Vec4.getY ad, m13 = Vec4.getZ ad, m14 = Vec4.getW ad
+                        , m21 = Vec4.getX bd, m22 = Vec4.getY bd, m23 = Vec4.getZ bd, m24 = Vec4.getW bd
+                        , m31 = Vec4.getX cd, m32 = Vec4.getY cd, m33 = Vec4.getZ cd, m34 = Vec4.getW cd
+                        , m41 = Vec4.getX dd, m42 = Vec4.getY dd, m43 = Vec4.getZ dd, m44 = Vec4.getW dd
+                        }
+                    , position = Mat4.fromRecord
+                        { m11 = Vec3.getX ap, m12 = Vec3.getY ap, m13 = Vec3.getZ ap, m14 = 0
+                        , m21 = Vec3.getX bp, m22 = Vec3.getY bp, m23 = Vec3.getZ bp, m24 = 0
+                        , m31 = Vec3.getX cp, m32 = Vec3.getY cp, m33 = Vec3.getZ cp, m34 = 0
+                        , m41 = Vec3.getX dp, m42 = Vec3.getY dp, m43 = Vec3.getZ dp, m44 = 0
+                        }
+                    }
+            _ ->
+                { ambient = Mat4.identity
+                , diffuse = Mat4.identity
+                , position = Mat4.identity
+                }
 
 
 vertexShader : WebGL.Shader Vertex Uniforms { vColor : Vec4 }
@@ -264,8 +337,8 @@ vertexShader =
         void main() {
 
             // Create color
-            //vColor = vec4(0.0);
-            vColor = vec4(1.0, 1.0, 1.0, 1.0);
+            vColor = vec4(0.0);
+            //vColor = vec4(0.0, 0.0, 0.0, 1.0);
 
             // Calculate the vertex position
             //vec3 position = aPosition / uResolution * 2.0;
