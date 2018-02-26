@@ -216,16 +216,14 @@ trianglePairAt thickness { prevPosition, prevNormal, prevSumNormal, position, su
 
 
 uniforms : Viewport {} -> Uniforms
-uniforms viewport =
-    -- { viewport
-    -- | shade = 0.8
-    -- }
-    { rotation = viewport.rotation
-    , perspective = viewport.perspective
-    , camera = viewport.camera
+uniforms v =
+    { rotation = v.rotation
+    , perspective = v.perspective
+    , camera = v.camera
     , shade = 0.8
-    , cameraTranslate = viewport.cameraTranslate
-    , cameraRotate = viewport.cameraRotate
+    , cameraTranslate = v.cameraTranslate
+    , cameraRotate = v.cameraRotate
+    , size = v.size
     }
 
 

@@ -2,16 +2,19 @@ module Viewport exposing
     ( State
     , Viewport
     , find
+    --, lift
     )
 
 
 import Math.Matrix4 as Mat4 exposing (Mat4)
+import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (vec3)
 
 
 type alias State =
     { theta : Float
     -- , t : Float
+    , size : ( Int, Int )
     }
 
 
@@ -23,21 +26,38 @@ type alias Viewport a =
     -- , shade : Float
     , cameraTranslate : Mat4
     , cameraRotate : Mat4
+    , size : Vec2
     }
 
 
 find : State -> Viewport {}
-find { theta } =
-    { rotation
-        = Mat4.makeRotate (3 * theta) (vec3 0 1 0)
-    , perspective
-        = Mat4.makePerspective 95 1.5 0.1 3000
-    , camera = Mat4.makeLookAt (vec3 1 0.5 -0.8) (vec3 -0.5 0.1 0) (vec3 0 1 0)
-    --, shade = 0.8
-    , cameraTranslate = Mat4.makeTranslate (vec3 (1/3) (1/80) (-1/16))
-    , cameraRotate = Mat4.makeRotate (2) (vec3 1 0 0)
-    }
+find { theta, size } =
+    let
+        ( width, height ) = size
+    in
+        { rotation
+            = Mat4.makeRotate (3 * theta) (vec3 0 1 0)
+        , perspective
+            = Mat4.makePerspective 95 1.5 0.1 3000
+        , camera = Mat4.makeLookAt (vec3 1 0.5 -0.8) (vec3 -0.5 0.1 0) (vec3 0 1 0)
+        --, shade = 0.8
+        , cameraTranslate = Mat4.makeTranslate (vec3 (1/3) (1/80) (-1/16))
+        , cameraRotate = Mat4.makeRotate (2) (vec3 1 0 0)
+        , size = vec2 (toFloat width) (toFloat height)
+        }
 
+
+-- lift : Viewport a -> Viewport a
+-- lift v =
+--     { rotation = v.rotation
+--     , perspective = v.perspective
+--     , camera = v.camera
+--     --, shade = 0.8
+--     , cameraTranslate = v.cameraTranslate
+--     , cameraRotate = v.cameraRotate
+--     , width = v.width
+--     , height = v.height
+--     }
 
 -- { perspective = perspective (t / 1000) }
 -- perspective : Float -> Mat4

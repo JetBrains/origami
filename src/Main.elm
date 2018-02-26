@@ -268,9 +268,9 @@ mapControls model controlsMsg =
         Controls.Rotate th -> Rotate th
 
 
-mergeLayers : Float -> Array Layer -> List WebGL.Entity
-mergeLayers theta layers =
-    let viewport = Viewport.find { theta = theta }
+mergeLayers : Float -> ( Int, Int ) -> Array Layer -> List WebGL.Entity
+mergeLayers theta size layers =
+    let viewport = Viewport.find { theta = theta, size = size }
     in layers |> Array.map
         (\layer ->
             case layer of
@@ -298,6 +298,7 @@ mergeLayers theta layers =
                 FssLayer _ blend serialized fss ->
                     FSS.makeEntity
                         viewport
+                        serialized
                         [ DepthTest.default, Blend.produce blend ]
                         fss
                 TextLayer blend ->
@@ -327,7 +328,7 @@ view model =
               , height (Tuple.second model.size)
               , style [ ( "display", "block" ), ("background-color", "#12181C") ]
               ]
-              (model.layers |> mergeLayers model.theta)
+              (model.layers |> mergeLayers model.theta model.size)
           :: []
         )
 
