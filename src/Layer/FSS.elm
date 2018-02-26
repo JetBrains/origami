@@ -7,6 +7,7 @@ module Layer.FSS exposing
     , init
     )
 
+import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (vec3, Vec3)
 import Math.Vector4 as Vec4 exposing (vec4, Vec4)
 import WebGL
@@ -202,9 +203,10 @@ v4fromList list =
 
 type alias Uniforms =
     Viewport
-        { uLightAmbient : Vec4
-        , uLightDiffuse : Vec4
-        , uLightPosition : Vec3
+        { uResolution : Vec3
+        , uLightPosition : Mat4
+        , uLightAmbient : Mat4
+        , uLightDiffuse : Mat4
         , uResolution : Vec3
         }
 
@@ -212,10 +214,11 @@ type alias Uniforms =
 uniforms : Viewport {} -> Uniforms
 uniforms v =
     -- { perspective = Mat4.mul v.perspective v.camera }
-    { uLightAmbient = vec4 0 0 0 0
-    , uLightDiffuse = vec4 0 0 0 0
-    , uLightPosition = vec3 0 0 0
-    , uResolution = vec3 0 0 0
+    { uResolution = vec3 0 0 0
+
+    , uLightAmbient = Mat4.identity
+    , uLightDiffuse = Mat4.identity
+    , uLightPosition = Mat4.identity
 
     , rotation = v.rotation
     , perspective = v.perspective
@@ -233,11 +236,6 @@ vertexShader =
         // Precision
         precision mediump float;
 
-        // Lights
-        //#define LIGHTS + lights
-
-        int LIGHTS = 0;
-
         // Attributes
         attribute float aSide;
         attribute vec3 aPosition;
@@ -254,9 +252,10 @@ vertexShader =
         uniform mat4 rotation;
 
         uniform vec3 uResolution;
-        uniform vec3 uLightPosition[3];
-        uniform vec4 uLightAmbient[3];
-        uniform vec4 uLightDiffuse[3];
+
+        uniform mat4 uLightPosition;
+        uniform mat4 uLightAmbient;
+        uniform mat4 uLightDiffuse;
 
         // Varyings
         varying vec4 vColor;
@@ -274,9 +273,9 @@ vertexShader =
 
             // Iterate through lights
             for (int i = 0; i < 3; i++) {
-                vec3 lightPosition = uLightPosition[i];
-                vec4 lightAmbient = uLightAmbient[i];
-                vec4 lightDiffuse = uLightDiffuse[i];
+                vec3 lightPosition = vec3(uLightPosition[i]);
+                vec4 lightAmbient = uLightPosition[i];
+                vec4 lightDiffuse = uLightPosition[i];
 
                 // Calculate illuminance
                 vec3 ray = normalize(lightPosition - aCentroid);
@@ -297,8 +296,8 @@ vertexShader =
             }
 
             // Clamp color
-            //vColor = clamp(vColor, 0.0, 1.0);
-            vColor = vec4(1.0, 1.0, 1.0, 1.0);
+            vColor = clamp(vColor, 0.0, 1.0);
+            //vColor = vec4(1.0, 1.0, 1.0, 1.0);
 
             // Set gl_Position
             //gl_Position = vec4(position, 1.0);
