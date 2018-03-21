@@ -77,7 +77,7 @@ init =
     in
         (
             { paused = False
-            , autoRotate = False
+            , autoRotate = True
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList

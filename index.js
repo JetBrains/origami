@@ -16,7 +16,7 @@ const app = Lorenz.Main.embed(mountNode);
 
 const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
 
-//registerToolkit(app, BlendsNode);
+// registerToolkit(app, BlendsNode);
 
 // Prepare RPD-patch
 //const startPatch = require('./patch.js');
