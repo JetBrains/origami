@@ -69,7 +69,7 @@ type Msg
 init : ( Model, Cmd Msg )
 init =
     let
-        -- lorenzConfig = Lorenz.init
+        lorenzConfig = Lorenz.init
         -- fractalConfig = Fractal.init
         -- voronoiConfig = Voronoi.init
         templateConfig = Template.init
@@ -77,13 +77,14 @@ init =
     in
         (
             { paused = False
-            , autoRotate = True
+            , autoRotate = False
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
-                , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
-                --, LorenzLayer Blend.default (lorenzConfig |> Lorenz.build)
+                [ --TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
+                --,
+                 FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing )
+                --, LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
                 --, FractalLayer Blend.default (fractalConfig |> Fractal.build)
                 --, VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
                 ]
