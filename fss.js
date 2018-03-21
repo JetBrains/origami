@@ -26,6 +26,7 @@ function startFss(port) {
     function initialise() {
         scene.add(mesh);
         scene.add(light);
+        light.setPosition(300*Math.sin(0.001), 200*Math.cos(0.0005), 60);
         //container.appendChild(renderer.element);
         //window.addEventListener('resize', resize);
     }

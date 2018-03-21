@@ -104,13 +104,22 @@ makeEntity viewport maybeScene settings mesh =
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
             |> Maybe.withDefault []
+        size = maybeScene
+            |> Maybe.map (\scene ->
+                List.head scene.meshes )
+            |> Maybe.map (\maybeMesh ->
+                case maybeMesh of
+                    Just mesh -> ( mesh.geometry.width,  mesh.geometry.height )
+                    Nothing -> (0, 0)
+                )
+            |> Maybe.withDefault (0, 0)
     in
         WebGL.entityWith
             settings
             vertexShader
             fragmentShader
             mesh
-            (uniforms viewport lights)
+            (uniforms viewport size lights)
 
 
 -- Mesh
@@ -157,10 +166,10 @@ build config maybeScene =
                                                       mesh.material
                                                       mesh.side
                                                       mesh.geometry.triangles
-                            len = Debug.log "len" (List.length convertedTriangles)
-                            triangle200 = Array.fromList convertedTriangles |> Array.get 200 |> Debug.log "Triangle 200"
+
+
                         in
-                            Debug.log "triangles" convertedTriangles
+                            convertedTriangles
                             --(Debug.log "triangles" [ triangle ])
                     Nothing -> []
             )
@@ -209,11 +218,11 @@ convertTriangles size material side src =
 
 
 convertVertex : (Int, Int) -> Vec3 -> SMaterial -> STriangle -> SSide -> SVertex -> Vertex
-convertVertex size color material  triangle side v =
+convertVertex size color material triangle side v =
     { aSide = side
     , aAmbient = v4fromList material.ambient.rgba
     , aDiffuse = v4fromList material.diffuse.rgba
-    , aPosition = v3fromList v.position |> adaptPosition size
+    , aPosition = v3fromList v.position -- |> adaptPosition size
     , aCentroid = v3fromList triangle.centroid
     , aNormal = v3fromList triangle.normal
     , aColor = color
@@ -261,10 +270,10 @@ type alias Uniforms =
         }
 
 
-uniforms : Viewport {} -> List SLight -> Uniforms
-uniforms v lights =
+uniforms : Viewport {} -> (Int, Int) -> List SLight -> Uniforms
+uniforms v size lights =
     let
-        adaptedLights = lights |> adaptLights
+        adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
         height = Vec2.getY v.size
     in
@@ -306,47 +315,84 @@ getRows light =
     }
 
 
-adaptLights : List SLight -> { ambient : Mat4, diffuse : Mat4, position : Mat4 }
-adaptLights srcLights =
+adaptLights : (Int, Int) -> List SLight -> { ambient : Mat4, diffuse : Mat4, position : Mat4 }
+adaptLights size srcLights =
     let
+        emptyVec4 = vec4 0 0 0 0
+        emptyVec3 = vec3 0 0 0
         emptyRows =
-            { ambient = vec4 0 0 0 0
-            , diffuse = vec4 0 0 0 0
-            , position = vec3 0 0 0
+            { ambient = emptyVec4
+            , diffuse = emptyVec4
+            , position = emptyVec3
             }
         lightRows = srcLights |> List.map getRows
     in
         case lightRows of
+            [a] ->
+                let
+                    rowA = ( a.ambient, emptyVec4, emptyVec4, emptyVec4 )
+                    rowB = ( a.diffuse, emptyVec4, emptyVec4, emptyVec4 )
+                    rowC = ( a.position, emptyVec3, emptyVec3, emptyVec3 )
+                in
+                    lightsToMatrices size rowA rowB rowC
+            [a,b] ->
+                let
+                    rowA = ( a.ambient, b.ambient, emptyVec4, emptyVec4 )
+                    rowB = ( a.diffuse, b.diffuse, emptyVec4, emptyVec4 )
+                    rowC = ( a.position, b.position, emptyVec3, emptyVec3 )
+                in
+                    lightsToMatrices size rowA rowB rowC
+            [a,b,c] ->
+                let
+                    rowA = ( a.ambient, b.ambient, c.ambient, emptyVec4 )
+                    rowB = ( a.diffuse, b.diffuse, c.diffuse, emptyVec4 )
+                    rowC = ( a.position, b.position, c.position, emptyVec3 )
+                in
+                    lightsToMatrices size rowA rowB rowC
             a::b::c::d::_ ->
                 let
-                    ( aa, ba, ca, da ) = ( a.ambient, b.ambient, c.ambient, d.ambient )
-                    ( ad, bd, cd, dd ) = ( a.diffuse, b.diffuse, c.diffuse, d.diffuse )
-                    ( ap, bp, cp, dp ) = ( a.position, b.position, c.position, d.position )
+                    rowA = ( a.ambient, b.ambient, c.ambient, d.ambient )
+                    rowB = ( a.diffuse, b.diffuse, c.diffuse, d.diffuse )
+                    rowC = ( a.position, b.position, c.position, d.position )
                 in
-                    { ambient = Mat4.fromRecord
-                        { m11 = Vec4.getX aa, m12 = Vec4.getY aa, m13 = Vec4.getZ aa, m14 = Vec4.getW aa
-                        , m21 = Vec4.getX ba, m22 = Vec4.getY ba, m23 = Vec4.getZ ba, m24 = Vec4.getW ba
-                        , m31 = Vec4.getX ca, m32 = Vec4.getY ca, m33 = Vec4.getZ ca, m34 = Vec4.getW ca
-                        , m41 = Vec4.getX da, m42 = Vec4.getY da, m43 = Vec4.getZ da, m44 = Vec4.getW da
-                        }
-                    , diffuse = Mat4.fromRecord
-                        { m11 = Vec4.getX ad, m12 = Vec4.getY ad, m13 = Vec4.getZ ad, m14 = Vec4.getW ad
-                        , m21 = Vec4.getX bd, m22 = Vec4.getY bd, m23 = Vec4.getZ bd, m24 = Vec4.getW bd
-                        , m31 = Vec4.getX cd, m32 = Vec4.getY cd, m33 = Vec4.getZ cd, m34 = Vec4.getW cd
-                        , m41 = Vec4.getX dd, m42 = Vec4.getY dd, m43 = Vec4.getZ dd, m44 = Vec4.getW dd
-                        }
-                    , position = Mat4.fromRecord
-                        { m11 = Vec3.getX ap, m12 = Vec3.getY ap, m13 = Vec3.getZ ap, m14 = 0
-                        , m21 = Vec3.getX bp, m22 = Vec3.getY bp, m23 = Vec3.getZ bp, m24 = 0
-                        , m31 = Vec3.getX cp, m32 = Vec3.getY cp, m33 = Vec3.getZ cp, m34 = 0
-                        , m41 = Vec3.getX dp, m42 = Vec3.getY dp, m43 = Vec3.getZ dp, m44 = 0
-                        }
-                    }
+                    lightsToMatrices size rowA rowB rowC
             _ ->
                 { ambient = Mat4.identity
                 , diffuse = Mat4.identity
                 , position = Mat4.identity
                 }
+
+lightsToMatrices
+    : (Int, Int)
+    -> ( Vec4, Vec4, Vec4, Vec4 )
+    -> ( Vec4, Vec4, Vec4, Vec4 )
+    ->  ( Vec3, Vec3, Vec3, Vec3 )
+    ->
+    { ambient : Mat4
+    , diffuse : Mat4
+    , position : Mat4
+    }
+lightsToMatrices (w, h) ( aa, ba, ca, da ) ( ad, bd, cd, dd ) ( ap, bp, cp, dp ) =
+    { ambient = Mat4.fromRecord
+        { m11 = Vec4.getX aa, m12 = Vec4.getY aa, m13 = Vec4.getZ aa, m14 = Vec4.getW aa
+        , m21 = Vec4.getX ba, m22 = Vec4.getY ba, m23 = Vec4.getZ ba, m24 = Vec4.getW ba
+        , m31 = Vec4.getX ca, m32 = Vec4.getY ca, m33 = Vec4.getZ ca, m34 = Vec4.getW ca
+        , m41 = Vec4.getX da, m42 = Vec4.getY da, m43 = Vec4.getZ da, m44 = Vec4.getW da
+        } |> Mat4.transpose
+    , diffuse = Mat4.fromRecord
+        { m11 = Vec4.getX ad, m12 = Vec4.getY ad, m13 = Vec4.getZ ad, m14 = Vec4.getW ad
+        , m21 = Vec4.getX bd, m22 = Vec4.getY bd, m23 = Vec4.getZ bd, m24 = Vec4.getW bd
+        , m31 = Vec4.getX cd, m32 = Vec4.getY cd, m33 = Vec4.getZ cd, m34 = Vec4.getW cd
+        , m41 = Vec4.getX dd, m42 = Vec4.getY dd, m43 = Vec4.getZ dd, m44 = Vec4.getW dd
+        } |> Mat4.transpose
+    , position = Mat4.fromRecord
+        { m11 = Vec3.getX ap, m12 = Vec3.getY ap, m13 = Vec3.getZ ap, m14 = 0
+        , m21 = Vec3.getX bp, m22 = Vec3.getY bp, m23 = Vec3.getZ bp, m24 = 0
+        , m31 = Vec3.getX cp, m32 = Vec3.getY cp, m33 = Vec3.getZ cp, m34 = 0
+        , m41 = Vec3.getX dp, m42 = Vec3.getY dp, m43 = Vec3.getZ dp, m44 = 0
+        } |> Mat4.transpose
+    }
+
 
 
 vertexShader : WebGL.Shader Vertex Uniforms { vColor : Vec4 }
@@ -400,19 +446,18 @@ vertexShader =
         void main() {
 
             // Create color
-           // vColor = vec4(0.0);
-            vColor = vec4(1.0, 0.0, 0.0, 1.0);
+            vColor = vec4(0.0);
 
             // Calculate the vertex position
-            //vec3 position = aPosition / uResolution * 2.0;
-            vec3 position = aPosition;
-            //position = clamp(position, -1.0, 1.0);
+            vec3 position = aPosition / uResolution * 2.0;
+
+
 
             // Iterate through lights
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 1; i++) {
                 vec3 lightPosition = vec3(uLightPosition[i]);
-                vec4 lightAmbient = uLightPosition[i];
-                vec4 lightDiffuse = uLightPosition[i];
+                vec4 lightAmbient = uLightAmbient[i];
+                vec4 lightDiffuse = uLightDiffuse[i];
 
                 // Calculate illuminance
                 vec3 ray = normalize(lightPosition - aCentroid);
@@ -425,7 +470,8 @@ vertexShader =
                     illuminance = max(abs(illuminance), 0.0);
                 }
 
-               // vColor = vec4(position.x, position.y, position.z, 1.0);
+
+            //   vColor = vec4(aColor, 1.0);
 
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
@@ -434,15 +480,9 @@ vertexShader =
                 vColor += aDiffuse * lightDiffuse * illuminance;
             }
 
-            // Clamp color
-            //vColor = vec4(position, 0.0, 1.0, 1.0);
-            //vColor = clamp(vColor, 0.0, 1.0);
-            vColor = vec4(aColor, 1.0);
-            //vColor = vec4(noise(position.xy), noise(position.xz), noise(position.yz), 1.0);
-
             // Set gl_Position
-            gl_Position = vec4(position, 1.0);
-            //gl_Position = perspective * camera * rotation * vec4(position, 1.0);
+            //gl_Position = vec4(position, 1.0);
+            gl_Position = perspective * camera * rotation * vec4(position, 1.0);
 
         }
 
