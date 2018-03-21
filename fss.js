@@ -17,8 +17,9 @@ const Scene = require('./node_modules/flat-surface-shader/source/Scene');
 function startFss(port) {
     var scene = new FSS.Scene();
     var light = new FSS.Light('#111122', '#FF0022');
-    var geometry = new FSS.Plane(600, 400, 6, 4);
-    var material = new FSS.Material('#FFFFFF', '#FFFFFF');
+    //var geometry = new FSS.Plane(600, 400, 16, 8);
+    var geometry = new FSS.Plane(1600, 2400, 16, 24);
+    var material = new FSS.Material('#FFFF22', '#FF00FF');
     var mesh = new FSS.Mesh(geometry, material);
     var now, start = Date.now();
 

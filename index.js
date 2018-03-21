@@ -16,12 +16,12 @@ const app = Lorenz.Main.embed(mountNode);
 
 const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
 
-registerToolkit(app, BlendsNode);
+//registerToolkit(app, BlendsNode);
 
 // Prepare RPD-patch
-const startPatch = require('./patch.js');
+//const startPatch = require('./patch.js');
 
 const startFss = require('./fss.js');
 
-startPatch(app);
+//startPatch(app);
 startFss(app.ports.receiveFss/*, app.ports.changeFss*/);

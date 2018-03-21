@@ -7,9 +7,11 @@ module Layer.FSS exposing
     , init
     )
 
+import Array
+
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2
-import Math.Vector3 as Vec3 exposing (vec3, Vec3)
+import Math.Vector3 as Vec3 exposing (vec3, Vec3, getX, getY, getZ)
 import Math.Vector4 as Vec4 exposing (vec4, Vec4)
 import WebGL
 import WebGL.Settings exposing (Setting)
@@ -121,6 +123,7 @@ type alias Vertex =
     , aNormal : Vec3
     , aPosition : Vec3
     , aSide : Float
+    , aColor : Vec3
     }
 
 
@@ -132,6 +135,7 @@ defaultVertex =
     , aNormal = vec3 0 0 0
     , aPosition = vec3 0 0 0
     , aSide = 0
+    , aColor = vec3 0 0 0
     }
 
 
@@ -142,27 +146,60 @@ build config maybeScene =
             |> Maybe.map (\scene ->
                 case List.head scene.meshes of
                     Just mesh ->
-                        convertTriangles
-                            mesh.material
-                            mesh.side
-                            mesh.geometry.triangles
+                        let
+                            triangle =
+                                ( quickVertex (vec3 0 0 0)
+                                , quickVertex (vec3 1 1 0)
+                                , quickVertex (vec3 1 -1 0)
+                                )
+                            convertedTriangles  = convertTriangles
+                                                      ( mesh.geometry.width, mesh.geometry.height )
+                                                      mesh.material
+                                                      mesh.side
+                                                      mesh.geometry.triangles
+                            len = Debug.log "len" (List.length convertedTriangles)
+                            triangle200 = Array.fromList convertedTriangles |> Array.get 200 |> Debug.log "Triangle 200"
+                        in
+                            Debug.log "triangles" convertedTriangles
+                            --(Debug.log "triangles" [ triangle ])
                     Nothing -> []
             )
             |> Maybe.withDefault [ ])
 
 
 
-convertTriangles : SMaterial -> SSide -> List STriangle -> List ( Vertex, Vertex, Vertex )
-convertTriangles material side src =
+-- flatten : List ( Vertex, Vertex, Vertex ) -> List Vertex
+-- flatten triangle =
+
+
+quickVertex : Vec3 -> Vertex
+quickVertex pos =
+    { defaultVertex | aPosition = pos, aColor = vec3 1 0 0 }
+
+
+convertTriangles : ( Int, Int ) -> SMaterial -> SSide -> List STriangle -> List ( Vertex, Vertex, Vertex )
+convertTriangles size material side src =
     src |>
-        List.map
-            (\sTriangle ->
+        List.indexedMap
+            (\index sTriangle ->
                 case sTriangle.vertices of
                     a::b::c::_ ->
-                        ( a |> convertVertex material sTriangle side
-                        , b |> convertVertex material sTriangle side
-                        , c |> convertVertex material sTriangle side
-                        )
+                        case index % 2 of
+                            0 ->
+                                ( a |> convertVertex size (vec3 1 0 0) material sTriangle side
+                                , b |> convertVertex size (vec3 1 0 0) material sTriangle side
+                                , c |> convertVertex size (vec3 1 0 0) material sTriangle side
+                                )
+                            1 ->
+                                ( a |> convertVertex size (vec3 0 1 0) material sTriangle side
+                                , b |> convertVertex size (vec3 0 1 0) material sTriangle side
+                                , c |> convertVertex size (vec3 0 1 0) material sTriangle side
+                                )
+                            _ ->
+                                ( defaultVertex
+                                , defaultVertex
+                                , defaultVertex
+                                )
                     _ ->
                         ( defaultVertex
                         , defaultVertex
@@ -171,15 +208,25 @@ convertTriangles material side src =
             )
 
 
-convertVertex : SMaterial -> STriangle -> SSide -> SVertex -> Vertex
-convertVertex material triangle side v =
+convertVertex : (Int, Int) -> Vec3 -> SMaterial -> STriangle -> SSide -> SVertex -> Vertex
+convertVertex size color material  triangle side v =
     { aSide = side
     , aAmbient = v4fromList material.ambient.rgba
     , aDiffuse = v4fromList material.diffuse.rgba
-    , aPosition = v3fromList v.position
+    , aPosition = v3fromList v.position |> adaptPosition size
     , aCentroid = v3fromList triangle.centroid
     , aNormal = v3fromList triangle.normal
+    , aColor = color
     }
+
+
+
+adaptPosition : (Int, Int) -> Vec3 -> Vec3
+adaptPosition (w, h) src =
+    vec3
+      (getX src / toFloat w * 2.0)
+      (getY src / toFloat h * 2.0)
+      (getZ src / toFloat 1)
 
 
 v3fromList : List Float -> Vec3
@@ -316,6 +363,7 @@ vertexShader =
         attribute vec3 aNormal;
         attribute vec4 aAmbient;
         attribute vec4 aDiffuse;
+        attribute vec3 aColor;
 
         // Uniforms
         uniform mat4 cameraTranslate;
@@ -333,16 +381,32 @@ vertexShader =
         // Varyings
         varying vec4 vColor;
 
+        float rand(vec2 n) { 
+            return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+        }
+
+        float noise(vec2 p){
+            vec2 ip = floor(p);
+            vec2 u = fract(p);
+            u = u*u*(3.0-2.0*u);
+            
+            float res = mix(
+                mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
+                mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
+            return res*res;
+        }
+
         // Main
         void main() {
 
             // Create color
-            vColor = vec4(0.0);
-            //vColor = vec4(0.0, 0.0, 0.0, 1.0);
+           // vColor = vec4(0.0);
+            vColor = vec4(1.0, 0.0, 0.0, 1.0);
 
             // Calculate the vertex position
             //vec3 position = aPosition / uResolution * 2.0;
             vec3 position = aPosition;
+            //position = clamp(position, -1.0, 1.0);
 
             // Iterate through lights
             for (int i = 0; i < 3; i++) {
@@ -361,6 +425,8 @@ vertexShader =
                     illuminance = max(abs(illuminance), 0.0);
                 }
 
+               // vColor = vec4(position.x, position.y, position.z, 1.0);
+
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
 
@@ -369,12 +435,14 @@ vertexShader =
             }
 
             // Clamp color
-            vColor = clamp(vColor, 0.0, 1.0);
-            //vColor = vec4(1.0, 1.0, 1.0, 1.0);
+            //vColor = vec4(position, 0.0, 1.0, 1.0);
+            //vColor = clamp(vColor, 0.0, 1.0);
+            vColor = vec4(aColor, 1.0);
+            //vColor = vec4(noise(position.xy), noise(position.xz), noise(position.yz), 1.0);
 
             // Set gl_Position
-            //gl_Position = vec4(position, 1.0);
-            gl_Position = perspective * camera * rotation * vec4(position, 1.0);
+            gl_Position = vec4(position, 1.0);
+            //gl_Position = perspective * camera * rotation * vec4(position, 1.0);
 
         }
 
@@ -420,7 +488,8 @@ fragmentShader =
         void main() {
 
             // Set gl_FragColor
-            gl_FragColor = vColor;
+           gl_FragColor = vColor;
+          //gl_FragColor = vec4(1,0,0,1);
 
         }
 
