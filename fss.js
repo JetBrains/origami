@@ -7,12 +7,13 @@ require('./node_modules/flat-surface-shader/source/Vertex');
 require('./node_modules/flat-surface-shader/source/Color');
 require('./node_modules/flat-surface-shader/source/Triangle');
 require('./node_modules/flat-surface-shader/source/Object');
-const Light = require('./node_modules/flat-surface-shader/source/Light');
-const Material = require('./node_modules/flat-surface-shader/source/Material');
-const Geometry = require('./node_modules/flat-surface-shader/source/Geometry');
-const Plane = require('./node_modules/flat-surface-shader/source/Plane');
-const Mesh = require('./node_modules/flat-surface-shader/source/Mesh');
-const Scene = require('./node_modules/flat-surface-shader/source/Scene');
+require('./node_modules/flat-surface-shader/source/Light');
+require('./node_modules/flat-surface-shader/source/Material');
+require('./node_modules/flat-surface-shader/source/Geometry');
+require('./node_modules/flat-surface-shader/source/Plane');
+require('./node_modules/flat-surface-shader/source/Mesh');
+require('./node_modules/flat-surface-shader/source/Scene');
+require('./node_modules/flat-surface-shader/source/Math');
 
 function startFss(port) {
     var scene = new FSS.Scene();
@@ -26,6 +27,19 @@ function startFss(port) {
     function initialise() {
         scene.add(mesh);
         scene.add(light);
+
+        var v, vertex;
+        for (v = geometry.vertices.length - 1; v >= 0; v--) {
+            vertex = geometry.vertices[v];
+            vertex.anchor = FSS.Vector3.clone(vertex.position);
+            vertex.step = FSS.Vector3.create(
+                Math.randomInRange(0.2, 1.0),
+                Math.randomInRange(0.2, 1.0),
+                Math.randomInRange(0.2, 1.0)
+            );
+            vertex.time = Math.randomInRange(0, Math.PIM2);
+        }
+
         light.setPosition(300*Math.sin(0.001), 200*Math.cos(0.0005), 60);
         //container.appendChild(renderer.element);
         //window.addEventListener('resize', resize);
