@@ -52,6 +52,7 @@ type alias Model =
     , theta : Float
     , layers : Array Layer
     , size : ( Int, Int )
+    , now : Time
     }
 
 
@@ -89,6 +90,7 @@ init =
                 --, VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
                 ]
             , size = ( 0, 0 )
+            , now = 0.0
             }
         , Cmd.batch
             [ Task.perform Resize Window.size
@@ -104,10 +106,12 @@ update msg model =
                 { model
                 | fps = floor (1000 / dt)
                 , theta = model.theta + dt / 4000
+                , now = model.now + dt
                 }
               else
                 { model
                 | fps = floor (1000 / dt)
+                , now = model.now + dt
                 }
             , Cmd.none
             )
@@ -269,8 +273,8 @@ mapControls model controlsMsg =
         Controls.Rotate th -> Rotate th
 
 
-mergeLayers : Float -> ( Int, Int ) -> Array Layer -> List WebGL.Entity
-mergeLayers theta size layers =
+mergeLayers : Float -> Time -> ( Int, Int ) -> Array Layer -> List WebGL.Entity
+mergeLayers theta now size layers =
     let viewport = Viewport.find { theta = theta, size = size }
     in layers |> Array.map
         (\layer ->
@@ -299,6 +303,7 @@ mergeLayers theta size layers =
                 FssLayer _ blend serialized fss ->
                     FSS.makeEntity
                         viewport
+                        now
                         serialized
                         [ DepthTest.default, Blend.produce blend ]
                         fss
@@ -329,7 +334,7 @@ view model =
               , height (Tuple.second model.size)
               , style [ ( "display", "block" ), ("background-color", "#12181C") ]
               ]
-              (model.layers |> mergeLayers model.theta model.size)
+              (model.layers |> mergeLayers model.theta model.now model.size)
           :: []
         )
 

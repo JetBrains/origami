@@ -15,6 +15,7 @@ import Math.Vector3 as Vec3 exposing (vec3, Vec3, getX, getY, getZ)
 import Math.Vector4 as Vec4 exposing (vec4, Vec4)
 import WebGL
 import WebGL.Settings exposing (Setting)
+import Time exposing (Time)
 
 import Viewport exposing (Viewport)
 
@@ -26,6 +27,7 @@ type alias Mesh = WebGL.Mesh Vertex
 
 
 -- Serialization
+
 
 type alias SColor =
     { rgba : List Float
@@ -54,6 +56,8 @@ type alias SPlane =
     , height : Int
     , triangles : List STriangle
     , vertices : List SVertex
+    , segmentWidth : Int
+    , sliceHeight : Int
     }
 
 
@@ -75,6 +79,9 @@ type alias STriangle =
 
 type alias SVertex =
     { position : List Float
+    , step : List Float
+    , anchor : List Float
+    , time : Float
     }
 
 
@@ -83,6 +90,7 @@ type alias SMesh =
     , material : SMaterial
     , position : List Float
     , side : SSide
+    --, depth : Int
     }
 
 
@@ -98,8 +106,8 @@ init : Config
 init = {}
 
 
-makeEntity : Viewport {} -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
-makeEntity viewport maybeScene settings mesh =
+makeEntity : Viewport {} -> Time -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
+makeEntity viewport now maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -119,7 +127,7 @@ makeEntity viewport maybeScene settings mesh =
             vertexShader
             fragmentShader
             mesh
-            (uniforms viewport size lights)
+            (uniforms viewport now size lights)
 
 
 -- Mesh
@@ -133,6 +141,8 @@ type alias Vertex =
     , aPosition : Vec3
     , aSide : Float
     , aColor : Vec3
+    , aStep : Vec3
+    , aPhi : Float
     }
 
 
@@ -145,6 +155,8 @@ defaultVertex =
     , aPosition = vec3 0 0 0
     , aSide = 0
     , aColor = vec3 0 0 0
+    , aStep = vec3 0 0 0
+    , aPhi = 0
     }
 
 
@@ -162,7 +174,6 @@ build config maybeScene =
                                 , quickVertex (vec3 1 -1 0)
                                 )
                             convertedTriangles  = convertTriangles
-                                                      ( mesh.geometry.width, mesh.geometry.height )
                                                       mesh.material
                                                       mesh.side
                                                       mesh.geometry.triangles
@@ -186,8 +197,8 @@ quickVertex pos =
     { defaultVertex | aPosition = pos, aColor = vec3 1 0 0 }
 
 
-convertTriangles : ( Int, Int ) -> SMaterial -> SSide -> List STriangle -> List ( Vertex, Vertex, Vertex )
-convertTriangles size material side src =
+convertTriangles :  SMaterial -> SSide -> List STriangle -> List ( Vertex, Vertex, Vertex )
+convertTriangles material side src =
     src |>
         List.indexedMap
             (\index sTriangle ->
@@ -195,14 +206,14 @@ convertTriangles size material side src =
                     a::b::c::_ ->
                         case index % 2 of
                             0 ->
-                                ( a |> convertVertex size (vec3 1 0 0) material sTriangle side
-                                , b |> convertVertex size (vec3 1 0 0) material sTriangle side
-                                , c |> convertVertex size (vec3 1 0 0) material sTriangle side
+                                ( a |> convertVertex (vec3 1 0 0) material sTriangle side
+                                , b |> convertVertex (vec3 1 0 0) material sTriangle side
+                                , c |> convertVertex (vec3 1 0 0) material sTriangle side
                                 )
                             1 ->
-                                ( a |> convertVertex size (vec3 0 1 0) material sTriangle side
-                                , b |> convertVertex size (vec3 0 1 0) material sTriangle side
-                                , c |> convertVertex size (vec3 0 1 0) material sTriangle side
+                                ( a |> convertVertex (vec3 0 1 0) material sTriangle side
+                                , b |> convertVertex (vec3 0 1 0) material sTriangle side
+                                , c |> convertVertex (vec3 0 1 0) material sTriangle side
                                 )
                             _ ->
                                 ( defaultVertex
@@ -217,8 +228,8 @@ convertTriangles size material side src =
             )
 
 
-convertVertex : (Int, Int) -> Vec3 -> SMaterial -> STriangle -> SSide -> SVertex -> Vertex
-convertVertex size color material triangle side v =
+convertVertex : Vec3 -> SMaterial -> STriangle -> SSide -> SVertex -> Vertex
+convertVertex color material triangle side v =
     { aSide = side
     , aAmbient = v4fromList material.ambient.rgba
     , aDiffuse = v4fromList material.diffuse.rgba
@@ -226,8 +237,28 @@ convertVertex size color material triangle side v =
     , aCentroid = v3fromList triangle.centroid
     , aNormal = v3fromList triangle.normal
     , aColor = color
+    , aStep = v3fromList v.step |> Debug.log "aStep"
+    , aPhi = v.time
     }
 
+
+--findNewPosition : State -> SVertex -> Vec3
+--findNewPosition { now, segmentWidth, sliceHeight, depth } { time, step } =
+--    let
+--        speed = 0.001
+--        xRange = 0.35
+--        yRange = 0.14
+--        zRange = 1.0
+--        offset = toFloat depth / 2.0
+--        stepVec = v3fromList step
+--        ox = sin (time + getX stepVec * now * speed)
+--        oy = cos (time + getY stepVec * now * speed)
+--        oz = sin (time + getZ stepVec * now * speed)
+--    in
+--        vec3
+--          (xRange * toFloat segmentWidth * ox)
+--          (yRange * toFloat sliceHeight * oy)
+--          (zRange * offset * oz - offset)
 
 
 adaptPosition : (Int, Int) -> Vec3 -> Vec3
@@ -267,11 +298,13 @@ type alias Uniforms =
         , uLightAmbient : Mat4
         , uLightDiffuse : Mat4
         , uResolution : Vec3
+        , uNow : Float
+        , uSegment : Vec3
         }
 
 
-uniforms : Viewport {} -> (Int, Int) -> List SLight -> Uniforms
-uniforms v size lights =
+uniforms : Viewport {} -> Time -> (Int, Int) -> List SLight -> Uniforms
+uniforms v now size lights =
     let
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
@@ -283,6 +316,8 @@ uniforms v size lights =
         , uLightAmbient = adaptedLights.ambient
         , uLightDiffuse = adaptedLights.diffuse
         , uLightPosition = adaptedLights.position
+        , uNow = now
+        , uSegment  = vec3 100 100 50
 
         , rotation = v.rotation
         , perspective = v.perspective
@@ -410,6 +445,9 @@ vertexShader =
         attribute vec4 aAmbient;
         attribute vec4 aDiffuse;
         attribute vec3 aColor;
+        attribute vec3 aStep;
+        attribute float aPhi;
+        
 
         // Uniforms
         uniform mat4 cameraTranslate;
@@ -420,12 +458,16 @@ vertexShader =
 
         uniform vec3 uResolution;
 
+        uniform vec3 uSegment;
+        uniform float uNow;
+
         uniform mat4 uLightPosition;
         uniform mat4 uLightAmbient;
         uniform mat4 uLightDiffuse;
 
         // Varyings
         varying vec4 vColor;
+
 
         float rand(vec2 n) { 
             return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
@@ -449,7 +491,26 @@ vertexShader =
             vColor = vec4(0.0);
 
             // Calculate the vertex position
+            //vec3 position; // = aPosition / uResolution * 2.0;
+            //vec3 position = aPosition;
+            //position.z = noise(position.xy);
+
+
+            float speed = 0.001;
+            float xRange = 0.35;
+            float yRange = 0.14;
+            float zRange = 1.0;
+            float offset = uSegment[2] / 2.0;
+            float segmentWidth = uSegment[0];
+            float sliceHeight = uSegment[1];
+
             vec3 position = aPosition / uResolution * 2.0;
+
+            //position.x = xRange * segmentWidth * sin(aPhi + aStep[0] * uNow * speed);
+            position.x = position.x + (xRange * segmentWidth * sin(aPhi + aStep[0] * uNow * speed));
+            position.y = position.y + (yRange * sliceHeight * cos(aPhi + aStep[1] * uNow * speed));
+            position.z = position.z + (zRange * offset * sin(aPhi + aStep[2] * uNow * speed) - offset);
+
 
 
 
@@ -481,8 +542,8 @@ vertexShader =
             }
 
             // Set gl_Position
-            //gl_Position = vec4(position, 1.0);
-            gl_Position = perspective * camera * rotation * vec4(position, 1.0);
+            gl_Position = vec4(position, 1.0);
+            //gl_Position = perspective * camera * rotation * vec4(position, 1.0);
 
         }
 
@@ -524,12 +585,21 @@ fragmentShader =
         // Varyings
         varying vec4 vColor;
 
+        uniform vec3 uResolution;
+
         // Main
         void main() {
 
             // Set gl_FragColor
            gl_FragColor = vColor;
-          //gl_FragColor = vec4(1,0,0,1);
+
+                       vec2 uv = gl_FragCoord.xy / uResolution.xy;
+
+                     //      gl_FragColor = texture2D(uv, vec2(abs(0.5 - uv.x), uv.y));
+            // gl_FragColor = texture2D(uv, vec2(abs(0.5 - uv.x), uv.y));
+             //gl_FragColor = vec4(uv, floor(uv.x + 0.5), uv.y, 1.0);
+
+          //gl_FragColor = vec4(uv, 0.0, 1.0);
 
         }
 
