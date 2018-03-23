@@ -140,7 +140,7 @@ type alias Vertex =
     , aNormal : Vec3
     , aPosition : Vec3
     , aSide : Float
-    , aColor : Vec3
+    , aColor : Vec4
     , aStep : Vec3
     , aPhi : Float
     }
@@ -154,7 +154,7 @@ defaultVertex =
     , aNormal = vec3 0 0 0
     , aPosition = vec3 0 0 0
     , aSide = 0
-    , aColor = vec3 0 0 0
+    , aColor = vec4 0 0 0 0
     , aStep = vec3 0 0 0
     , aPhi = 0
     }
@@ -188,13 +188,10 @@ build config maybeScene =
 
 
 
--- flatten : List ( Vertex, Vertex, Vertex ) -> List Vertex
--- flatten triangle =
-
 
 quickVertex : Vec3 -> Vertex
 quickVertex pos =
-    { defaultVertex | aPosition = pos, aColor = vec3 1 0 0 }
+    { defaultVertex | aPosition = pos }
 
 
 convertTriangles :  SMaterial -> SSide -> List STriangle -> List ( Vertex, Vertex, Vertex )
@@ -206,14 +203,14 @@ convertTriangles material side src =
                     a::b::c::_ ->
                         case index % 2 of
                             0 ->
-                                ( a |> convertVertex (vec3 1 0 0) material sTriangle side
-                                , b |> convertVertex (vec3 1 0 0) material sTriangle side
-                                , c |> convertVertex (vec3 1 0 0) material sTriangle side
+                                ( a |> convertVertex (vec4 1 0 0 1) material sTriangle side
+                                , b |> convertVertex (vec4 1 0 0 1) material sTriangle side
+                                , c |> convertVertex (vec4 1 0 0 1) material sTriangle side
                                 )
                             1 ->
-                                ( a |> convertVertex (vec3 0 1 0) material sTriangle side
-                                , b |> convertVertex (vec3 0 1 0) material sTriangle side
-                                , c |> convertVertex (vec3 0 1 0) material sTriangle side
+                                ( a |> convertVertex (vec4 0 1 0 1) material sTriangle side
+                                , b |> convertVertex (vec4 1 0 0 1) material sTriangle side
+                                , c |> convertVertex (vec4 0 1 0 1) material sTriangle side
                                 )
                             _ ->
                                 ( defaultVertex
@@ -228,7 +225,7 @@ convertTriangles material side src =
             )
 
 
-convertVertex : Vec3 -> SMaterial -> STriangle -> SSide -> SVertex -> Vertex
+convertVertex : Vec4 -> SMaterial -> STriangle -> SSide -> SVertex -> Vertex
 convertVertex color material triangle side v =
     { aSide = side
     , aAmbient = v4fromList material.ambient.rgba
@@ -242,31 +239,6 @@ convertVertex color material triangle side v =
     }
 
 
---findNewPosition : State -> SVertex -> Vec3
---findNewPosition { now, segmentWidth, sliceHeight, depth } { time, step } =
---    let
---        speed = 0.001
---        xRange = 0.35
---        yRange = 0.14
---        zRange = 1.0
---        offset = toFloat depth / 2.0
---        stepVec = v3fromList step
---        ox = sin (time + getX stepVec * now * speed)
---        oy = cos (time + getY stepVec * now * speed)
---        oz = sin (time + getZ stepVec * now * speed)
---    in
---        vec3
---          (xRange * toFloat segmentWidth * ox)
---          (yRange * toFloat sliceHeight * oy)
---          (zRange * offset * oz - offset)
-
-
-adaptPosition : (Int, Int) -> Vec3 -> Vec3
-adaptPosition (w, h) src =
-    vec3
-      (getX src / toFloat w * 2.0)
-      (getY src / toFloat h * 2.0)
-      (getZ src / toFloat 1)
 
 
 v3fromList : List Float -> Vec3
@@ -430,7 +402,7 @@ lightsToMatrices (w, h) ( aa, ba, ca, da ) ( ad, bd, cd, dd ) ( ap, bp, cp, dp )
 
 
 
-vertexShader : WebGL.Shader Vertex Uniforms { vColor : Vec4 }
+vertexShader : WebGL.Shader Vertex Uniforms { vColor : Vec4, vPosition : Vec3 }
 vertexShader =
     [glsl|
 
@@ -444,7 +416,7 @@ vertexShader =
         attribute vec3 aNormal;
         attribute vec4 aAmbient;
         attribute vec4 aDiffuse;
-        attribute vec3 aColor;
+        attribute vec4 aColor;
         attribute vec3 aStep;
         attribute float aPhi;
         
@@ -467,6 +439,7 @@ vertexShader =
 
         // Varyings
         varying vec4 vColor;
+        varying vec3 vPosition;
 
 
         float rand(vec2 n) { 
@@ -489,12 +462,12 @@ vertexShader =
 
             // Create color
             vColor = vec4(0.0);
+            //vColor = aColor;
 
             // Calculate the vertex position
             //vec3 position; // = aPosition / uResolution * 2.0;
             vec3 position = aPosition;
             //position.z = noise(position.xy);
-
 
             float speed = 0.001;
             float xRange = 0.35;
@@ -504,9 +477,6 @@ vertexShader =
             float segmentWidth = uSegment[0];
             float sliceHeight = uSegment[1];
 
-
-
-            //position.x = xRange * segmentWidth * sin(aPhi + aStep[0] * uNow * speed);
             position.x = position.x + (xRange * segmentWidth * sin(aPhi + aStep[0] * uNow * speed));
             position.y = position.y + (yRange * sliceHeight * cos(aPhi + aStep[1] * uNow * speed));
             position.z = position.z + (zRange * offset * sin(aPhi + aStep[2] * uNow * speed) - offset);
@@ -544,6 +514,7 @@ vertexShader =
 
             // Set gl_Position
             gl_Position = vec4(position, 1.0);
+            vPosition = position;
             //gl_Position = perspective * camera * rotation * vec4(position, 1.0);
 
         }
@@ -551,32 +522,9 @@ vertexShader =
     |]
 
 
--- vertexShader : WebGL.Shader Vertex Uniforms { vcolor : Vec3 }
--- vertexShader =
---     [glsl|
-
---         attribute vec3 position;
---         attribute vec3 color;
-
---         uniform mat4 cameraTranslate;
---         uniform mat4 cameraRotate;
---         uniform mat4 perspective;
---         uniform mat4 camera;
---         uniform mat4 rotation;
-
---         varying vec3 vcolor;
-
---         void main () {
---             // gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate * vec4(position, 1.0);
---             // gl_Position = perspective * camera * rotation * vec4(position, 1.0);
---             gl_Position = perspective * camera * rotation * vec4(position, 1.0);
---             vcolor = color;
---         }
-
---     |]
 
 
-fragmentShader : WebGL.Shader {} Uniforms { vColor : Vec4 }
+fragmentShader : WebGL.Shader {} Uniforms { vColor : Vec4, vPosition : Vec3 }
 fragmentShader =
     [glsl|
 
@@ -585,22 +533,20 @@ fragmentShader =
 
         // Varyings
         varying vec4 vColor;
+        varying vec3 vPosition;
 
         uniform vec3 uResolution;
 
         // Main
         void main() {
 
-            // Set gl_FragColor
+           // Set gl_FragColor
            gl_FragColor = vColor;
 
-                       vec2 uv = gl_FragCoord.xy / uResolution.xy;
+           //gl_FragColor.r = gl_FragCoord.y >= 0.1 ? 0.0 : gl_FragColor.r ;
 
-                     //      gl_FragColor = texture2D(uv, vec2(abs(0.5 - uv.x), uv.y));
-            // gl_FragColor = texture2D(uv, vec2(abs(0.5 - uv.x), uv.y));
-             //gl_FragColor = vec4(uv, floor(uv.x + 0.5), uv.y, 1.0);
+   //        vec2 uv = gl_FragCoord.xy / uResolution.xy;
 
-          //gl_FragColor = vec4(uv, 0.0, 1.0);
 
         }
 

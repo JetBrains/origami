@@ -17,10 +17,10 @@ require('./node_modules/flat-surface-shader/source/Math');
 
 function startFss(port) {
     var scene = new FSS.Scene();
-    var light = new FSS.Light('#111122', '#FF0022');
+    var light = new FSS.Light('#000000', '#4b4e76');
     //var geometry = new FSS.Plane(600, 400, 16, 8);
     var geometry = new FSS.Plane(1600, 2400, 16, 24);
-    var material = new FSS.Material('#FFFF22', '#FF00FF');
+    var material = new FSS.Material('#FFFFFF', '#FFFFFF');
     var mesh = new FSS.Mesh(geometry, material);
     var now, start = Date.now();
 
@@ -40,7 +40,7 @@ function startFss(port) {
             vertex.time = Math.randomInRange(0, Math.PIM2);
         }
 
-        light.setPosition(300*Math.sin(0.001), 200*Math.cos(0.0005), 60);
+        light.setPosition(300*Math.sin(0.001), 200*Math.cos(0.0001), 120);
         //container.appendChild(renderer.element);
         //window.addEventListener('resize', resize);
     }
