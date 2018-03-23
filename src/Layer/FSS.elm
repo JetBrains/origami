@@ -464,6 +464,8 @@ vertexShader =
             vColor = vec4(0.0);
             //vColor = aColor;
 
+
+
             // Calculate the vertex position
             //vec3 position; // = aPosition / uResolution * 2.0;
             vec3 position = aPosition;
@@ -471,27 +473,30 @@ vertexShader =
 
             float speed = 0.001;
             float xRange = 0.35;
-            float yRange = 0.14;
+            float yRange = 0.2;
             float zRange = 1.0;
-            float offset = uSegment[2] / 2.0;
+            float offset = uSegment[2];
             float segmentWidth = uSegment[0];
             float sliceHeight = uSegment[1];
 
+
+
             position.x = position.x + (xRange * segmentWidth * sin(aPhi + aStep[0] * uNow * speed));
             position.y = position.y + (yRange * sliceHeight * cos(aPhi + aStep[1] * uNow * speed));
-            position.z = position.z + (zRange * offset * sin(aPhi + aStep[2] * uNow * speed) - offset);
+            position.z = position.z + (zRange * offset * sin(aPhi + aStep[2] * uNow * speed));
 
             position = position / uResolution * 2.0;
 
 
 
             // Iterate through lights
-            for (int i = 0; i < 1; i++) {
-                vec3 lightPosition = vec3(uLightPosition[i]);
+            for (int i = 0; i < 3; i++) {
+                vec3 lightPosition = vec3(uLightPosition[i]) * 0.5;
                 vec4 lightAmbient = uLightAmbient[i];
-                vec4 lightDiffuse = uLightDiffuse[i];
+                vec4 lightDiffuse = uLightDiffuse[i] * 1.5;
 
                 // Calculate illuminance
+
                 vec3 ray = normalize(lightPosition - aCentroid);
                 float illuminance = dot(aNormal, ray);
                 if (aSide == 0.0) {
@@ -505,17 +510,25 @@ vertexShader =
 
             //   vColor = vec4(aColor, 1.0);
 
+
+
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
 
                 // Calculate diffuse light
                 vColor += aDiffuse * lightDiffuse * illuminance;
+
+
             }
 
+                vColor = aPhi < 2.0 ? vColor *  vec4(1.4, 1.4, 1.4, 1.4) : vColor;
+
             // Set gl_Position
-            gl_Position = vec4(position, 1.0);
+           gl_Position = vec4(position, 1.0);
             vPosition = position;
-            //gl_Position = perspective * camera * rotation * vec4(position, 1.0);
+           // gl_Position = perspective * camera * rotation * vec4(position, 1.0);
+
+
 
         }
 
@@ -536,6 +549,7 @@ fragmentShader =
         varying vec3 vPosition;
 
         uniform vec3 uResolution;
+  //      uniform float uNow;
 
         // Main
         void main() {
@@ -543,11 +557,16 @@ fragmentShader =
            // Set gl_FragColor
            gl_FragColor = vColor;
 
-           //gl_FragColor.r = gl_FragCoord.y >= 0.1 ? 0.0 : gl_FragColor.r ;
-
-   //        vec2 uv = gl_FragCoord.xy / uResolution.xy;
 
 
+          // gl_FragColor.r = gl_FragCoord.y >= 0.1 ? 0.0 : gl_FragColor.r ;
+
+         //  vec2 uv = gl_FragCoord.xy / uResolution.xy;
+
+       // gl_FragColor.a = ((gl_FragCoord.x >= 0.5) ? (1.0 - gl_FragCoord.x) : gl_FragCoord.x);
+     //   gl_FragColor.a *= ((gl_FragCoord.y >= 0.5) ? (pow(2.0, 15.0 * (0.5 - gl_FragCoord.y))) : 1.0 - pow(1.6, 15.0 * (- gl_FragCoord.y)));
+       //   gl_FragColor.r = 1.0 - pow(2.0, uv.x);
+        //    gl_FragColor.r = sin(radians(uNow / 20.0));
         }
 
     |]

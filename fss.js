@@ -19,7 +19,7 @@ function startFss(port) {
     var scene = new FSS.Scene();
     var light = new FSS.Light('#000000', '#4b4e76');
     //var geometry = new FSS.Plane(600, 400, 16, 8);
-    var geometry = new FSS.Plane(1600, 2400, 16, 24);
+    var geometry = new FSS.Plane(1550, 800, 10, 10);
     var material = new FSS.Material('#FFFFFF', '#FFFFFF');
     var mesh = new FSS.Mesh(geometry, material);
     var now, start = Date.now();
