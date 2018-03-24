@@ -82,6 +82,7 @@ type alias SVertex =
     , step : List Float
     , anchor : List Float
     , time : Float
+    , gradient : Float
     }
 
 
@@ -201,22 +202,11 @@ convertTriangles material side src =
             (\index sTriangle ->
                 case sTriangle.vertices of
                     a::b::c::_ ->
-                        case index % 2 of
-                            0 ->
-                                ( a |> convertVertex (vec4 1 0 0 1) material sTriangle side
-                                , b |> convertVertex (vec4 1 0 0 1) material sTriangle side
-                                , c |> convertVertex (vec4 1 0 0 1) material sTriangle side
-                                )
-                            1 ->
-                                ( a |> convertVertex (vec4 0 1 0 1) material sTriangle side
-                                , b |> convertVertex (vec4 1 0 0 1) material sTriangle side
-                                , c |> convertVertex (vec4 0 1 0 1) material sTriangle side
-                                )
-                            _ ->
-                                ( defaultVertex
-                                , defaultVertex
-                                , defaultVertex
-                                )
+                        ( a |> convertVertex (vec4 a.gradient a.gradient a.gradient 1) material sTriangle side
+                        , b |> convertVertex (vec4 b.gradient b.gradient b.gradient 1) material sTriangle side
+                        , c |> convertVertex (vec4  c.gradient c.gradient c.gradient 1) material sTriangle side
+                        )
+
                     _ ->
                         ( defaultVertex
                         , defaultVertex
@@ -418,6 +408,7 @@ vertexShader =
         attribute vec4 aDiffuse;
         attribute vec4 aColor;
         attribute vec3 aStep;
+
         attribute float aPhi;
         
 
@@ -462,7 +453,8 @@ vertexShader =
 
             // Create color
             vColor = vec4(0.0);
-            //vColor = aColor;
+           // vColor = aColor;
+           // vColor = vec4(aGradient, 1.0);
 
 
 
@@ -493,7 +485,7 @@ vertexShader =
             for (int i = 0; i < 3; i++) {
                 vec3 lightPosition = vec3(uLightPosition[i]) * 0.5;
                 vec4 lightAmbient = uLightAmbient[i];
-                vec4 lightDiffuse = uLightDiffuse[i] * 1.5;
+                vec4 lightDiffuse = uLightDiffuse[i] * 3.5;
 
                 // Calculate illuminance
 
@@ -516,12 +508,14 @@ vertexShader =
                 vColor += aAmbient * lightAmbient;
 
                 // Calculate diffuse light
-                vColor += aDiffuse * lightDiffuse * illuminance;
+                vColor += aDiffuse  * lightDiffuse * illuminance;
 
 
             }
 
-                vColor = aPhi < 2.0 ? vColor *  vec4(1.4, 1.4, 1.4, 1.4) : vColor;
+             //   vColor = aPhi < 2.0 ? vColor *  vec4(1.4, 1.4, 1.4, 1.4) : vColor;
+
+             vColor = vColor * aColor;
 
             // Set gl_Position
            gl_Position = vec4(position, 1.0);

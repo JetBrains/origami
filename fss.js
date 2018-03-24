@@ -38,6 +38,8 @@ function startFss(port) {
                 Math.randomInRange(0.2, 1.0)
             );
             vertex.time = Math.randomInRange(0, Math.PIM2);
+
+            vertex.gradient = Math.randomInRange(0.2, 0.7);
         }
 
         light.setPosition(300*Math.sin(0.001), 200*Math.cos(0.0001), 120);
