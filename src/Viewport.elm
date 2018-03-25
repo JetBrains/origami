@@ -36,13 +36,13 @@ find { theta, size } =
         ( width, height ) = size
     in
         { rotation
-            = Mat4.makeRotate (3 * theta) (vec3 0 1 0)
+            = Mat4.makeRotate (3 * theta) (vec3 0 0 1)
         , perspective
-            = Mat4.makePerspective 95 1.5 0.1 3000
-        , camera = Mat4.makeLookAt (vec3 1 0.5 -0.8) (vec3 -0.5 0.1 0) (vec3 0 1 0)
+            = Mat4.makePerspective 90 1.5 0.1 3000
+        , camera = Mat4.makeLookAt (vec3 0 0 0.5) (vec3 0 0 0) (vec3 1 0 0)
         --, shade = 0.8
-        , cameraTranslate = Mat4.makeTranslate (vec3 (1/3) (1/80) (-1/16))
-        , cameraRotate = Mat4.makeRotate (2) (vec3 1 0 0)
+        , cameraTranslate = Mat4.makeTranslate (vec3 0 0 0)
+        , cameraRotate = Mat4.makeRotate (-0.5) (vec3 0 0 1)
         , size = vec2 (toFloat width) (toFloat height)
         }
 
