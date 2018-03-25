@@ -467,7 +467,7 @@ vertexShader =
             float speed = 0.001;
             float xRange = 0.35;
             float yRange = 0.2;
-            float zRange = 0.1;
+            float zRange = 0.9;
             float offset = uSegment[2];
             float segmentWidth = uSegment[0];
             float sliceHeight = uSegment[1];
@@ -485,13 +485,15 @@ vertexShader =
             // Iterate through lights
             for (int i = 0; i < 2; i++) {
                 vec3 lightPosition = vec3(uLightPosition[i]) * 0.5;
+                lightPosition.x =  100.0 * sin(uNow / 4000.0);
+             //   lightPosition.y =  00.0 * cos(uNow / 4000.0);
                 vec4 lightAmbient = uLightAmbient[i];
-                vec4 lightDiffuse = uLightDiffuse[i] * 3.5;
+                vec4 lightDiffuse = uLightDiffuse[i] * 3.0;
 
                 // Calculate illuminance
 
                 vec3 ray = normalize(lightPosition - aCentroid);
-                float illuminance = dot(aNormal, ray);
+                float illuminance = dot(aNormal, ray) ;
                 if (aSide == 0.0) {
                     illuminance = max(illuminance, 0.0);
                 } else if (aSide == 1.0) {
@@ -516,6 +518,8 @@ vertexShader =
 
            // Multiplied by gradients
              vColor = vColor * aColor;
+
+
 
             // Set gl_Position
            gl_Position = cameraRotate * vec4(position, 1.0);
@@ -551,23 +555,37 @@ fragmentShader =
            // Set gl_FragColor
            gl_FragColor = vColor;
 
+ //   vec2 pos_ndc = gl_FragCoord.xy / uResolution.xy - 1.0;
 
+ //   float dist = length(pos_ndc);
+
+    vec4 white = vec4(1.0, 1.0, 1.0, 0.0);
+   vec4 red = vec4(0.99, 0.19, 0.36, 1.0);
+    float step1 = 0.0;
+
+    float step4 = 2.5;
+
+   vec4 color = mix(vColor, red, smoothstep(step1, step4, gl_FragCoord.y / uResolution.y));
+
+  //color.b = gl_FragCoord.y / uResolution.y > 0.5 ? 1.0 : color.b;
+
+    gl_FragColor = color;
 
           // gl_FragColor.r = gl_FragCoord.y >= 0.1 ? 0.0 : gl_FragColor.r ;
 
-          vec3 position = vPosition / uResolution;
+      //    vec3 position = vPosition / uResolution;
 
-           vec2 uv = gl_FragCoord.xy / uResolution.xy;
+       //    vec2 uv = gl_FragCoord.xy / uResolution.xy;
 
-           vec4 color = vec4(0.045, 0.045, 0.045, 0.0);
+       //    vec4 color = vec4(0.045, 0.045, 0.045, 0.0);
 
-           float pct = abs(sin(uv.x));
+    //       float pct = abs(sin(uv.x));
          //  pct =uv.x > 0.5 ?  1.0 : 0.0;
-        //   vec4 color1 = mix(color, vColor, pct);
+      //    vec4 color1 = mix(color, vColor, pct);
 
          //  gl_FragColor = vec4(vec3(0.045, 0.045, 0.045), abs(cos(uv.x)));
 
-      //   gl_FragColor = color1;
+         //gl_FragColor = color1;
 
 
 
