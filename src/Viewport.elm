@@ -42,7 +42,7 @@ find { theta, size } =
         , camera = Mat4.makeLookAt (vec3 0 0 0.5) (vec3 0 0 0) (vec3 1 0 0)
         --, shade = 0.8
         , cameraTranslate = Mat4.makeTranslate (vec3 0 0 0)
-        , cameraRotate = Mat4.makeRotate (0.2) (vec3 0 0 1)
+        , cameraRotate = Mat4.makeRotate (0.5) (vec3 0 0 1)
         , size = vec2 (toFloat width) (toFloat height)
         }
 
