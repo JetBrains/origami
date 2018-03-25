@@ -271,9 +271,10 @@ uniforms v now size lights =
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
         height = Vec2.getY v.size
+        depth = 100.0
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
-        { uResolution = vec3 width height width
+        { uResolution = vec3 width height depth
 
         , uLightAmbient = adaptedLights.ambient
         , uLightDiffuse = adaptedLights.diffuse
@@ -466,7 +467,7 @@ vertexShader =
             float speed = 0.001;
             float xRange = 0.35;
             float yRange = 0.2;
-            float zRange = 1.0;
+            float zRange = 0.1;
             float offset = uSegment[2];
             float segmentWidth = uSegment[0];
             float sliceHeight = uSegment[1];
@@ -482,7 +483,7 @@ vertexShader =
 
 
             // Iterate through lights
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 2; i++) {
                 vec3 lightPosition = vec3(uLightPosition[i]) * 0.5;
                 vec4 lightAmbient = uLightAmbient[i];
                 vec4 lightDiffuse = uLightDiffuse[i] * 3.5;
@@ -513,14 +514,13 @@ vertexShader =
 
             }
 
-             //   vColor = aPhi < 2.0 ? vColor *  vec4(1.4, 1.4, 1.4, 1.4) : vColor;
-
+           // Multiplied by gradients
              vColor = vColor * aColor;
 
             // Set gl_Position
-           gl_Position = vec4(position, 1.0);
-            vPosition = position;
-           // gl_Position = perspective * camera * rotation * vec4(position, 1.0);
+           gl_Position = cameraRotate * vec4(position, 1.0);
+          //  vPosition = position;
+         //   gl_Position =  camera * cameraRotate *  rotation * vec4(position, 1.0);
 
 
 
@@ -555,12 +555,35 @@ fragmentShader =
 
           // gl_FragColor.r = gl_FragCoord.y >= 0.1 ? 0.0 : gl_FragColor.r ;
 
-         //  vec2 uv = gl_FragCoord.xy / uResolution.xy;
+          vec3 position = vPosition / uResolution;
 
-       // gl_FragColor.a = ((gl_FragCoord.x >= 0.5) ? (1.0 - gl_FragCoord.x) : gl_FragCoord.x);
-     //   gl_FragColor.a *= ((gl_FragCoord.y >= 0.5) ? (pow(2.0, 15.0 * (0.5 - gl_FragCoord.y))) : 1.0 - pow(1.6, 15.0 * (- gl_FragCoord.y)));
+           vec2 uv = gl_FragCoord.xy / uResolution.xy;
+
+           vec4 color = vec4(0.045, 0.045, 0.045, 0.0);
+
+           float pct = abs(sin(uv.x));
+         //  pct =uv.x > 0.5 ?  1.0 : 0.0;
+        //   vec4 color1 = mix(color, vColor, pct);
+
+         //  gl_FragColor = vec4(vec3(0.045, 0.045, 0.045), abs(cos(uv.x)));
+
+      //   gl_FragColor = color1;
+
+
+
+      //  gl_FragColor.a = ((gl_FragCoord.x >= 0.5) ? (1.0 - gl_FragCoord.x) : gl_FragCoord.x);
+
+     //  gl_FragColor.a = position.x > 0.5 ? 0.0 : vColor.a;
+
+      //  gl_FragColor.a *= ((gl_FragCoord.y >= 0.5) ? (pow(2.0, 15.0 * (0.5 - gl_FragCoord.y))) : 1.0 - pow(1.6, 15.0 * (- gl_FragCoord.y)));
        //   gl_FragColor.r = 1.0 - pow(2.0, uv.x);
         //    gl_FragColor.r = sin(radians(uNow / 20.0));
+       // gl_FragColor = vec4(1.0,0.0,1.0,1.0);
+
+
+     // 	gl_FragColor = vec4(uv.x,uv.y,0.0, uv.y);
+
+
         }
 
     |]

@@ -78,7 +78,7 @@ init =
     in
         (
             { paused = False
-            , autoRotate = True
+            , autoRotate = False
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
@@ -332,7 +332,7 @@ view model =
            :: WebGL.toHtml
               [ width (Tuple.first model.size)
               , height (Tuple.second model.size)
-              , style [ ( "display", "block" ), ("background-color", "#12181C") ]
+              , style [ ( "display", "block" ), ("background-color", "#161616") ]
               ]
               (model.layers |> mergeLayers model.theta model.now model.size)
           :: []
