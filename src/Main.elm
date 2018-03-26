@@ -89,7 +89,7 @@ init =
                 --, FractalLayer Blend.default (fractalConfig |> Fractal.build)
                 --, VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
                 ]
-            , size = ( 0, 0 )
+            , size = ( 1500, 800 )
             , now = 0.0
             }
         , Cmd.batch
@@ -181,7 +181,7 @@ update msg model =
             )
 
         Resize { width, height } ->
-            ( { model | size = ( width, height ) }
+            ( model
             , Cmd.none
             )
 
@@ -325,11 +325,13 @@ mergeLayers theta now size layers =
 view : Model -> Html Msg
 view model =
     div [ ]
-        ( span [ class "fps" ] [ toString model.fps ++ "FPS" |> text ]
+        (
+        --span [ class "fps" ] [ toString model.fps ++ "FPS" |> text ]
         --    :: Html.map mapControls
         --     (config |>
         --           Controls.controls numVertices theta)
-           :: WebGL.toHtmlWith
+           --:: WebGL.toHtmlWith
+           WebGL.toHtmlWith
               [ WebGL.antialias
               , WebGL.alpha True
               , WebGL.clearColor 0.0862745098 0.0862745098 0.0862745098 1.0

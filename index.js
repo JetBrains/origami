@@ -6,7 +6,8 @@ require('./index.css');
 
 // initialize Elm Application
 const Lorenz = require('./src/Main.elm');
-const mountNode = document.getElementById('elm-target');
+//const mountNode = document.getElementById('elm-target');
+const mountNode = document.getElementById('js-animation');
 
 // Prepare JB-Toolkit
 const registerToolkit = require('./toolkit.js');
