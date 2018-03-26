@@ -555,17 +555,16 @@ fragmentShader =
            // Set gl_FragColor
            gl_FragColor = vColor;
 
- //   vec2 pos_ndc = gl_FragCoord.xy / uResolution.xy - 1.0;
+    vec2 pos_ndc = 2.0 * gl_FragCoord.xy / uResolution.xy - 1.0;
 
- //   float dist = length(pos_ndc);
+    float dist = length(pos_ndc);
 
-    vec4 white = vec4(1.0, 1.0, 1.0, 0.0);
-   vec4 red = vec4(0.99, 0.19, 0.36, 1.0);
-    float step1 = 0.0;
+   vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
+   float step1 = 0.0;
 
-    float step4 = 2.5;
+   float step4 = 1.0;
 
-   vec4 color = mix(vColor, red, smoothstep(step1, step4, gl_FragCoord.y / uResolution.y));
+   vec4 color = mix(vColor, bgColor, smoothstep(step1, step4, dist));
 
   //color.b = gl_FragCoord.y / uResolution.y > 0.5 ? 1.0 : color.b;
 
@@ -573,15 +572,13 @@ fragmentShader =
 
           // gl_FragColor.r = gl_FragCoord.y >= 0.1 ? 0.0 : gl_FragColor.r ;
 
-      //    vec3 position = vPosition / uResolution;
+           vec2 uv = gl_FragCoord.xy / uResolution.xy;
 
-       //    vec2 uv = gl_FragCoord.xy / uResolution.xy;
+           float pct = abs(sin(uv.x));
 
-       //    vec4 color = vec4(0.045, 0.045, 0.045, 0.0);
+           pct =uv.x > 0.5 ?  1.0 : 0.0;
 
-    //       float pct = abs(sin(uv.x));
-         //  pct =uv.x > 0.5 ?  1.0 : 0.0;
-      //    vec4 color1 = mix(color, vColor, pct);
+         vec4 color1 = mix(color, vColor, pct);
 
          //  gl_FragColor = vec4(vec3(0.045, 0.045, 0.045), abs(cos(uv.x)));
 

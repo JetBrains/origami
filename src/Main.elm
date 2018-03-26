@@ -8,6 +8,7 @@ import Time exposing (Time)
 import Window
 import Task exposing (Task)
 import WebGL exposing (Mesh)
+import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
 import Viewport exposing (Viewport)
@@ -305,7 +306,7 @@ mergeLayers theta now size layers =
                         viewport
                         now
                         serialized
-                        [ DepthTest.default, Blend.produce blend ]
+                        [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
                         fss
                 TextLayer blend ->
                     -- FIXME: replace with text
