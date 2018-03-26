@@ -7,7 +7,7 @@ import AnimationFrame
 import Time exposing (Time)
 import Window
 import Task exposing (Task)
-import WebGL exposing (Mesh)
+import WebGL exposing (Mesh, Option)
 import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
@@ -83,9 +83,8 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ --TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
-                --,
-                 FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing )
+                --[ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
+                [ FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing )
                 --, LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
                 --, FractalLayer Blend.default (fractalConfig |> Fractal.build)
                 --, VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
@@ -330,7 +329,12 @@ view model =
         --    :: Html.map mapControls
         --     (config |>
         --           Controls.controls numVertices theta)
-           :: WebGL.toHtml
+           :: WebGL.toHtmlWith
+              [ WebGL.antialias
+              , WebGL.alpha True
+              , WebGL.clearColor 0.0862745098 0.0862745098 0.0862745098 1.0
+              --, WebGL.depth 0.5
+              ]
               [ width (Tuple.first model.size)
               , height (Tuple.second model.size)
               , style [ ( "display", "block" ), ("background-color", "#161616") ]

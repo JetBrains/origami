@@ -14,9 +14,9 @@ const registerToolkit = require('./toolkit.js');
 // The third value on embed are the initial values for incomming ports into Elm
 const app = Lorenz.Main.embed(mountNode);
 
-const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
+//const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
 
-// registerToolkit(app, BlendsNode);
+//registerToolkit(app, BlendsNode);
 
 // Prepare RPD-patch
 //const startPatch = require('./patch.js');
