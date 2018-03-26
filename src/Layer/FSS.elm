@@ -449,6 +449,14 @@ vertexShader =
             return res*res;
         }
 
+        float introTransition(float curTime, float len) {
+          if (curTime < len) {
+             return curTime / len;
+          } else {
+             return 1.0;
+          }
+        }
+
         // Main
         void main() {
 
@@ -474,9 +482,10 @@ vertexShader =
 
 
 
-            position.x = position.x + (xRange * segmentWidth * sin(aPhi + aStep[0] * uNow * speed));
-            position.y = position.y + (yRange * sliceHeight * cos(aPhi + aStep[1] * uNow * speed));
-            position.z = position.z + (zRange * offset * sin(aPhi + aStep[2] * uNow * speed));
+
+            position.x = position.x + (introTransition(uNow, 10000.0) * xRange * segmentWidth * sin(aPhi + aStep[0] * uNow * speed));
+            position.y = position.y + (introTransition(uNow, 10000.0) * yRange * sliceHeight * cos(aPhi + aStep[1] * uNow * speed));
+            position.z = position.z + (introTransition(uNow, 10000.0) * zRange * offset * sin(aPhi + aStep[2] * uNow * speed));
 
             position = position / uResolution * 2.0;
 
@@ -485,7 +494,7 @@ vertexShader =
             // Iterate through lights
             for (int i = 0; i < 2; i++) {
                 vec3 lightPosition = vec3(uLightPosition[i]) * 0.5;
-                lightPosition.x =  100.0 * sin(uNow / 4000.0);
+              //  lightPosition.x =  100.0 * sin(uNow / 4000.0);
              //   lightPosition.y =  00.0 * cos(uNow / 4000.0);
                 vec4 lightAmbient = uLightAmbient[i];
                 vec4 lightDiffuse = uLightDiffuse[i] * 3.0;
