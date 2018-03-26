@@ -522,7 +522,7 @@ vertexShader =
 
 
             // Set gl_Position
-           gl_Position = cameraRotate * vec4(position, 1.0);
+           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
           //  vPosition = position;
          //   gl_Position =  camera * cameraRotate *  rotation * vec4(position, 1.0);
 
@@ -552,56 +552,16 @@ fragmentShader =
         // Main
         void main() {
 
-           // Set gl_FragColor
-           gl_FragColor = vColor;
+    // Set gl_FragColor
+    gl_FragColor = vColor;
 
-    vec2 pos_ndc = 2.0 * gl_FragCoord.xy / uResolution.xy - 1.0;
+    vec2 st=  gl_FragCoord.xy / uResolution.xy;
 
-    float dist = length(pos_ndc);
+    vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
 
-    //vec4 red = vec4(1.0, 0.0, 0.0, 1.0);
-    //vec4 white = vec4(0.0, 0.0, 0.0, 0.0);
-   vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
-   float step1 = 0.0;
-
-   float step4 = 1.0;
-
-    //vec4 color = mix(white, red, smoothstep(step1, step4, dist));
-    //vec4 color = mix(vColor, white, smoothstep(step1, step4, dist));
-   //vec4 color = mix(vColor, bgColor, smoothstep(step1, step4, dist));
-   vec4 color = mix(vColor, bgColor, smoothstep(step1, step4, dist));
-
-  //color.b = gl_FragCoord.y / uResolution.y > 0.5 ? 1.0 : color.b;
-
-    gl_FragColor = color;
-
-          // gl_FragColor.r = gl_FragCoord.y >= 0.1 ? 0.0 : gl_FragColor.r ;
-
-           vec2 uv = gl_FragCoord.xy / uResolution.xy;
-
-           float pct = abs(sin(uv.x));
-
-           pct =uv.x > 0.5 ?  1.0 : 0.0;
-
-         vec4 color1 = mix(color, vColor, pct);
-
-         //  gl_FragColor = vec4(vec3(0.045, 0.045, 0.045), abs(cos(uv.x)));
-
-         //gl_FragColor = color1;
+    gl_FragColor = mix(vColor, bgColor, smoothstep(0.0, 0.5, distance(st, vec2(0.5) )));
 
 
-
-      //  gl_FragColor.a = ((gl_FragCoord.x >= 0.5) ? (1.0 - gl_FragCoord.x) : gl_FragCoord.x);
-
-     //  gl_FragColor.a = position.x > 0.5 ? 0.0 : vColor.a;
-
-      //  gl_FragColor.a *= ((gl_FragCoord.y >= 0.5) ? (pow(2.0, 15.0 * (0.5 - gl_FragCoord.y))) : 1.0 - pow(1.6, 15.0 * (- gl_FragCoord.y)));
-       //   gl_FragColor.r = 1.0 - pow(2.0, uv.x);
-        //    gl_FragColor.r = sin(radians(uNow / 20.0));
-       // gl_FragColor = vec4(1.0,0.0,1.0,1.0);
-
-
-     // 	gl_FragColor = vec4(uv.x,uv.y,0.0, uv.y);
 
 
         }
