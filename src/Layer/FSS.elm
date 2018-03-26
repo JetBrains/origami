@@ -559,11 +559,16 @@ fragmentShader =
 
     float dist = length(pos_ndc);
 
+    //vec4 red = vec4(1.0, 0.0, 0.0, 1.0);
+    //vec4 white = vec4(0.0, 0.0, 0.0, 0.0);
    vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
    float step1 = 0.0;
 
    float step4 = 1.0;
 
+    //vec4 color = mix(white, red, smoothstep(step1, step4, dist));
+    //vec4 color = mix(vColor, white, smoothstep(step1, step4, dist));
+   //vec4 color = mix(vColor, bgColor, smoothstep(step1, step4, dist));
    vec4 color = mix(vColor, bgColor, smoothstep(step1, step4, dist));
 
   //color.b = gl_FragCoord.y / uResolution.y > 0.5 ? 1.0 : color.b;

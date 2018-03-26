@@ -42,7 +42,7 @@ Rpd.noderenderer('jb/layers', 'svg', {
     },
     always: function(bodyElm, inlets) {
         // TODO: Embed Elm App inside?
-        return;
+        //return;
         var layersCount = parseInt(inlets.count);
         console.log(layersCount);
         d3.select(bodyElm).selectAll("*").remove();
@@ -164,4 +164,4 @@ function mapTextOver(list, shiftX, onClick) {
 module.exports = function(elmLorenzInstance, layersNodeApp_) {
     elmLorenz = elmLorenzInstance;
     layersNodeApp = layersNodeApp_;
-}
+};
