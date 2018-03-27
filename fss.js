@@ -19,7 +19,7 @@ function startFss(port) {
     var scene = new FSS.Scene();
     var light = new FSS.Light('#000000', '#4b4e76');
     var highlight = new FSS.Light('#000000', '#fb4e76');
-    //var geometry = new FSS.Plane(600, 400, 16, 8);
+    var glare = new FSS.Light('#000000', '#ffffff');
     var geometry = new FSS.Plane(1550, 800, 10, 10);
     var material = new FSS.Material('#FFFFFF', '#FFFFFF');
     var mesh = new FSS.Mesh(geometry, material);
@@ -29,6 +29,7 @@ function startFss(port) {
         scene.add(mesh);
         scene.add(light);
         scene.add(highlight);
+        scene.add(glare);
 
         var v, vertex;
         for (v = geometry.vertices.length - 1; v >= 0; v--) {
@@ -40,12 +41,13 @@ function startFss(port) {
                 Math.randomInRange(0.2, 1.0)
             );
             vertex.time = Math.randomInRange(0, Math.PIM2);
-
             vertex.gradient = Math.randomInRange(0.2, 0.7);
         }
 
-        light.setPosition(300, -100, 120);
-        highlight.setPosition(0, 300, 20);
+        light.setPosition(150, -50, 60);
+        highlight.setPosition(0, 150, 10);
+        glare.setPosition(800, 800, 10);
+
         //container.appendChild(renderer.element);
         //window.addEventListener('resize', resize);
     }
@@ -53,6 +55,11 @@ function startFss(port) {
     function resize() {
         //renderer.setSize(container.offsetWidth, container.offsetHeight);
     }
+
+
+
+
+
 
     /*function animate() {
         now = Date.now() - start;
