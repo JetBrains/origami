@@ -481,7 +481,7 @@ vertexShader =
 
             // Iterate through lights
             for (int i = 0; i < 2; i++) {
-                vec3 lightPosition = vec3(uLightPosition[i]) * 0.5;
+                vec3 lightPosition = vec3(uLightPosition[i]);
               //  lightPosition.x =  100.0 * sin(uNow / 4000.0);
              //   lightPosition.y =  00.0 * cos(uNow / 4000.0);
                 vec4 lightAmbient = uLightAmbient[i];

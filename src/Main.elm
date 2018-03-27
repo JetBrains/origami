@@ -102,12 +102,14 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Animate dt ->
-            ( if model.autoRotate then
+            ( if model.autoRotate && not model.paused then
                 { model
                 | fps = floor (1000 / dt)
                 , theta = model.theta + dt / 4000
                 , now = model.now + dt
                 }
+              else if  model.paused then
+                model
               else
                 { model
                 | fps = floor (1000 / dt)
@@ -200,6 +202,13 @@ update msg model =
                     )
             , Cmd.none
             )
+        Pause ->
+          ( if not model.paused then
+                { model | paused = True }
+            else
+                 { model | paused = False }
+          , Cmd.none
+          )
 
         _ -> ( model, Cmd.none )
 
@@ -261,9 +270,10 @@ subscriptions model =
         , receiveFss (\serializedMesh ->
             RebuildFss serializedMesh
         )
-        , pause (\_ -> Pause)
+        , (pause (\_ -> Pause ))
         , start (\_ -> Start)
         ]
+
 
 
 mapControls : Model -> Controls.Msg -> Msg
@@ -356,7 +366,7 @@ main =
         }
 
 
-port pause : (() -> msg) -> Sub msg
+port pause : ((Bool) -> msg) -> Sub msg
 
 port start : (() -> msg) -> Sub msg
 

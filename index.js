@@ -9,6 +9,11 @@ const Lorenz = require('./src/Main.elm');
 //const mountNode = document.getElementById('elm-target');
 const mountNode = document.getElementById('js-animation');
 
+mountNode.addEventListener('click', function(){
+    app.ports.pause.send(true);
+});
+
+
 // Prepare JB-Toolkit
 const registerToolkit = require('./toolkit.js');
 
@@ -25,4 +30,7 @@ const app = Lorenz.Main.embed(mountNode);
 const startFss = require('./fss.js');
 
 //startPatch(app);
+
 startFss(app.ports.receiveFss/*, app.ports.changeFss*/);
+
+
