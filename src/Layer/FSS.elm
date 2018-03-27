@@ -457,36 +457,24 @@ vertexShader =
           }
         }
 
+        vec3 trigFunc(vec3 arg) {
+            return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
+        }
+
         // Main
         void main() {
 
-            // Create color
+           // Create color
             vColor = vec4(0.0);
            // vColor = aColor;
            // vColor = vec4(aGradient, 1.0);
 
-
+            float speed = 0.001;
+            vec3 ranges = vec3(0.35, 0.2, 0.2);
 
             // Calculate the vertex position
-            //vec3 position; // = aPosition / uResolution * 2.0;
             vec3 position = aPosition;
-            //position.z = noise(position.xy);
-
-            float speed = 0.001;
-            float xRange = 0.35;
-            float yRange = 0.2;
-            float zRange = 0.9;
-            float offset = uSegment[2];
-            float segmentWidth = uSegment[0];
-            float sliceHeight = uSegment[1];
-
-
-
-
-            position.x = position.x + (introTransition(uNow, 10000.0) * xRange * segmentWidth * sin(aPhi + aStep[0] * uNow * speed));
-            position.y = position.y + (introTransition(uNow, 10000.0) * yRange * sliceHeight * cos(aPhi + aStep[1] * uNow * speed));
-            position.z = position.z + (introTransition(uNow, 10000.0) * zRange * offset * sin(aPhi + aStep[2] * uNow * speed));
-
+            position = position + introTransition(uNow, 5000.0) * ranges * uSegment * trigFunc(aPhi + aStep * uNow * speed);
             position = position / uResolution * 2.0;
 
 
@@ -497,7 +485,7 @@ vertexShader =
               //  lightPosition.x =  100.0 * sin(uNow / 4000.0);
              //   lightPosition.y =  00.0 * cos(uNow / 4000.0);
                 vec4 lightAmbient = uLightAmbient[i];
-                vec4 lightDiffuse = uLightDiffuse[i] * 3.0;
+                vec4 lightDiffuse = uLightDiffuse[i] * 4.0;
 
                 // Calculate illuminance
 
@@ -512,10 +500,6 @@ vertexShader =
                 }
 
 
-            //   vColor = vec4(aColor, 1.0);
-
-
-
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
 
@@ -527,13 +511,13 @@ vertexShader =
 
            // Multiplied by gradients
              vColor = vColor * aColor;
-
+          //vColor = vec4(1.0);
 
 
             // Set gl_Position
            gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
-          //  vPosition = position;
-         //   gl_Position =  camera * cameraRotate *  rotation * vec4(position, 1.0);
+            //  vPosition = position;
+            //   gl_Position =  camera * cameraRotate *  rotation * vec4(position, 1.0);
 
 
 
@@ -568,7 +552,9 @@ fragmentShader =
 
     vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
 
-    gl_FragColor = mix(vColor, bgColor, smoothstep(0.0, 0.5, distance(st, vec2(0.5) )));
+    gl_FragColor = mix(vColor, bgColor, pow(smoothstep(0.0, 0.37, distance(st, vec2(0.55, 0.35))), 2.0));
+
+
 
 
 
