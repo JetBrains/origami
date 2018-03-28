@@ -80,7 +80,7 @@ type alias STriangle =
 
 type alias SVertex =
     { position : List Float
-    , velocity : List Float
+    , v0 : List Float
     , anchor : List Float
     , time : Float
     , gradient : Float
@@ -108,8 +108,8 @@ init : Config
 init = {}
 
 
-makeEntity : Viewport {} -> Time -> ( Vec2, Vec2 ) -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
-makeEntity viewport now mouseDir maybeScene settings mesh =
+makeEntity : Viewport {} -> Time -> List (Time, Int, Int) -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
+makeEntity viewport now samples maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -129,7 +129,7 @@ makeEntity viewport now mouseDir maybeScene settings mesh =
             vertexShader
             fragmentShader
             mesh
-            (uniforms viewport now size mouseDir lights)
+            (uniforms viewport now size samples lights)
 
 
 -- Mesh
@@ -143,7 +143,7 @@ type alias Vertex =
     , aPosition : Vec3
     , aSide : Float
     , aColor : Vec4
-    , aVelocity : Vec3
+    , aV0 : Vec3
     , aPhi : Float
     }
 
@@ -157,7 +157,7 @@ defaultVertex =
     , aPosition = vec3 0 0 0
     , aSide = 0
     , aColor = vec4 0 0 0 0
-    , aVelocity = vec3 0 0 0
+    , aV0 = vec3 0 0 0
     , aPhi = 0
     }
 
@@ -225,7 +225,7 @@ convertVertex color material triangle side v =
     , aCentroid = v3fromList triangle.centroid
     , aNormal = v3fromList triangle.normal
     , aColor = color
-    , aVelocity = v3fromList v.velocity
+    , aV0 = v3fromList v.v0
     , aPhi = v.time
     }
 
@@ -266,14 +266,14 @@ type alias Uniforms =
         }
 
 
-uniforms : Viewport {} -> Time -> (Int, Int) -> (Vec2, Vec2) -> List SLight -> Uniforms
-uniforms v now size mouseDir lights =
+uniforms : Viewport {} -> Time -> (Int, Int) -> List (Time, Int, Int) -> List SLight -> Uniforms
+uniforms v now size samples lights =
     let
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
         height = Vec2.getY v.size
         depth = 100.0
-      --  ff = Debug.log "mouseDir" mouseDir
+       -- ff = Debug.log "samples" samples
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -410,7 +410,7 @@ vertexShader =
         attribute vec4 aAmbient;
         attribute vec4 aDiffuse;
         attribute vec4 aColor;
-        attribute vec3 aVelocity;
+        attribute vec3 aV0;
 
         attribute float aPhi;
         
@@ -482,7 +482,7 @@ vertexShader =
             vec2 brightnessD = vec2(3.5, 3.5);
             vec2 brightnessA = vec2(1.0, 1.0);
             vec3 position = aPosition;
-            position = position + introTransition(uNow, 5000.0) * ranges * uSegment * trigFunc(aPhi + aVelocity * uNow * speed);
+            position = position + introTransition(uNow, 5000.0) * ranges * uSegment * trigFunc(aPhi + aV0 * uNow * speed);
             position = position / uResolution * 2.0;
 
 
