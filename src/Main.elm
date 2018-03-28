@@ -102,21 +102,14 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Animate dt ->
-            ( if model.autoRotate && not model.paused then
+             (
                 { model
-                | fps = floor (1000 / dt)
-                , theta = model.theta + dt / 4000
-                , now = model.now + dt
-                }
-              else if  model.paused then
-                model
-              else
-                { model
-                | fps = floor (1000 / dt)
-                , now = model.now + dt
-                }
-            , Cmd.none
-            )
+                 | fps = floor (1000 / dt)
+                 , theta = if not model.autoRotate then model.theta + dt / 4000 else model.theta
+                 , now = if not model.paused then model.now + dt else model.now
+                 }
+             , Cmd.none
+             )
 
         Configure index config ->
             case model.layers |> Array.get index of
@@ -203,10 +196,7 @@ update msg model =
             , Cmd.none
             )
         Pause ->
-          ( if not model.paused then
-                { model | paused = True }
-            else
-                 { model | paused = False }
+          ( { model | paused = not model.paused }
           , Cmd.none
           )
 
@@ -366,7 +356,7 @@ main =
         }
 
 
-port pause : ((Bool) -> msg) -> Sub msg
+port pause : (() -> msg) -> Sub msg
 
 port start : (() -> msg) -> Sub msg
 
