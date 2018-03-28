@@ -469,36 +469,32 @@ vertexShader =
            // vColor = aColor;
            // vColor = vec4(aGradient, 1.0);
 
-            float speed = 0.001;
-            vec3 ranges = vec3(0.35, 0.2, 0.2);
+
 
             // Calculate the vertex position
+
+            float speed = 0.001;
+            vec3 ranges = vec3(0.35, 0.2, 0.2);
+            vec2 orbitFactor = vec2(1.0, 1.0);
+            vec2 lightsSpeed = vec2(4000.0, 4000.0);
+            vec2 brightnessD = vec2(3.5, 3.5);
+            vec2 brightnessA = vec2(1.0, 1.0);
             vec3 position = aPosition;
             position = position + introTransition(uNow, 5000.0) * ranges * uSegment * trigFunc(aPhi + aStep * uNow * speed);
             position = position / uResolution * 2.0;
 
 
 
+
             // Iterate through lights
             for (int i = 0; i < 2; i++) {
-                vec3 lightPosition = vec3(uLightPosition[i]);
-                lightPosition.x =  vec3(uLightPosition[i]).x * sin(uNow / 4000.0);
-                lightPosition.y = vec3(uLightPosition[i]).y * cos(uNow / 4000.0);
-                vec4 lightAmbient = uLightAmbient[i];
-                vec4 lightDiffuse = uLightDiffuse[i] * 3.0;
-
-                // Calculate illuminance
+                vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * trigFunc(vec3(vec2(uNow / lightsSpeed[i]), 90.0));
+                vec4 lightAmbient = brightnessA[i] * uLightAmbient[i];
+                vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
 
                 vec3 ray = normalize(lightPosition - aCentroid);
                 float illuminance = dot(aNormal, ray) ;
-                if (aSide == 0.0) {
-                    illuminance = max(illuminance, 0.0);
-                } else if (aSide == 1.0) {
-                    illuminance = abs(min(illuminance, 0.0));
-                } else if (aSide == 2.0) {
-                    illuminance = max(abs(illuminance), 0.0);
-                }
-
+                illuminance = max(illuminance, 0.0);
 
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
