@@ -482,10 +482,10 @@ vertexShader =
             // Iterate through lights
             for (int i = 0; i < 2; i++) {
                 vec3 lightPosition = vec3(uLightPosition[i]);
-              //  lightPosition.x =  100.0 * sin(uNow / 4000.0);
-             //   lightPosition.y =  00.0 * cos(uNow / 4000.0);
+                lightPosition.x =  vec3(uLightPosition[i]).x * sin(uNow / 4000.0);
+                lightPosition.y = vec3(uLightPosition[i]).y * cos(uNow / 4000.0);
                 vec4 lightAmbient = uLightAmbient[i];
-                vec4 lightDiffuse = uLightDiffuse[i] * 4.0;
+                vec4 lightDiffuse = uLightDiffuse[i] * 3.0;
 
                 // Calculate illuminance
 
