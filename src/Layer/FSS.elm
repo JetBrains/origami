@@ -10,12 +10,13 @@ module Layer.FSS exposing
 import Array
 
 import Math.Matrix4 as Mat4 exposing (Mat4)
-import Math.Vector2 as Vec2
+import Math.Vector2 as Vec2 exposing (vec2, Vec2)
 import Math.Vector3 as Vec3 exposing (vec3, Vec3, getX, getY, getZ)
 import Math.Vector4 as Vec4 exposing (vec4, Vec4)
 import WebGL
 import WebGL.Settings exposing (Setting)
 import Time exposing (Time)
+import Mouse exposing (Position)
 
 import Viewport exposing (Viewport)
 
@@ -107,8 +108,8 @@ init : Config
 init = {}
 
 
-makeEntity : Viewport {} -> Time -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
-makeEntity viewport now maybeScene settings mesh =
+makeEntity : Viewport {} -> Time -> ( Vec2, Vec2 ) -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
+makeEntity viewport now mouseDir maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -128,7 +129,7 @@ makeEntity viewport now maybeScene settings mesh =
             vertexShader
             fragmentShader
             mesh
-            (uniforms viewport now size lights)
+            (uniforms viewport now size mouseDir lights)
 
 
 -- Mesh
@@ -265,13 +266,14 @@ type alias Uniforms =
         }
 
 
-uniforms : Viewport {} -> Time -> (Int, Int) -> List SLight -> Uniforms
-uniforms v now size lights =
+uniforms : Viewport {} -> Time -> (Int, Int) -> (Vec2, Vec2) -> List SLight -> Uniforms
+uniforms v now size mouseDir lights =
     let
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
         height = Vec2.getY v.size
         depth = 100.0
+      --  ff = Debug.log "mouseDir" mouseDir
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
