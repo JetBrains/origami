@@ -5,10 +5,13 @@ import Html.Attributes exposing (width, height, style, class)
 import AnimationFrame
 import Time exposing (Time)
 import Window
+import Mouse exposing (clicks, moves, Position)
 import Task exposing (Task)
 import WebGL exposing (Mesh, Option)
 import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
+
+import Math.Vector2 as V2 exposing (vec2, Vec2, getX, getY)
 
 import Viewport exposing (Viewport)
 
@@ -25,6 +28,7 @@ type alias Model =
     , theta : Float
     , fss : FSS
     , size : ( Int, Int )
+    , mouseDir : ( Vec2, Vec2 )
     , now : Time
     }
 
@@ -35,6 +39,7 @@ type Msg
     | RebuildFss FSS.SerializedScene
     | ConfigureFss FSS.Config
     | Rotate Float
+    | Locate Position
     | Pause
     | Start
 
@@ -52,6 +57,7 @@ init =
             , fss =
                 FSS fssConfig Nothing (FSS.build fssConfig Nothing)
             , size = ( 1500, 800 )
+            , mouseDir = ( vec2 0 0, vec2 0 0 )
             , now = 0.0
             }
         , Cmd.batch
@@ -75,6 +81,16 @@ update msg model =
 
         Resize { width, height } ->
             ( model
+            , Cmd.none
+            )
+
+        Locate pos ->
+            (
+                { model
+                | mouseDir =
+                    case model.mouseDir of
+                        ( prevPrevPos, prevPos ) -> ( prevPos, vec2 (toFloat pos.x) (toFloat pos.y) )
+                }
             , Cmd.none
             )
 
@@ -118,6 +134,8 @@ subscriptions model =
     Sub.batch
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
+        , clicks (\_ -> Pause)
+        , moves (\pos -> Locate pos)
         , changeFss (\newConfig ->
             ConfigureFss newConfig
         )
@@ -130,7 +148,7 @@ subscriptions model =
 
 
 view : Model -> Html Msg
-view { theta, size, now, fss } =
+view { theta, size, now, mouseDir, fss } =
     let
         viewport = Viewport.find { theta = theta, size = size }
     in div [ ]
@@ -155,6 +173,7 @@ view { theta, size, now, fss } =
                     FSS.makeEntity
                         viewport
                         now
+                        mouseDir
                         fssSerialized
                         -- [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
                         [ DepthTest.default, sampleAlphaToCoverage ]
