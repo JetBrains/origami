@@ -8,10 +8,6 @@ require('./index.css');
 const Fss = require('./src/FSSOnly.elm');
 const mountNode = document.getElementById('js-animation');
 
-mountNode.addEventListener('click', function(){
-    app.ports.pause.send(null);
-});
-
 // The third value on embed are the initial values for incomming ports into Elm
 const app = Fss.Main.embed(mountNode);
 

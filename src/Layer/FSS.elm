@@ -79,7 +79,7 @@ type alias STriangle =
 
 type alias SVertex =
     { position : List Float
-    , step : List Float
+    , velocity : List Float
     , anchor : List Float
     , time : Float
     , gradient : Float
@@ -142,7 +142,7 @@ type alias Vertex =
     , aPosition : Vec3
     , aSide : Float
     , aColor : Vec4
-    , aStep : Vec3
+    , aVelocity : Vec3
     , aPhi : Float
     }
 
@@ -156,7 +156,7 @@ defaultVertex =
     , aPosition = vec3 0 0 0
     , aSide = 0
     , aColor = vec4 0 0 0 0
-    , aStep = vec3 0 0 0
+    , aVelocity = vec3 0 0 0
     , aPhi = 0
     }
 
@@ -224,7 +224,7 @@ convertVertex color material triangle side v =
     , aCentroid = v3fromList triangle.centroid
     , aNormal = v3fromList triangle.normal
     , aColor = color
-    , aStep = v3fromList v.step
+    , aVelocity = v3fromList v.velocity
     , aPhi = v.time
     }
 
@@ -408,7 +408,7 @@ vertexShader =
         attribute vec4 aAmbient;
         attribute vec4 aDiffuse;
         attribute vec4 aColor;
-        attribute vec3 aStep;
+        attribute vec3 aVelocity;
 
         attribute float aPhi;
         
@@ -480,7 +480,7 @@ vertexShader =
             vec2 brightnessD = vec2(3.5, 3.5);
             vec2 brightnessA = vec2(1.0, 1.0);
             vec3 position = aPosition;
-            position = position + introTransition(uNow, 5000.0) * ranges * uSegment * trigFunc(aPhi + aStep * uNow * speed);
+            position = position + introTransition(uNow, 5000.0) * ranges * uSegment * trigFunc(aPhi + aVelocity * uNow * speed);
             position = position / uResolution * 2.0;
 
 
