@@ -39,7 +39,7 @@ function startFss(port) {
         for (v = geometry.vertices.length - 1; v >= 0; v--) {
             vertex = geometry.vertices[v];
             vertex.anchor = FSS.Vector3.clone(vertex.position);
-            vertex.step = FSS.Vector3.create(
+            vertex.velocity = FSS.Vector3.create(
                 Math.randomInRange(0.2, 1.0),
                 Math.randomInRange(0.2, 1.0),
                 Math.randomInRange(0.2, 1.0)
