@@ -15,13 +15,16 @@
     "webpack-dev-server": "^2.9.7"
   },
   "devDependencies": {
-    "google-closure-compiler-js": "^20180204.0.0"
+    "uglify-js": "^3.3.16"
   },
   "scripts": {
     "start": "./node_modules/.bin/webpack-dev-server",
     "build:elm": "elm-make ./src/Main.elm --output=build/Main.js",
-    "build:closure": "./node_modules/google-closure-compiler-js/cmd.js ./build/Main.js > ./build/Main.min.js",
-    "build": "npm run build:elm && npm run build:closure",
+    "build:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/Main.js --output ./build/Main.min.js",
+    "build": "npm run build:elm && npm run build:uglify",
+    "build:fss:elm": "elm-make ./src/FSSOnly.elm --output=build/FSSOnly.js",
+    "build:fss:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/FSSOnly.js --output ./build/FSSOnly.min.js",
+    "build:fss": "npm run build:fss:elm && npm run build:fss:uglify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
