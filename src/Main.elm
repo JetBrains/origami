@@ -6,6 +6,7 @@ import Html.Attributes exposing (width, height, style, class)
 import AnimationFrame
 import Time exposing (Time)
 import Window
+import Mouse exposing (clicks, moves, Position)
 import Task exposing (Task)
 import WebGL exposing (Mesh, Option)
 import WebGL.Settings exposing (sampleAlphaToCoverage)
@@ -53,6 +54,7 @@ type alias Model =
     , theta : Float
     , layers : Array Layer
     , size : ( Int, Int )
+  --  , mouse : Maybe Position
     , now : Time
     }
 
@@ -239,6 +241,7 @@ subscriptions model =
     Sub.batch
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
+        , clicks (\_ -> Pause)
         , rotate Rotate
         , changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
@@ -260,7 +263,7 @@ subscriptions model =
         , receiveFss (\serializedMesh ->
             RebuildFss serializedMesh
         )
-        , (pause (\_ -> Pause ))
+        , pause (\_ -> Pause )
         , start (\_ -> Start)
         ]
 

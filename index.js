@@ -9,10 +9,6 @@ const Lorenz = require('./src/Main.elm');
 //const mountNode = document.getElementById('elm-target');
 const mountNode = document.getElementById('js-animation');
 
-mountNode.addEventListener('click', function(){
-    app.ports.pause.send(null);
-});
-
 
 // Prepare JB-Toolkit
 const registerToolkit = require('./toolkit.js');
