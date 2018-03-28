@@ -27,8 +27,6 @@ function startFss(port) {
     var highlight = new FSS.Light('#000000', '#fb4e76');
 
 
-    var now, start = Date.now();
-
     function initialise() {
         scene.add(mesh);
         scene.add(light);
@@ -39,7 +37,7 @@ function startFss(port) {
         for (v = geometry.vertices.length - 1; v >= 0; v--) {
             vertex = geometry.vertices[v];
             vertex.anchor = FSS.Vector3.clone(vertex.position);
-            vertex.velocity = FSS.Vector3.create(
+            vertex.v0 = FSS.Vector3.create(
                 Math.randomInRange(0.2, 1.0),
                 Math.randomInRange(0.2, 1.0),
                 Math.randomInRange(0.2, 1.0)

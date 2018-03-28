@@ -28,7 +28,8 @@ type alias Model =
     , theta : Float
     , fss : FSS
     , size : ( Int, Int )
-    , mouseDir : ( Vec2, Vec2 )
+    , samples : List (Time, Int, Int)
+    , mouse : ( Int, Int )
     , now : Time
     }
 
@@ -40,6 +41,7 @@ type Msg
     | ConfigureFss FSS.Config
     | Rotate Float
     | Locate Position
+    | Sample Time
     | Pause
     | Start
 
@@ -57,8 +59,9 @@ init =
             , fss =
                 FSS fssConfig Nothing (FSS.build fssConfig Nothing)
             , size = ( 1500, 800 )
-            , mouseDir = ( vec2 0 0, vec2 0 0 )
+            , mouse = ( 0, 0 )
             , now = 0.0
+            , samples = []
             }
         , Cmd.batch
             [ Task.perform Resize Window.size
@@ -87,12 +90,16 @@ update msg model =
         Locate pos ->
             (
                 { model
-                | mouseDir =
-                    case model.mouseDir of
-                        ( prevPrevPos, prevPos ) -> ( prevPos, vec2 (toFloat pos.x) (toFloat pos.y) )
+                | mouse =
+                    case model.mouse of
+                        mouse -> ( pos.x, pos.y )
                 }
             , Cmd.none
             )
+
+        Sample t ->
+            ({ model | samples = List.take 2 ((t, (Tuple.first model.mouse), (Tuple.second model.mouse)) :: model.samples) }, Cmd.none)
+
 
         RebuildFss serializedScene ->
             (
@@ -136,6 +143,7 @@ subscriptions model =
         , Window.resizes Resize
         , clicks (\_ -> Pause)
         , moves (\pos -> Locate pos)
+        , Time.every (50 * Time.millisecond) Sample
         , changeFss (\newConfig ->
             ConfigureFss newConfig
         )
@@ -148,7 +156,7 @@ subscriptions model =
 
 
 view : Model -> Html Msg
-view { theta, size, now, mouseDir, fss } =
+view { theta, size, now, samples, fss } =
     let
         viewport = Viewport.find { theta = theta, size = size }
     in div [ ]
@@ -173,7 +181,7 @@ view { theta, size, now, mouseDir, fss } =
                     FSS.makeEntity
                         viewport
                         now
-                        mouseDir
+                        samples
                         fssSerialized
                         -- [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
                         [ DepthTest.default, sampleAlphaToCoverage ]
