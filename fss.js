@@ -60,11 +60,6 @@ function startFss(port) {
         //renderer.setSize(container.offsetWidth, container.offsetHeight);
     }
 
-
-
-
-
-
     /*function animate() {
         now = Date.now() - start;
         light.setPosition(300*Math.sin(now*0.001), 200*Math.cos(now*0.0005), 60);
