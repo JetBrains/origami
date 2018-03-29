@@ -22,8 +22,8 @@
     "build:elm": "elm-make ./src/Main.elm --output=build/Main.js",
     "build:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/Main.js --output ./build/Main.min.js",
     "build": "npm run build:elm && npm run build:uglify",
-    "build:fss:elm": "elm-make ./src/FSSOnly.elm --output=build/FSSOnly.js",
-    "build:fss:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/FSSOnly.js --output ./build/FSSOnly.min.js",
+    "build:fss:elm": "elm-make ./src/MainFSS.elm --output=build/MainFSS.js",
+    "build:fss:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/MainFSS.js --output ./build/MainFSS.min.js",
     "build:fss": "npm run build:fss:elm && npm run build:fss:uglify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
