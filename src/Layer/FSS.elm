@@ -2,6 +2,7 @@ module Layer.FSS exposing
     ( Config
     , Mesh
     , SerializedScene
+    , MouseSample(..)
     , makeEntity
     , build
     , init
@@ -22,6 +23,9 @@ import Viewport exposing (Viewport)
 
 
 type alias Config = {}
+
+
+type MouseSample = MouseSample Time Vec2
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -108,7 +112,7 @@ init : Config
 init = {}
 
 
-makeEntity : Viewport {} -> Time -> List (Time, Int, Int) -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
+makeEntity : Viewport {} -> Time -> ( MouseSample, MouseSample ) -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
 makeEntity viewport now samples maybeScene settings mesh =
     let
         lights = maybeScene
@@ -262,18 +266,27 @@ type alias Uniforms =
         , uLightDiffuse : Mat4
         , uResolution : Vec3
         , uNow : Float
+        , uMouseVelocity: Vec2
+        , uMousePosition: Vec2
         , uSegment : Vec3
         }
 
 
-uniforms : Viewport {} -> Time -> (Int, Int) -> List (Time, Int, Int) -> List SLight -> Uniforms
+-- velocity
+
+
+uniforms : Viewport {} -> Time -> (Int, Int) -> ( MouseSample, MouseSample ) -> List SLight -> Uniforms
 uniforms v now size samples lights =
     let
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
         height = Vec2.getY v.size
         depth = 100.0
-       -- ff = Debug.log "samples" samples
+        ( MouseSample prevT prevPos, MouseSample curT curPos ) = samples
+        velocity =
+            (Vec2.distance prevPos curPos) / (curT - prevT)
+        velocityVec = Vec2.direction prevPos curPos |> Vec2.scale velocity
+        ff = Debug.log "samples" samples
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -282,6 +295,8 @@ uniforms v now size samples lights =
         , uLightDiffuse = adaptedLights.diffuse
         , uLightPosition = adaptedLights.position
         , uNow = now
+        , uMouseVelocity = velocityVec
+        , uMousePosition = curPos
         , uSegment  = vec3 100 100 50
 
         , rotation = v.rotation
