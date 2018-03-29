@@ -15,7 +15,7 @@ import Math.Vector2 as V2 exposing (vec2, Vec2, getX, getY)
 
 import Viewport exposing (Viewport)
 
-import Layer.FSS as FSS
+import Layer.FSS as FSS exposing (MouseSample(..))
 
 
 type FSS = FSS FSS.Config (Maybe FSS.SerializedScene) FSS.Mesh
@@ -28,8 +28,8 @@ type alias Model =
     , theta : Float
     , fss : FSS
     , size : ( Int, Int )
-    , samples : List (Time, Int, Int)
-    , mouse : ( Int, Int )
+    , samples : ( MouseSample, MouseSample )
+--    , mouse : ( Int, Int )
     , now : Time
     }
 
@@ -40,8 +40,7 @@ type Msg
     | RebuildFss FSS.SerializedScene
     | ConfigureFss FSS.Config
     | Rotate Float
-    | Locate Position
-    | Sample Time
+    | Locate Time Position
     | Pause
     | Start
 
@@ -50,6 +49,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         fssConfig = FSS.init
+        initSample = MouseSample 0 (vec2 0 0)
     in
         (
             { paused = False
@@ -59,9 +59,8 @@ init =
             , fss =
                 FSS fssConfig Nothing (FSS.build fssConfig Nothing)
             , size = ( 1500, 800 )
-            , mouse = ( 0, 0 )
             , now = 0.0
-            , samples = []
+            , samples = ( initSample, initSample )
             }
         , Cmd.batch
             [ Task.perform Resize Window.size
@@ -87,19 +86,17 @@ update msg model =
             , Cmd.none
             )
 
-        Locate pos ->
+        Locate t pos ->
             (
                 { model
-                | mouse =
-                    case model.mouse of
-                        mouse -> ( pos.x, pos.y )
+                | samples =
+                    case model.samples of
+                        ( _, prev )  ->
+                            let posVec = vec2 (toFloat pos.x) (toFloat pos.y)
+                            in ( prev, MouseSample t posVec )
                 }
             , Cmd.none
             )
-
-        Sample t ->
-            ({ model | samples = List.take 2 ((t, (Tuple.first model.mouse), (Tuple.second model.mouse)) :: model.samples) }, Cmd.none)
-
 
         RebuildFss serializedScene ->
             (
@@ -142,8 +139,7 @@ subscriptions model =
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
         , clicks (\_ -> Pause)
-        , moves (\pos -> Locate pos)
-        , Time.every (50 * Time.millisecond) Sample
+        , moves (\pos -> Locate model.now pos)
         , changeFss (\newConfig ->
             ConfigureFss newConfig
         )
