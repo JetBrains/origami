@@ -5,7 +5,7 @@
 require('./index.css');
 
 // initialize Elm Application
-const Fss = require('./src/FSSOnly.elm');
+const Fss = require('./src/MainFSS.elm');
 const mountNode = document.getElementById('js-animation');
 
 // The third value on embed are the initial values for incomming ports into Elm
