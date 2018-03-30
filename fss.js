@@ -25,12 +25,14 @@ function startFss(port) {
 
     var light = new FSS.Light('#000000', '#4b4e76');
     var highlight = new FSS.Light('#000000', '#fb4e76');
+    var glare = new FSS.Light('#000000', '#ffffff');
 
 
     function initialise() {
         scene.add(mesh);
         scene.add(light);
         scene.add(highlight);
+        scene.add(glare);
 
 
         var v, vertex;
@@ -48,6 +50,7 @@ function startFss(port) {
 
         light.setPosition(150, -50, 60);
         highlight.setPosition(0, 150, 10);
+        glare.setPosition(0, 0, 0);
 
 
         //container.appendChild(renderer.element);
