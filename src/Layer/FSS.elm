@@ -286,7 +286,7 @@ uniforms v now size samples lights =
         velocity =
             (Vec2.distance prevPos curPos) / (curT - prevT)
         velocityVec = Vec2.direction prevPos curPos |> Vec2.scale velocity
-        ff = Debug.log "samples" samples
+        --ff = Debug.log "samples" samples
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -446,16 +446,24 @@ vertexShader =
         uniform mat4 uLightAmbient;
         uniform mat4 uLightDiffuse;
 
+        uniform vec2 uMouseVelocity;
+        uniform vec2 uMousePosition;
+
         // Varyings
         varying vec4 vColor;
         varying vec3 vPosition;
+
+
+        vec2 mousePosition = uMousePosition * vec2(1.0, -1.0);
+
+        float time = uNow;
 
 
         float rand(vec2 n) { 
             return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
         }
 
-        float noise(vec2 p){
+        float noise1(vec2 p){
             vec2 ip = floor(p);
             vec2 u = fract(p);
             u = u*u*(3.0-2.0*u);
@@ -465,6 +473,8 @@ vertexShader =
                 mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
             return res*res;
         }
+
+
 
         float introTransition(float curTime, float len) {
           if (curTime < len) {
@@ -477,6 +487,12 @@ vertexShader =
         vec3 trigFunc(vec3 arg) {
             return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
         }
+
+
+
+
+
+        vec3 disturbance = vec3(0.0);
 
         // Main
         void main() {
@@ -492,22 +508,45 @@ vertexShader =
 
             float speed = 0.001;
             vec3 ranges = vec3(0.35, 0.2, 0.2);
-            vec2 orbitFactor = vec2(1.0, 1.0);
-            vec2 lightsSpeed = vec2(4000.0, 4000.0);
-            vec2 brightnessD = vec2(3.5, 3.5);
-            vec2 brightnessA = vec2(1.0, 1.0);
+            vec3 orbitFactor = vec3(1.0, 1.0, 1.0);
+            vec3 lightsSpeed = vec3(4000.0, 4000.0, 4000.0);
+            vec3 brightnessD = vec3(3.5, 3.5, 3.5);
+            vec3 brightnessA = vec3(1.0, 1.0, 1.0);
             vec3 position = aPosition;
-            position = position + introTransition(uNow, 5000.0) * ranges * uSegment * trigFunc(aPhi + aV0 * uNow * speed);
-            position = position / uResolution * 2.0;
+
+          // mousePosition = vec2(smoothstep(0.0, uResolution.x, mousePosition.x), smoothstep(0.0, uResolution.y, mousePosition.y));
+
+            //position = position / uResolution * 2.0;
+            mousePosition = mousePosition - (uResolution.xy / 4.0);
 
 
+
+              vec3 intro = introTransition(uNow, 5000.0) * ranges * uSegment;
+              //vec3 trigonometry = trigFunc(aPhi + (aV0 + disturbance) * uNow * speed);
+              vec3 oscillator = trigFunc(aPhi + aV0 * uNow * speed);
+              position = position + intro * oscillator;
+
+//              float rad = distance(mousePosition, position.xy);
+//
+//              if (rad < 500.0) {
+//                 disturbance = vec3(0.2);
+//                 position = position * disturbance;
+//              }
+
+              position = position / uResolution * 2.0;
 
 
             // Iterate through lights
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 3; i++) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * trigFunc(vec3(vec2(uNow / lightsSpeed[i]), 90.0));
                 vec4 lightAmbient = brightnessA[i] * uLightAmbient[i];
                 vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
+
+
+                //    lightPosition = vec3(mousePosition, 10.0);
+
+
+
 
                 vec3 ray = normalize(lightPosition - aCentroid);
                 float illuminance = dot(aNormal, ray) ;
@@ -522,10 +561,14 @@ vertexShader =
 
             }
 
+
+
            // Multiplied by gradients
+             //vColor = vColor + (noise(position.xy * 2.0));
              vColor = vColor * aColor;
           //vColor = vec4(1.0);
 
+       //  vColor = vColor * noise(position.xy * 20000.0, time) * 200.0;
 
             // Set gl_Position
            gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
@@ -553,24 +596,31 @@ fragmentShader =
         varying vec3 vPosition;
 
         uniform vec3 uResolution;
-  //      uniform float uNow;
+        uniform float uNow;
+
+        float noise(vec2 seed, float time) {
+            float x = (seed.x / 3.14159 + 4.0) * (seed.y / 13.0 + 4.0) * ((fract(time) + 1.0) * 10.0);
+            return mod((mod(x, 13.0) + 1.0) * (mod(x, 123.0) + 1.0), 0.01) - 0.005;
+        }
+
+        float brightness(vec4 color) {;
+                return (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b);
+        }
 
         // Main
         void main() {
 
-    // Set gl_FragColor
-    gl_FragColor = vColor;
+            // Set gl_FragColor
+               gl_FragColor = vColor;
 
-    vec2 st=  gl_FragCoord.xy / uResolution.xy;
+               vec2 st=  gl_FragCoord.xy / uResolution.xy;
 
-    vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
+               vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
 
-    gl_FragColor = mix(vColor, bgColor, pow(smoothstep(0.0, 0.37, distance(st, vec2(0.55, 0.35))), 2.0));
+               // noise by brightness
+               gl_FragColor = mix(vColor, vec4(noise(st * 1000.0, uNow) * 80.0), 0.0045 / brightness(vColor));
 
-
-
-
-
+               gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.37, distance(st, vec2(0.55, 0.35))), 2.0));
 
         }
 
