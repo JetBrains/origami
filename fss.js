@@ -50,7 +50,7 @@ function startFss(port) {
 
         light.setPosition(150, -50, 60);
         highlight.setPosition(0, 150, 10);
-        glare.setPosition(0, 0, 0);
+        glare.setPosition(100, 100, 3);
 
 
         //container.appendChild(renderer.element);
