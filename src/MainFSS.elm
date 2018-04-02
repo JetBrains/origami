@@ -15,7 +15,7 @@ import Math.Vector2 as V2 exposing (vec2, Vec2, getX, getY)
 
 import Viewport exposing (Viewport)
 
-import Layer.FSS as FSS exposing (MouseSample(..))
+import Layer.FSS as FSS exposing (Mouse(..))
 
 
 type FSS = FSS FSS.Config (Maybe FSS.SerializedScene) FSS.Mesh
@@ -28,7 +28,7 @@ type alias Model =
     , theta : Float
     , fss : FSS
     , size : ( Int, Int )
-    , samples : ( MouseSample, MouseSample )
+    , mouse : ( Int, Int)
 --    , mouse : ( Int, Int )
     , now : Time
     }
@@ -40,7 +40,7 @@ type Msg
     | RebuildFss FSS.SerializedScene
     | ConfigureFss FSS.Config
     | Rotate Float
-    | Locate Time Position
+    | Locate Position
     | Pause
     | Start
 
@@ -49,7 +49,6 @@ init : ( Model, Cmd Msg )
 init =
     let
         fssConfig = FSS.init
-        initSample = MouseSample 0 (vec2 0 0)
     in
         (
             { paused = False
@@ -60,7 +59,7 @@ init =
                 FSS fssConfig Nothing (FSS.build fssConfig Nothing)
             , size = ( 1500, 800 )
             , now = 0.0
-            , samples = ( initSample, initSample )
+            , mouse = ( 0, 0 )
             }
         , Cmd.batch
             [ Task.perform Resize Window.size
@@ -86,14 +85,10 @@ update msg model =
             , Cmd.none
             )
 
-        Locate t pos ->
+        Locate pos ->
             (
-                { model
-                | samples =
-                    case model.samples of
-                        ( _, prev )  ->
-                            let posVec = vec2 (toFloat pos.x) (toFloat pos.y)
-                            in ( prev, MouseSample t posVec )
+                { model | mouse = (pos.x, pos.y)
+
                 }
             , Cmd.none
             )
@@ -139,7 +134,7 @@ subscriptions model =
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
         , clicks (\_ -> Pause)
-        , moves (\pos -> Locate model.now pos)
+        , moves (\pos -> Locate pos)
         , changeFss (\newConfig ->
             ConfigureFss newConfig
         )
@@ -152,7 +147,7 @@ subscriptions model =
 
 
 view : Model -> Html Msg
-view { theta, size, now, samples, fss, paused } =
+view { theta, size, now, mouse, fss, paused } =
     let
         viewport = Viewport.find { theta = theta, size = size, paused = paused }
     in div [ ]
@@ -177,7 +172,7 @@ view { theta, size, now, samples, fss, paused } =
                     FSS.makeEntity
                         viewport
                         now
-                        samples
+                        mouse
                         fssSerialized
                         -- [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
                         [ DepthTest.default, sampleAlphaToCoverage ]
