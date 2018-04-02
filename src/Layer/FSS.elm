@@ -456,6 +456,7 @@ vertexShader =
        float time = uNow;
        float duration = 5000.0;
        vec3 position = vec3(0.0);
+       vec3 disturb = vec3(0.0);
 
 
        float attenuator(float curTime, float len) {
@@ -499,8 +500,10 @@ vertexShader =
                 vec2 dir = normalize(dist);
                 float r = length(dist);
                 r = clamp (r, 1.0, 2.0);
-                position += vec3( 0.005 * dir / (r * r) , 0.0);
+                disturb= vec3( 0.005 * dir / (r * r) , 0.0);
             }
+
+            position += disturb;
 
 
             position += attenuator (time, duration) * amplitudes * oscillators(speed * time + phase);
@@ -509,11 +512,11 @@ vertexShader =
 
             // Iterate through lights
             for (int i = 0; i < 2; i++) {
-                vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * oscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0));
+                vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * oscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
                 vec4 lightAmbient = brightnessA[i] * uLightAmbient[i];
                 vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
 
-                vec3 ray = normalize(lightPosition - aCentroid);
+                vec3 ray = normalize(lightPosition - aCentroid  + disturb * 2000.0);
                 float illuminance = dot(aNormal, ray) ;
                 illuminance = max(illuminance, 0.0);
 
