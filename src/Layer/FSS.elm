@@ -8,7 +8,6 @@ module Layer.FSS exposing
     , init
     )
 
-import Array
 
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (vec2, Vec2)
@@ -17,7 +16,7 @@ import Math.Vector4 as Vec4 exposing (vec4, Vec4)
 import WebGL
 import WebGL.Settings exposing (Setting)
 import Time exposing (Time)
-import Mouse exposing (Position)
+
 
 import Viewport exposing (Viewport)
 
@@ -269,6 +268,7 @@ type alias Uniforms =
         , uMouseVelocity: Vec2
         , uMousePosition: Vec2
         , uSegment : Vec3
+        , paused : Bool
         }
 
 
@@ -298,14 +298,13 @@ uniforms v now size samples lights =
         , uMouseVelocity = velocityVec
         , uMousePosition = curPos
         , uSegment  = vec3 100 100 50
-
+        , paused = v.paused
         , rotation = v.rotation
         , perspective = v.perspective
         , camera = v.camera
         --, shade = 0.8
         , cameraTranslate = v.cameraTranslate
         , cameraRotate = v.cameraRotate
-
         , size = v.size
         }
 
@@ -437,9 +436,11 @@ vertexShader =
         uniform mat4 camera;
         uniform mat4 rotation;
 
+
         uniform vec3 uResolution;
 
         uniform vec3 uSegment;
+        uniform bool paused;
         uniform float uNow;
 
         uniform mat4 uLightPosition;
@@ -453,13 +454,14 @@ vertexShader =
         varying vec4 vColor;
         varying vec3 vPosition;
 
+        //Transform matrix
+
         mat4 viewMatrix = cameraRotate * cameraTranslate;
-       // mat4 viewMatrix = mat4(1.0);
 
+        // Don't ask
+       vec2 _m = uMousePosition * vec2(1.0, -1.0) + vec2( -150.0,  (200.0 + uResolution.y / 2.0));
 
-        vec4 m = vec4(uMousePosition.x - 150.0, -uMousePosition.y + 150.0 + uResolution.y / 2.0 , 0.0, 1.0);
-
-       vec2 mousePosition =  vec2(m.x - uResolution.x / 2.0, m.y - uResolution.y / 10.0 ) / uResolution.xy * 2.0;
+       vec2 mousePosition =  vec2(_m.x - uResolution.x / 2.0, _m.y - uResolution.y / 10.0 ) / uResolution.xy * 2.0;
 
 
 
@@ -476,6 +478,8 @@ vertexShader =
           }
         }
 
+
+
         vec3 oscillators(vec3 arg) {
             return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
         }
@@ -485,7 +489,6 @@ vertexShader =
 
 
         float duration = 5000.0;
-        vec3 force = vec3(0.0);
         vec3 position = vec3(0.0);
         vec3 speed  = vec3(0.0);
 
@@ -498,10 +501,9 @@ vertexShader =
 
            // Create color
             vColor = vec4(0.0);
+            speed = normalize(aV0) * 0.001;
 
-            if (speed.x == 0.0 && speed.y == 0.0 && speed.z == 0.0) {
-                    speed = normalize(aV0) * 0.001;
-             }
+
             float phase = aPhi;
 
 
@@ -517,22 +519,18 @@ vertexShader =
             position = aPosition;
             position = position / uResolution * 2.0;
 
-
-            vec4 p = vec4(position, 1.0);
-
-            position = p.xyz;
-
-
+            if (!paused) {
             vec2 dist = mousePosition - position.xy;
 
-
             vec2 dir = normalize(dist);
+
             float r = length(dist);
 
             r = clamp (r, 1.0, 2.0);
 
-
             position += vec3( 0.005 * dir / (r * r) , 0.0);
+            }
+
 
             position += attenuator (time, duration) * amplitudes * oscillators(speed * time + phase);
 

@@ -152,9 +152,9 @@ subscriptions model =
 
 
 view : Model -> Html Msg
-view { theta, size, now, samples, fss } =
+view { theta, size, now, samples, fss, paused } =
     let
-        viewport = Viewport.find { theta = theta, size = size }
+        viewport = Viewport.find { theta = theta, size = size, paused = paused }
     in div [ ]
         (
         --span [ class "fps" ] [ toString model.fps ++ "FPS" |> text ]
