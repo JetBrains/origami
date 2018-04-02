@@ -2,7 +2,7 @@ module Layer.FSS exposing
     ( Config
     , Mesh
     , SerializedScene
-    , MouseSample(..)
+    , Mouse(..)
     , makeEntity
     , build
     , init
@@ -24,7 +24,7 @@ import Viewport exposing (Viewport)
 type alias Config = {}
 
 
-type MouseSample = MouseSample Time Vec2
+type Mouse = Mouse Int Int
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -111,8 +111,8 @@ init : Config
 init = {}
 
 
-makeEntity : Viewport {} -> Time -> ( MouseSample, MouseSample ) -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
-makeEntity viewport now samples maybeScene settings mesh =
+makeEntity : Viewport {} -> Time -> (Int, Int) -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
+makeEntity viewport now mouse maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -132,7 +132,7 @@ makeEntity viewport now samples maybeScene settings mesh =
             vertexShader
             fragmentShader
             mesh
-            (uniforms viewport now size samples lights)
+            (uniforms viewport now size mouse lights)
 
 
 -- Mesh
@@ -265,7 +265,6 @@ type alias Uniforms =
         , uLightDiffuse : Mat4
         , uResolution : Vec3
         , uNow : Float
-        , uMouseVelocity: Vec2
         , uMousePosition: Vec2
         , uSegment : Vec3
         , paused : Bool
@@ -275,18 +274,14 @@ type alias Uniforms =
 -- velocity
 
 
-uniforms : Viewport {} -> Time -> (Int, Int) -> ( MouseSample, MouseSample ) -> List SLight -> Uniforms
-uniforms v now size samples lights =
+uniforms : Viewport {} -> Time -> (Int, Int) -> (Int, Int) -> List SLight -> Uniforms
+uniforms v now size mouse lights =
     let
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
         height = Vec2.getY v.size
         depth = 100.0
-        ( MouseSample prevT prevPos, MouseSample curT curPos ) = samples
-        velocity =
-            (Vec2.distance prevPos curPos) / (curT - prevT)
-        velocityVec = Vec2.direction prevPos curPos |> Vec2.scale velocity
-        -- ff = Debug.log "samples" samples
+
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -295,8 +290,7 @@ uniforms v now size samples lights =
         , uLightDiffuse = adaptedLights.diffuse
         , uLightPosition = adaptedLights.position
         , uNow = now
-        , uMouseVelocity = velocityVec
-        , uMousePosition = curPos
+        , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
         , uSegment  = vec3 100 100 50
         , paused = v.paused
         , rotation = v.rotation
@@ -447,69 +441,50 @@ vertexShader =
         uniform mat4 uLightAmbient;
         uniform mat4 uLightDiffuse;
 
-        uniform vec2 uMouseVelocity;
         uniform vec2 uMousePosition;
 
         // Varyings
         varying vec4 vColor;
         varying vec3 vPosition;
 
-        //Transform matrix
 
-        mat4 viewMatrix = cameraRotate * cameraTranslate;
 
-        // Don't ask
+       // Don't ask
        vec2 _m = uMousePosition * vec2(1.0, -1.0) + vec2( -150.0,  (200.0 + uResolution.y / 2.0));
-
        vec2 mousePosition =  vec2(_m.x - uResolution.x / 2.0, _m.y - uResolution.y / 10.0 ) / uResolution.xy * 2.0;
 
+       float time = uNow;
+       float duration = 5000.0;
+       vec3 position = vec3(0.0);
 
 
-
-
-        float time = uNow;
-
-
-        float attenuator(float curTime, float len) {
+       float attenuator(float curTime, float len) {
           if (curTime < len) {
              return curTime / len;
           } else {
              return 1.0;
           }
-        }
-
-
+       }
 
         vec3 oscillators(vec3 arg) {
             return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
         }
 
 
-
-
-
-        float duration = 5000.0;
-        vec3 position = vec3(0.0);
-        vec3 speed  = vec3(0.0);
-
-
-
-
         // Main
         void main() {
 
-
-           // Create color
-            vColor = vec4(0.0);
-            speed = normalize(aV0) * 0.001;
-
-
             float phase = aPhi;
+            vec3 speed = normalize(aV0) * 0.001;
 
+            // Create color
+            vColor = vec4(0.0);
 
 
             // Calculate the vertex position
             vec3 amplitudes = vec3(0.35, 0.2, 0.2) * uSegment / uResolution * 2.0 ;
+
+            // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
             vec3 lightsSpeed = vec3(4000.0, 4000.0, 100.0);
             vec3 brightnessD = vec3(3.5, 3.5, 6.0);
@@ -520,27 +495,15 @@ vertexShader =
             position = position / uResolution * 2.0;
 
             if (!paused) {
-            vec2 dist = mousePosition - position.xy;
-
-            vec2 dir = normalize(dist);
-
-            float r = length(dist);
-
-            r = clamp (r, 1.0, 2.0);
-
-            position += vec3( 0.005 * dir / (r * r) , 0.0);
+                vec2 dist = mousePosition - position.xy;
+                vec2 dir = normalize(dist);
+                float r = length(dist);
+                r = clamp (r, 1.0, 2.0);
+                position += vec3( 0.005 * dir / (r * r) , 0.0);
             }
 
 
             position += attenuator (time, duration) * amplitudes * oscillators(speed * time + phase);
-
-
-
-
-
-
-
-
 
 
 
@@ -560,27 +523,14 @@ vertexShader =
                 // Calculate diffuse light
                 vColor += aDiffuse  * lightDiffuse * illuminance;
 
-
-
-
             }
 
 
-
-
            // Multiplied by gradients
-
              vColor = vColor * aColor;
 
             // Set gl_Position
-
-
-
-          gl_Position = viewMatrix * vec4(position, 1.0);
-         //  gl_Position = vec4(position, 1.0);
-
-
-
+          gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
 
         }
 
@@ -619,14 +569,12 @@ fragmentShader =
 
             // Set gl_FragColor
                gl_FragColor = vColor;
-
                vec2 st=  gl_FragCoord.xy / uResolution.xy;
 
 
 
                // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(st * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
-
                gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.37, distance(st, vec2(0.55, 0.35))), 2.0));
 
         }
