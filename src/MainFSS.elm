@@ -11,8 +11,6 @@ import WebGL exposing (Mesh, Option)
 import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
-import Math.Vector2 as V2 exposing (vec2, Vec2, getX, getY)
-
 import Viewport exposing (Viewport)
 
 import Layer.FSS as FSS exposing (Mouse(..))
@@ -43,6 +41,8 @@ type Msg
     | Locate Position
     | Pause
     | Start
+    | NoOp
+
 
 
 init : ( Model, Cmd Msg )
@@ -133,8 +133,10 @@ subscriptions model =
     Sub.batch
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
-        , clicks (\_ -> Pause)
-        , moves (\pos -> Locate pos)
+        , clicks (\pos ->
+            activeArea model pos Pause)
+        , moves (\pos ->
+            activeArea model pos (Locate pos))
         , changeFss (\newConfig ->
             ConfigureFss newConfig
         )
@@ -144,6 +146,13 @@ subscriptions model =
         , pause (\_ -> Pause)
         , start (\_ -> Start)
         ]
+
+activeArea : Model -> Position -> Msg -> Msg
+activeArea model pos msg =
+        let (width, height) = model.size
+        in if (pos.x <= width) && (pos.y <= height)
+        then msg else NoOp
+
 
 
 view : Model -> Html Msg
