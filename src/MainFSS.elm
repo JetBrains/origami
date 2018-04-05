@@ -134,9 +134,15 @@ subscriptions model =
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
         , clicks (\pos ->
-            activeArea model pos Pause)
+            toLocal model.size pos
+                |> Maybe.map (\pos -> Pause)
+                |> Maybe.withDefault NoOp
+        )
         , moves (\pos ->
-            activeArea model pos (Locate pos))
+            toLocal model.size pos
+                |> Maybe.map (\localPos -> Locate localPos)
+                |> Maybe.withDefault NoOp
+        )
         , changeFss (\newConfig ->
             ConfigureFss newConfig
         )
@@ -147,11 +153,10 @@ subscriptions model =
         , start (\_ -> Start)
         ]
 
-activeArea : Model -> Position -> Msg -> Msg
-activeArea model pos msg =
-        let (width, height) = model.size
-        in if (pos.x <= width) && (pos.y <= height)
-        then msg else NoOp
+toLocal : (Int, Int) -> Position -> Maybe Position
+toLocal (width, height) pos =
+        if (pos.x <= width) && (pos.y <= height)
+        then Just pos else Nothing
 
 
 
