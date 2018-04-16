@@ -19,7 +19,7 @@ import Controls
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
 import Layer.Voronoi as Voronoi
-import Layer.FSS as FSS
+import Layer.FSS as FSS exposing (Mouse(..))
 import Layer.Template as Template
 
 
@@ -54,7 +54,7 @@ type alias Model =
     , theta : Float
     , layers : Array Layer
     , size : ( Int, Int )
-  --  , mouse : Maybe Position
+    , mouse : ( Int, Int)
     , now : Time
     }
 
@@ -66,16 +66,18 @@ type Msg
     | ChangeBlend LayerIndex Blend
     | RebuildFss FSS.SerializedScene
     | Rotate Float
+    | Locate Position
     | Pause
     | Start
+    | NoOp
 
 
 init : ( Model, Cmd Msg )
 init =
     let
         lorenzConfig = Lorenz.init
-        -- fractalConfig = Fractal.init
-        -- voronoiConfig = Voronoi.init
+        fractalConfig = Fractal.init
+        voronoiConfig = Voronoi.init
         templateConfig = Template.init
         fssConfig = FSS.init
     in
@@ -85,14 +87,15 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                --[ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
-                [ FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing )
-                --, LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
-                --, FractalLayer Blend.default (fractalConfig |> Fractal.build)
-                --, VoronoiLayer Blend.default (voronoiConfig |> Voronoi.build)
+                [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
+                , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
+                , LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
+                , FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
+                , VoronoiLayer voronoiConfig Blend.default (voronoiConfig |> Voronoi.build)
                 ]
             , size = ( 1500, 800 )
             , now = 0.0
+            , mouse = ( 0, 0 )
             }
         , Cmd.batch
             [ Task.perform Resize Window.size
@@ -182,6 +185,14 @@ update msg model =
             , Cmd.none
             )
 
+        Locate pos ->
+            (
+                { model | mouse = (pos.x, pos.y)
+
+                }
+            , Cmd.none
+            )
+
         RebuildFss serializedScene ->
             ( model
                 |> changeAll
@@ -197,6 +208,7 @@ update msg model =
                     )
             , Cmd.none
             )
+
         Pause ->
           ( { model | paused = not model.paused }
           , Cmd.none
@@ -241,7 +253,16 @@ subscriptions model =
     Sub.batch
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
-        , clicks (\_ -> Pause)
+        , clicks (\pos ->
+            toLocal model.size pos
+                |> Maybe.map (\pos -> Pause)
+                |> Maybe.withDefault NoOp
+        )
+        , moves (\pos ->
+            toLocal model.size pos
+                |> Maybe.map (\localPos -> Locate localPos)
+                |> Maybe.withDefault NoOp
+        )
         , rotate Rotate
         , changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
@@ -263,9 +284,15 @@ subscriptions model =
         , receiveFss (\serializedMesh ->
             RebuildFss serializedMesh
         )
-        , pause (\_ -> Pause )
+        , pause (\_ -> Pause)
         , start (\_ -> Start)
         ]
+
+
+toLocal : (Int, Int) -> Position -> Maybe Position
+toLocal (width, height) pos =
+        if (pos.x <= width) && (pos.y <= height)
+        then Just pos else Nothing
 
 
 
@@ -276,10 +303,10 @@ mapControls model controlsMsg =
         Controls.Rotate th -> Rotate th
 
 
-mergeLayers : Float -> Time -> ( Int, Int ) -> Array Layer -> List WebGL.Entity
-mergeLayers theta now size layers =
-    let viewport = Viewport.find { theta = theta, size = size }
-    in layers |> Array.map
+mergeLayers : Model -> List WebGL.Entity
+mergeLayers model =
+    let viewport = getViewportState model |> Viewport.find
+    in model.layers |> Array.map
         (\layer ->
             case layer of
                 -- FIXME: simplify
@@ -306,7 +333,8 @@ mergeLayers theta now size layers =
                 FssLayer _ blend serialized fss ->
                     FSS.makeEntity
                         viewport
-                        now
+                        model.now
+                        model.mouse
                         serialized
                         [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
                         fss
@@ -323,6 +351,11 @@ mergeLayers theta now size layers =
                         (Template.init |> Template.build)
         )
     |> Array.toList
+
+
+getViewportState : Model -> Viewport.State
+getViewportState { paused, size, theta } =
+    { paused = paused, size = size, theta = theta }
 
 
 view : Model -> Html Msg
@@ -344,7 +377,7 @@ view model =
               , height (Tuple.second model.size)
               , style [ ( "display", "block" ), ("background-color", "#161616") ]
               ]
-              (model.layers |> mergeLayers model.theta model.now model.size)
+              (mergeLayers model)
           :: []
         )
 

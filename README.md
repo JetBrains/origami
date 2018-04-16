@@ -1,4 +1,4 @@
-# lorenz-elm-webgl
+# elmsfeuer
 
 Install Elm and Webpack:
 
@@ -11,3 +11,9 @@ Then install required packages:
 Run with:
 
 `npm start`
+
+If you want to build / minify, use:
+
+`npm run build`
+
+Then take `build/Main.min.js` from `/build` directory.

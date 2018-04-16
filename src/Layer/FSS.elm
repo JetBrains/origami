@@ -421,7 +421,7 @@ vertexShader =
         attribute vec3 aV0;
 
         attribute float aPhi;
-        
+
 
         // Uniforms
         uniform mat4 cameraTranslate;

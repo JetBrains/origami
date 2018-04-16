@@ -224,6 +224,7 @@ uniforms v =
     , cameraTranslate = v.cameraTranslate
     , cameraRotate = v.cameraRotate
     , size = v.size
+    , paused = v.paused
     }
 
 

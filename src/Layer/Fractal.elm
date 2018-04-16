@@ -190,6 +190,7 @@ defaultUniforms viewport =
     -- , shade = viewport.shade
     , cameraTranslate = viewport.cameraTranslate
     , cameraRotate = viewport.cameraRotate
+    , paused = viewport.paused
 
     , scale = 1.0
     , power = 8
