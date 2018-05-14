@@ -267,8 +267,14 @@ type alias Uniforms =
         , uNow : Float
         , uMousePosition: Vec2
         , uSegment : Vec3
-        , paused : Bool
         }
+
+
+type alias Varyings =
+    { vColor : Vec4
+    , vPosition : Vec3
+    , vMirror : Vec3
+    }
 
 
 -- velocity
@@ -292,6 +298,7 @@ uniforms v now size mouse lights =
         , uNow = now
         , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
         , uSegment  = vec3 100 100 50
+
         , paused = v.paused
         , rotation = v.rotation
         , perspective = v.perspective
@@ -404,7 +411,7 @@ lightsToMatrices (w, h) ( aa, ba, ca, da ) ( ad, bd, cd, dd ) ( ap, bp, cp, dp )
 
 
 
-vertexShader : WebGL.Shader Vertex Uniforms { vColor : Vec4, vPosition : Vec3 }
+vertexShader : WebGL.Shader Vertex Uniforms Varyings
 vertexShader =
     [glsl|
 
@@ -443,10 +450,12 @@ vertexShader =
         uniform mat4 uLightDiffuse;
 
         uniform vec2 uMousePosition;
+        uniform vec2 mirror;
 
         // Varyings
         varying vec4 vColor;
         varying vec3 vPosition;
+        varying vec3 vMirror;
 
 
 
@@ -533,6 +542,8 @@ vertexShader =
            // Multiplied by gradients
              vColor = vColor * aColor;
 
+             vMirror = vec3(mirror, 0.0);
+
             // Set gl_Position
           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
 
@@ -543,7 +554,7 @@ vertexShader =
 
 
 
-fragmentShader : WebGL.Shader {} Uniforms { vColor : Vec4, vPosition : Vec3 }
+fragmentShader : WebGL.Shader {} Uniforms Varyings
 fragmentShader =
     [glsl|
 
@@ -553,6 +564,7 @@ fragmentShader =
         // Varyings
         varying vec4 vColor;
         varying vec3 vPosition;
+        varying vec3 vMirror;
 
         uniform vec3 uResolution;
         uniform float uNow;
@@ -570,6 +582,9 @@ fragmentShader =
 
         // Main
         void main() {
+
+            vec2 actPos = gl_FragCoord.xy / uResolution.xy;
+            if (actPos.x > 0.6) discard;
 
             // Set gl_FragColor
                gl_FragColor = vColor;

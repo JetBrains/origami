@@ -2,7 +2,7 @@ var d3 = require('d3');
 var Kefir = require('Kefir');
 
 window.Rpd = require('./node_modules/rpd/src/rpd.js');
-console.log(Rpd);
+// console.log(Rpd);
 
 var SVG_XMLNS = "http://www.w3.org/2000/svg";
 
@@ -26,7 +26,7 @@ Rpd.noderenderer('jb/layers', 'svg', {
     size: { width: 500, height: 400 },
     pivot: { x: 0.03, y: 0.03 },
     first: function(bodyElm) {
-        console.log(layersNode);
+        // console.log(layersNode);
         if (layersNodeApp) {
             layersNode = layersNodeApp.embed(bodyElm);
             layersNode.ports.resize.send([ 500, 400 ]);
@@ -44,12 +44,12 @@ Rpd.noderenderer('jb/layers', 'svg', {
         // TODO: Embed Elm App inside?
         //return;
         var layersCount = parseInt(inlets.count);
-        console.log(layersCount);
+        // console.log(layersCount);
         d3.select(bodyElm).selectAll("*").remove();
         for (var i = 0; i < layersCount; i++) {
             bodyElm.appendChild(createLayerBlendControls(i).node());
         }
-        console.log(layersCount);
+        // console.log(layersCount);
     }
 });
 
@@ -133,7 +133,7 @@ function eqFuncClick(blendType, state) {
     return function(node, index) {
         return function() {
             state.blend[blendType + 'Eq'][0] = index;
-            console.log(state);
+            // console.log(state);
             if (elmLorenz) elmLorenz.ports.changeBlend.send(state);
         }
     }
@@ -143,7 +143,7 @@ function eqFactorClick(blendType, factorId, state) {
     return function(node, index) {
         return function() {
             state.blend[blendType + 'Eq'][factorId] = index;
-            console.log(state);
+            // console.log(state);
             if (elmLorenz) elmLorenz.ports.changeBlend.send(state);
         }
     }

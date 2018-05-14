@@ -15,7 +15,7 @@ require('./node_modules/rpd/src/toolkit/util/toolkit.js');
 require('./node_modules/rpd/src/toolkit/util/svg.js');
 
 window.Rpd = require('./node_modules/rpd/src/rpd.js');
-console.log(Rpd);
+// console.log(Rpd);
 
 var elmLorenz = null;
 
