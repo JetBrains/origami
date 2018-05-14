@@ -191,6 +191,7 @@ defaultUniforms viewport =
     , cameraTranslate = viewport.cameraTranslate
     , cameraRotate = viewport.cameraRotate
     , paused = viewport.paused
+    , mirror = viewport.mirror
 
     , scale = 1.0
     , power = 8
