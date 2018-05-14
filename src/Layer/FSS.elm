@@ -300,6 +300,7 @@ uniforms v now size mouse lights =
         , cameraTranslate = v.cameraTranslate
         , cameraRotate = v.cameraRotate
         , size = v.size
+        , mirror = v.mirror
         }
 
 
