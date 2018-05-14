@@ -87,12 +87,13 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
-                , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
-                , LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
-                , FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
-                , VoronoiLayer voronoiConfig Blend.default (voronoiConfig |> Voronoi.build)
-                ]
+                [ FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing) ]
+                -- [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
+                -- , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
+                -- , LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
+                -- , FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
+                -- , VoronoiLayer voronoiConfig Blend.default (voronoiConfig |> Voronoi.build)
+                -- ]
             , size = ( 1500, 800 )
             , now = 0.0
             , mouse = ( 0, 0 )
