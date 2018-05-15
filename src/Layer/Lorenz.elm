@@ -225,7 +225,6 @@ uniforms v =
     , cameraRotate = v.cameraRotate
     , size = v.size
     , paused = v.paused
-    , mirror = v.mirror
     }
 
 
