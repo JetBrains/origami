@@ -107,6 +107,7 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+
         Animate dt ->
              (
                 { model
@@ -246,7 +247,7 @@ configureFirst { layers } config f =
         |> Tuple.second
         |> List.head
         |> Maybe.withDefault 0
-        |> (\idx -> Configure idx config)
+        |> \idx -> Configure idx config
 
 
 subscriptions : Model -> Sub Msg
@@ -268,21 +269,21 @@ subscriptions model =
         , changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
         )
-        , modifyLorenz (\lorenzConfig ->
+        , configureLorenz (\lorenzConfig ->
             configureFirst model (LorenzConfig lorenzConfig) (\layer ->
                 case layer of
                     LorenzLayer _ _ _ -> True
                     _ -> False
             )
         )
-        , changeFss (\fssConfig ->
+        , configureFss (\fssConfig ->
             configureFirst model (FssConfig fssConfig) (\layer ->
                 case layer of
                     FssLayer _ _ _ _ -> True
                     _ -> False
             )
         )
-        , receiveFss (\serializedMesh ->
+        , rebuildFss (\serializedMesh ->
             RebuildFss serializedMesh
         )
         , pause (\_ -> Pause)
@@ -401,13 +402,13 @@ port start : (() -> msg) -> Sub msg
 
 port rotate : (Float -> msg) -> Sub msg
 
-port modifyLorenz : (Lorenz.Config -> msg) -> Sub msg
+port configureLorenz : (Lorenz.Config -> msg) -> Sub msg
+
+port configureFss : (FSS.Config -> msg) -> Sub msg
 
 -- TODO: port to affect camera
 
-port changeFss : (FSS.Config -> msg) -> Sub msg
-
-port receiveFss : (FSS.SerializedScene -> msg) -> Sub msg
+port rebuildFss : (FSS.SerializedScene -> msg) -> Sub msg
 
 port changeBlend :
     ( { layer : Int

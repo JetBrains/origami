@@ -5,9 +5,11 @@
 require('./index.css');
 
 // initialize Elm Application
-const Lorenz = require('./src/Main.elm');
+const App = require('./src/Main.elm');
 //const mountNode = document.getElementById('elm-target');
 const mountNode = document.getElementById('js-animation');
+// The third value on embed are the initial values for incomming ports into Elm
+const app = App.Main.embed(mountNode);
 
 mountNode.addEventListener('click', function(){
     app.ports.pause.send(null);
@@ -16,9 +18,6 @@ mountNode.addEventListener('click', function(){
 
 // Prepare JB-Toolkit
 const registerToolkit = require('./toolkit.js');
-
-// The third value on embed are the initial values for incomming ports into Elm
-const app = Lorenz.Main.embed(mountNode);
 
 const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
 
@@ -31,6 +30,6 @@ const startFss = require('./fss.js');
 
 startPatch(app);
 
-startFss(app.ports.receiveFss/*, app.ports.changeFss*/);
+startFss(app.ports.rebuildFss, app.ports.configureFss);
 
 
