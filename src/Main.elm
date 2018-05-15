@@ -79,7 +79,9 @@ init =
         fractalConfig = Fractal.init
         voronoiConfig = Voronoi.init
         templateConfig = Template.init
-        fssConfig = FSS.init
+        defaultConfig = FSS.init
+        fssConfig1 = { defaultConfig | clip = ( 0.5, 1 ) }
+        fssConfig2 = { defaultConfig | clip = ( 0, 0.5 ), mirror = True }
     in
         (
             { paused = False
@@ -87,7 +89,9 @@ init =
             , fps = 0
             , theta = 0.1
             , layers = Array.fromList
-                [ FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing) ]
+                [ FssLayer fssConfig1 Blend.default Nothing (FSS.build fssConfig1 Nothing)
+                , FssLayer fssConfig2 Blend.default Nothing (FSS.build fssConfig2 Nothing)
+                ]
                 -- [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
                 -- , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
                 -- , LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
