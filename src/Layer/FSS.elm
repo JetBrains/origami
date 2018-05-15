@@ -29,7 +29,7 @@ type alias Config =
 type alias Mouse = ( Int, Int )
 type alias Size = ( Int, Int )
 type alias Clip = ( Float, Float )
-type alias Mirror = ( Float, Float )
+type alias Mirror = Bool
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -114,7 +114,7 @@ type alias SerializedScene =
 
 init : Config
 init =
-    { mirror = (-1, -1) -- normal of the mirror
+    { mirror = False -- normal of the mirror
     , clip = (-1, -1) -- max and min values of X for clipping
     }
 
@@ -291,7 +291,7 @@ type alias Uniforms =
         , uNow : Float
         , uMousePosition: Vec2
         , uSegment : Vec3
-        , uMirror : Vec2
+        , uMirror : Float
         , uClip : Vec2
         }
 
@@ -330,7 +330,7 @@ uniforms v now size mouse lights mirror clip =
         , uNow = now
         , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
         , uSegment  = vec3 100 100 50
-        , uMirror = vec2 (Tuple.first mirror) (Tuple.second mirror)
+        , uMirror = if mirror then 1.0 else 0.0
         , uClip = vec2 (Tuple.first clip) (Tuple.second clip)
 
         , paused = v.paused
@@ -483,7 +483,7 @@ vertexShader =
         uniform mat4 uLightDiffuse;
 
         uniform vec2 uMousePosition;
-        uniform vec2 uMirror;
+        uniform float uMirror;
         uniform vec2 uClip;
 
         // Varyings
@@ -577,11 +577,13 @@ vertexShader =
            // Multiplied by gradients
              vColor = vColor * aColor;
 
-             vMirror = vec3(uMirror, 0.0);
+             // vMirror = vec3(uMirror, 0.0);
 
             // Set gl_Position
           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
-          //gl_Position.x = 1.0 - gl_Position.x;
+          if (uMirror > 0.0) {
+              gl_Position.x = 1.0 - gl_Position.x;
+          }
 
         }
 
@@ -627,7 +629,7 @@ fragmentShader =
             // }
 
             if ((uClip.x >= 0.0) && (uClip.y >= 0.0)) {
-                if ((actPos.x >= uClip.x) && (actPos.y <= uClip.y)) {
+                if ((actPos.x >= uClip.x) && (actPos.x <= uClip.y)) {
                     discard;
                 }
             }
