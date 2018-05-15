@@ -19,7 +19,7 @@ import Controls
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
 import Layer.Voronoi as Voronoi
-import Layer.FSS as FSS exposing (Mouse(..))
+import Layer.FSS as FSS
 import Layer.Template as Template
 
 
@@ -331,11 +331,13 @@ mergeLayers model =
                         viewport
                         [ DepthTest.default, Blend.produce blend ]
                         voronoi
-                FssLayer _ blend serialized fss ->
+                FssLayer config blend serialized fss ->
                     FSS.makeEntity
                         viewport
                         model.now
                         model.mouse
+                        config.mirror
+                        config.clip
                         serialized
                         [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
                         fss

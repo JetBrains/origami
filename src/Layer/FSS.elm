@@ -2,7 +2,6 @@ module Layer.FSS exposing
     ( Config
     , Mesh
     , SerializedScene
-    , Mouse(..)
     , makeEntity
     , build
     , init
@@ -21,10 +20,16 @@ import Time exposing (Time)
 import Viewport exposing (Viewport)
 
 
-type alias Config = {}
+type alias Config =
+    { mirror : Mirror -- normal of the mirror
+    , clip : Clip -- max and min values of X for clipping
+    }
 
 
-type Mouse = Mouse Int Int
+type alias Mouse = ( Int, Int )
+type alias Size = ( Int, Int )
+type alias Clip = ( Float, Float )
+type alias Mirror = ( Float, Float )
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -108,11 +113,23 @@ type alias SerializedScene =
 -- Base logic
 
 init : Config
-init = {}
+init =
+    { mirror = (-1, -1) -- normal of the mirror
+    , clip = (-1, -1) -- max and min values of X for clipping
+    }
 
 
-makeEntity : Viewport {} -> Time -> (Int, Int) -> Maybe SerializedScene -> List Setting -> Mesh -> WebGL.Entity
-makeEntity viewport now mouse maybeScene settings mesh =
+makeEntity
+     : Viewport {}
+    -> Time
+    -> Mouse
+    -> Mirror
+    -> Clip
+    -> Maybe SerializedScene
+    -> List Setting
+    -> Mesh
+    -> WebGL.Entity
+makeEntity viewport now mouse mirror clip maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -132,7 +149,14 @@ makeEntity viewport now mouse maybeScene settings mesh =
             vertexShader
             fragmentShader
             mesh
-            (uniforms viewport now size mouse lights)
+            (uniforms
+                viewport
+                now
+                size
+                mouse
+                lights
+                mirror
+                clip)
 
 
 -- Mesh
@@ -267,6 +291,8 @@ type alias Uniforms =
         , uNow : Float
         , uMousePosition: Vec2
         , uSegment : Vec3
+        , uMirror : Vec2
+        , uClip : Vec2
         }
 
 
@@ -280,24 +306,32 @@ type alias Varyings =
 -- velocity
 
 
-uniforms : Viewport {} -> Time -> (Int, Int) -> (Int, Int) -> List SLight -> Uniforms
-uniforms v now size mouse lights =
+uniforms
+     : Viewport {}
+    -> Time
+    -> Size
+    -> Mouse
+    -> List SLight
+    -> Mirror
+    -> Clip
+    -> Uniforms
+uniforms v now size mouse lights mirror clip =
     let
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
         height = Vec2.getY v.size
         depth = 100.0
-
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
-
         , uLightAmbient = adaptedLights.ambient
         , uLightDiffuse = adaptedLights.diffuse
         , uLightPosition = adaptedLights.position
         , uNow = now
         , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
         , uSegment  = vec3 100 100 50
+        , uMirror = vec2 (Tuple.first mirror) (Tuple.second mirror)
+        , uClip = vec2 (Tuple.first clip) (Tuple.second clip)
 
         , paused = v.paused
         , rotation = v.rotation
@@ -307,7 +341,6 @@ uniforms v now size mouse lights =
         , cameraTranslate = v.cameraTranslate
         , cameraRotate = v.cameraRotate
         , size = v.size
-        , mirror = v.mirror
         }
 
 
@@ -450,7 +483,8 @@ vertexShader =
         uniform mat4 uLightDiffuse;
 
         uniform vec2 uMousePosition;
-        uniform vec2 mirror;
+        uniform vec2 uMirror;
+        uniform vec2 uClip;
 
         // Varyings
         varying vec4 vColor;
@@ -504,6 +538,7 @@ vertexShader =
 
             position = aPosition;
             position = position / uResolution * 2.0;
+            //position = vec3(1.0 - position.x, position.y, position.z);
 
             if (!paused) {
                 vec2 dist = mousePosition - position.xy;
@@ -542,10 +577,11 @@ vertexShader =
            // Multiplied by gradients
              vColor = vColor * aColor;
 
-             vMirror = vec3(mirror, 0.0);
+             vMirror = vec3(uMirror, 0.0);
 
             // Set gl_Position
           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
+          //gl_Position.x = 1.0 - gl_Position.x;
 
         }
 
@@ -568,6 +604,7 @@ fragmentShader =
 
         uniform vec3 uResolution;
         uniform float uNow;
+        uniform vec2 uClip;
 
         vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
 
@@ -584,17 +621,24 @@ fragmentShader =
         void main() {
 
             vec2 actPos = gl_FragCoord.xy / uResolution.xy;
-            if (actPos.x > 0.6) discard;
+            // if (actPos.x > 0.6) discard;
+            // if ((vMirror.x >= 0.0) && (vMirror.y >= 0.0)) {
+
+            // }
+
+            if ((uClip.x >= 0.0) && (uClip.y >= 0.0)) {
+                if ((actPos.x >= uClip.x) && (actPos.y <= uClip.y)) {
+                    discard;
+                }
+            }
 
             // Set gl_FragColor
                gl_FragColor = vColor;
-               vec2 st=  gl_FragCoord.xy / uResolution.xy;
-
 
 
                // noise by brightness
-               gl_FragColor = mix(vColor, vec4(noise(st * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
-               gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.37, distance(st, vec2(0.55, 0.35))), 2.0));
+               gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
+               gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.37, distance(actPos, vec2(0.55, 0.35))), 2.0));
 
         }
 

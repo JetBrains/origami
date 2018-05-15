@@ -29,7 +29,6 @@ type alias Viewport a =
     , cameraRotate : Mat4
     , size : Vec2
     , paused :  Bool
-    , mirror : Vec2 -- normal of the mirror
     }
 
 
@@ -48,7 +47,6 @@ find { theta, size, paused } =
         , cameraRotate = Mat4.makeRotate (0.5) (vec3 0 0 1)
         , size = vec2 (toFloat width) (toFloat height)
         , paused = paused
-        , mirror = vec2 -1 -1
         }
 
 
