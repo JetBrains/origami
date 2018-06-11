@@ -82,6 +82,8 @@ init =
         defaultConfig = FSS.init
         fssConfig1 = { defaultConfig | clip = ( 0.5, 1 ) }
         fssConfig2 = { defaultConfig | clip = ( 0, 0.5 ), mirror = True }
+--        fssConfig3 = { defaultConfig | clip = ( 0.75, 1 ) }
+--        fssConfig4 = { defaultConfig | clip = ( 0, 0.25 ), mirror = True }
     in
         (
             { paused = False
@@ -91,6 +93,8 @@ init =
             , layers = Array.fromList
                 [ FssLayer fssConfig1 Blend.default Nothing (FSS.build fssConfig1 Nothing)
                 , FssLayer fssConfig2 Blend.default Nothing (FSS.build fssConfig2 Nothing)
+--                , FssLayer fssConfig3 Blend.default Nothing (FSS.build fssConfig3 Nothing)
+--                , FssLayer fssConfig4 Blend.default Nothing (FSS.build fssConfig4 Nothing)
                 ]
                 -- [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
                 -- , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
