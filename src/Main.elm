@@ -42,7 +42,7 @@ type Layer
     | VoronoiLayer Voronoi.Config Blend Voronoi.Mesh
     | TemplateLayer Template.Config Blend Template.Mesh
     | FssLayer FSS.Config Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | MirroredFssLayer FSS.Config Float Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | MirroredFssLayer FSS.Config MirrorConfig Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | TextLayer Blend
     | Unknown
     -- | CanvasLayer (\_ -> )
@@ -73,6 +73,11 @@ type Msg
     | NoOp
 
 
+type alias MirrorConfig =
+    { mirrorPos : Float
+    }
+
+
 init : ( Model, Cmd Msg )
 init =
     let
@@ -88,7 +93,12 @@ init =
             , fps = 0
             , theta = 0.1
             , layers =
-                [ MirroredFssLayer fssConfig 0.5 Blend.default Nothing (FSS.build fssConfig Nothing)
+                [ MirroredFssLayer
+                    fssConfig
+                    { mirrorPos = 0.5 }
+                    Blend.default
+                    Nothing
+                    (FSS.build fssConfig Nothing)
                 ]
                 -- [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
                 -- , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
@@ -362,10 +372,10 @@ layerToEntities model viewport layer =
                 [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
                 fss
             ]
-        MirroredFssLayer config mirrorPos blend serialized fss ->
+        MirroredFssLayer config mirror blend serialized fss ->
             let
-                config1 = { config | clip = ( 0.5, 1 ) }
-                config2 = { config | clip = ( 0, 0.5 ), mirror = True }
+                config1 = { config | clip = ( mirror.mirrorPos, 1 ) }
+                config2 = { config | clip = ( 0, mirror.mirrorPos ), mirror = True }
             in
                 (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
                 (layerToEntities model viewport (FssLayer config2 blend serialized fss))
