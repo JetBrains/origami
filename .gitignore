@@ -7,4 +7,5 @@ node_modules
 .idea
 # built files
 build
+# DS_Store
 .DS_Store
