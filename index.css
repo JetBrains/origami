@@ -26,3 +26,20 @@ body {
 .rpd-background {
     pointer-events: none;
 }
+
+.rpd-jb-palette-variant rect {
+    stroke: black;
+    stroke-width: 1px;
+}
+
+.rpd-jb-palette-variant.rpd-jb-active-variant rect {
+    stroke: white;
+}
+
+text.rpd-jb-active-label {
+    fill: white;
+}
+
+.rpd-patch text.rpd-jb-product-label {
+    font-size: 8px;
+}

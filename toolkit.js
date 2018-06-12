@@ -174,12 +174,12 @@ Rpd.nodetype('jb/palette', {
     }
 });
 
-var PALETTE_NODE_WIDTH = PRODUCTS.length * 14 + 20;
+var PALETTE_NODE_WIDTH = PRODUCTS.length * 13;
 var PALETTE_NODE_HEIGHT = 70;
 
-var PALETTE_NODE_BODY_X = -(PALETTE_NODE_WIDTH / 2) + 10;
+var PALETTE_NODE_BODY_X = -(PALETTE_NODE_WIDTH / 2) - 45;
 var PALETTE_NODE_BODY_Y = 5;
-var LABEL_Y_SHIFT = 10;
+var LABEL_Y_SHIFT = 15;
 Rpd.noderenderer('jb/palette', 'svg', function() {
     var cellSide = 12;
     return {
@@ -220,7 +220,8 @@ Rpd.noderenderer('jb/palette', 'svg', function() {
                                                     .attr('width', cellSide).attr('height', cellSide)
                                                     .attr('fill', color);
                                     });
-                                    Kefir.fromEvents(paletteGroup.node(), 'click').onValue(function() {
+                                    Kefir.fromEvents(paletteGroup.node(), 'click')
+                                         .onValue(function() {
                                         if (lastSelected) lastSelected.attr('class', 'rpd-jb-palette-variant');
                                         if (lastHilitedLabel) lastHilitedLabel.attr('class', 'rpd-jb-product-label');
                                         labelText[productId].attr('class', 'rpd-jb-product-label rpd-jb-active-label');
@@ -237,6 +238,8 @@ Rpd.noderenderer('jb/palette', 'svg', function() {
 
             lastSelected = paletteGroups[0];
             paletteGroups[0].attr('class', 'rpd-jb-palette-variant rpd-jb-active-variant');
+            labelText[PRODUCTS[0].id].attr('class', 'rpd-jb-product-label rpd-jb-active-label');
+            lastHilitedLabel = labelText[PRODUCTS[0].id];
             return { 'palette': { valueOut: paletteChange },
                      'product':  { valueOut: productChange } };
         }
