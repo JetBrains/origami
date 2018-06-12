@@ -20,7 +20,7 @@ function start() {
 
     var patch = Rpd.addPatch('Elmsfeuer').resizeCanvas(window.innerWidth, window.innerHeight);
 
-    var layersNode = patch.addNode('jb/layers').move(80, 700);
+    var layersNode = patch.addNode('jb/layers').move(80, 750);
 }
 
 module.exports = start;

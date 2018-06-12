@@ -65,7 +65,7 @@ type Msg
     | Resize Window.Size
     | Configure LayerIndex LayerConfig
     | ChangeBlend LayerIndex Blend
-    | RebuildFss FSS.SerializedScene
+    | RebuildFss LayerIndex FSS.SerializedScene
     | Rotate Float
     | Locate Position
     | Pause
@@ -198,7 +198,7 @@ update msg model =
             , Cmd.none
             )
 
-        RebuildFss serializedScene ->
+        RebuildFss layerIndex serializedScene ->
             ( model
                 |> changeAll
                     (\layer ->
@@ -241,22 +241,11 @@ changeAll f model =
     }
 
 
-configureFirst : Model -> LayerConfig -> (Layer -> Bool) -> Msg
-configureFirst { layers } config f =
-    layers
-        |> List.foldl
-            (\layer (lastIdx, indices) ->
-                ( lastIdx + 1
-                , if f layer
-                    then lastIdx :: indices
-                    else indices
-                )
-            )
-            (0, [])
-        |> Tuple.second
-        |> List.head
-        |> Maybe.withDefault 0
-        |> \idx -> Configure idx config
+configureWhenMatches : LayerIndex -> Model -> LayerConfig -> (Layer -> Bool) -> Msg
+configureWhenMatches index { layers } config f =
+    case Array.fromList layers |> Array.get index of
+        Just layer -> if (f layer) then Configure index config else NoOp
+        Nothing -> NoOp
 
 
 updateLayer : Int -> (Layer -> Layer) -> Model -> Model
@@ -290,23 +279,25 @@ subscriptions model =
         , changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
           )
-        , configureLorenz (\lorenzConfig ->
-            configureFirst model (LorenzConfig lorenzConfig) (\layer ->
-                case layer of
-                    LorenzLayer _ _ _ -> True
-                    _ -> False
-            )
+        , configureLorenz (\(lorenzConfig, layerIndex) ->
+            configureWhenMatches layerIndex model (LorenzConfig lorenzConfig)
+                (\layer ->
+                    case layer of
+                        LorenzLayer _ _ _ -> True
+                        _ -> False
+                )
           )
-        , configureFss (\fssConfig ->
-            configureFirst model (FssConfig fssConfig) (\layer ->
-                case layer of
-                    FssLayer _ _ _ _ -> True
-                    MirroredFssLayer _ _ _ _ _ -> True
-                    _ -> False
-            )
+        , configureFss (\(fssConfig, layerIndex) ->
+            configureWhenMatches layerIndex model (FssConfig fssConfig)
+                (\layer ->
+                    case layer of
+                        FssLayer _ _ _ _ -> True
+                        MirroredFssLayer _ _ _ _ _ -> True
+                        _ -> False
+                )
           )
-        , rebuildFss (\serializedMesh ->
-            RebuildFss serializedMesh
+        , rebuildFss (\(serializedMesh, layerIndex) ->
+            RebuildFss layerIndex serializedMesh
           )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
@@ -439,13 +430,13 @@ port start : (() -> msg) -> Sub msg
 
 port rotate : (Float -> msg) -> Sub msg
 
-port configureLorenz : (Lorenz.Config -> msg) -> Sub msg
+port configureLorenz : ((Lorenz.Config, Int) -> msg) -> Sub msg
 
-port configureFss : (FSS.Config -> msg) -> Sub msg
+port configureFss : ((FSS.Config, Int) -> msg) -> Sub msg
 
 -- TODO: port to affect camera
 
-port rebuildFss : (FSS.SerializedScene -> msg) -> Sub msg
+port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
 
 port changeBlend :
     ( { layer : Int

@@ -20,16 +20,16 @@ const startPatching = require('./patch.js');
 
 const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
 
-// Prepare JB-Toolkit
 registerToolkit(app, BlendsNode);
 
-// Prepare RPD-patch
 // const startLorenz = require('./lorenz.js');
 
-const startFss = require('./fss.js');
+const addFSS = require('./fss.js');
 
 // startLorenz(app);
 
-startFss(app.ports.rebuildFss, app.ports.configureFss);
+addFSS(app.ports.rebuildFss, app.ports.configureFss, 0);
+//app.ports.configureFss.send({ colors : [ '#4b4e76', '#fb4e76' ]});
+//addFSS(app.ports.rebuildFss, app.ports.configureFss, 1);
 startPatching();
 
