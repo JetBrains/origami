@@ -1,10 +1,10 @@
 module Layer.FSS exposing
-    ( Config
+    ( Config, MConfig, loadConfig
     , Mesh
     , SerializedScene
     , makeEntity
     , build
-    , init
+    , init, initM
     )
 
 
@@ -21,15 +21,20 @@ import Viewport exposing (Viewport)
 
 
 type alias Config =
-    { mirror : Mirror -- normal of the mirror
+    { hasMirror : Bool -- normal of the mirror
     , clip : Clip -- max and min values of X for clipping
+    }
+
+
+type alias MConfig =
+    { mirror : Mirror
     }
 
 
 type alias Mouse = ( Int, Int )
 type alias Size = ( Int, Int )
 type alias Clip = ( Float, Float )
-type alias Mirror = Bool
+type alias Mirror = Float
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -114,22 +119,31 @@ type alias SerializedScene =
 
 init : Config
 init =
-    { mirror = False -- normal of the mirror
+    { hasMirror = False -- normal of the mirror
     , clip = (-1, -1) -- max and min values of X for clipping
     }
+
+
+initM : MConfig
+initM =
+    { mirror = 0.5
+    }
+
+
+loadConfig : MConfig -> Config
+loadConfig _ = init
 
 
 makeEntity
      : Viewport {}
     -> Time
     -> Mouse
-    -> Mirror
-    -> Clip
+    -> Config
     -> Maybe SerializedScene
     -> List Setting
     -> Mesh
     -> WebGL.Entity
-makeEntity viewport now mouse mirror clip maybeScene settings mesh =
+makeEntity viewport now mouse config maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -155,8 +169,7 @@ makeEntity viewport now mouse mirror clip maybeScene settings mesh =
                 size
                 mouse
                 lights
-                mirror
-                clip)
+                config)
 
 
 -- Mesh
@@ -312,10 +325,9 @@ uniforms
     -> Size
     -> Mouse
     -> List SLight
-    -> Mirror
-    -> Clip
+    -> Config
     -> Uniforms
-uniforms v now size mouse lights mirror clip =
+uniforms v now size mouse lights config =
     let
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
@@ -330,8 +342,8 @@ uniforms v now size mouse lights mirror clip =
         , uNow = now
         , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
         , uSegment  = vec3 100 100 50
-        , uMirror = if mirror then 1.0 else 0.0
-        , uClip = vec2 (Tuple.first clip) (Tuple.second clip)
+        , uMirror = if config.hasMirror then 1.0 else 0.0
+        , uClip = vec2 (Tuple.first config.clip) (Tuple.second config.clip)
 
         , paused = v.paused
         , rotation = v.rotation

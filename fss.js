@@ -19,13 +19,13 @@ function buildFSS(config) {
     var scene = new FSS.Scene();
 
 
-    var geometry = new FSS.Plane(4000, 4000, 50, 80);
+    var geometry = new FSS.Plane(config.size[0], config.size[1],
+                                 config.faces[0], config.faces[1]);
     var material = new FSS.Material('#FFFFFF', '#FFFFFF');
     var mesh = new FSS.Mesh(geometry, material);
 
-    var light = new FSS.Light('#000000', '#4b4e76');
-    var highlight = new FSS.Light('#000000', '#fb4e76');
-
+    var light = new FSS.Light('#000000', config.colors[0]);
+    var highlight = new FSS.Light('#000000', config.colors[1]);
 
     function initialise() {
         scene.add(mesh);
