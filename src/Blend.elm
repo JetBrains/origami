@@ -9,6 +9,7 @@ module Blend exposing
     , labelOfFunc
     , labelOfFactor
     , decodeAll
+    , encodeAll
     )
 
 
@@ -164,6 +165,28 @@ intFromHex ch =
         _ -> Nothing
 
 
+intToHex : Int -> Char
+intToHex int =
+    case int of
+        0 -> '0'
+        1 -> '1'
+        2 -> '2'
+        3 -> '3'
+        4 -> '4'
+        5 -> '5'
+        6 -> '6'
+        7 -> '7'
+        8 -> '8'
+        9 -> '9'
+        10 -> 'a'
+        11 -> 'b'
+        12 -> 'c'
+        13 -> 'd'
+        14 -> 'e'
+        15 -> 'f'
+        _ -> '0'
+
+
 intFromHex_ : ( Char, Char ) -> Maybe Int
 intFromHex_ ( ch1, ch2 ) =
     case ( intFromHex ch1, intFromHex ch2 ) of
@@ -176,8 +199,8 @@ decodeEq src =
     case src |> String.toList of
         [ c1, c2, c3 ] ->
             let func = intFromHex c1 |> Maybe.withDefault 0
-                factor1 =  intFromHex c2 |> Maybe.withDefault 1
-                factor2 =  intFromHex c3 |> Maybe.withDefault 0
+                factor1 = intFromHex c2 |> Maybe.withDefault 1
+                factor2 = intFromHex c3 |> Maybe.withDefault 0
             in Just ( func, factor1, factor2 )
         _ -> Nothing
 
@@ -212,10 +235,28 @@ decodeBlend src =
 
 decodeAll : String -> List Blend
 decodeAll src =
-    let
-        _ = Debug.log "decodeAll" src
-    in []
+    src
+        |> String.split ":"
+        |> List.map decodeBlend
+        |> List.map (Maybe.withDefault default)
+
+
+encodeAll : List Blend -> String
+encodeAll blends =
+    blends |> List.map encodeBlend |> String.join ":"
 
 
 encodeBlend : Blend -> String
-encodeBlend blend = ""
+encodeBlend { colorEq, alphaEq } =
+    "00000000" ++ encodeEq colorEq ++ encodeEq alphaEq
+
+
+encodeColor : Color -> String
+encodeColor _ = ""
+
+
+encodeEq : Equation -> String
+encodeEq ( func, factor1, factor2 ) =
+    String.cons (intToHex factor2) ""
+        |> String.cons (intToHex factor1)
+        |> String.cons (intToHex func)
