@@ -15,7 +15,7 @@ require('./node_modules/flat-surface-shader/source/Mesh');
 require('./node_modules/flat-surface-shader/source/Scene');
 require('./node_modules/flat-surface-shader/source/Math');
 
-function addFSS(sceneReceiver, configReceiver, layerIndex) {
+function buildFSS(config) {
     var scene = new FSS.Scene();
 
 
@@ -70,7 +70,7 @@ function addFSS(sceneReceiver, configReceiver, layerIndex) {
     //animate();
 
   //  console.log(scene);
-    sceneReceiver.send([ scene, layerIndex ]);
+    return scene;
 }
 
-module.exports = addFSS;
+module.exports = buildFSS;
