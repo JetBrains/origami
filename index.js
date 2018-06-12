@@ -11,25 +11,36 @@ const mountNode = document.getElementById('js-animation');
 // The third value on embed are the initial values for incomming ports into Elm
 const app = App.Main.embed(mountNode);
 
-mountNode.addEventListener('click', function(){
-    app.ports.pause.send(null);
-});
+// mountNode.addEventListener('click', function() {
+//     app.ports.pause.send(null);
+// });
 
-
-// Prepare JB-Toolkit
 const registerToolkit = require('./toolkit.js');
+const startPatching = require('./patch.js');
 
 const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
 
 registerToolkit(app, BlendsNode);
 
-// Prepare RPD-patch
-const startPatch = require('./patch.js');
+// const startLorenz = require('./lorenz.js');
 
-const startFss = require('./fss.js');
+const buildFSS = require('./fss.js');
 
-startPatch(app);
+// startLorenz(app);
+var layers = [
+    { type: 'fss-mirror', config: { colors: [ '#4b4e76', '#fb4e76' ], mirror: 0.5 } }
+];
 
-startFss(app.ports.rebuildFss, app.ports.configureFss);
+app.ports.initLayers.send(layers.map((l) => l.type));
 
+layers.forEach((layer, index) => {
+    if (layer.type == 'fss-mirror') {
+        const scene = buildFSS(layer.config);
+        app.ports.rebuildFss.send([ scene, index ]);
+    }
+});
+
+//app.ports.configureFss.send({ colors : [ '#4b4e76', '#fb4e76' ]});
+//addFSS(app.ports.rebuildFss, app.ports.configureFss, 1);
+startPatching();
 
