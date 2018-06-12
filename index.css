@@ -22,3 +22,7 @@ body {
 .rpd-node.rpd-jb-layers .rpd-process text {
     dominant-baseline: hanging;
 }
+
+.rpd-background {
+    pointer-events: none;
+}

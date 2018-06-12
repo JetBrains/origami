@@ -42,6 +42,7 @@ type Layer
     | VoronoiLayer Voronoi.Config Blend Voronoi.Mesh
     | TemplateLayer Template.Config Blend Template.Mesh
     | FssLayer FSS.Config Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | MirroredFssLayer FSS.Config MirrorConfig Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | TextLayer Blend
     | Unknown
     -- | CanvasLayer (\_ -> )
@@ -52,7 +53,7 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , layers : Array Layer
+    , layers : List Layer
     , size : ( Int, Int )
     , mouse : ( Int, Int)
     , now : Time
@@ -62,9 +63,10 @@ type alias Model =
 type Msg
     = Animate Time
     | Resize Window.Size
+    | InitLayers (List String)
     | Configure LayerIndex LayerConfig
     | ChangeBlend LayerIndex Blend
-    | RebuildFss FSS.SerializedScene
+    | RebuildFss LayerIndex FSS.SerializedScene
     | Rotate Float
     | Locate Position
     | Pause
@@ -72,36 +74,22 @@ type Msg
     | NoOp
 
 
+type alias MirrorConfig =
+    { mirrorPos : Float
+    }
+
+
 init : ( Model, Cmd Msg )
 init =
     let
-        lorenzConfig = Lorenz.init
-        fractalConfig = Fractal.init
-        voronoiConfig = Voronoi.init
-        templateConfig = Template.init
-        defaultConfig = FSS.init
-        fssConfig1 = { defaultConfig | clip = ( 0.5, 1 ) }
-        fssConfig2 = { defaultConfig | clip = ( 0, 0.5 ), mirror = True }
---        fssConfig3 = { defaultConfig | clip = ( 0.75, 1 ) }
---        fssConfig4 = { defaultConfig | clip = ( 0, 0.25 ), mirror = True }
+        fssConfig = FSS.init
     in
         (
             { paused = False
             , autoRotate = False
             , fps = 0
             , theta = 0.1
-            , layers = Array.fromList
-                [ FssLayer fssConfig1 Blend.default Nothing (FSS.build fssConfig1 Nothing)
-                , FssLayer fssConfig2 Blend.default Nothing (FSS.build fssConfig2 Nothing)
---                , FssLayer fssConfig3 Blend.default Nothing (FSS.build fssConfig3 Nothing)
---                , FssLayer fssConfig4 Blend.default Nothing (FSS.build fssConfig4 Nothing)
-                ]
-                -- [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
-                -- , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
-                -- , LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
-                -- , FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
-                -- , VoronoiLayer voronoiConfig Blend.default (voronoiConfig |> Voronoi.build)
-                -- ]
+            , layers = [ ]
             , size = ( 1500, 800 )
             , now = 0.0
             , mouse = ( 0, 0 )
@@ -117,73 +105,67 @@ update msg model =
     case msg of
 
         Animate dt ->
-             (
+            (
                 { model
                  | fps = floor (1000 / dt)
                  , theta = if not model.autoRotate then model.theta + dt / 4000 else model.theta
                  , now = if not model.paused then model.now + dt else model.now
                  }
-             , Cmd.none
-             )
+            , Cmd.none
+            )
+
+        InitLayers layerTypes ->
+            ( { model | layers = layerTypes |> List.map createLayer }, Cmd.none )
 
         Configure index config ->
-            case model.layers |> Array.get index of
-                Just layer ->
-                    let
-                        newLayer = case ( layer, config ) of
-                            -- FIXME: simplify
-                            ( LorenzLayer _ curBlend _, LorenzConfig lorenzConfig ) ->
-                                LorenzLayer lorenzConfig curBlend (lorenzConfig |> Lorenz.build)
-                            ( FractalLayer _ curBlend _, FractalConfig fractalConfig ) ->
-                                FractalLayer fractalConfig curBlend (fractalConfig |> Fractal.build)
-                            ( VoronoiLayer _ curBlend _, VoronoiConfig voronoiConfig ) ->
-                                VoronoiLayer voronoiConfig curBlend (voronoiConfig |> Voronoi.build)
-                            ( FssLayer _ curBlend maybeScene _, FssConfig fssConfig ) ->
-                                let
-                                    newMesh = (maybeScene |> FSS.build fssConfig)
-                                in
-                                    FssLayer fssConfig curBlend maybeScene newMesh
-                            ( TemplateLayer _ curBlend _, TemplateConfig templateConfig ) ->
-                                TemplateLayer templateConfig curBlend (templateConfig |> Template.build)
-                            _ -> Unknown
-                    in
-                        ( { model
-                          | layers = model.layers
-                              |> Array.set index newLayer
-                          }
-                        , Cmd.none
-                        )
-                Nothing -> ( model, Cmd.none )
+            ( model |> updateLayer index
+                (\layer ->
+                    case ( layer, config ) of
+                        -- FIXME: simplify
+                        ( LorenzLayer _ curBlend _, LorenzConfig lorenzConfig ) ->
+                            LorenzLayer lorenzConfig curBlend (lorenzConfig |> Lorenz.build)
+                        ( FractalLayer _ curBlend _, FractalConfig fractalConfig ) ->
+                            FractalLayer fractalConfig curBlend (fractalConfig |> Fractal.build)
+                        ( VoronoiLayer _ curBlend _, VoronoiConfig voronoiConfig ) ->
+                            VoronoiLayer voronoiConfig curBlend (voronoiConfig |> Voronoi.build)
+                        ( FssLayer _ curBlend maybeScene _, FssConfig fssConfig ) ->
+                            let
+                                newMesh = (maybeScene |> FSS.build fssConfig)
+                            in
+                                FssLayer fssConfig curBlend maybeScene newMesh
+                        ( MirroredFssLayer _ mirror curBlend maybeScene _, FssConfig fssConfig ) ->
+                            let
+                                newMesh = (maybeScene |> FSS.build fssConfig)
+                            in
+                                MirroredFssLayer fssConfig mirror curBlend maybeScene newMesh
+                        ( TemplateLayer _ curBlend _, TemplateConfig templateConfig ) ->
+                            TemplateLayer templateConfig curBlend (templateConfig |> Template.build)
+                        _ -> Unknown
+                )
+            , Cmd.none )
 
         ChangeBlend index newBlend ->
-            case model.layers |> Array.get index of
-                Just layer ->
-                    let
-                        newLayer =
-                            case layer of
-                                -- FIXME: simplify
-                                TemplateLayer cfg _ mesh ->
-                                    TemplateLayer cfg newBlend mesh
-                                LorenzLayer cfg _ mesh ->
-                                    LorenzLayer cfg newBlend mesh
-                                FractalLayer cfg _ mesh ->
-                                    FractalLayer cfg newBlend mesh
-                                VoronoiLayer cfg _ mesh ->
-                                    VoronoiLayer cfg newBlend mesh
-                                FssLayer cfg _ scene mesh ->
-                                    FssLayer cfg newBlend scene mesh
-                                TextLayer _ ->
-                                    TextLayer newBlend
-                                _ -> Unknown
-                    in
-                        ( { model
-                           | layers = model.layers
-                               |> Array.set index newLayer
-                           }
-                           , Cmd.none
-                           )
-                Nothing ->
-                    ( model , Cmd.none )
+            ( model |> updateLayer index
+                (\layer ->
+                    case layer of
+                        -- FIXME: simplify
+                        TemplateLayer cfg _ mesh ->
+                            TemplateLayer cfg newBlend mesh
+                        LorenzLayer cfg _ mesh ->
+                            LorenzLayer cfg newBlend mesh
+                        FractalLayer cfg _ mesh ->
+                            FractalLayer cfg newBlend mesh
+                        VoronoiLayer cfg _ mesh ->
+                            VoronoiLayer cfg newBlend mesh
+                        FssLayer cfg _ scene mesh ->
+                            FssLayer cfg newBlend scene mesh
+                        MirroredFssLayer cfg mirror _ scene mesh ->
+                            MirroredFssLayer cfg mirror newBlend scene mesh
+                        TextLayer _ ->
+                            TextLayer newBlend
+                        _ -> Unknown
+                )
+            , Cmd.none )
 
         Rotate theta ->
             ( { model | theta = theta  }
@@ -203,7 +185,7 @@ update msg model =
             , Cmd.none
             )
 
-        RebuildFss serializedScene ->
+        RebuildFss layerIndex serializedScene ->
             ( model
                 |> changeAll
                     (\layer ->
@@ -214,6 +196,12 @@ update msg model =
                                     newMesh = maybeScene |> FSS.build cfg
                                 in
                                     FssLayer cfg blend maybeScene newMesh |> Just
+                            MirroredFssLayer cfg mirror blend _ mesh ->
+                                let
+                                    maybeScene = Just serializedScene
+                                    newMesh = maybeScene |> FSS.build cfg
+                                in
+                                    MirroredFssLayer cfg mirror blend maybeScene newMesh |> Just
                             _ -> Nothing
                     )
             , Cmd.none
@@ -227,12 +215,48 @@ update msg model =
         _ -> ( model, Cmd.none )
 
 
+createLayer : String -> Layer
+createLayer code =
+    case code of
+        "fss" ->
+            let fssConfig = FSS.init
+            in
+                FssLayer
+                    fssConfig
+                    Blend.default
+                    Nothing
+                    (FSS.build fssConfig Nothing)
+        "fss-mirror" ->
+            let fssConfig = FSS.init
+            in
+                MirroredFssLayer
+                    fssConfig
+                    { mirrorPos = 0.5 }
+                    Blend.default
+                    Nothing
+                    (FSS.build fssConfig Nothing)
+        "lorenz" ->
+            let lorenzConfig = Lorenz.init
+            in LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
+        "template" ->
+            let templateConfig = Template.init
+            in TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
+        "voronoi" ->
+            let voronoiConfig = Voronoi.init
+            in VoronoiLayer voronoiConfig Blend.default (voronoiConfig |> Voronoi.build)
+        "fractal" ->
+            let fractalConfig = Fractal.init
+            in FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
+        -- TODO: text
+        _ -> Unknown
+
+
 changeAll : (Layer -> Maybe Layer) -> Model -> Model
 changeAll f model =
     { model |
         layers =
             model.layers |>
-                Array.map (\layer ->
+                List.map (\layer ->
                     case f layer of
                         Just newLayer -> newLayer
                         Nothing -> layer
@@ -240,22 +264,23 @@ changeAll f model =
     }
 
 
-configureFirst : Model -> LayerConfig -> (Layer -> Bool) -> Msg
-configureFirst { layers } config f =
-    layers
-        |> Array.foldl
-            (\layer (lastIdx, indices) ->
-                ( lastIdx + 1
-                , if f layer
-                    then lastIdx :: indices
-                    else indices
-                )
-            )
-            (0, [])
-        |> Tuple.second
-        |> List.head
-        |> Maybe.withDefault 0
-        |> \idx -> Configure idx config
+configureWhenMatches : LayerIndex -> Model -> LayerConfig -> (Layer -> Bool) -> Msg
+configureWhenMatches index { layers } config f =
+    case Array.fromList layers |> Array.get index of
+        Just layer -> if (f layer) then Configure index config else NoOp
+        Nothing -> NoOp
+
+
+updateLayer : Int -> (Layer -> Layer) -> Model -> Model
+updateLayer index f model =
+    let layersArray = Array.fromList model.layers
+    in
+        case layersArray |> Array.get index of
+            Just layer ->
+                { model
+                | layers = layersArray |> Array.set index (f layer) |> Array.toList
+                }
+            Nothing -> model
 
 
 subscriptions : Model -> Sub Msg
@@ -267,33 +292,37 @@ subscriptions model =
             toLocal model.size pos
                 |> Maybe.map (\pos -> Pause)
                 |> Maybe.withDefault NoOp
-        )
+          )
         , moves (\pos ->
             toLocal model.size pos
                 |> Maybe.map (\localPos -> Locate localPos)
                 |> Maybe.withDefault NoOp
-        )
+          )
         , rotate Rotate
+        , initLayers (\layerTypes -> InitLayers (Array.toList layerTypes))
         , changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
-        )
-        , configureLorenz (\lorenzConfig ->
-            configureFirst model (LorenzConfig lorenzConfig) (\layer ->
-                case layer of
-                    LorenzLayer _ _ _ -> True
-                    _ -> False
-            )
-        )
-        , configureFss (\fssConfig ->
-            configureFirst model (FssConfig fssConfig) (\layer ->
-                case layer of
-                    FssLayer _ _ _ _ -> True
-                    _ -> False
-            )
-        )
-        , rebuildFss (\serializedMesh ->
-            RebuildFss serializedMesh
-        )
+          )
+        , configureLorenz (\(lorenzConfig, layerIndex) ->
+            configureWhenMatches layerIndex model (LorenzConfig lorenzConfig)
+                (\layer ->
+                    case layer of
+                        LorenzLayer _ _ _ -> True
+                        _ -> False
+                )
+          )
+        , configureFss (\(fssConfig, layerIndex) ->
+            configureWhenMatches layerIndex model (FssConfig fssConfig)
+                (\layer ->
+                    case layer of
+                        FssLayer _ _ _ _ -> True
+                        MirroredFssLayer _ _ _ _ _ -> True
+                        _ -> False
+                )
+          )
+        , rebuildFss (\(serializedMesh, layerIndex) ->
+            RebuildFss layerIndex serializedMesh
+          )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
         ]
@@ -316,53 +345,68 @@ mapControls model controlsMsg =
 mergeLayers : Model -> List WebGL.Entity
 mergeLayers model =
     let viewport = getViewportState model |> Viewport.find
-    in model.layers |> Array.map
-        (\layer ->
-            case layer of
-                -- FIXME: simplify
-                LorenzLayer _ blend lorenz ->
-                    Lorenz.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        lorenz
-                FractalLayer _ blend fractal ->
-                    Fractal.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        fractal
-                TemplateLayer _ blend template ->
-                    Template.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        template
-                VoronoiLayer _ blend voronoi ->
-                    Voronoi.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        voronoi
-                FssLayer config blend serialized fss ->
-                    FSS.makeEntity
-                        viewport
-                        model.now
-                        model.mouse
-                        config.mirror
-                        config.clip
-                        serialized
-                        [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
-                        fss
-                TextLayer blend ->
-                    -- FIXME: replace with text
-                    Template.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce blend ]
-                        (Template.init |> Template.build)
-                Unknown ->
-                    Template.makeEntity
-                        viewport
-                        [ DepthTest.default, Blend.produce Blend.default ]
-                        (Template.init |> Template.build)
-        )
-    |> Array.toList
+    in
+        model.layers |> List.concatMap (layerToEntities model viewport)
+
+
+layerToEntities : Model -> Viewport {} -> Layer -> List WebGL.Entity
+layerToEntities model viewport layer =
+    case layer of
+        LorenzLayer _ blend lorenz ->
+            [ Lorenz.makeEntity
+                viewport
+                [ DepthTest.default, Blend.produce blend ]
+                lorenz
+            ]
+        FractalLayer _ blend fractal ->
+            [ Fractal.makeEntity
+                viewport
+                [ DepthTest.default, Blend.produce blend ]
+                fractal
+            ]
+        TemplateLayer _ blend template ->
+            [ Template.makeEntity
+                viewport
+                [ DepthTest.default, Blend.produce blend ]
+                template
+            ]
+        VoronoiLayer _ blend voronoi ->
+            [ Voronoi.makeEntity
+                viewport
+                [ DepthTest.default, Blend.produce blend ]
+                voronoi
+            ]
+        FssLayer config blend serialized fss ->
+            [ FSS.makeEntity
+                viewport
+                model.now
+                model.mouse
+                config.mirror
+                config.clip
+                serialized
+                [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
+                fss
+            ]
+        MirroredFssLayer config mirror blend serialized fss ->
+            let
+                config1 = { config | clip = ( mirror.mirrorPos, 1 ) }
+                config2 = { config | clip = ( 0, mirror.mirrorPos ), mirror = True }
+            in
+                (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
+                (layerToEntities model viewport (FssLayer config2 blend serialized fss))
+        TextLayer blend ->
+            -- FIXME: replace with text
+            [ Template.makeEntity
+                viewport
+                [ DepthTest.default, Blend.produce blend ]
+                (Template.init |> Template.build)
+            ]
+        Unknown ->
+            [ Template.makeEntity
+                viewport
+                [ DepthTest.default, Blend.produce Blend.default ]
+                (Template.init |> Template.build)
+            ]
 
 
 getViewportState : Model -> Viewport.State
@@ -410,13 +454,15 @@ port start : (() -> msg) -> Sub msg
 
 port rotate : (Float -> msg) -> Sub msg
 
-port configureLorenz : (Lorenz.Config -> msg) -> Sub msg
+port initLayers : (Array String -> msg) -> Sub msg
 
-port configureFss : (FSS.Config -> msg) -> Sub msg
+port configureLorenz : ((Lorenz.Config, Int) -> msg) -> Sub msg
+
+port configureFss : ((FSS.Config, Int) -> msg) -> Sub msg
 
 -- TODO: port to affect camera
 
-port rebuildFss : (FSS.SerializedScene -> msg) -> Sub msg
+port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
 
 port changeBlend :
     ( { layer : Int
