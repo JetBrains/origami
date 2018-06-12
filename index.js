@@ -18,9 +18,9 @@ const app = App.Main.embed(mountNode);
 const registerToolkit = require('./toolkit.js');
 const startPatching = require('./patch.js');
 
-const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
+const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
-registerToolkit(app, BlendsNode);
+registerToolkit(app, LayersNode);
 
 // const startLorenz = require('./lorenz.js');
 

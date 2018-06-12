@@ -1,4 +1,4 @@
-port module BlendsNode exposing (..)
+port module LayersNode exposing (..)
 
 import Dict
 import Array
