@@ -3,6 +3,7 @@ port module LayersNode exposing (..)
 import Dict
 import Array
 import Html
+import Html.Attributes as HA exposing (attribute)
 import Svg exposing (..)
 import Svg.Attributes as SA exposing (..)
 import Svg.Events as SE exposing (..)
@@ -36,7 +37,7 @@ renderBlendFrom blends idx =
     g
         [ SA.style "alignment-baseline: hanging;"
         , class ("layer layer-" ++ toString idx)
-        , move 0 (idx * 130)
+        , move 0 (idx * 90)
         ]
         [ text_ [ fill "black" ] [ text ("Layer " ++ toString idx) ]
         , blends
@@ -52,14 +53,14 @@ renderBlend idx blend =
         [ class "blend", move 0 10 ]
         [ rect [ width "10", height "10", fill (getFill blend)
                , stroke "black", strokeWidth "1", rx "3", ry "3", move 1 4 ] []
-        , text_ [ fill "black", move 15 5 ] [ text "Color EQ" ]
+       -- , text_ [ fill "black", move 15 5 ] [ text "Color EQ" ]
         , g
-            [ class "color-eq", move 15 15 ]
+            [ class "color-eq", move 22 8 ]
             [ blend.colorEq |> renderEq "color"
               (\eq -> ChangeBlend idx { blend | colorEq = eq }) ]
-        , text_ [ fill "black", move 15 55 ] [ text "Alpha EQ" ]
+        --, text_ [ fill "black", move 15 55 ] [ text "Alpha EQ" ]
         , g
-            [ class "alpha-eq", move 15 65 ]
+            [ class "alpha-eq", move 22 45 ]
             [ blend.alphaEq |> renderEq "alpha"
               (\eq -> ChangeBlend idx { blend | alphaEq = eq }) ]
         ]
@@ -85,26 +86,28 @@ renderEq eqType upd ( func, factor1, factor2 ) =
 
 renderFunc : (Int -> Msg) -> Int -> Int -> a -> Svg Msg
 renderFunc select curN n _ =
-    text_
+    circle
         [ SA.style "cursor: pointer;"
-        , fill (if (n == curN) then "blue" else "white")
-        , move (n * 30) 0
+        , SA.r "3"
+        , fill (if (n == curN) then "white" else "black")
+        , move (n * 12) 0
+        , HA.attribute "data-label" <| B.labelOfFunc n
         , SE.onClick (select n)
         ]
-        [ B.labelOfFunc n |> text
-        ]
+        [ ]
 
 
 renderFactor : (Int -> Msg) -> Int -> Int -> a -> Svg Msg
 renderFactor select curN n _ =
-    text_
+    circle
         [ SA.style "cursor: pointer;"
-        , fill (if (n == curN) then "blue" else "white")
-        , move (n * 30) 0
+        , SA.r "3"
+        , fill (if (n == curN) then "white" else "black")
+        , move (n * 12) 0
+        , HA.attribute "data-label" <| B.labelOfFactor n
         , SE.onClick (select n)
         ]
-        [ B.labelOfFactor n |> text
-        ]
+        [ ]
 
 
 getFill : B.Blend -> String

@@ -13,17 +13,21 @@ var layersNode = null;
 Rpd.nodetype('jb/layers', {
     title: 'Layers',
     inlets: {
-        'count': { type: 'util/number', default: 3 }
+        'count': { type: 'util/number', default: 3 },
+        //'colors': { type: 'jb/colors', default: [] }
+        'colors': { type: 'core/any', default: [] }
     },
     outlets: {},
     process: function(inlets) {
-        if (layersNode) layersNode.ports.changeLayerCount.send(parseInt(inlets.count));
+        if (layersNode) {
+            layersNode.ports.changeLayerCount.send(parseInt(inlets.count));
+        }
         return {};
     }
 });
 
 Rpd.noderenderer('jb/layers', 'svg', {
-    size: { width: 500, height: 400 },
+    size: { width: 212, height: 200 },
     pivot: { x: 0.03, y: 0.03 },
     first: function(bodyElm) {
         // console.log(layersNode);
@@ -33,7 +37,10 @@ Rpd.noderenderer('jb/layers', 'svg', {
             if (elmsfeuer) {
                 layersNode.ports.sendNewBlend.subscribe(function(state) {
                     elmsfeuer.ports.changeBlend.send(state);
-                })
+                });
+                // layersNode.ports.sendNewColors.subscribe(function(state) {
+                //     elmsfeuer.ports.changeBlend.send(state);
+                // });
             }
         }
     },
