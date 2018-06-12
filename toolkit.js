@@ -119,7 +119,8 @@ Rpd.nodetype('jb/layers', {
     inlets: {
         'count': { type: 'util/number', default: 3 },
         //'colors': { type: 'jb/colors', default: [] }
-        'colors': { type: 'core/any', default: [] }
+        'colors': { type: 'core/any', default: [] },
+        'code': { type: 'core/any', default: '' }
     },
     outlets: {},
     process: function(inlets) {
@@ -152,6 +153,7 @@ Rpd.noderenderer('jb/layers', 'svg', {
         var layersCount = parseInt(inlets.count);
         if (layersNode) {
             layersNode.ports.changeLayerCount.send(layersCount);
+            if (inlets.code) layersNode.ports.applyAllBlends.send(inlets.code);
         }
     }
 });

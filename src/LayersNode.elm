@@ -23,6 +23,7 @@ type alias Model =
 
 type Msg
     = ChangeBlend Int B.Blend
+    | ApplyAllBlends String
     | ChangeLayerCount Int
     | Resize ( Int, Int )
 
@@ -132,6 +133,14 @@ update msg model =
         ChangeBlend layerId newBlend ->
             { model | blends = model.blends |> Dict.insert layerId newBlend }
             ! [ sendNewBlend { layer = layerId, blend = newBlend }]
+        ApplyAllBlends blends ->
+            { model | blends =
+                B.decodeAll blends
+                    |> Array.fromList
+                    |> Array.toIndexedList
+                    |> Dict.fromList
+            }
+            ! [ {- sendNewBlend { layer = layerId, blend = newBlend } -} ]
         ChangeLayerCount newCount ->
             { model
             | layerCount = newCount
@@ -150,6 +159,9 @@ subscriptions model =
     Sub.batch
         [ changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
+          )
+        , applyAllBlends (\encodedBlends ->
+            ApplyAllBlends encodedBlends
           )
         , resize Resize
         , changeLayerCount ChangeLayerCount
@@ -181,6 +193,10 @@ port changeBlend :
     ( { layer : Int
       , blend : B.Blend
       }
+    -> msg) -> Sub msg
+
+port applyAllBlends :
+    ( String
     -> msg) -> Sub msg
 
 port sendNewBlend :
