@@ -53,7 +53,7 @@ setTimeout(function() {
         }
     });
 
-    startPatching();
+    startPatching(layers);
 }, 100);
 
 
