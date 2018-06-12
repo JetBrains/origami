@@ -143,6 +143,9 @@ Rpd.noderenderer('jb/layers', 'svg', {
                 layersNode.ports.sendNewBlend.subscribe(function(state) {
                     elmsfeuer.ports.changeBlend.send(state);
                 });
+                layersNode.ports.sendNewCode.subscribe(function(code) {
+                    window.location.hash = '#blends=' + code;
+                });
                 // layersNode.ports.sendNewColors.subscribe(function(state) {
                 //     elmsfeuer.ports.changeBlend.send(state);
                 // });

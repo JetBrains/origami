@@ -131,16 +131,24 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ChangeBlend layerId newBlend ->
-            { model | blends = model.blends |> Dict.insert layerId newBlend }
-            ! [ sendNewBlend { layer = layerId, blend = newBlend }]
+            let model_ = { model | blends = model.blends |> Dict.insert layerId newBlend }
+            in
+                model_ !
+                    [ sendNewBlend { layer = layerId, blend = newBlend }
+                    , Dict.values model_.blends |> B.encodeAll |> sendNewCode
+                    ]
         ApplyAllBlends blends ->
-            { model | blends =
+            let newBlends =
                 B.decodeAll blends
                     |> Array.fromList
                     |> Array.toIndexedList
-                    |> Dict.fromList
-            }
-            ! [ {- sendNewBlend { layer = layerId, blend = newBlend } -} ]
+            in
+                { model | blends = Dict.fromList newBlends
+                }
+                ! (newBlends |> List.map
+                    (\(layerId, newBlend) ->
+                        sendNewBlend { layer = layerId, blend = newBlend }
+                    ))
         ChangeLayerCount newCount ->
             { model
             | layerCount = newCount
@@ -203,3 +211,6 @@ port sendNewBlend :
     { layer: Int
     , blend: B.Blend
     } -> Cmd msg
+
+port sendNewCode :
+    String -> Cmd msg
