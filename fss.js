@@ -19,7 +19,7 @@ function startFss(sceneReceiver, configReceiver) {
     var scene = new FSS.Scene();
 
 
-    var geometry = new FSS.Plane(1550, 800, 10, 10);
+    var geometry = new FSS.Plane(4000, 4000, 50, 80);
     var material = new FSS.Material('#FFFFFF', '#FFFFFF');
     var mesh = new FSS.Mesh(geometry, material);
 
@@ -46,8 +46,8 @@ function startFss(sceneReceiver, configReceiver) {
             vertex.gradient = Math.randomInRange(0.2, 0.7);
         }
 
-        light.setPosition(150, -50, 60);
-        highlight.setPosition(0, 150, 10);
+        light.setPosition(150, -50, 100);
+        highlight.setPosition(0, 150, 15);
 
 
         //container.appendChild(renderer.element);
