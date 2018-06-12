@@ -63,6 +63,7 @@ type alias Model =
 type Msg
     = Animate Time
     | Resize Window.Size
+    | InitLayers (List String)
     | Configure LayerIndex LayerConfig
     | ChangeBlend LayerIndex Blend
     | RebuildFss LayerIndex FSS.SerializedScene
@@ -81,10 +82,6 @@ type alias MirrorConfig =
 init : ( Model, Cmd Msg )
 init =
     let
-        -- lorenzConfig = Lorenz.init
-        -- fractalConfig = Fractal.init
-        -- voronoiConfig = Voronoi.init
-        -- templateConfig = Template.init
         fssConfig = FSS.init
     in
         (
@@ -92,20 +89,7 @@ init =
             , autoRotate = False
             , fps = 0
             , theta = 0.1
-            , layers =
-                [ MirroredFssLayer
-                    fssConfig
-                    { mirrorPos = 0.5 }
-                    Blend.default
-                    Nothing
-                    (FSS.build fssConfig Nothing)
-                ]
-                -- [ TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
-                -- , FssLayer fssConfig Blend.default Nothing (FSS.build fssConfig Nothing)
-                -- , LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
-                -- , FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
-                -- , VoronoiLayer voronoiConfig Blend.default (voronoiConfig |> Voronoi.build)
-                -- ]
+            , layers = [ ]
             , size = ( 1500, 800 )
             , now = 0.0
             , mouse = ( 0, 0 )
@@ -121,14 +105,17 @@ update msg model =
     case msg of
 
         Animate dt ->
-             (
+            (
                 { model
                  | fps = floor (1000 / dt)
                  , theta = if not model.autoRotate then model.theta + dt / 4000 else model.theta
                  , now = if not model.paused then model.now + dt else model.now
                  }
-             , Cmd.none
-             )
+            , Cmd.none
+            )
+
+        InitLayers layerTypes ->
+            ( { model | layers = layerTypes |> List.map createLayer }, Cmd.none )
 
         Configure index config ->
             ( model |> updateLayer index
@@ -228,6 +215,42 @@ update msg model =
         _ -> ( model, Cmd.none )
 
 
+createLayer : String -> Layer
+createLayer code =
+    case code of
+        "fss" ->
+            let fssConfig = FSS.init
+            in
+                FssLayer
+                    fssConfig
+                    Blend.default
+                    Nothing
+                    (FSS.build fssConfig Nothing)
+        "fss-mirror" ->
+            let fssConfig = FSS.init
+            in
+                MirroredFssLayer
+                    fssConfig
+                    { mirrorPos = 0.5 }
+                    Blend.default
+                    Nothing
+                    (FSS.build fssConfig Nothing)
+        "lorenz" ->
+            let lorenzConfig = Lorenz.init
+            in LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
+        "template" ->
+            let templateConfig = Template.init
+            in TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
+        "voronoi" ->
+            let voronoiConfig = Voronoi.init
+            in VoronoiLayer voronoiConfig Blend.default (voronoiConfig |> Voronoi.build)
+        "fractal" ->
+            let fractalConfig = Fractal.init
+            in FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
+        -- TODO: text
+        _ -> Unknown
+
+
 changeAll : (Layer -> Maybe Layer) -> Model -> Model
 changeAll f model =
     { model |
@@ -276,6 +299,7 @@ subscriptions model =
                 |> Maybe.withDefault NoOp
           )
         , rotate Rotate
+        , initLayers (\layerTypes -> InitLayers (Array.toList layerTypes))
         , changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
           )
@@ -429,6 +453,8 @@ port pause : (() -> msg) -> Sub msg
 port start : (() -> msg) -> Sub msg
 
 port rotate : (Float -> msg) -> Sub msg
+
+port initLayers : (Array String -> msg) -> Sub msg
 
 port configureLorenz : ((Lorenz.Config, Int) -> msg) -> Sub msg
 

@@ -24,11 +24,22 @@ registerToolkit(app, BlendsNode);
 
 // const startLorenz = require('./lorenz.js');
 
-const addFSS = require('./fss.js');
+const buildFSS = require('./fss.js');
 
 // startLorenz(app);
+var layers = [
+    { type: 'fss-mirror', config: { colors: [ '#4b4e76', '#fb4e76' ], mirror: 0.5 } }
+];
 
-addFSS(app.ports.rebuildFss, app.ports.configureFss, 0);
+app.ports.initLayers.send(layers.map((l) => l.type));
+
+layers.forEach((layer, index) => {
+    if (layer.type == 'fss-mirror') {
+        const scene = buildFSS(layer.config);
+        app.ports.rebuildFss.send([ scene, index ]);
+    }
+});
+
 //app.ports.configureFss.send({ colors : [ '#4b4e76', '#fb4e76' ]});
 //addFSS(app.ports.rebuildFss, app.ports.configureFss, 1);
 startPatching();
