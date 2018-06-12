@@ -11,25 +11,25 @@ const mountNode = document.getElementById('js-animation');
 // The third value on embed are the initial values for incomming ports into Elm
 const app = App.Main.embed(mountNode);
 
-mountNode.addEventListener('click', function(){
-    app.ports.pause.send(null);
-});
+// mountNode.addEventListener('click', function() {
+//     app.ports.pause.send(null);
+// });
 
-
-// Prepare JB-Toolkit
 const registerToolkit = require('./toolkit.js');
+const startPatching = require('./patch.js');
 
 const BlendsNode = require('./src/BlendsNode.elm').BlendsNode;
 
+// Prepare JB-Toolkit
 registerToolkit(app, BlendsNode);
 
 // Prepare RPD-patch
-const startPatch = require('./patch.js');
+// const startLorenz = require('./lorenz.js');
 
 const startFss = require('./fss.js');
 
-startPatch(app);
+// startLorenz(app);
 
 startFss(app.ports.rebuildFss, app.ports.configureFss);
-
+startPatching();
 

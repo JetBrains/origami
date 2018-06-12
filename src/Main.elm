@@ -280,23 +280,23 @@ subscriptions model =
             toLocal model.size pos
                 |> Maybe.map (\pos -> Pause)
                 |> Maybe.withDefault NoOp
-        )
+          )
         , moves (\pos ->
             toLocal model.size pos
                 |> Maybe.map (\localPos -> Locate localPos)
                 |> Maybe.withDefault NoOp
-        )
+          )
         , rotate Rotate
         , changeBlend (\{ layer, blend } ->
             ChangeBlend layer blend
-        )
+          )
         , configureLorenz (\lorenzConfig ->
             configureFirst model (LorenzConfig lorenzConfig) (\layer ->
                 case layer of
                     LorenzLayer _ _ _ -> True
                     _ -> False
             )
-        )
+          )
         , configureFss (\fssConfig ->
             configureFirst model (FssConfig fssConfig) (\layer ->
                 case layer of
@@ -304,10 +304,10 @@ subscriptions model =
                     MirroredFssLayer _ _ _ _ _ -> True
                     _ -> False
             )
-        )
+          )
         , rebuildFss (\serializedMesh ->
             RebuildFss serializedMesh
-        )
+          )
         , pause (\_ -> Pause)
         , start (\_ -> Start)
         ]
