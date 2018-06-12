@@ -32,6 +32,7 @@ type LayerConfig
     | FractalConfig Fractal.Config
     | VoronoiConfig Voronoi.Config
     | FssConfig FSS.Config
+    | MirroredFssConfig FSS.MConfig
     | TemplateConfig Template.Config
 
 
@@ -42,7 +43,7 @@ type Layer
     | VoronoiLayer Voronoi.Config Blend Voronoi.Mesh
     | TemplateLayer Template.Config Blend Template.Mesh
     | FssLayer FSS.Config Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | MirroredFssLayer FSS.Config MirrorConfig Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | MirroredFssLayer FSS.MConfig Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | TextLayer Blend
     | Unknown
     -- | CanvasLayer (\_ -> )
@@ -72,11 +73,6 @@ type Msg
     | Pause
     | Start
     | NoOp
-
-
-type alias MirrorConfig =
-    { mirrorPos : Float
-    }
 
 
 init : ( Model, Cmd Msg )
@@ -130,14 +126,17 @@ update msg model =
                             VoronoiLayer voronoiConfig curBlend (voronoiConfig |> Voronoi.build)
                         ( FssLayer _ curBlend maybeScene _, FssConfig fssConfig ) ->
                             let
-                                newMesh = (maybeScene |> FSS.build fssConfig)
+                                newMesh = maybeScene |> FSS.build fssConfig
                             in
                                 FssLayer fssConfig curBlend maybeScene newMesh
-                        ( MirroredFssLayer _ mirror curBlend maybeScene _, FssConfig fssConfig ) ->
+                        ( MirroredFssLayer _ curBlend maybeScene _
+                        , MirroredFssConfig mirroredFssConfig ) ->
                             let
-                                newMesh = (maybeScene |> FSS.build fssConfig)
+                                fssConfig = FSS.loadConfig mirroredFssConfig
+                                newMesh = maybeScene
+                                    |> FSS.build fssConfig
                             in
-                                MirroredFssLayer fssConfig mirror curBlend maybeScene newMesh
+                                MirroredFssLayer mirroredFssConfig curBlend maybeScene newMesh
                         ( TemplateLayer _ curBlend _, TemplateConfig templateConfig ) ->
                             TemplateLayer templateConfig curBlend (templateConfig |> Template.build)
                         _ -> Unknown
@@ -159,8 +158,8 @@ update msg model =
                             VoronoiLayer cfg newBlend mesh
                         FssLayer cfg _ scene mesh ->
                             FssLayer cfg newBlend scene mesh
-                        MirroredFssLayer cfg mirror _ scene mesh ->
-                            MirroredFssLayer cfg mirror newBlend scene mesh
+                        MirroredFssLayer cfg _ scene mesh ->
+                            MirroredFssLayer cfg newBlend scene mesh
                         TextLayer _ ->
                             TextLayer newBlend
                         _ -> Unknown
@@ -185,25 +184,24 @@ update msg model =
             , Cmd.none
             )
 
-        RebuildFss layerIndex serializedScene ->
-            ( model
-                |> changeAll
-                    (\layer ->
-                        case layer of
-                            FssLayer cfg blend _ mesh ->
-                                let
-                                    maybeScene = Just serializedScene
-                                    newMesh = maybeScene |> FSS.build cfg
-                                in
-                                    FssLayer cfg blend maybeScene newMesh |> Just
-                            MirroredFssLayer cfg mirror blend _ mesh ->
-                                let
-                                    maybeScene = Just serializedScene
-                                    newMesh = maybeScene |> FSS.build cfg
-                                in
-                                    MirroredFssLayer cfg mirror blend maybeScene newMesh |> Just
-                            _ -> Nothing
-                    )
+        RebuildFss index serializedScene ->
+            ( model |> updateLayer index
+                (\layer ->
+                    case layer of
+                        FssLayer cfg blend _ mesh ->
+                            let
+                                maybeScene = Just serializedScene
+                                newMesh = maybeScene |> FSS.build cfg
+                            in
+                                FssLayer cfg blend maybeScene newMesh
+                        MirroredFssLayer mirrorCfg blend _ mesh ->
+                            let
+                                maybeScene = Just serializedScene
+                                newMesh = maybeScene |> FSS.build (FSS.loadConfig mirrorCfg)
+                            in
+                                MirroredFssLayer mirrorCfg blend maybeScene newMesh
+                        _ -> layer
+                )
             , Cmd.none
             )
 
@@ -227,11 +225,11 @@ createLayer code =
                     Nothing
                     (FSS.build fssConfig Nothing)
         "fss-mirror" ->
-            let fssConfig = FSS.init
+            let mirrorConfig = FSS.initM
+                fssConfig = FSS.init
             in
                 MirroredFssLayer
-                    fssConfig
-                    { mirrorPos = 0.5 }
+                    mirrorConfig
                     Blend.default
                     Nothing
                     (FSS.build fssConfig Nothing)
@@ -251,22 +249,22 @@ createLayer code =
         _ -> Unknown
 
 
-changeAll : (Layer -> Maybe Layer) -> Model -> Model
-changeAll f model =
-    { model |
-        layers =
-            model.layers |>
-                List.map (\layer ->
-                    case f layer of
-                        Just newLayer -> newLayer
-                        Nothing -> layer
-                )
-    }
+-- changeAll : (Layer -> Maybe Layer) -> Model -> Model
+-- changeAll f model =
+--     { model |
+--         layers =
+--             model.layers |>
+--                 List.map (\layer ->
+--                     case f layer of
+--                         Just newLayer -> newLayer
+--                         Nothing -> layer
+--                 )
+--     }
 
 
 configureWhenMatches : LayerIndex -> Model -> LayerConfig -> (Layer -> Bool) -> Msg
 configureWhenMatches index { layers } config f =
-    case Array.fromList layers |> Array.get index of
+    case Array.fromList layers|>Array.get index of
         Just layer -> if (f layer) then Configure index config else NoOp
         Nothing -> NoOp
 
@@ -316,7 +314,14 @@ subscriptions model =
                 (\layer ->
                     case layer of
                         FssLayer _ _ _ _ -> True
-                        MirroredFssLayer _ _ _ _ _ -> True
+                        _ -> False
+                )
+          )
+        , configureMirroredFss (\(mirroredFssConfig, layerIndex) ->
+            configureWhenMatches layerIndex model (MirroredFssConfig mirroredFssConfig)
+                (\layer ->
+                    case layer of
+                        MirroredFssLayer _ _ _ _ -> True
                         _ -> False
                 )
           )
@@ -381,16 +386,16 @@ layerToEntities model viewport layer =
                 viewport
                 model.now
                 model.mouse
-                config.mirror
-                config.clip
+                config
                 serialized
                 [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
                 fss
             ]
-        MirroredFssLayer config mirror blend serialized fss ->
+        MirroredFssLayer mConfig blend serialized fss ->
             let
-                config1 = { config | clip = ( mirror.mirrorPos, 1 ) }
-                config2 = { config | clip = ( 0, mirror.mirrorPos ), mirror = True }
+                fssConfig = FSS.loadConfig mConfig
+                config1 = { fssConfig | clip = ( mConfig.mirror, 1 ) }
+                config2 = { fssConfig | clip = ( 0, mConfig.mirror ), hasMirror = True }
             in
                 (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
                 (layerToEntities model viewport (FssLayer config2 blend serialized fss))
@@ -447,7 +452,6 @@ main =
         , update = update
         }
 
-
 port pause : (() -> msg) -> Sub msg
 
 port start : (() -> msg) -> Sub msg
@@ -459,6 +463,8 @@ port initLayers : (Array String -> msg) -> Sub msg
 port configureLorenz : ((Lorenz.Config, Int) -> msg) -> Sub msg
 
 port configureFss : ((FSS.Config, Int) -> msg) -> Sub msg
+
+port configureMirroredFss : ((FSS.MConfig, Int) -> msg) -> Sub msg
 
 -- TODO: port to affect camera
 

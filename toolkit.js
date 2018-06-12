@@ -6,7 +6,7 @@ window.Rpd = require('./node_modules/rpd/src/rpd.js');
 
 var SVG_XMLNS = "http://www.w3.org/2000/svg";
 
-var elmLorenz = null;
+var elmsfeuer = null;
 var layersNodeApp = null;
 var layersNode = null;
 
@@ -30,9 +30,9 @@ Rpd.noderenderer('jb/layers', 'svg', {
         if (layersNodeApp) {
             layersNode = layersNodeApp.embed(bodyElm);
             layersNode.ports.resize.send([ 500, 400 ]);
-            if (elmLorenz) {
+            if (elmsfeuer) {
                 layersNode.ports.sendNewBlend.subscribe(function(state) {
-                    elmLorenz.ports.changeBlend.send(state);
+                    elmsfeuer.ports.changeBlend.send(state);
                 })
             }
         }
@@ -134,7 +134,7 @@ function eqFuncClick(blendType, state) {
         return function() {
             state.blend[blendType + 'Eq'][0] = index;
             // console.log(state);
-            if (elmLorenz) elmLorenz.ports.changeBlend.send(state);
+            if (elmsfeuer) elmsfeuer.ports.changeBlend.send(state);
         }
     }
 }
@@ -144,7 +144,7 @@ function eqFactorClick(blendType, factorId, state) {
         return function() {
             state.blend[blendType + 'Eq'][factorId] = index;
             // console.log(state);
-            if (elmLorenz) elmLorenz.ports.changeBlend.send(state);
+            if (elmsfeuer) elmsfeuer.ports.changeBlend.send(state);
         }
     }
 }
@@ -161,7 +161,7 @@ function mapTextOver(list, shiftX, onClick) {
     }
 }
 
-module.exports = function(elmLorenzInstance, layersNodeApp_) {
-    elmLorenz = elmLorenzInstance;
+module.exports = function(elmsfeuerInstance, layersNodeApp_) {
+    elmsfeuer = elmsfeuerInstance;
     layersNodeApp = layersNodeApp_;
 };
