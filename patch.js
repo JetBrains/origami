@@ -23,6 +23,8 @@ function start(layers) {
     var layersNode = patch.addNode('jb/layers').move(80, 750);
     layersNode.inlets['count'].receive(layers.length);
     layersNode.inlets['colors'].receive(layers.map((layer) => layer.config.colors));
+
+    var paletteNode = patch.addNode('jb/palette').move(350, 750);
 }
 
 module.exports = start;
