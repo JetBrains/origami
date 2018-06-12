@@ -14,13 +14,14 @@ require('./node_modules/rpd/src/toolkit/util/svg.js');
 
 window.Rpd = require('./node_modules/rpd/src/rpd.js');
 
-function start() {
+function start(layers) {
     Rpd.renderNext('svg', document.getElementById('patch-target'),
                     { style: 'ableton' });
 
     var patch = Rpd.addPatch('Elmsfeuer').resizeCanvas(window.innerWidth, window.innerHeight);
 
     var layersNode = patch.addNode('jb/layers').move(80, 750);
+    layersNode.inlets['count'].receive(layers.length);
 }
 
 module.exports = start;
