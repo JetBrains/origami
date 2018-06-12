@@ -40,7 +40,7 @@ find { theta, size, paused } =
         { rotation
             = Mat4.makeRotate (3 * theta) (vec3 0 0 1)
         , perspective
-            = Mat4.makePerspective 90 1.5 0.1 3000
+            = Mat4.makePerspective 80 1.5 0.1 3000
         , camera = Mat4.makeLookAt (vec3 0 0 0.5) (vec3 0 0 0) (vec3 1 0 0)
         --, shade = 0.8
         , cameraTranslate = Mat4.makeTranslate (vec3 0 -0.35 0)

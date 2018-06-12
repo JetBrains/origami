@@ -65,8 +65,8 @@ type alias SPlane =
     , height : Int
     , triangles : List STriangle
     , vertices : List SVertex
-    , segmentWidth : Int
-    , sliceHeight : Int
+    , segmentWidth : Float
+    , sliceHeight : Float
     }
 
 
@@ -527,7 +527,7 @@ vertexShader =
 
 
             // Calculate the vertex position
-            vec3 amplitudes = vec3(0.35, 0.2, 0.2) * uSegment / uResolution * 2.0 ;
+            vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment / uResolution * 2.0;
 
             // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
@@ -641,7 +641,7 @@ fragmentShader =
 
                // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
-               gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.55, 0.35))), 2.0));
+             //  gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.55, 0.35))), 2.0));
 
         }
 
