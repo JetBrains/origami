@@ -1,7 +1,7 @@
 port module LayersNode exposing (..)
 
-import Dict
-import Array
+import Dict as Dict exposing (Dict)
+import Array as Array exposing (Array)
 import Html
 import Html.Attributes as HA exposing (attribute)
 import Svg exposing (..)
@@ -13,17 +13,21 @@ import Blend as B
 
 type alias Blends = Dict.Dict Int B.Blend
 
+type alias Colors = Dict Int (Array String)
+
 
 type alias Model =
     { layerCount : Int
-    , size: ( Int, Int )
-    , blends: Blends
+    , size : ( Int, Int )
+    , blends : Blends
+    , colors : Colors
     }
 
 
 type Msg
     = ChangeBlend Int B.Blend
     | ApplyAllBlends String
+    | ApplyColors Colors
     | ChangeLayerCount Int
     | Resize ( Int, Int )
 
@@ -124,6 +128,7 @@ init =
     { layerCount =  0
     , size = ( 100, 100 )
     , blends = Dict.empty
+    , colors = Dict.empty
     } ! []
 
 
@@ -140,6 +145,7 @@ update msg model =
         ApplyAllBlends blends ->
             let newBlends =
                 B.decodeAll blends
+                    -- TODO: do not convert twice
                     |> Array.fromList
                     |> Array.toIndexedList
             in
@@ -149,6 +155,22 @@ update msg model =
                     (\(layerId, newBlend) ->
                         sendNewBlend { layer = layerId, blend = newBlend }
                     ))
+        ApplyColors colors ->
+            { model | colors = colors
+            }
+            ! (let colors_ =
+                Dict.map
+                    (\layerId colors ->
+                        sendNewColors { layer = layerId, colors = colors }
+                    ) colors
+              in colors_ |> Dict.values)
+            -- ! ( colors
+            --         |> Dict.map
+            --             (\layerId colors ->
+            --                 sendNewColors { layer = layerId, colors = colors }
+            --             )
+            --         |> Dict.values
+            --   )
         ChangeLayerCount newCount ->
             { model
             | layerCount = newCount
@@ -162,6 +184,13 @@ update msg model =
         Resize newSize -> { model | size = newSize } ! []
 
 
+adaptColors : Array (Array String) -> Colors
+adaptColors source =
+    source
+        |> Array.toIndexedList
+        |> Dict.fromList
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
@@ -170,6 +199,9 @@ subscriptions model =
           )
         , applyAllBlends (\encodedBlends ->
             ApplyAllBlends encodedBlends
+          )
+        , applyColors (\colors ->
+            colors |> adaptColors |> ApplyColors
           )
         , resize Resize
         , changeLayerCount ChangeLayerCount
@@ -195,6 +227,8 @@ main =
 
 port changeLayerCount : (Int -> msg) -> Sub msg
 
+port applyColors : (Array (Array String) -> msg) -> Sub msg
+
 port resize : ( ( Int, Int ) -> msg ) -> Sub msg
 
 port changeBlend :
@@ -210,6 +244,11 @@ port applyAllBlends :
 port sendNewBlend :
     { layer: Int
     , blend: B.Blend
+    } -> Cmd msg
+
+port sendNewColors :
+    { layer: Int
+    , colors: Array String
     } -> Cmd msg
 
 port sendNewCode :
