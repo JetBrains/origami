@@ -10,6 +10,7 @@ var SVG_XMLNS = "http://www.w3.org/2000/svg";
 var elmsfeuer = null;
 var layersNodeApp = null;
 var layersNode = null;
+var updateFssColors = null;
 
 function howMuch(single, plural) {
     return function(list) {
@@ -147,9 +148,13 @@ Rpd.noderenderer('jb/layers', 'svg', {
                 layersNode.ports.sendNewCode.subscribe(function(code) {
                     window.location.hash = '#blends=' + code;
                 });
-                // layersNode.ports.sendNewColors.subscribe(function(state) {
-                //     elmsfeuer.ports.changeBlend.send(state);
-                // });
+                layersNode.ports.sendNewColors.subscribe(function(state) {
+                    // FIXME: remove the handler in palette node and use this one
+                    //        for updates
+                    if (updateFssColors) {
+                        updateFssColors(state.layer, state.colors);
+                    }
+                });
             }
         }
     },
@@ -173,6 +178,12 @@ Rpd.nodetype('jb/palette', {
         'product': { type: 'jb/product' }
     },
     process: function(inlets) {
+        // FIXME: remove the handler in this node and use the one in layers node
+        //        instead
+        if (updateFssColors && inlets.palette) {
+            updateFssColors(0, inlets.palette.slice(0, 2));
+            updateFssColors(1, inlets.palette.slice(2, 3).concat('#fb4e76'));
+        }
         return {
             palette: inlets.palette,
             product: inlets.product
@@ -256,7 +267,8 @@ function svgNode(name) {
     return document.createElementNS(SVG_XMLNS, name);
 }
 
-module.exports = function(elmsfeuerInstance, layersNodeApp_) {
+module.exports = function(elmsfeuerInstance, layersNodeApp_, updateFssColors_) {
     elmsfeuer = elmsfeuerInstance;
     layersNodeApp = layersNodeApp_;
+    updateFssColors = updateFssColors_;
 };
