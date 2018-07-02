@@ -126,6 +126,7 @@ Rpd.nodetype('jb/layers', {
     process: function(inlets) {
         if (layersNode) {
             layersNode.ports.changeLayerCount.send(parseInt(inlets.count));
+            if (inlets.colors) layersNode.ports.applyColors.send(inlets.colors);
         }
         return {};
     }
