@@ -20,14 +20,7 @@ const startPatching = require('./patch.js');
 
 const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
-registerToolkit(app, LayersNode);
-
-// const startLorenz = require('./lorenz.js');
-
-const buildFSS = require('./fss.js');
-
-// startLorenz(app);
-var layers = [
+const layers = [
     { type: 'fss-mirror', config:
         { colors: [ '#f45b69', '#e4fde1' ]
         , size: [ 1550, 800 ] // 4000, 4000
@@ -42,18 +35,40 @@ var layers = [
     }
 ];
 
+const updateFssLayer = (index, config) => {
+    const scene = buildFSS(config);
+    app.ports.configureMirroredFss.send([ config, index ]);
+    app.ports.rebuildFss.send([ scene, index ]);
+}
+
+const updateFssColors = (index, colors) => {
+    const newConfig =
+        { colors: colors
+        , size: [ 1550, 800 ] // 4000, 4000
+        , faces: [ 10, 10 ] // 50, 80
+        , mirror: 0.5 }
+    updateFssLayer(index, newConfig);
+}
+
+registerToolkit(app, LayersNode, updateFssColors);
+
+const buildFSS = require('./fss.js');
+
 app.ports.initLayers.send(layers.map((l) => l.type));
 
 setTimeout(function() {
     layers.forEach((layer, index) => {
         if (layer.type == 'fss-mirror') {
-            const scene = buildFSS(layer.config);
-            app.ports.configureMirroredFss.send([ layer.config, index ]);
-            app.ports.rebuildFss.send([ scene, index ]);
+            updateFssLayer(index, layer.config);
         }
     });
 
     startPatching(layers);
+
+    // setTimeout(function() {
+    //     //updateFssColors(0, ['#000000', '#ffffff']);
+    //     updateFssColors(1, ['#ffffff', '#000000']);
+    // }, 100);
 }, 100);
 
 
