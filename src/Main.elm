@@ -12,13 +12,10 @@ import WebGL exposing (Mesh, Option)
 import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
-import Json.Decode as D exposing (int, string, float, Decoder, Value)
-import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
-import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
-
 import Viewport exposing (Viewport)
 import Blend exposing (Blend)
 import Controls
+import ImportExport as IE exposing (EncodedState)
 
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
@@ -28,9 +25,6 @@ import Layer.Template as Template
 
 
 type alias LayerIndex = Int
-
-type alias ExportedScene = String
-
 
 type LayerConfig
     -- FIXME: use type variable for that, or just a function!
@@ -461,48 +455,6 @@ main =
         , subscriptions = subscriptions
         , update = update
         }
-
-
-decodeLayers : D.Decoder (List Layer)
-decodeLayers =
-    let
-        createLayer type_ config mesh =
-            case type_ of
-                "fss" -> Unknown -- TODO
-                _ -> Unknown
-    in
-        D.list
-            ( D.decode createLayer
-                |> D.required "type" D.string
-                |> D.required "config" D.string
-                |> D.required "mesh" D.string
-            )
-
-
-decodeIntPair : D.Decoder (Int, Int)
-decodeIntPair =
-    D.decode (\i1 i2 -> (i1, i2))
-        |> D.required "v1" D.int
-        |> D.required "v2" D.int
-
-
-decodeModel : D.Decoder Model
-decodeModel =
-    D.decode Model
-        |> D.optional "paused" D.bool False
-        |> D.optional "autoRotate" D.bool False
-        |> D.optional "fps" D.int 0
-        |> D.required "theta" D.float
-        |> D.required "layers" decodeLayers
-        |> D.required "size" decodeIntPair
-        |> D.required "mouse" decodeIntPair
-        |> D.required "time" D.float
-
-
-
-bakeExport : Model -> ExportedScene
-bakeExport model =
-    ""
 
 
 port pause : (() -> msg) -> Sub msg
