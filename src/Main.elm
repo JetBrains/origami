@@ -12,6 +12,10 @@ import WebGL exposing (Mesh, Option)
 import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
+import Json.Decode as D exposing (int, string, float, Decoder, Value)
+import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
+import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
+
 import Viewport exposing (Viewport)
 import Blend exposing (Blend)
 import Controls
@@ -24,6 +28,8 @@ import Layer.Template as Template
 
 
 type alias LayerIndex = Int
+
+type alias ExportedScene = String
 
 
 type LayerConfig
@@ -70,30 +76,33 @@ type Msg
     | RebuildFss LayerIndex FSS.SerializedScene
     | Rotate Float
     | Locate Position
+    | Import ExportedScene
+    | Export
     | Pause
     | Start
     | NoOp
 
 
+emptyModel : Model
+emptyModel =
+    { paused = False
+    , autoRotate = False
+    , fps = 0
+    , theta = 0.1
+    , layers = [ ]
+    , size = ( 1500, 800 )
+    , now = 0.0
+    , mouse = ( 0, 0 )
+    }
+
+
 init : ( Model, Cmd Msg )
 init =
-    let
-        fssConfig = FSS.init
-    in
-        (
-            { paused = False
-            , autoRotate = False
-            , fps = 0
-            , theta = 0.1
-            , layers = [ ]
-            , size = ( 1500, 800 )
-            , now = 0.0
-            , mouse = ( 0, 0 )
-            }
-        , Cmd.batch
-            [ Task.perform Resize Window.size
-            ]
-        )
+    ( emptyModel
+    , Cmd.batch
+        [ Task.perform Resize Window.size
+        ]
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -328,6 +337,7 @@ subscriptions model =
         , rebuildFss (\(serializedMesh, layerIndex) ->
             RebuildFss layerIndex serializedMesh
           )
+        , import_ Import
         , pause (\_ -> Pause)
         , start (\_ -> Start)
         ]
@@ -452,6 +462,49 @@ main =
         , update = update
         }
 
+
+decodeLayers : D.Decoder (List Layer)
+decodeLayers =
+    let
+        createLayer type_ config mesh =
+            case type_ of
+                "fss" -> Unknown -- TODO
+                _ -> Unknown
+    in
+        D.list
+            ( D.decode createLayer
+                |> D.required "type" D.string
+                |> D.required "config" D.string
+                |> D.required "mesh" D.string
+            )
+
+
+decodeIntPair : D.Decoder (Int, Int)
+decodeIntPair =
+    D.decode (\i1 i2 -> (i1, i2))
+        |> D.required "v1" D.int
+        |> D.required "v2" D.int
+
+
+decodeModel : D.Decoder Model
+decodeModel =
+    D.decode Model
+        |> D.optional "paused" D.bool False
+        |> D.optional "autoRotate" D.bool False
+        |> D.optional "fps" D.int 0
+        |> D.required "theta" D.float
+        |> D.required "layers" decodeLayers
+        |> D.required "size" decodeIntPair
+        |> D.required "mouse" decodeIntPair
+        |> D.required "time" D.float
+
+
+
+bakeExport : Model -> ExportedScene
+bakeExport model =
+    ""
+
+
 port pause : (() -> msg) -> Sub msg
 
 port start : (() -> msg) -> Sub msg
@@ -469,6 +522,10 @@ port configureMirroredFss : ((FSS.MConfig, Int) -> msg) -> Sub msg
 -- TODO: port to affect camera
 
 port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
+
+port import_ : (String -> msg) -> Sub msg
+
+port export_ : String -> Cmd msg
 
 port changeBlend :
     ( { layer : Int
