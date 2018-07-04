@@ -24,6 +24,7 @@ import Layer.FSS as FSS
 import Layer.Template as Template
 
 
+
 type alias LayerIndex = Int
 
 type LayerConfig
@@ -70,8 +71,8 @@ type Msg
     | RebuildFss LayerIndex FSS.SerializedScene
     | Rotate Float
     | Locate Position
-    | Import ExportedScene
-    | Export
+    | Import EncodedState
+    | Export EncodedState
     | Pause
     | Start
     | NoOp
@@ -114,7 +115,9 @@ update msg model =
             )
 
         InitLayers layerTypes ->
-            ( { model | layers = layerTypes |> List.map createLayer }, Cmd.none )
+            ( { model | layers = layerTypes |> List.map createLayer }
+            , Cmd.none
+            )
 
         Configure index config ->
             ( model |> updateLayer index
@@ -144,7 +147,8 @@ update msg model =
                             TemplateLayer templateConfig curBlend (templateConfig |> Template.build)
                         _ -> Unknown
                 )
-            , Cmd.none )
+            , Cmd.none
+            )
 
         ChangeBlend index newBlend ->
             ( model |> updateLayer index
@@ -167,7 +171,8 @@ update msg model =
                             TextLayer newBlend
                         _ -> Unknown
                 )
-            , Cmd.none )
+            , Cmd.none
+            )
 
         Rotate theta ->
             ( { model | theta = theta  }
@@ -175,15 +180,13 @@ update msg model =
             )
 
         Resize { width, height } ->
-            ( model
-            , Cmd.none
-            )
+            ( model, Cmd.none )
+            -- ( { model | size = ( width, height ) }
+            -- , Cmd.none
+            -- )
 
         Locate pos ->
-            (
-                { model | mouse = (pos.x, pos.y)
-
-                }
+            ( { model | mouse = (pos.x, pos.y) }
             , Cmd.none
             )
 
@@ -209,9 +212,19 @@ update msg model =
             )
 
         Pause ->
-          ( { model | paused = not model.paused }
-          , Cmd.none
-          )
+            ( { model | paused = not model.paused }
+            , Cmd.none
+            )
+
+        Import encodedModel ->
+            ( IE.decodeModel encodedModel (\_ -> model)
+                |> Maybe.withDefault model
+            , Cmd.none )
+
+        Export encodedModel ->
+            ( model
+            , export_ encodedModel
+            )
 
         _ -> ( model, Cmd.none )
 
