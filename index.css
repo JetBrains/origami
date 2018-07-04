@@ -6,10 +6,16 @@ body {
     position: absolute;
     left: 0;
     top: 0;
+    pointer-events: none;
 }
 
 .rpd-background {
-    fill: transparent !important;
+    fill: transparent !important; /* FIXME: is it not possible to set it in RPD? */
+    pointer-events: none;
+}
+
+.rpd-node-box {
+    pointer-events: all;
 }
 
 .fps {
@@ -21,10 +27,6 @@ body {
 
 .rpd-node.rpd-jb-layers .rpd-process text {
     dominant-baseline: hanging;
-}
-
-.rpd-background {
-    pointer-events: none;
 }
 
 .rpd-jb-palette-variant rect {

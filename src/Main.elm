@@ -3,7 +3,7 @@ port module Main exposing (main)
 import Array exposing (Array)
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H exposing (width, height, style, class, type_, min, max)
-import Html.Events exposing (on, onInput, onMouseUp)
+import Html.Events exposing (on, onInput, onMouseUp, onClick)
 import AnimationFrame
 import Time exposing (Time)
 import Window
@@ -238,7 +238,7 @@ update msg model =
         TimeTravel timeShift ->
             (
                 { model
-                | timeShift = timeShift |> Debug.log "shift"
+                | timeShift = timeShift
                 }
             , Cmd.none )
 
@@ -298,6 +298,21 @@ createLayer code =
 --                 )
 --     }
 
+timeShiftRange : Float
+timeShiftRange = 500.0
+
+
+adaptTimeShift : String -> Time
+adaptTimeShift v =
+    let floatV = String.toFloat v
+        |> Result.withDefault 0.0
+    in (floatV - 50.0) / 100.0 * timeShiftRange
+
+
+extractTimeShift : Time -> String
+extractTimeShift v =
+    (v / timeShiftRange * 100.0) + 50.0 |> toString
+
 
 configureWhenMatches : LayerIndex -> Model -> LayerConfig -> (Layer -> Bool) -> Msg
 configureWhenMatches index { layers } config f =
@@ -323,11 +338,11 @@ subscriptions model =
     Sub.batch
         [ AnimationFrame.diffs Animate
         , Window.resizes Resize
-        , clicks (\pos ->
-            toLocal model.size pos
-                |> Maybe.map (\pos -> Pause)
-                |> Maybe.withDefault NoOp
-          )
+        -- , clicks (\pos ->
+        --     toLocal model.size pos
+        --         |> Maybe.map (\pos -> Pause)
+        --         |> Maybe.withDefault NoOp
+        --   )
         , moves (\pos ->
             toLocal model.size pos
                 |> Maybe.map (\localPos -> Locate localPos)
@@ -469,13 +484,8 @@ view model =
             [ type_ "range"
             , H.min "0"
             , H.max "100"
-            , H.value (model.timeShift * 20 |> toString)
-            , onInput
-                (\v -> String.toFloat v
-                    |> Result.withDefault 0.0
-                    |> (\v -> v / 20.0)
-                    |> TimeTravel
-                )
+            , H.value (extractTimeShift model.timeShift)
+            , onInput (\v -> adaptTimeShift v |> TimeTravel)
             , onMouseUp BackToNow
             ]
             []
@@ -488,6 +498,7 @@ view model =
               [ width (Tuple.first model.size)
               , height (Tuple.second model.size)
               , style [ ( "display", "block" ), ("background-color", "#161616") ]
+              , onClick Pause
               ]
               (mergeLayers model)
           :: []
