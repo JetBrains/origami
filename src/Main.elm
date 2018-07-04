@@ -74,7 +74,7 @@ type Msg
     | Rotate Float
     | Locate Position
     | Import EncodedState
-    | Export EncodedState
+    | Export
     | TimeTravel Float
     | BackToNow
     | Pause
@@ -230,9 +230,9 @@ update msg model =
                 |> Maybe.withDefault model
             , Cmd.none )
 
-        Export encodedModel ->
+        Export ->
             ( model
-            , export_ encodedModel
+            , model |> prepareModel |> IE.encodeModel |> export_
             )
 
         TimeTravel timeShift ->
@@ -286,17 +286,27 @@ createLayer code =
         _ -> Unknown
 
 
--- changeAll : (Layer -> Maybe Layer) -> Model -> Model
--- changeAll f model =
---     { model |
---         layers =
---             model.layers |>
---                 List.map (\layer ->
---                     case f layer of
---                         Just newLayer -> newLayer
---                         Nothing -> layer
---                 )
---     }
+prepareLayer : Layer -> IE.Layer
+prepareLayer layer =
+    case layer of
+        FssLayer config blend maybeScene mesh ->
+            { type_ = "fss"
+            , blend = blend
+            , config = config
+            , mesh = mesh
+            }
+        _ -> IE.defaultLayer
+
+
+prepareModel : Model -> IE.Model
+prepareModel model =
+    { theta = model.theta
+    , time = model.now
+    , layers = List.map prepareLayer model.layers
+    , mouse = model.mouse
+    , size = model.size
+    }
+
 
 timeShiftRange : Float
 timeShiftRange = 500.0
@@ -489,6 +499,7 @@ view model =
             , onMouseUp BackToNow
             ]
             []
+          :: input [ type_ "button", onClick Export ] []
           :: WebGL.toHtmlWith
               [ WebGL.antialias
               , WebGL.alpha True

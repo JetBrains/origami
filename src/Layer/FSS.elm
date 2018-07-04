@@ -4,6 +4,7 @@ module Layer.FSS exposing
     , SerializedScene
     , makeEntity
     , build
+    , emptyMesh
     , init, initM
     )
 
@@ -200,6 +201,11 @@ defaultVertex =
     , aV0 = vec3 0 0 0
     , aPhi = 0
     }
+
+
+emptyMesh : Mesh
+emptyMesh =
+    WebGL.triangles []
 
 
 build : Config -> Maybe SerializedScene -> Mesh

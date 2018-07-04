@@ -1,4 +1,11 @@
-module ImportExport exposing (decodeModel, EncodedState)
+module ImportExport exposing
+    ( encodeModel
+    , decodeModel
+    , Model
+    , Layer
+    , EncodedState
+    , defaultLayer
+    )
 
 import Time exposing (Time)
 
@@ -8,7 +15,7 @@ import Json.Encode as E exposing (encode, Value, string, int, float, bool, list,
 
 import Layer.FSS as FSS
 
-import Blend exposing (Blend)
+import Blend as Blend exposing (Blend)
 
 type alias EncodedState = String
 
@@ -19,21 +26,70 @@ type alias Layer =
     , mesh : FSS.Mesh
     }
 
+
 type alias Model =
     { theta : Float
-    , layers : List (Maybe Layer)
+    , layers : List Layer
     , size : (Int, Int)
     , mouse : (Int, Int)
     , time : Time
     }
 
-decodeLayers : D.Decoder (List (Maybe Layer))
-decodeLayers =
+
+encodeIntPair : ( Int, Int ) -> E.Value
+encodeIntPair ( v1, v2 ) =
+    E.object
+        [ ( "v1", E.int v1 )
+        , ( "v2", E.int v2 )
+        ]
+
+
+encodeLayer : Layer -> E.Value
+encodeLayer layer =
+    E.object
+        [ ( "type", E.string layer.type_ )
+        , ( "blend", Blend.encodeOne layer.blend |> E.string )
+        , ( "config", E.string "" )
+        , ( "mesh", E.string "" )
+        ]
+
+
+encodeModel_ : Model -> E.Value
+encodeModel_ model =
+    E.object
+        [ ( "theta", E.float model.theta )
+        , ( "layers", E.list (List.map encodeLayer model.layers) )
+        -- , ( "layers", E.list (List.filterMap
+        --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
+        , ( "size", encodeIntPair model.size )
+        , ( "mouse", encodeIntPair model.mouse )
+        , ( "time", E.float model.time )
+        ]
+
+
+encodeModel : Model -> EncodedState
+encodeModel model = model |> encodeModel_ |> E.encode 2
+
+
+defaultLayer : Layer
+defaultLayer =
+    { type_ = "empty"
+    , blend = Blend.default
+    , config = FSS.init
+    , mesh = FSS.emptyMesh
+    }
+
+
+layersDecoder : D.Decoder (List Layer)
+layersDecoder =
     let
         createLayer type_ blend config mesh =
-            case type_ of
-                "fss" -> Nothing -- TODO
-                _ -> Nothing
+            { type_ = type_
+            , blend = Blend.decodeOne blend
+                |> Maybe.withDefault Blend.default
+            , config = FSS.init
+            , mesh = FSS.emptyMesh
+            }
     in
         D.list
             ( D.decode createLayer
@@ -55,7 +111,7 @@ modelDecoder : D.Decoder Model
 modelDecoder =
     D.decode Model
         |> D.required "theta" D.float
-        |> D.required "layers" decodeLayers
+        |> D.required "layers" layersDecoder
         |> D.required "size" intPairDecoder
         |> D.required "mouse" intPairDecoder
         |> D.required "time" D.float
