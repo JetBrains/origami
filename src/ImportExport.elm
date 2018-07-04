@@ -44,17 +44,25 @@ decodeLayers =
             )
 
 
-decodeIntPair : D.Decoder (Int, Int)
-decodeIntPair =
+intPairDecoder : D.Decoder (Int, Int)
+intPairDecoder =
     D.decode (\i1 i2 -> (i1, i2))
         |> D.required "v1" D.int
         |> D.required "v2" D.int
 
-decodeModel : D.Decoder Model
-decodeModel =
+
+modelDecoder : D.Decoder Model
+modelDecoder =
     D.decode Model
         |> D.required "theta" D.float
         |> D.required "layers" decodeLayers
-        |> D.required "size" decodeIntPair
-        |> D.required "mouse" decodeIntPair
+        |> D.required "size" intPairDecoder
+        |> D.required "mouse" intPairDecoder
         |> D.required "time" D.float
+
+
+decodeModel : EncodedState -> (Model -> a) -> Maybe a
+decodeModel modelStr f =
+    D.decodeString modelDecoder modelStr
+        |> Result.toMaybe
+        |> Maybe.map f
