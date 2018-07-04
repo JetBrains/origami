@@ -8,6 +8,8 @@ module Blend exposing
     , allFactors
     , labelOfFunc
     , labelOfFactor
+    , decodeOne
+    , encodeOne
     , decodeAll
     , encodeAll
     )
@@ -219,8 +221,8 @@ decodeColor src =
         _ -> Nothing
 
 
-decodeBlend : String -> Maybe Blend
-decodeBlend src =
+decodeOne : String -> Maybe Blend
+decodeOne src =
     if (String.length src == 8 + 3 + 3) then
         let
             colorStr = src |> String.slice 0 8
@@ -237,17 +239,17 @@ decodeAll : String -> List Blend
 decodeAll src =
     src
         |> String.split ":"
-        |> List.map decodeBlend
+        |> List.map decodeOne
         |> List.map (Maybe.withDefault default)
 
 
 encodeAll : List Blend -> String
 encodeAll blends =
-    blends |> List.map encodeBlend |> String.join ":"
+    blends |> List.map encodeOne |> String.join ":"
 
 
-encodeBlend : Blend -> String
-encodeBlend { colorEq, alphaEq } =
+encodeOne : Blend -> String
+encodeOne { colorEq, alphaEq } =
     "00000000" ++ encodeEq colorEq ++ encodeEq alphaEq
 
 
