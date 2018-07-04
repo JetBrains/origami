@@ -1,8 +1,9 @@
 port module Main exposing (main)
 
 import Array exposing (Array)
-import Html exposing (Html, text, div, span)
-import Html.Attributes exposing (width, height, style, class)
+import Html exposing (Html, text, div, span, input)
+import Html.Attributes as H exposing (width, height, style, class, type_, min, max)
+import Html.Events exposing (on, onInput, onMouseUp)
 import AnimationFrame
 import Time exposing (Time)
 import Window
@@ -59,6 +60,7 @@ type alias Model =
     , size : ( Int, Int )
     , mouse : ( Int, Int)
     , now : Time
+    , timeShift : Time
     }
 
 
@@ -73,6 +75,8 @@ type Msg
     | Locate Position
     | Import EncodedState
     | Export EncodedState
+    | TimeTravel Float
+    | BackToNow
     | Pause
     | Start
     | NoOp
@@ -86,8 +90,9 @@ emptyModel =
     , theta = 0.1
     , layers = [ ]
     , size = ( 1500, 800 )
-    , now = 0.0
     , mouse = ( 0, 0 )
+    , now = 0.0
+    , timeShift = 0.0
     }
 
 
@@ -108,8 +113,12 @@ update msg model =
             (
                 { model
                  | fps = floor (1000 / dt)
-                 , theta = if not model.autoRotate then model.theta + dt / 4000 else model.theta
-                 , now = if not model.paused then model.now + dt else model.now
+                 , theta = if not model.autoRotate
+                              then model.theta + dt / 4000
+                              else model.theta
+                 , now = if not model.paused
+                            then model.now + dt + model.timeShift
+                            else model.now
                  }
             , Cmd.none
             )
@@ -224,6 +233,18 @@ update msg model =
         Export encodedModel ->
             ( model
             , export_ encodedModel
+            )
+
+        TimeTravel timeShift ->
+            (
+                { model
+                | timeShift = timeShift |> Debug.log "shift"
+                }
+            , Cmd.none )
+
+        BackToNow ->
+            ( { model | timeShift = 0.0 }
+            , Cmd.none
             )
 
         _ -> ( model, Cmd.none )
@@ -439,13 +460,26 @@ getViewportState { paused, size, theta } =
 view : Model -> Html Msg
 view model =
     div [ ]
-        (
         --span [ class "fps" ] [ toString model.fps ++ "FPS" |> text ]
         --    :: Html.map mapControls
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-           WebGL.toHtmlWith
+        ( input
+            [ type_ "range"
+            , H.min "0"
+            , H.max "100"
+            , H.value (model.timeShift * 20 |> toString)
+            , onInput
+                (\v -> String.toFloat v
+                    |> Result.withDefault 0.0
+                    |> (\v -> v / 20.0)
+                    |> TimeTravel
+                )
+            , onMouseUp BackToNow
+            ]
+            []
+          :: WebGL.toHtmlWith
               [ WebGL.antialias
               , WebGL.alpha True
               , WebGL.clearColor 0.0862745098 0.0862745098 0.0862745098 1.0
