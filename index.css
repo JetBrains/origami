@@ -46,7 +46,7 @@ text.rpd-jb-active-label {
     font-size: 8px;
 }
 
-#export-target {
+#export-target, #import-target {
     display: none;
     position: absolute;
     top: 10%;
@@ -56,20 +56,20 @@ text.rpd-jb-active-label {
     flex-direction: column;
 }
 
-#close-export {
+#close-export, #close-import {
     margin-bottom: 20px;
 }
 
-#export-target textarea {
+#export-target textarea, #import-target textarea {
     min-width: 500px;
     min-height: 400px;
 }
 
-#export-target.shown {
+#export-target.shown, #import-target.shown {
     display: flex;
 }
 
-#export-code {
+#export-code, #import-code {
     font-family: monospace;
     font-size: 10px;
 }

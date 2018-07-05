@@ -2,7 +2,7 @@ port module Main exposing (main)
 
 import Array exposing (Array)
 import Html exposing (Html, text, div, span, input)
-import Html.Attributes as H exposing (width, height, style, class, type_, min, max, value)
+import Html.Attributes as H exposing (width, height, style, class, type_, min, max, value, id)
 import Html.Events exposing (on, onInput, onMouseUp, onClick)
 import AnimationFrame
 import Time exposing (Time)
@@ -505,6 +505,7 @@ view model =
             , onMouseUp BackToNow
             ]
             []
+          , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
           , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
           , WebGL.toHtmlWith
               [ WebGL.antialias
