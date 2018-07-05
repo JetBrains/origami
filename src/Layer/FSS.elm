@@ -151,7 +151,7 @@ makeEntity viewport now mouse config maybeScene settings mesh =
             |> Maybe.withDefault []
         size = maybeScene
             |> Maybe.map (\scene ->
-                List.head scene.meshes )
+                List.head scene.meshes)
             |> Maybe.map (\maybeMesh ->
                 case maybeMesh of
                     Just mesh -> ( mesh.geometry.width,  mesh.geometry.height )

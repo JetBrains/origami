@@ -2,7 +2,7 @@ port module Main exposing (main)
 
 import Array exposing (Array)
 import Html exposing (Html, text, div, span, input)
-import Html.Attributes as H exposing (width, height, style, class, type_, min, max)
+import Html.Attributes as H exposing (width, height, style, class, type_, min, max, value)
 import Html.Events exposing (on, onInput, onMouseUp, onClick)
 import AnimationFrame
 import Time exposing (Time)
@@ -290,10 +290,16 @@ prepareLayer : Layer -> IE.Layer
 prepareLayer layer =
     case layer of
         FssLayer config blend maybeScene mesh ->
-            { type_ = "fss"
+            { type_ = IE.Fss
             , blend = blend
-            , config = config
-            , mesh = mesh
+            -- , config = config
+            -- , mesh = mesh
+            }
+        MirroredFssLayer config blend maybeScene mesh ->
+            { type_ = IE.MirroredFss
+            , blend = blend
+            -- , config = config
+            -- , mesh = mesh
             }
         _ -> IE.defaultLayer
 
@@ -490,17 +496,17 @@ view model =
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-        ( input
+        [ input
             [ type_ "range"
             , H.min "0"
             , H.max "100"
-            , H.value (extractTimeShift model.timeShift)
+            , extractTimeShift model.timeShift |> H.value
             , onInput (\v -> adaptTimeShift v |> TimeTravel)
             , onMouseUp BackToNow
             ]
             []
-          :: input [ type_ "button", onClick Export ] []
-          :: WebGL.toHtmlWith
+          , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
+          , WebGL.toHtmlWith
               [ WebGL.antialias
               , WebGL.alpha True
               , WebGL.clearColor 0.0862745098 0.0862745098 0.0862745098 1.0
@@ -512,8 +518,7 @@ view model =
               , onClick Pause
               ]
               (mergeLayers model)
-          :: []
-        )
+        ]
 
 
 main : Program Never Model Msg
