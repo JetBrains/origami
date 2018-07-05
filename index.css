@@ -45,3 +45,31 @@ text.rpd-jb-active-label {
 .rpd-patch text.rpd-jb-product-label {
     font-size: 8px;
 }
+
+#export-target {
+    display: none;
+    position: absolute;
+    top: 10%;
+    left: 30%;
+    padding: 40px;
+    background-color: wheat;
+    flex-direction: column;
+}
+
+#close-export {
+    margin-bottom: 20px;
+}
+
+#export-target textarea {
+    min-width: 500px;
+    min-height: 400px;
+}
+
+#export-target.shown {
+    display: flex;
+}
+
+#export-code {
+    font-family: monospace;
+    font-size: 10px;
+}

@@ -2,7 +2,7 @@ module ImportExport exposing
     ( encodeModel
     , decodeModel
     , Model
-    , Layer
+    , Layer, LayerType(..)
     , EncodedState
     , defaultLayer
     )
@@ -19,11 +19,25 @@ import Blend as Blend exposing (Blend)
 
 type alias EncodedState = String
 
+
+type LayerType
+    = Unknown
+    | Fss
+    | MirroredFss
+
+
+-- type Config
+--     = None
+--     | FssConfig
+--         FSS.Config
+--     | MirroredFssConfig FSS.MConfig
+
+
 type alias Layer =
-    { type_ : String
+    { type_ : LayerType
     , blend : Blend
-    , config :  FSS.Config
-    , mesh : FSS.Mesh
+    --, config : Config
+    --, mesh : FSS.Mesh
     }
 
 
@@ -44,13 +58,22 @@ encodeIntPair ( v1, v2 ) =
         ]
 
 
+encodeLayerType : LayerType -> E.Value
+encodeLayerType type_ =
+    E.string
+        (case type_ of
+            Unknown -> "unknown"
+            Fss -> "fss"
+            MirroredFss -> "fss-mirror")
+
+
 encodeLayer : Layer -> E.Value
 encodeLayer layer =
     E.object
-        [ ( "type", E.string layer.type_ )
+        [ ( "type", encodeLayerType layer.type_ )
         , ( "blend", Blend.encodeOne layer.blend |> E.string )
         , ( "config", E.string "" )
-        , ( "mesh", E.string "" )
+        -- , ( "mesh", E.string "" )
         ]
 
 
@@ -71,24 +94,32 @@ encodeModel : Model -> EncodedState
 encodeModel model = model |> encodeModel_ |> E.encode 2
 
 
+determineLayerType : String -> LayerType
+determineLayerType layerTypeStr =
+    case layerTypeStr of
+        "fss" -> Fss
+        "fss-mirror" -> MirroredFss
+        _ -> Unknown
+
+
 defaultLayer : Layer
 defaultLayer =
-    { type_ = "empty"
+    { type_ = Unknown
     , blend = Blend.default
-    , config = FSS.init
-    , mesh = FSS.emptyMesh
+    -- , config = None
+    --, mesh = FSS.emptyMesh
     }
 
 
 layersDecoder : D.Decoder (List Layer)
 layersDecoder =
     let
-        createLayer type_ blend config mesh =
-            { type_ = type_
+        createLayer type_ blend config =
+            { type_ = determineLayerType type_
             , blend = Blend.decodeOne blend
                 |> Maybe.withDefault Blend.default
-            , config = FSS.init
-            , mesh = FSS.emptyMesh
+            --, config = FSS.init
+            -- , mesh = FSS.emptyMesh
             }
     in
         D.list
@@ -96,7 +127,7 @@ layersDecoder =
                 |> D.required "type" D.string
                 |> D.required "blend" D.string
                 |> D.required "config" D.string
-                |> D.required "mesh" D.string
+                --|> D.required "mesh" D.string
             )
 
 
