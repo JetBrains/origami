@@ -20,6 +20,8 @@ const startPatching = require('./patch.js');
 
 const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
+const buildFSS = require('./fss.js');
+
 const size = [ 1550, 800 ];
 const faces = [ 10, 10 ];
 const mirrorPos = 0.5;
@@ -43,6 +45,7 @@ const layers = [
     }
 ];
 
+let scenes = {};
 const updateFssLayer = (index, config) => {
     const scene = buildFSS(config);
     app.ports.configureMirroredFss.send([ config, index ]);
@@ -50,6 +53,7 @@ const updateFssLayer = (index, config) => {
     if (layers[index]) {
         layers[index].config = config;
     }
+    scenes[index] = scene;
 }
 
 const updateFssColors = (index, colors) => {
@@ -61,25 +65,49 @@ const updateFssColors = (index, colors) => {
     updateFssLayer(index, newConfig);
 }
 
-registerToolkit(app, LayersNode, updateFssColors);
+const prepareImportExport = () => {
+    app.ports.export_.subscribe(function(exportedState) {
+        const stateObj = JSON.parse(exportedState);
+        stateObj.layers.forEach((layer, index) => {
+            layer.config = layers[index] ? layers[index].config : {};
+            layer.scene = layer.type == 'fss-mirror'
+                ? scenes[index] || buildFSS(layer.config)
+                : null;
+        })
+        console.log(stateObj);
 
-const buildFSS = require('./fss.js');
+        document.getElementById('export-target').className = 'shown';
+        document.getElementById('export-code').value = JSON.stringify(stateObj);
+    });
+    document.getElementById('close-export').addEventListener('click', () => {
+        document.getElementById('export-target').className = '';
+    });
+    document.getElementById('close-import').addEventListener('click', () => {
+        document.getElementById('import-target').className = '';
+    });
+    setTimeout(() => {
+        document.getElementById('import-button').addEventListener('click', () => {
+            document.getElementById('import-target').className = 'shown';
+        });
+    }, 100);
+    document.getElementById('import').addEventListener('click', () => {
+        try {
+            if (document.getElementById('import-code').value) {
+                app.ports.import_.send(JSON.parse(document.getElementById('import-code').value));
+            } else {
+                alert('Nothing to import');
+            }
+        } catch(e) {
+            alert('Failed to send, wrong format?')
+        }
+    });
+}
+
+registerToolkit(app, LayersNode, updateFssColors);
 
 app.ports.initLayers.send(layers.map((l) => l.type));
 
-app.ports.export_.subscribe(function(exportedState) {
-    const stateObj = JSON.parse(exportedState);
-    stateObj.layers.forEach((layer, index) => {
-        layer.config = layers[index] ? layers[index].config : {};
-    })
-    console.log(stateObj);
-
-    document.getElementById('export-target').className = 'shown';
-    document.getElementById('export-code').value = JSON.stringify(stateObj);
-});
-document.getElementById('close-export').addEventListener('click', () => {
-    document.getElementById('export-target').className = '';
-});
+prepareImportExport();
 
 setTimeout(function() {
     layers.forEach((layer, index) => {
