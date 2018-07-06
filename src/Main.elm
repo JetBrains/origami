@@ -78,7 +78,8 @@ type Msg
     | TimeTravel Float
     | BackToNow
     | Pause
-    | Start
+    | Continue
+    | TriggerPause
     | NoOp
 
 
@@ -221,6 +222,16 @@ update msg model =
             )
 
         Pause ->
+            ( { model | paused = True }
+            , Cmd.none
+            )
+
+        Continue ->
+            ( { model | paused = False }
+            , Cmd.none
+            )
+
+        TriggerPause ->
             ( { model | paused = not model.paused }
             , Cmd.none
             )
@@ -398,7 +409,8 @@ subscriptions model =
           )
         , import_ Import
         , pause (\_ -> Pause)
-        , start (\_ -> Start)
+        , continue (\_ -> Continue)
+        , triggerPause (\_ -> TriggerPause)
         ]
 
 
@@ -516,7 +528,7 @@ view model =
               [ width (Tuple.first model.size)
               , height (Tuple.second model.size)
               , style [ ( "display", "block" ), ("background-color", "#161616") ]
-              , onClick Pause
+              , onClick TriggerPause
               ]
               (mergeLayers model)
         ]
@@ -534,7 +546,9 @@ main =
 
 port pause : (() -> msg) -> Sub msg
 
-port start : (() -> msg) -> Sub msg
+port continue : (() -> msg) -> Sub msg
+
+port triggerPause : (() -> msg) -> Sub msg
 
 port rotate : (Float -> msg) -> Sub msg
 

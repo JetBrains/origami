@@ -28,7 +28,7 @@ const mirrorPos = 0.5;
 const colorsA = [ '#f45b69', '#e4fde1' ];
 const colorsB = [ '#4b4e76', '#fb4e76' ];
 
-const layers = [
+let layers = [
     { type: 'fss-mirror', config:
         { colors: colorsA
         , size: size
@@ -67,6 +67,7 @@ const updateFssColors = (index, colors) => {
 
 const prepareImportExport = () => {
     app.ports.export_.subscribe(function(exportedState) {
+        app.ports.pause.send(null);
         const stateObj = JSON.parse(exportedState);
         stateObj.layers.forEach((layer, index) => {
             layer.config = layers[index] ? layers[index].config : {};
@@ -93,12 +94,42 @@ const prepareImportExport = () => {
     document.getElementById('import').addEventListener('click', () => {
         try {
             if (document.getElementById('import-code').value) {
-                app.ports.import_.send(JSON.parse(document.getElementById('import-code').value));
+                const parsedState = JSON.parse(document.getElementById('import-code').value);
+                scenes = {};
+                layers = [];
+                parsedState.layers.forEach((layer, index) => {
+                    layers[index] = {
+                        type: layer.type,
+                        config: layer.config
+                    };
+                    scenes[index] = layer.scene;
+                });
+                app.ports.pause.send(null);
+                app.ports.initLayers.send(layers.map((l) => l.type));
+                app.ports.import_.send(JSON.stringify({
+                    theta: parsedState.theta,
+                    size: parsedState.size,
+                    mouse: parsedState.mouse,
+                    time: parsedState.time,
+                    layers: parsedState.layers.map((layer) => (
+                        { type_ : layer.type,
+                          blend: layer.blend
+                        }
+                    ))
+                }));
+                parsedState.layers.forEach((layer, index) => {
+                    if (layer.type == 'fss-mirror') {
+                        const scene = layer.scene || buildFSS(layer.config);
+                        app.ports.configureMirroredFss.send([ layer.config, index ]);
+                        app.ports.rebuildFss.send([ scene, index ]);
+                    }
+                });
             } else {
                 alert('Nothing to import');
             }
         } catch(e) {
-            alert('Failed to send, wrong format?')
+            console.error(e);
+            alert('Failed to parse or send, incorrect format?');
         }
     });
 }
