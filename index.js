@@ -65,14 +65,25 @@ const updateFssColors = (index, colors) => {
     updateFssLayer(index, newConfig);
 }
 
+const exportScene = (scene) => {
+    //console.log(scene);
+    return scene.meshes[0].geometry.vertices.map((vertex) => (
+        { v0: vertex.v0,
+          time: vertex.time,
+          anchor: vertex.anchor,
+          gradient: vertex.gradient
+        }
+    ));
+}
+
 const prepareImportExport = () => {
     app.ports.export_.subscribe(function(exportedState) {
         app.ports.pause.send(null);
         const stateObj = JSON.parse(exportedState);
         stateObj.layers.forEach((layer, index) => {
             layer.config = layers[index] ? layers[index].config : {};
-            layer.scene = layer.type == 'fss-mirror'
-                ? scenes[index] || buildFSS(layer.config)
+            layer.sceneFuzz = layer.type == 'fss-mirror'
+                ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
                 : null;
         })
         console.log(stateObj);
@@ -102,7 +113,7 @@ const prepareImportExport = () => {
                         type: layer.type,
                         config: layer.config
                     };
-                    scenes[index] = layer.scene;
+                    //scenes[index] = layer.scene;
                 });
                 app.ports.pause.send(null);
                 app.ports.initLayers.send(layers.map((l) => l.type));
@@ -119,7 +130,8 @@ const prepareImportExport = () => {
                 }));
                 parsedState.layers.forEach((layer, index) => {
                     if (layer.type == 'fss-mirror') {
-                        const scene = layer.scene || buildFSS(layer.config);
+                        const scene = buildFSS(layer.config, layer.sceneFuzz);
+                        scenes[index] = scene;
                         app.ports.configureMirroredFss.send([ layer.config, index ]);
                         app.ports.rebuildFss.send([ scene, index ]);
                     }
