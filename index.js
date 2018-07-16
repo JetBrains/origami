@@ -78,7 +78,7 @@ const prepareImportExport = () => {
         console.log(stateObj);
 
         document.getElementById('export-target').className = 'shown';
-        document.getElementById('export-code').value = JSON.stringify(stateObj);
+        document.getElementById('export-code').value = JSON.stringify(stateObj, null, 2);
     });
     document.getElementById('close-export').addEventListener('click', () => {
         document.getElementById('export-target').className = '';

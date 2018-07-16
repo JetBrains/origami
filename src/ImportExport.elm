@@ -72,6 +72,11 @@ encodeLayer layer =
     E.object
         [ ( "type", encodeLayerType layer.type_ )
         , ( "blend", Blend.encodeOne layer.blend |> E.string )
+        , ( "blendDesc",
+            layer.blend
+                |> Blend.encodeHumanOne { delim = "; ", space = "> " }
+                |> E.string
+          )
         , ( "config", E.string "" )
         -- , ( "mesh", E.string "" )
         ]

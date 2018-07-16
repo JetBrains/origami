@@ -12,6 +12,8 @@ module Blend exposing
     , encodeOne
     , decodeAll
     , encodeAll
+    , encodeHumanOne
+    , encodeHumanAll
     )
 
 
@@ -120,7 +122,7 @@ labelOfFunc n =
 
 labelOfFactor : Int -> String
 labelOfFactor n =
-    case n of
+     case n of
         0 -> "0" -- B.zero
         1 -> "1" -- B.one
         2 -> "sC" -- B.srcColor
@@ -262,3 +264,66 @@ encodeEq ( func, factor1, factor2 ) =
     String.cons (intToHex factor2) ""
         |> String.cons (intToHex factor1)
         |> String.cons (intToHex func)
+
+
+type alias HumanEncodeSpec =
+    { delim : String
+    , space: String
+    }
+
+
+encodeHumanAll : HumanEncodeSpec -> List Blend -> String
+encodeHumanAll spec blends =
+    blends |> List.map (encodeHumanOne spec) |> String.join ":"
+
+
+encodeHumanOne : HumanEncodeSpec -> Blend -> String
+encodeHumanOne ({ delim, space } as spec) { color, colorEq, alphaEq } =
+    "Color: " ++ (Maybe.map (encodeHumanColor spec) color |> Maybe.withDefault "[?]") ++ delim ++
+    "Color EQ: " ++ encodeHumanEq spec colorEq ++ delim ++
+    "Alpha EQ: " ++ encodeHumanEq spec alphaEq ++ delim
+
+
+encodeHumanColor : HumanEncodeSpec -> Color -> String
+encodeHumanColor { delim, space } { r, g, b, a } =
+    case [ toString r, toString g, toString b, toString a ] of
+        [ rStr, gStr, bStr, aStr ] ->
+            "rgba(" ++ rStr ++ "," ++ gStr ++ "," ++ bStr ++ "," ++ aStr ++ ")"
+        _ -> "[?]"
+
+
+encodeHumanEq : HumanEncodeSpec -> Equation -> String
+encodeHumanEq { delim, space } ( func, factor1, factor2 ) =
+    space ++ "Function: " ++ nameOfFunc func ++ delim ++
+    space ++ "Factor 1: " ++ nameOfFactor factor1 ++ delim ++
+    space ++ "Factor 2: " ++ nameOfFactor factor2 ++ delim
+
+
+nameOfFunc : Int -> String
+nameOfFunc n =
+    case n of
+        0 -> "Custom Add"
+        1 -> "Custom Subtract"
+        2 -> "Custom Reverse Subtract"
+        _ -> "[?]"
+
+
+nameOfFactor : Int -> String
+nameOfFactor n =
+    case n of
+        0 -> "zero"
+        1 -> "one"
+        2 -> "srcColor"
+        3 -> "oneMinusSrcColor"
+        4 -> "dstColor"
+        5 -> "oneMinusDstColor"
+        6 -> "srcAlpha"
+        7 -> "oneMinusSrcAlpha"
+        8 -> "dstAlpha"
+        9 -> "oneMinusDstAlpha"
+        10 -> "srcAlphaSaturate"
+        11 -> "constantColor"
+        12 -> "oneMinusConstantColor"
+        13 -> "constantAlpha"
+        14 -> "oneMinusConstantAlpha"
+        _ -> "[?]"
