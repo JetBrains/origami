@@ -18,7 +18,6 @@ module Blend exposing
 
 
 import Array
-import Char
 
 import WebGL.Settings exposing (Setting)
 import WebGL.Settings.Blend as B
@@ -198,6 +197,11 @@ intFromHex_ ( ch1, ch2 ) =
         _ -> Nothing
 
 
+intToHex_ : Int -> String
+intToHex_ i =
+    String.fromList [ intToHex (i // 16), intToHex (rem i 16) ]
+
+
 decodeEq : String -> Maybe Equation
 decodeEq src =
     case src |> String.toList of
@@ -218,7 +222,13 @@ decodeColor src =
                  , intFromHex_ ( b1, b2 )
                  , intFromHex_ ( a1, a2 )
                  ) of
-                ( Just r, Just g, Just b, Just a ) -> Just { r = 0, g = 0, b = 0, a = 0 }
+                ( Just r, Just g, Just b, Just a ) ->
+                    Just
+                        { r = toFloat r / 255
+                        , g = toFloat g / 255
+                        , b = toFloat b / 255
+                        , a = toFloat a / 255
+                        }
                 _ -> Nothing
         _ -> Nothing
 
@@ -251,12 +261,19 @@ encodeAll blends =
 
 
 encodeOne : Blend -> String
-encodeOne { colorEq, alphaEq } =
-    "00000000" ++ encodeEq colorEq ++ encodeEq alphaEq
+encodeOne { color, colorEq, alphaEq } =
+    encodeColor color ++ encodeEq colorEq ++ encodeEq alphaEq
 
 
-encodeColor : Color -> String
-encodeColor _ = ""
+encodeColor : Maybe Color -> String
+encodeColor maybeColor =
+    case maybeColor of
+        Just { r, g, b, a } ->
+            intToHex_ (floor (r * 255)) ++
+            intToHex_ (floor (g * 255)) ++
+            intToHex_ (floor (b * 255)) ++
+            intToHex_ (floor (a * 255))
+        Nothing -> "00000000"
 
 
 encodeEq : Equation -> String
