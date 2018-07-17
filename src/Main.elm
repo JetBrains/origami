@@ -237,7 +237,16 @@ update msg model =
             )
 
         Import encodedModel ->
-            ( IE.decodeModel encodedModel (\_ -> model)
+            ( IE.decodeModel encodedModel
+                (\src ->
+                    { model
+                    | theta = src.theta
+                    , now = src.now
+                    --, layers = List.map prepareLayer model.layers
+                    , mouse = src.mouse
+                    , size = src.size
+                    } )
+                |> Debug.log "decoded model"
                 |> Maybe.withDefault model
             , Cmd.none )
 
@@ -318,7 +327,7 @@ prepareLayer layer =
 prepareModel : Model -> IE.Model
 prepareModel model =
     { theta = model.theta
-    , time = model.now
+    , now = model.now
     , layers = List.map prepareLayer model.layers
     , mouse = model.mouse
     , size = model.size
