@@ -242,7 +242,7 @@ update msg model =
                     { model
                     | theta = src.theta
                     , now = src.now
-                    --, layers = List.map prepareLayer model.layers
+                    , layers = List.map2 extractLayer model.layers src.layers
                     , mouse = src.mouse
                     , size = src.size
                     } )
@@ -303,6 +303,14 @@ createLayer code =
             let fractalConfig = Fractal.init
             in FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
         -- TODO: text
+        _ -> Unknown
+
+
+extractLayer : Layer -> IE.Layer -> Layer
+extractLayer curLayer srcLayer =
+    case ( srcLayer.type_, curLayer ) of
+        ( IE.MirroredFss,  MirroredFssLayer config blend scene mesh ) ->
+            MirroredFssLayer config srcLayer.blend scene mesh
         _ -> Unknown
 
 
