@@ -40,6 +40,11 @@ function start(layers) {
     }
 
     var paletteNode = patch.addNode('jb/palette').move(350, 250);
+
+    return {
+        layersNode: layersNode,
+        paletteNode: paletteNode
+    }
 }
 
 module.exports = start;

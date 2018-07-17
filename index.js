@@ -46,6 +46,10 @@ let layers = [
 ];
 
 let scenes = {};
+
+let layersNode = null;
+let paletteNode = null;
+
 const updateFssLayer = (index, config) => {
     const scene = buildFSS(config);
     app.ports.configureMirroredFss.send([ config, index ]);
@@ -137,6 +141,9 @@ const prepareImportExport = () => {
                         app.ports.rebuildFss.send([ scene, index ]);
                     }
                 });
+                const mergedBlends = parsedState.layers.map(layer => layer.blend).join(':');
+                window.location.hash = '#blends=' + mergedBlends;
+                //if (layersNode) layersNode.inlets['code'].receive(mergedBlends);
             } else {
                 alert('Nothing to import');
             }
@@ -160,7 +167,10 @@ setTimeout(function() {
         }
     });
 
-    startPatching(layers);
+    const nodes = startPatching(layers);
+
+    layersNode = nodes.layersNode;
+    paletteNode = nodes.paletteNode;
 
     // setTimeout(function() {
     //     //updateFssColors(0, ['#000000', '#ffffff']);
