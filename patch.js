@@ -29,7 +29,7 @@ function start(layers) {
 
     var patch = Rpd.addPatch('Elmsfeuer').resizeCanvas(window.innerWidth, window.innerHeight);
 
-    var layersNode = patch.addNode('jb/layers').move(80, 750);
+    var layersNode = patch.addNode('jb/layers').move(80, 250);
     layersNode.inlets['count'].receive(layers.length);
     layersNode.inlets['colors'].receive(layers.map((layer) => layer.config.colors));
     if (window.location.search) {
@@ -39,7 +39,7 @@ function start(layers) {
         }
     }
 
-    var paletteNode = patch.addNode('jb/palette').move(350, 750);
+    var paletteNode = patch.addNode('jb/palette').move(350, 250);
 }
 
 module.exports = start;
