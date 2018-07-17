@@ -13,8 +13,6 @@ import Json.Decode as D exposing (int, string, float, Decoder, Value)
 import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
 import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
 
-import Layer.FSS as FSS
-
 import Blend as Blend exposing (Blend)
 
 type alias EncodedState = String
@@ -46,7 +44,7 @@ type alias Model =
     , layers : List Layer
     , size : (Int, Int)
     , mouse : (Int, Int)
-    , time : Time
+    , now : Time
     }
 
 
@@ -91,7 +89,7 @@ encodeModel_ model =
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
         , ( "size", encodeIntPair model.size )
         , ( "mouse", encodeIntPair model.mouse )
-        , ( "time", E.float model.time )
+        , ( "now", E.float model.now )
         ]
 
 
@@ -129,7 +127,7 @@ layersDecoder =
     in
         D.list
             ( D.decode createLayer
-                |> D.required "type" D.string
+                |> D.required "type_" D.string
                 |> D.required "blend" D.string
                 |> D.required "config" D.string
                 --|> D.required "mesh" D.string
@@ -150,11 +148,12 @@ modelDecoder =
         |> D.required "layers" layersDecoder
         |> D.required "size" intPairDecoder
         |> D.required "mouse" intPairDecoder
-        |> D.required "time" D.float
+        |> D.required "now" D.float
 
 
 decodeModel : EncodedState -> (Model -> a) -> Maybe a
 decodeModel modelStr f =
     D.decodeString modelDecoder modelStr
+        |> Debug.log "Decode Result: "
         |> Result.toMaybe
         |> Maybe.map f

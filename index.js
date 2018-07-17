@@ -121,10 +121,11 @@ const prepareImportExport = () => {
                     theta: parsedState.theta,
                     size: parsedState.size,
                     mouse: parsedState.mouse,
-                    time: parsedState.time,
+                    now: parsedState.now,
                     layers: parsedState.layers.map((layer) => (
                         { type_ : layer.type,
-                          blend: layer.blend
+                          blend: layer.blend,
+                          config: ''
                         }
                     ))
                 }));
