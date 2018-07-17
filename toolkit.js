@@ -141,21 +141,26 @@ Rpd.noderenderer('jb/layers', 'svg', {
         if (layersNodeApp) {
             layersNode = layersNodeApp.embed(bodyElm);
             layersNode.ports.resize.send([ 500, 400 ]);
+            if (window.location.hash && (window.location.hash.indexOf('#blends=' > 0))) {
+                const newBlends = window.location.hash.slice(8);
+                layersNode.ports.applyAllBlends.send(newBlends);
+            }
             if (elmsfeuer) {
                 layersNode.ports.sendNewBlend.subscribe(function(state) {
                     elmsfeuer.ports.changeBlend.send(state);
                 });
-                layersNode.ports.sendNewCode.subscribe(function(code) {
-                    window.location.hash = '#blends=' + code;
-                });
-                layersNode.ports.sendNewColors.subscribe(function(state) {
-                    // FIXME: remove the handler in palette node and use this one
-                    //        for updates
-                    if (updateFssColors) {
-                        updateFssColors(state.layer, state.colors);
-                    }
-                });
             }
+            layersNode.ports.sendNewCode.subscribe(function(code) {
+                window.location.hash = '#blends=' + code;
+            });
+            layersNode.ports.sendNewColors.subscribe(function(state) {
+                // FIXME: remove the handler in palette node and use this one
+                //        for updates,
+                //        but actually those colors are for blends instead
+                if (updateFssColors) {
+                    updateFssColors(state.layer, state.colors);
+                }
+            });
         }
     },
     always: function(bodyElm, inlets) {
