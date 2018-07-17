@@ -120,6 +120,7 @@ layersDecoder =
         createLayer type_ blend config =
             { type_ = determineLayerType type_
             , blend = Blend.decodeOne blend
+                |> Debug.log "Blend: "
                 |> Maybe.withDefault Blend.default
             --, config = FSS.init
             -- , mesh = FSS.emptyMesh
