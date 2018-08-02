@@ -190,10 +190,9 @@ update msg model =
             )
 
         Resize { width, height } ->
-            ( model, Cmd.none )
-            -- ( { model | size = ( width, height ) }
-            -- , Cmd.none
-            -- )
+            ( { model | size = ( width, height ) }
+            , Cmd.none
+            )
 
         Locate pos ->
             ( { model | mouse = (pos.x, pos.y) }
