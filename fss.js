@@ -21,16 +21,16 @@ function buildFSS(config, source) {
 
     var geometry = new FSS.Plane(config.size[0], config.size[1],
                                  config.faces[0], config.faces[1]);
-    var material = new FSS.Material('#FFFFFF', '#FFFFFF');
+    var material = new FSS.Material(config.material[0], config.material[1]);
     var mesh = new FSS.Mesh(geometry, material);
 
-    var light = new FSS.Light('#000000', config.colors[0]);
-    var highlight = new FSS.Light('#000000', config.colors[1]);
+    var ambient = new FSS.Light(config.lights.ambient[0], config.lights.ambient[1]);
+    var diffuse = new FSS.Light(config.lights.diffuse[0], config.lights.diffuse[1]);
 
     function initialise() {
         scene.add(mesh);
-        scene.add(light);
-        scene.add(highlight);
+        scene.add(ambient);
+        scene.add(diffuse);
 
 
         var v, vertex;
@@ -52,8 +52,8 @@ function buildFSS(config, source) {
                 : Math.randomInRange(0.2, 0.7);
         }
 
-        light.setPosition(150, -50, 100);
-        highlight.setPosition(0, 150, 15);
+        ambient.setPosition(150, -50, 100);
+        diffuse.setPosition(0, 150, 15);
 
 
         //container.appendChild(renderer.element);
