@@ -22,8 +22,8 @@ const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
 const buildFSS = require('./fss.js');
 
-const size = [ 1550, 800 ];
-const faces = [ 10, 10 ];
+const size = [ 1550, 1200 ];
+const faces = [ 12, 15 ];
 const mirrorPos = 0.5;
 const colorsA = [ '#f45b69', '#e4fde1' ];
 const colorsB = [ '#4b4e76', '#fb4e76' ];
