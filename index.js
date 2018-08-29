@@ -22,6 +22,10 @@ const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
 const buildFSS = require('./fss.js');
 
+function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj))
+}
+
 const defaultConfig =
     { lights:
         { ambient: [ '#000000', '#f45b69' ]
@@ -36,11 +40,11 @@ const defaultConfig =
     , mirror: 0.5
     };
 
-let layerOneConfig = Object.assign({}, defaultConfig);
+let layerOneConfig = deepClone(defaultConfig);
 layerOneConfig.lights.ambient = [ '#000000', '#f45b69' ];
 layerOneConfig.lights.diffuse = [ '#000000', '#e4fde1' ];
 
-let layerTwoConfig = Object.assign({}, defaultConfig);
+let layerTwoConfig = deepClone(defaultConfig);
 layerTwoConfig.lights.ambient = [ '#000000', '#4b4e76' ];
 layerOneConfig.lights.diffuse = [ '#000000', '#fb4e76' ];
 
@@ -75,8 +79,10 @@ const updateFssLayer = (index, config) => {
     app.ports.configureMirroredFss.send([ config, index ]);
     app.ports.rebuildFss.send([ scene, index ]);
     if (layers[index]) {
-        layers[index].config = config;
+        layers[index].config = deepClone(config);
     }
+    console.log(index, 'ambient', layers[index].config.lights.ambient);
+    console.log(index, 'diffuse', layers[index].config.lights.diffuse);
     scenes[index] = scene;
 }
 
@@ -104,6 +110,8 @@ const prepareImportExport = () => {
         const stateObj = JSON.parse(exportedState);
         stateObj.layers.forEach((layer, index) => {
             layer.config = layers[index] ? layers[index].config : {};
+            console.log(index, 'ambient', layer.config.lights.ambient);
+            console.log(index, 'diffuse', layer.config.lights.diffuse);
             layer.sceneFuzz = layer.type == 'fss-mirror'
                 ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
                 : null;
