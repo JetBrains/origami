@@ -22,26 +22,46 @@ const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
 const buildFSS = require('./fss.js');
 
-const size = [ 1550, 1200 ];
-const faces = [ 12, 15 ];
-const mirrorPos = 0.5;
-const colorsA = [ '#f45b69', '#e4fde1' ];
-const colorsB = [ '#4b4e76', '#fb4e76' ];
+const defaultConfig =
+    { lights:
+        { ambient: [ '#000000', '#f45b69' ]
+        , diffuse:  [ '#000000', '#e4fde1' ]
+        , count: 2
+        }
+    , material: [ '#ffffff', '#ffffff' ]
+    , xRange: 0.8
+    , yRange: 0.1
+    , size: [ 1550, 1200 ]
+    , faces: [ 12, 15 ]
+    , mirror: 0.5
+    };
+
+let layerOneConfig = Object.assign({}, defaultConfig);
+layerOneConfig.lights.ambient = [ '#000000', '#f45b69' ];
+layerOneConfig.lights.diffuse = [ '#000000', '#e4fde1' ];
+
+let layerTwoConfig = Object.assign({}, defaultConfig);
+layerTwoConfig.lights.ambient = [ '#000000', '#4b4e76' ];
+layerOneConfig.lights.diffuse = [ '#000000', '#fb4e76' ];
 
 let layers = [
-    { type: 'fss-mirror', config:
-        { colors: colorsA
-        , size: size
-        , faces: faces
-        , mirror: mirrorPos
-        }
+    { type: 'fss-mirror', config: layerOneConfig
+        /* { ...defaultConfig
+        , lights:
+            { ambient: [ '#000000', '#f45b69' ]
+            , diffuse:  [ '#000000', '#e4fde1' ]
+            , count: 2
+            }
+        } */
     },
-    { type: 'fss-mirror', config:
-        { colors: colorsB
-        , size: size
-        , faces: faces
-        , mirror: mirrorPos
-        }
+    { type: 'fss-mirror', config: layerTwoConfig
+        /* { ...defaultConfig
+        , lights:
+            { ambient: [ '#000000', '#4b4e76' ]
+            , diffuse:  [ '#000000', '#fb4e76' ]
+            , count: 2
+            }
+        } */
     }
 ];
 
@@ -61,11 +81,9 @@ const updateFssLayer = (index, config) => {
 }
 
 const updateFssColors = (index, colors) => {
-    const newConfig =
-        { colors: colors
-        , size: size // 4000, 4000
-        , faces: faces // 50, 80
-        , mirror: mirrorPos }
+    let newConfig = Object.assign({}, defaultConfig);
+    newConfig.lights.ambient[1] = colors[0];
+    newConfig.lights.diffuse[1] = colors[1];
     updateFssLayer(index, newConfig);
 }
 
