@@ -81,13 +81,20 @@ const updateFssLayer = (index, config) => {
     if (layers[index]) {
         layers[index].config = deepClone(config);
     }
-    console.log(index, 'ambient', layers[index].config.lights.ambient);
-    console.log(index, 'diffuse', layers[index].config.lights.diffuse);
     scenes[index] = scene;
 }
 
+const updateAllFssLayers = (updateConfig) => {
+    layers.forEach((layer, index) => {
+        if (layer.type == 'fss-mirror') {
+            updateFssLayer(index,
+                updateConfig(deepClone(layer.config)));
+        }
+    });
+}
+
 const updateFssColors = (index, colors) => {
-    let newConfig = Object.assign({}, defaultConfig);
+    let newConfig = deepClone(defaultConfig);
     newConfig.lights.ambient[1] = colors[0];
     newConfig.lights.diffuse[1] = colors[1];
     updateFssLayer(index, newConfig);
@@ -193,7 +200,7 @@ setTimeout(function() {
         }
     });
 
-    const nodes = startPatching(layers);
+    const nodes = startPatching(layers, updateAllFssLayers);
 
     layersNode = nodes.layersNode;
     paletteNode = nodes.paletteNode;
