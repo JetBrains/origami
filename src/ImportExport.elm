@@ -13,7 +13,7 @@ import Json.Decode as D exposing (int, string, float, Decoder, Value)
 import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
 import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
 
-import Blend as Blend exposing (Blend)
+import WebGL.Blend as WGLBlend exposing (Blend)
 
 type alias EncodedState = String
 
@@ -69,10 +69,10 @@ encodeLayer : Layer -> E.Value
 encodeLayer layer =
     E.object
         [ ( "type", encodeLayerType layer.type_ )
-        , ( "blend", Blend.encodeOne layer.blend |> E.string )
+        , ( "blend", WGLBlend.encodeOne layer.blend |> E.string )
         , ( "blendDesc",
             layer.blend
-                |> Blend.encodeHumanOne { delim = "; ", space = "> " }
+                |> WGLBlend.encodeHumanOne { delim = "; ", space = "> " }
                 |> E.string
           )
         , ( "config", E.string "" )
@@ -108,7 +108,7 @@ determineLayerType layerTypeStr =
 defaultLayer : Layer
 defaultLayer =
     { type_ = Unknown
-    , blend = Blend.default
+    , blend = WGLBlend.default
     -- , config = None
     --, mesh = FSS.emptyMesh
     }
@@ -119,9 +119,9 @@ layersDecoder =
     let
         createLayer type_ blend config =
             { type_ = determineLayerType type_
-            , blend = Blend.decodeOne blend
+            , blend = WGLBlend.decodeOne blend
                 |> Debug.log "Blend: "
-                |> Maybe.withDefault Blend.default
+                |> Maybe.withDefault WGLBlend.default
             --, config = FSS.init
             -- , mesh = FSS.emptyMesh
             }
