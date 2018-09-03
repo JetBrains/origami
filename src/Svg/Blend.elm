@@ -1,6 +1,9 @@
 module Svg.Blend exposing
     ( Blend
+    , PortBlend
     , default
+    , encode
+    , decode
     )
 
 type Blend
@@ -21,6 +24,56 @@ type Blend
     | Color
     | Luminosity
     | Unset
+
+
+type alias PortBlend = String
+
+
+-- TODO: use Map Blend PortBlend
+encode : Blend -> PortBlend
+encode blend =
+    case blend of
+        Normal -> "normal"
+        Difference -> "difference"
+        Exclusion -> "exclusion"
+        Overlay -> "overlay"
+        SoftLight -> "soft-light"
+        Hue -> "hue"
+        Multiply -> "multiply"
+        Screen -> "screen"
+        Darken -> "darken"
+        Lighten -> "lighten"
+        ColorDodge -> "color-dodge"
+        ColorBurn -> "color-burn"
+        HardLight -> "hard-light"
+        Saturation -> "saturation"
+        Color -> "color"
+        Luminosity -> "luminosity"
+        Unset -> "unset"
+
+
+-- TODO: use Map PortBlend Blend
+decode : PortBlend -> Blend
+decode portBlend =
+    case portBlend of
+        "normal" -> Normal
+        "difference" -> Difference
+        "exclusion" -> Exclusion
+        "overlay" -> Overlay
+        "soft-light" -> SoftLight
+        "hue" -> Hue
+        "multiply" -> Multiply
+        "screen" -> Screen
+        "darken" -> Darken
+        "lighten" -> Lighten
+        "color-dodge" -> ColorDodge
+        "color-burn" -> ColorBurn
+        "hard-light" -> HardLight
+        "saturation" -> Saturation
+        "color" -> Color
+        "luminosity" -> Luminosity
+        "unset" -> Unset
+        _ -> Unset
 
 
 default : Blend

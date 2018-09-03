@@ -9,9 +9,22 @@ import Svg.Attributes as SA exposing (..)
 import Svg.Events as SE exposing (..)
 
 import WebGL.Blend as WGLB
+import Svg.Blend as SVGB
+
+type Blend
+    = None
+    | WebGLBlend WGLB.Blend
+    | SVGBlend SVGB.Blend
 
 
-type alias Blends = Dict.Dict Int WGLB.Blend
+-- kinda Either, but for ports:
+--    ( Just WebGLBlend, Nothing ) --> WebGL Blend
+--    ( Nothing, Just String ) --> SVG Blend
+--    ( Nothing, Nothing ) --> None
+--    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
+type alias PortBlend = (Maybe WGLB.Blend, Maybe SVGB.PortBlend)
+
+type alias Blends = Dict.Dict Int Blend
 
 type alias Colors = Dict Int (Array String)
 
@@ -25,11 +38,60 @@ type alias Model =
 
 
 type Msg
-    = ChangeWGLBlend Int WGLB.Blend
+    = ChangeBlend Int Blend
     | ApplyAllBlends String
     | ApplyColors Colors
     | ChangeLayerCount Int
     | Resize ( Int, Int )
+
+
+convertBlend : Blend -> PortBlend
+convertBlend blend =
+    case blend of
+        None -> ( Nothing, Nothing )
+        WebGLBlend webglBlend -> ( Just webglBlend, Nothing )
+        SVGBlend svgBlend -> ( Nothing, Just (SVGB.encode svgBlend) )
+
+
+adaptBlend : PortBlend -> Blend
+adaptBlend portBlend =
+    case portBlend of
+        ( Just webGlBlend, Nothing ) -> WebGLBlend webGlBlend
+        ( Nothing, Just svgBlend ) -> SVGBlend (SVGB.decode svgBlend )
+        _ -> None
+
+
+decodeOne : String -> Blend
+decodeOne str =
+    if (String.startsWith "_" str) then
+        SVGB.decode (String.dropLeft 1 str) |> SVGBlend
+    else
+        case str of
+            "" -> None
+            someStr ->
+                (WGLB.decodeOne someStr)
+                    |> Maybe.map WebGLBlend
+                    |> Maybe.withDefault None
+
+
+encodeOne : Blend -> String
+encodeOne blend =
+    case blend of
+        None -> "-"
+        WebGLBlend webglBlend -> WGLB.encodeOne webglBlend
+        SVGBlend svgBlend -> SVGB.encode svgBlend
+
+
+decodeAll : String -> List Blend
+decodeAll src =
+    src
+        |> String.split ":"
+        |> List.map decodeOne
+
+
+encodeAll : List Blend -> String
+encodeAll blends =
+    blends |> List.map encodeOne |> String.join ":"
 
 
 move : Int -> Int -> Svg.Attribute Msg
@@ -47,28 +109,32 @@ renderBlendFrom blends idx =
         [ text_ [ fill "black" ] [ text ("Layer " ++ toString idx) ]
         , blends
             |> Dict.get idx
-            |> Maybe.withDefault WGLB.default
+            |> Maybe.withDefault None
             |> renderBlend idx
         ]
 
 
-renderBlend : Int -> WGLB.Blend -> Svg Msg
+renderBlend : Int -> Blend -> Svg Msg
 renderBlend idx blend =
-    g
-        [ class "blend", move 0 10 ]
-        [ rect [ width "10", height "10", fill (getFill blend)
-               , stroke "black", strokeWidth "1", rx "3", ry "3", move 1 4 ] []
-       -- , text_ [ fill "black", move 15 5 ] [ text "Color EQ" ]
-        , g
-            [ class "color-eq", move 22 8 ]
-            [ blend.colorEq |> renderEq "color"
-              (\eq -> ChangeWGLBlend idx { blend | colorEq = eq }) ]
-        --, text_ [ fill "black", move 15 55 ] [ text "Alpha EQ" ]
-        , g
-            [ class "alpha-eq", move 22 45 ]
-            [ blend.alphaEq |> renderEq "alpha"
-              (\eq -> ChangeWGLBlend idx { blend | alphaEq = eq }) ]
-        ]
+    case blend of
+        WebGLBlend webglBlend ->
+            g
+                [ class "blend", move 0 10 ]
+                [ rect [ width "10", height "10", fill (getFill webglBlend)
+                    , stroke "black", strokeWidth "1", rx "3", ry "3", move 1 4 ] []
+                -- , text_ [ fill "black", move 15 5 ] [ text "Color EQ" ]
+                , g
+                    [ class "color-eq", move 22 8 ]
+                    [ webglBlend.colorEq |> renderEq "color"
+                    (\eq -> ChangeBlend idx (WebGLBlend { webglBlend | colorEq = eq })) ]
+                --, text_ [ fill "black", move 15 55 ] [ text "Alpha EQ" ]
+                , g
+                    [ class "alpha-eq", move 22 45 ]
+                    [ webglBlend.alphaEq |> renderEq "alpha"
+                    (\eq -> ChangeBlend idx (WebGLBlend { webglBlend | alphaEq = eq })) ]
+                ]
+        SVGBlend svgBlend -> g [] []
+        None -> g [] []
 
 
 renderEq : String -> (WGLB.Equation -> Msg) -> WGLB.Equation -> Svg Msg
@@ -135,17 +201,21 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ChangeWGLBlend layerId newBlend ->
-            let model_ = { model | blends = model.blends |> Dict.insert layerId newBlend }
+        ChangeBlend layerId newBlend ->
+            let model_
+                = { model
+                  | blends = model.blends |> Dict.insert layerId newBlend
+                  }
             in
                 model_ !
-                    [ sendNewWGLBlend { layer = layerId, blend = newBlend }
-                    , Dict.values model_.blends |> WGLB.encodeAll |> sendNewCode
+                    [ sendNewBlend { layer = layerId, blend = convertBlend newBlend }
+                    , Dict.values model_.blends |> encodeAll |> sendNewCode
                     ]
         ApplyAllBlends blends ->
             let newBlends =
                 WGLB.decodeAll blends
                     -- TODO: do not convert twice
+                    |> List.map WebGLBlend
                     |> Array.fromList
                     |> Array.toIndexedList
             in
@@ -153,7 +223,7 @@ update msg model =
                 }
                 ! (newBlends |> List.map
                     (\(layerId, newBlend) ->
-                        sendNewWGLBlend { layer = layerId, blend = newBlend }
+                        sendNewBlend { layer = layerId, blend = convertBlend newBlend }
                     ))
         ApplyColors colors ->
             { model | colors = colors
@@ -177,7 +247,11 @@ update msg model =
             , blends =
                 List.range 0 (model.layerCount - 1)
                     |> List.map (\idx ->
-                           ( idx, model.blends |> Dict.get idx |> Maybe.withDefault WGLB.default )
+                           ( idx
+                           , model.blends
+                                |> Dict.get idx
+                                |> Maybe.withDefault None
+                           )
                        )
                     |> Dict.fromList
             } ! []
@@ -194,15 +268,15 @@ adaptColors source =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ changeWGLBlend (\{ layer, blend } ->
-            ChangeWGLBlend layer blend
-          )
+        [ changeBlend (\{ layer, blend } ->
+            ChangeBlend layer (blend |> adaptBlend)
+        )
         , applyAllBlends (\encodedBlends ->
             ApplyAllBlends encodedBlends
-          )
+        )
         , applyColors (\colors ->
             colors |> adaptColors |> ApplyColors
-          )
+        )
         , resize Resize
         , changeLayerCount ChangeLayerCount
         ]
@@ -231,9 +305,9 @@ port applyColors : (Array (Array String) -> msg) -> Sub msg
 
 port resize : ( ( Int, Int ) -> msg ) -> Sub msg
 
-port changeWGLBlend :
+port changeBlend :
     ( { layer : Int
-      , blend : WGLB.Blend
+      , blend : PortBlend
       }
     -> msg) -> Sub msg
 
@@ -241,9 +315,9 @@ port applyAllBlends :
     ( String
     -> msg) -> Sub msg
 
-port sendNewWGLBlend :
+port sendNewBlend :
     { layer: Int
-    , blend: WGLB.Blend
+    , blend: PortBlend
     } -> Cmd msg
 
 port sendNewColors :
