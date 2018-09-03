@@ -15,11 +15,25 @@ module.exports = {
         {
           test:    /\.elm$/,
           exclude: [/elm-stuff/, /node_modules/],
-          loader:  'elm-webpack-loader?verbose=true&warn=true',
+          use: [
+            {
+              loader: "elm-svg-loader",
+              options: {
+                package: "user/project"
+              }
+            },
+            {
+              loader: "elm-webpack-loader?verbose=true&warn=true"
+            }
+          ]
         },
         {
           test: /\.css$/,
           use: [ 'style-loader', 'css-loader' ]
+        },
+        {
+          test: /\.svg$/,
+          use: [ 'raw-loader' ]
         }
       ],
 
