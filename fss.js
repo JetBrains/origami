@@ -32,7 +32,6 @@ function buildFSS(config, source) {
         scene.add(ambient);
         scene.add(diffuse);
 
-
         var v, vertex;
         for (v = geometry.vertices.length - 1; v >= 0; v--) {
             vertex = geometry.vertices[v];
@@ -54,7 +53,6 @@ function buildFSS(config, source) {
 
         ambient.setPosition(150, -50, 100);
         diffuse.setPosition(0, 150, 15);
-
 
         //container.appendChild(renderer.element);
         //window.addEventListener('resize', resize);
