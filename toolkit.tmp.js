@@ -79,7 +79,7 @@ function eqFuncClick(blendType, state) {
         return function() {
             state.blend[blendType + 'Eq'][0] = index;
             // console.log(state);
-            if (elmsfeuer) elmsfeuer.ports.changeBlend.send(state);
+            if (elmsfeuer) elmsfeuer.ports.changeWGLBlend.send(state);
         }
     }
 }
@@ -89,7 +89,7 @@ function eqFactorClick(blendType, factorId, state) {
         return function() {
             state.blend[blendType + 'Eq'][factorId] = index;
             // console.log(state);
-            if (elmsfeuer) elmsfeuer.ports.changeBlend.send(state);
+            if (elmsfeuer) elmsfeuer.ports.changeWGLBlend.send(state);
         }
     }
 }

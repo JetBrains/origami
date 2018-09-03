@@ -134,20 +134,20 @@ Rpd.nodetype('jb/layers', {
 });
 
 Rpd.noderenderer('jb/layers', 'svg', {
-    size: { width: 212, height: 200 },
+    size: { width: 212, height: 285 },
     pivot: { x: 0.03, y: 0.03 },
     first: function(bodyElm) {
         // console.log(layersNode);
         if (layersNodeApp) {
             layersNode = layersNodeApp.embed(bodyElm);
-            layersNode.ports.resize.send([ 500, 400 ]);
+            layersNode.ports.resize.send([ 700, 700 ]);
             if (window.location.hash && (window.location.hash.indexOf('#blends=' > 0))) {
                 const newBlends = window.location.hash.slice(8);
                 layersNode.ports.applyAllBlends.send(newBlends);
             }
             if (elmsfeuer) {
-                layersNode.ports.sendNewBlend.subscribe(function(state) {
-                    elmsfeuer.ports.changeBlend.send(state);
+                layersNode.ports.sendNewWGLBlend.subscribe(function(state) {
+                    elmsfeuer.ports.changeWGLBlend.send(state);
                 });
             }
             layersNode.ports.sendNewCode.subscribe(function(code) {

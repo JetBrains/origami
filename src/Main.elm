@@ -15,6 +15,7 @@ import WebGL.Settings.DepthTest as DepthTest
 
 import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
+import Svg.Blend as SVGBlend
 import Controls
 import ImportExport as IE exposing (EncodedState)
 
@@ -46,7 +47,7 @@ type Layer
     | TemplateLayer Template.Config WGLBlend.Blend Template.Mesh
     | FssLayer FSS.Config WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | MirroredFssLayer FSS.MConfig WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | TextLayer WGLBlend.Blend
+    | TextLayer SVGBlend.Blend
     | Unknown
     -- | CanvasLayer (\_ -> )
 
@@ -70,6 +71,7 @@ type Msg
     | InitLayers (List String)
     | Configure LayerIndex LayerConfig
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
+    | ChangeSVGBlend LayerIndex SVGBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
     | Rotate Float
     | Locate Position
@@ -177,9 +179,18 @@ update msg model =
                             FssLayer cfg newBlend scene mesh
                         MirroredFssLayer cfg _ scene mesh ->
                             MirroredFssLayer cfg newBlend scene mesh
+                        _ -> layer
+                )
+            , Cmd.none
+            )
+
+        ChangeSVGBlend index newBlend ->
+            ( model |> updateLayer index
+                (\layer ->
+                    case layer of
                         TextLayer _ ->
                             TextLayer newBlend
-                        _ -> Unknown
+                        _ -> layer
                 )
             , Cmd.none
             )
@@ -302,7 +313,7 @@ createLayer code =
             let fractalConfig = Fractal.init
             in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
         "text" ->
-            TextLayer WGLBlend.default
+            TextLayer SVGBlend.default
         _ -> Unknown
 
 
@@ -394,7 +405,7 @@ subscriptions model =
           )
         , rotate Rotate
         , initLayers (\layerTypes -> InitLayers (Array.toList layerTypes))
-        , changeBlend (\{ layer, blend } ->
+        , changeWGLBlend (\{ layer, blend } ->
             ChangeWGLBlend layer blend
           )
         , configureLorenz (\(lorenzConfig, layerIndex) ->
@@ -618,7 +629,7 @@ port import_ : (String -> msg) -> Sub msg
 
 port export_ : String -> Cmd msg
 
-port changeBlend :
+port changeWGLBlend :
     ( { layer : Int
       , blend : WGLBlend.Blend
       }

@@ -1,5 +1,7 @@
 module Svg.Blend exposing
-    ( Blend )
+    ( Blend
+    , default
+    )
 
 type Blend
     = Normal
@@ -21,3 +23,5 @@ type Blend
     | Unset
 
 
+default : Blend
+default = Normal
