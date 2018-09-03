@@ -14,7 +14,7 @@ import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
 import Viewport exposing (Viewport)
-import Blend exposing (Blend)
+import WebGL.Blend as WGLBlend
 import Controls
 import ImportExport as IE exposing (EncodedState)
 
@@ -40,13 +40,13 @@ type LayerConfig
 
 type Layer
     -- FIXME: use type variable for that, or just a function!
-    = LorenzLayer Lorenz.Config Blend Lorenz.Mesh
-    | FractalLayer Fractal.Config Blend Fractal.Mesh
-    | VoronoiLayer Voronoi.Config Blend Voronoi.Mesh
-    | TemplateLayer Template.Config Blend Template.Mesh
-    | FssLayer FSS.Config Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | MirroredFssLayer FSS.MConfig Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | TextLayer Blend
+    = LorenzLayer Lorenz.Config WGLBlend.Blend Lorenz.Mesh
+    | FractalLayer Fractal.Config WGLBlend.Blend Fractal.Mesh
+    | VoronoiLayer Voronoi.Config WGLBlend.Blend Voronoi.Mesh
+    | TemplateLayer Template.Config WGLBlend.Blend Template.Mesh
+    | FssLayer FSS.Config WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | MirroredFssLayer FSS.MConfig WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | TextLayer WGLBlend.Blend
     | Unknown
     -- | CanvasLayer (\_ -> )
 
@@ -69,7 +69,7 @@ type Msg
     | Resize Window.Size
     | InitLayers (List String)
     | Configure LayerIndex LayerConfig
-    | ChangeBlend LayerIndex Blend
+    | ChangeWGLBlend LayerIndex WGLBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
     | Rotate Float
     | Locate Position
@@ -160,7 +160,7 @@ update msg model =
             , Cmd.none
             )
 
-        ChangeBlend index newBlend ->
+        ChangeWGLBlend index newBlend ->
             ( model |> updateLayer index
                 (\layer ->
                     case layer of
@@ -277,7 +277,7 @@ createLayer code =
             in
                 FssLayer
                     fssConfig
-                    Blend.default
+                    WGLBlend.default
                     Nothing
                     (FSS.build fssConfig Nothing)
         "fss-mirror" ->
@@ -286,21 +286,21 @@ createLayer code =
             in
                 MirroredFssLayer
                     mirrorConfig
-                    Blend.default
+                    WGLBlend.default
                     Nothing
                     (FSS.build fssConfig Nothing)
         "lorenz" ->
             let lorenzConfig = Lorenz.init
-            in LorenzLayer lorenzConfig Blend.default (lorenzConfig |> Lorenz.build)
+            in LorenzLayer lorenzConfig WGLBlend.default (lorenzConfig |> Lorenz.build)
         "template" ->
             let templateConfig = Template.init
-            in TemplateLayer templateConfig Blend.default (templateConfig |> Template.build)
+            in TemplateLayer templateConfig WGLBlend.default (templateConfig |> Template.build)
         "voronoi" ->
             let voronoiConfig = Voronoi.init
-            in VoronoiLayer voronoiConfig Blend.default (voronoiConfig |> Voronoi.build)
+            in VoronoiLayer voronoiConfig WGLBlend.default (voronoiConfig |> Voronoi.build)
         "fractal" ->
             let fractalConfig = Fractal.init
-            in FractalLayer fractalConfig Blend.default (fractalConfig |> Fractal.build)
+            in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
         -- TODO: text
         _ -> Unknown
 
@@ -394,7 +394,7 @@ subscriptions model =
         , rotate Rotate
         , initLayers (\layerTypes -> InitLayers (Array.toList layerTypes))
         , changeBlend (\{ layer, blend } ->
-            ChangeBlend layer blend
+            ChangeWGLBlend layer blend
           )
         , configureLorenz (\(lorenzConfig, layerIndex) ->
             configureWhenMatches layerIndex model (LorenzConfig lorenzConfig)
@@ -457,25 +457,25 @@ layerToEntities model viewport layer =
         LorenzLayer _ blend lorenz ->
             [ Lorenz.makeEntity
                 viewport
-                [ DepthTest.default, Blend.produce blend ]
+                [ DepthTest.default, WGLBlend.produce blend ]
                 lorenz
             ]
         FractalLayer _ blend fractal ->
             [ Fractal.makeEntity
                 viewport
-                [ DepthTest.default, Blend.produce blend ]
+                [ DepthTest.default, WGLBlend.produce blend ]
                 fractal
             ]
         TemplateLayer _ blend template ->
             [ Template.makeEntity
                 viewport
-                [ DepthTest.default, Blend.produce blend ]
+                [ DepthTest.default, WGLBlend.produce blend ]
                 template
             ]
         VoronoiLayer _ blend voronoi ->
             [ Voronoi.makeEntity
                 viewport
-                [ DepthTest.default, Blend.produce blend ]
+                [ DepthTest.default, WGLBlend.produce blend ]
                 voronoi
             ]
         FssLayer config blend serialized fss ->
@@ -485,7 +485,7 @@ layerToEntities model viewport layer =
                 model.mouse
                 config
                 serialized
-                [ DepthTest.default, Blend.produce blend, sampleAlphaToCoverage ]
+                [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                 fss
             ]
         MirroredFssLayer mConfig blend serialized fss ->
@@ -500,13 +500,13 @@ layerToEntities model viewport layer =
             -- FIXME: replace with text
             [ Template.makeEntity
                 viewport
-                [ DepthTest.default, Blend.produce blend ]
+                [ DepthTest.default, WGLBlend.produce blend ]
                 (Template.init |> Template.build)
             ]
         Unknown ->
             [ Template.makeEntity
                 viewport
-                [ DepthTest.default, Blend.produce Blend.default ]
+                [ DepthTest.default, WGLBlend.produce WGLBlend.default ]
                 (Template.init |> Template.build)
             ]
 
@@ -586,6 +586,6 @@ port export_ : String -> Cmd msg
 
 port changeBlend :
     ( { layer : Int
-      , blend : Blend
+      , blend : WGLBlend.Blend
       }
     -> msg) -> Sub msg

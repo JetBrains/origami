@@ -8,7 +8,7 @@ import Svg exposing (..)
 import Svg.Attributes as SA exposing (..)
 import Svg.Events as SE exposing (..)
 
-import Blend as B
+import WebGL.Blend as B
 
 
 type alias Blends = Dict.Dict Int B.Blend
