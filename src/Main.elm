@@ -245,7 +245,7 @@ update msg model =
                     , mouse = src.mouse
                     , size = src.size
                     } )
-                |> Debug.log "decoded model"
+                -- |> Debug.log "decoded model"
                 |> Maybe.withDefault model
             , Cmd.none )
 
@@ -301,7 +301,8 @@ createLayer code =
         "fractal" ->
             let fractalConfig = Fractal.init
             in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
-        -- TODO: text
+        "text" ->
+            TextLayer WGLBlend.default
         _ -> Unknown
 
 
@@ -444,11 +445,44 @@ mapControls model controlsMsg =
         Controls.Rotate th -> Rotate th
 
 
-mergeLayers : Model -> List WebGL.Entity
-mergeLayers model =
+isWebGLLayer : Layer -> Bool
+isWebGLLayer layer =
+    case layer of
+        TextLayer _ -> False
+        Unknown -> False
+        _ -> True
+
+
+isHtmlLayer : Layer -> Bool
+isHtmlLayer layer =
+    case layer of
+        TextLayer _ -> True
+        Unknown -> False
+        _ -> False
+
+
+mergeWebGLLayers : Model -> List WebGL.Entity
+mergeWebGLLayers model =
     let viewport = getViewportState model |> Viewport.find
     in
-        model.layers |> List.concatMap (layerToEntities model viewport)
+        model.layers
+            |> List.filter isWebGLLayer
+            |> List.concatMap (layerToEntities model viewport)
+
+
+mergeHtmlLayers : Model -> List (Html Msg)
+mergeHtmlLayers model =
+    model.layers
+        |> List.filter isHtmlLayer
+        |> List.map layerToHtml
+
+
+layerToHtml : Layer -> Html Msg
+layerToHtml layer =
+    case layer of
+        TextLayer blend ->
+            JbText.view
+        _ -> div [] []
 
 
 layerToEntities : Model -> Viewport {} -> Layer -> List WebGL.Entity
@@ -496,19 +530,18 @@ layerToEntities model viewport layer =
             in
                 (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
                 (layerToEntities model viewport (FssLayer config2 blend serialized fss))
-        TextLayer blend ->
-            -- FIXME: replace with text
-            [ Template.makeEntity
-                viewport
-                [ DepthTest.default, WGLBlend.produce blend ]
-                (Template.init |> Template.build)
-            ]
-        Unknown ->
-            [ Template.makeEntity
-                viewport
-                [ DepthTest.default, WGLBlend.produce WGLBlend.default ]
-                (Template.init |> Template.build)
-            ]
+        TextLayer _ -> []
+            -- [ Template.makeEntity
+            --     viewport
+            --     [ DepthTest.default, WGLBlend.produce blend ]
+            --     (Template.init |> Template.build)
+            -- ]
+        Unknown -> []
+            -- [ Template.makeEntity
+            --     viewport
+            --     [ DepthTest.default, WGLBlend.produce WGLBlend.default ]
+            --     (Template.init |> Template.build)
+            -- ]
 
 
 getViewportState : Model -> Viewport.State
@@ -533,21 +566,21 @@ view model =
             , onMouseUp BackToNow
             ]
             []
-          , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
-          , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
-          , WebGL.toHtmlWith
-              [ WebGL.antialias
-              , WebGL.alpha True
-              , WebGL.clearColor 0.0862745098 0.0862745098 0.0862745098 1.0
-              --, WebGL.depth 0.5
-              ]
-              [ width (Tuple.first model.size)
-              , height (Tuple.second model.size)
-              , style [ ( "display", "block" ), ("background-color", "#161616") ]
-              , onClick TriggerPause
-              ]
-              (mergeLayers model)
-          , JbText.view
+        , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
+        , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
+        , WebGL.toHtmlWith
+            [ WebGL.antialias
+            , WebGL.alpha True
+            , WebGL.clearColor 0.0862745098 0.0862745098 0.0862745098 1.0
+            --, WebGL.depth 0.5
+            ]
+            [ width (Tuple.first model.size)
+            , height (Tuple.second model.size)
+            , style [ ( "display", "block" ), ("background-color", "#161616") ]
+            , onClick TriggerPause
+            ]
+            (mergeWebGLLayers model)
+        , div [] (mergeHtmlLayers model)
         ]
 
 

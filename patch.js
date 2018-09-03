@@ -35,9 +35,11 @@ function start(layers, updateLayers) {
     var layersNode = patch.addNode('jb/layers').move(80, 250);
     layersNode.inlets['count'].receive(layers.length);
     layersNode.inlets['colors'].receive(layers.map((layer) => {
-        return [ layer.config.lights.ambient[1]
-               , layer.config.lights.diffuse[1]
-               ]
+        return  (layer.type === 'fss') || (layer.type === 'fss-mirror')
+            ? [ layer.config.lights.ambient[1]
+              , layer.config.lights.diffuse[1]
+              ]
+            : []
     }));
     if (window.location.search) {
         const parsedQuery = parseQuery(window.location.search);

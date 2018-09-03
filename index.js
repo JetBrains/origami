@@ -66,7 +66,8 @@ let layers = [
             , count: 2
             }
         } */
-    }
+    },
+    { type: 'text' }
 ];
 
 let scenes = {};
