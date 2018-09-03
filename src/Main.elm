@@ -23,7 +23,7 @@ import Layer.Fractal as Fractal
 import Layer.Voronoi as Voronoi
 import Layer.FSS as FSS
 import Layer.Template as Template
-
+import Layer.JbText as JbText
 
 
 type alias LayerIndex = Int
@@ -547,6 +547,7 @@ view model =
               , onClick TriggerPause
               ]
               (mergeLayers model)
+          , JbText.view
         ]
 
 
