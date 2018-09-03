@@ -8,10 +8,10 @@ import Svg exposing (..)
 import Svg.Attributes as SA exposing (..)
 import Svg.Events as SE exposing (..)
 
-import WebGL.Blend as B
+import WebGL.Blend as WGLB
 
 
-type alias Blends = Dict.Dict Int B.Blend
+type alias Blends = Dict.Dict Int WGLB.Blend
 
 type alias Colors = Dict Int (Array String)
 
@@ -25,7 +25,7 @@ type alias Model =
 
 
 type Msg
-    = ChangeBlend Int B.Blend
+    = ChangeWGLBlend Int WGLB.Blend
     | ApplyAllBlends String
     | ApplyColors Colors
     | ChangeLayerCount Int
@@ -47,12 +47,12 @@ renderBlendFrom blends idx =
         [ text_ [ fill "black" ] [ text ("Layer " ++ toString idx) ]
         , blends
             |> Dict.get idx
-            |> Maybe.withDefault B.default
+            |> Maybe.withDefault WGLB.default
             |> renderBlend idx
         ]
 
 
-renderBlend : Int -> B.Blend -> Svg Msg
+renderBlend : Int -> WGLB.Blend -> Svg Msg
 renderBlend idx blend =
     g
         [ class "blend", move 0 10 ]
@@ -62,16 +62,16 @@ renderBlend idx blend =
         , g
             [ class "color-eq", move 22 8 ]
             [ blend.colorEq |> renderEq "color"
-              (\eq -> ChangeBlend idx { blend | colorEq = eq }) ]
+              (\eq -> ChangeWGLBlend idx { blend | colorEq = eq }) ]
         --, text_ [ fill "black", move 15 55 ] [ text "Alpha EQ" ]
         , g
             [ class "alpha-eq", move 22 45 ]
             [ blend.alphaEq |> renderEq "alpha"
-              (\eq -> ChangeBlend idx { blend | alphaEq = eq }) ]
+              (\eq -> ChangeWGLBlend idx { blend | alphaEq = eq }) ]
         ]
 
 
-renderEq : String -> (B.Equation -> Msg) -> B.Equation -> Svg Msg
+renderEq : String -> (WGLB.Equation -> Msg) -> WGLB.Equation -> Svg Msg
 renderEq eqType upd ( func, factor1, factor2 ) =
     let
         updFunc = (\newFunc -> upd ( newFunc, factor1, factor2 ))
@@ -81,11 +81,11 @@ renderEq eqType upd ( func, factor1, factor2 ) =
         g
             [ class ("equation equation-" ++ eqType) ]
             [ g [ class "func" ]
-                ( B.allFuncs |> Array.indexedMap (renderFunc updFunc func) |> Array.toList )
+                ( WGLB.allFuncs |> Array.indexedMap (renderFunc updFunc func) |> Array.toList )
             , g [ class "factor-1", move 0 12 ]
-                ( B.allFactors |> Array.indexedMap (renderFactor updFact1 factor1) |> Array.toList )
+                ( WGLB.allFactors |> Array.indexedMap (renderFactor updFact1 factor1) |> Array.toList )
             , g [ class "factor-2", move 0 24 ]
-                ( B.allFactors |> Array.indexedMap (renderFactor updFact2 factor2) |> Array.toList )
+                ( WGLB.allFactors |> Array.indexedMap (renderFactor updFact2 factor2) |> Array.toList )
             ]
 
 
@@ -96,7 +96,7 @@ renderFunc select curN n _ =
         , SA.r "3"
         , fill (if (n == curN) then "white" else "black")
         , move (n * 12) 0
-        , HA.attribute "data-label" <| B.labelOfFunc n
+        , HA.attribute "data-label" <| WGLB.labelOfFunc n
         , SE.onClick (select n)
         ]
         [ ]
@@ -109,13 +109,13 @@ renderFactor select curN n _ =
         , SA.r "3"
         , fill (if (n == curN) then "white" else "black")
         , move (n * 12) 0
-        , HA.attribute "data-label" <| B.labelOfFactor n
+        , HA.attribute "data-label" <| WGLB.labelOfFactor n
         , SE.onClick (select n)
         ]
         [ ]
 
 
-getFill : B.Blend -> String
+getFill : WGLB.Blend -> String
 getFill { color } =
     color
         |> Maybe.withDefault { r = 0, g = 0, b = 0, a = 0 }
@@ -135,16 +135,16 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ChangeBlend layerId newBlend ->
+        ChangeWGLBlend layerId newBlend ->
             let model_ = { model | blends = model.blends |> Dict.insert layerId newBlend }
             in
                 model_ !
-                    [ sendNewBlend { layer = layerId, blend = newBlend }
-                    , Dict.values model_.blends |> B.encodeAll |> sendNewCode
+                    [ sendNewWGLBlend { layer = layerId, blend = newBlend }
+                    , Dict.values model_.blends |> WGLB.encodeAll |> sendNewCode
                     ]
         ApplyAllBlends blends ->
             let newBlends =
-                B.decodeAll blends
+                WGLB.decodeAll blends
                     -- TODO: do not convert twice
                     |> Array.fromList
                     |> Array.toIndexedList
@@ -153,7 +153,7 @@ update msg model =
                 }
                 ! (newBlends |> List.map
                     (\(layerId, newBlend) ->
-                        sendNewBlend { layer = layerId, blend = newBlend }
+                        sendNewWGLBlend { layer = layerId, blend = newBlend }
                     ))
         ApplyColors colors ->
             { model | colors = colors
@@ -177,7 +177,7 @@ update msg model =
             , blends =
                 List.range 0 (model.layerCount - 1)
                     |> List.map (\idx ->
-                           ( idx, model.blends |> Dict.get idx |> Maybe.withDefault B.default )
+                           ( idx, model.blends |> Dict.get idx |> Maybe.withDefault WGLB.default )
                        )
                     |> Dict.fromList
             } ! []
@@ -194,8 +194,8 @@ adaptColors source =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ changeBlend (\{ layer, blend } ->
-            ChangeBlend layer blend
+        [ changeWGLBlend (\{ layer, blend } ->
+            ChangeWGLBlend layer blend
           )
         , applyAllBlends (\encodedBlends ->
             ApplyAllBlends encodedBlends
@@ -231,9 +231,9 @@ port applyColors : (Array (Array String) -> msg) -> Sub msg
 
 port resize : ( ( Int, Int ) -> msg ) -> Sub msg
 
-port changeBlend :
+port changeWGLBlend :
     ( { layer : Int
-      , blend : B.Blend
+      , blend : WGLB.Blend
       }
     -> msg) -> Sub msg
 
@@ -241,9 +241,9 @@ port applyAllBlends :
     ( String
     -> msg) -> Sub msg
 
-port sendNewBlend :
+port sendNewWGLBlend :
     { layer: Int
-    , blend: B.Blend
+    , blend: WGLB.Blend
     } -> Cmd msg
 
 port sendNewColors :
