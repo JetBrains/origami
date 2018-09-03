@@ -9,11 +9,11 @@ import InlineSvg exposing (inline)
 
 { icon } =
     inline
-        { jetbrains = "jetbrains-text-square.svg"
+        { jetbrains = "./jetbrains-text-square.svg"
         }
 
 view =
     div
         []
-        [ icon .jetbrains [ Svg.Attributes.class "text text--jetbrains" ]
+        [ icon .jetbrains [ Svg.Attributes.class "text-layer text-layer--jetbrains" ]
         ]

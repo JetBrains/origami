@@ -73,3 +73,9 @@ text.rpd-jb-active-label {
     font-family: monospace;
     font-size: 10px;
 }
+
+svg.text-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
