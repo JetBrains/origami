@@ -41,11 +41,9 @@ function start(layers, updateLayers) {
               ]
             : []
     }));
-    if (window.location.search) {
-        const parsedQuery = parseQuery(window.location.search);
-        if (parsedQuery.blends) {
-            layersNode.inlets['code'].receive(parsedQuery.blends);
-        }
+    if (window.location.hash && (window.location.hash.indexOf('#blends=' > 0))) {
+        const newBlends = window.location.hash.slice(8);
+        layersNode.inlets['code'].receive(newBlends);
     } else {
         const codes = layers.map((layer, layerIdx) => {
             if (layer.type == 'text') {
