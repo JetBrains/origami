@@ -2,7 +2,8 @@ port module Main exposing (main)
 
 import Array exposing (Array)
 import Html exposing (Html, text, div, span, input)
-import Html.Attributes as H exposing (width, height, style, class, type_, min, max, value, id)
+import Html.Attributes as H
+    exposing (class, width, height, style, class, type_, min, max, value, id)
 import Html.Events exposing (on, onInput, onMouseUp, onClick)
 import AnimationFrame
 import Time exposing (Time)
@@ -488,14 +489,14 @@ mergeHtmlLayers : Model -> List (Html Msg)
 mergeHtmlLayers model =
     model.layers
         |> List.filter isHtmlLayer
-        |> List.map layerToHtml
+        |> List.map (layerToHtml model)
 
 
-layerToHtml : Layer -> Html Msg
-layerToHtml layer =
+layerToHtml : Model -> Layer -> Html Msg
+layerToHtml model layer =
     case layer of
         TextLayer blend ->
-            JbText.view blend
+            JbText.view model.size blend
         _ -> div [] []
 
 
@@ -571,17 +572,20 @@ view model =
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-        [ input
-            [ type_ "range"
-            , H.min "0"
-            , H.max "100"
-            , extractTimeShift model.timeShift |> H.value
-            , onInput (\v -> adaptTimeShift v |> TimeTravel)
-            , onMouseUp BackToNow
+        [ div
+            [ H.class "overlay-panel import-export-panel" ]
+            [ input
+                [ type_ "range"
+                , H.min "0"
+                , H.max "100"
+                , extractTimeShift model.timeShift |> H.value
+                , onInput (\v -> adaptTimeShift v |> TimeTravel)
+                , onMouseUp BackToNow
+                ]
+                []
+            , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
+            , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
             ]
-            []
-        , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
-        , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
         , WebGL.toHtmlWith
             [ WebGL.antialias
             , WebGL.alpha True

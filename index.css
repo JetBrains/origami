@@ -78,4 +78,17 @@ svg.text-layer {
     position: absolute;
     top: 0;
     left: 0;
+    pointer-events: none;
+}
+
+.overlay-panel {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.import-export-panel {
+    top: 10px;
+    left: 10px;
 }
