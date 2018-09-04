@@ -3,7 +3,9 @@ module Layer.JbText exposing
     )
 
 import Html exposing (..)
-import Svg.Attributes
+import Html.Attributes as HAttrs
+import Svg.Blend as Blend
+import Svg.Attributes as SAttrs
 import InlineSvg exposing (inline)
 
 
@@ -12,8 +14,9 @@ import InlineSvg exposing (inline)
         { jetbrains = "./jetbrains-text-square.svg"
         }
 
-view =
+view : Blend.Blend -> Html a
+view blend =
     div
-        []
-        [ icon .jetbrains [ Svg.Attributes.class "text-layer text-layer--jetbrains" ]
+        [ HAttrs.style [("mix-blend-mode", Blend.encode blend)] ]
+        [ icon .jetbrains [ SAttrs.class "text-layer text-layer--jetbrains" ]
         ]
