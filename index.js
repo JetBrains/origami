@@ -206,6 +206,18 @@ setTimeout(function() {
     layersNode = nodes.layersNode;
     paletteNode = nodes.paletteNode;
 
+    let panelsHidden = false;
+
+    document.addEventListener('keydown', (event) => {
+        if (event.keyCode == 32) {
+            const overlayPanels = document.querySelectorAll('.hide-on-space');
+            for (let i = 0; i < overlayPanels.length; i++) {
+                overlayPanels[i].style.display = panelsHidden ? 'block' : 'none';
+            }
+            panelsHidden = !panelsHidden;
+        }
+      });
+
     // setTimeout(function() {
     //     //updateFssColors(0, ['#000000', '#ffffff']);
     //     updateFssColors(1, ['#ffffff', '#000000']);

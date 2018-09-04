@@ -88,6 +88,10 @@ svg.text-layer {
     border-radius: 5px;
 }
 
+.hide-on-space {
+
+}
+
 .import-export-panel {
     top: 10px;
     left: 10px;
