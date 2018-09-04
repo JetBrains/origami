@@ -573,7 +573,7 @@ view model =
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
         [ div
-            [ H.class "overlay-panel import-export-panel" ]
+            [ H.class "overlay-panel import-export-panel hide-on-space" ]
             [ input
                 [ type_ "range"
                 , H.min "0"
