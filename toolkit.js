@@ -147,10 +147,11 @@ Rpd.noderenderer('jb/layers', 'svg', {
             }
             if (elmsfeuer) {
                 layersNode.ports.sendNewBlend.subscribe(function(state) {
-                    if (state[0]) {
-                        elmsfeuer.ports.changeWGLBlend.send(state[0]);
-                    } else if (state[1]) {
-                        elmsfeuer.ports.changeSVGBlend.send(state[1]);
+                    const { layer, blend } = state;
+                    if (blend && blend[0]) {
+                        elmsfeuer.ports.changeWGLBlend.send({ layer, blend : blend[0] });
+                    } else if (blend && blend[1]) {
+                        elmsfeuer.ports.changeSVGBlend.send({ layer, blend : blend[1] });
                     }
                 });
             }

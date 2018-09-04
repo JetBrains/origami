@@ -408,6 +408,9 @@ subscriptions model =
         , changeWGLBlend (\{ layer, blend } ->
             ChangeWGLBlend layer blend
           )
+        , changeSVGBlend (\{ layer, blend } ->
+            ChangeSVGBlend layer (SVGBlend.decode blend)
+          )
         , configureLorenz (\(lorenzConfig, layerIndex) ->
             configureWhenMatches layerIndex model (LorenzConfig lorenzConfig)
                 (\layer ->
@@ -632,5 +635,11 @@ port export_ : String -> Cmd msg
 port changeWGLBlend :
     ( { layer : Int
       , blend : WGLBlend.Blend
+      }
+    -> msg) -> Sub msg
+
+port changeSVGBlend :
+    ( { layer : Int
+      , blend : SVGBlend.PortBlend
       }
     -> msg) -> Sub msg
