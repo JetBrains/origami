@@ -42,6 +42,7 @@ type Msg
     | ApplyAllBlends String
     | ApplyColors Colors
     | ChangeLayerCount Int
+    | SetBlendType Int String
     | Resize ( Int, Int )
 
 
@@ -79,7 +80,7 @@ encodeOne blend =
     case blend of
         None -> "-"
         WebGLBlend webglBlend -> WGLB.encodeOne webglBlend
-        SVGBlend svgBlend -> SVGB.encode svgBlend
+        SVGBlend svgBlend -> "_" ++ SVGB.encode svgBlend
 
 
 decodeAll : String -> List Blend
@@ -133,8 +134,14 @@ renderBlend idx blend =
                     [ webglBlend.alphaEq |> renderEq "alpha"
                     (\eq -> ChangeBlend idx (WebGLBlend { webglBlend | alphaEq = eq })) ]
                 ]
-        SVGBlend svgBlend -> g [] []
-        None -> g [] []
+        SVGBlend svgBlend ->
+            g
+                [ class "blend", move 0 10 ]
+                [ text_ [] [ text ("SVG:" ++ SVGB.encode svgBlend) ] ]
+        None ->
+            g
+                [ class "blend", move 0 10 ]
+                [ text_ [] [ text "None" ] ]
 
 
 renderEq : String -> (WGLB.Equation -> Msg) -> WGLB.Equation -> Svg Msg
@@ -209,22 +216,24 @@ update msg model =
             in
                 model_ !
                     [ sendNewBlend { layer = layerId, blend = convertBlend newBlend }
-                    , Dict.values model_.blends |> encodeAll |> sendNewCode
+                    , sendNewCodeFrom model_.blends
                     ]
         ApplyAllBlends blends ->
             let newBlends =
-                WGLB.decodeAll blends
-                    -- TODO: do not convert twice
-                    |> List.map WebGLBlend
-                    |> Array.fromList
-                    |> Array.toIndexedList
+                    decodeAll blends
+                        -- TODO: do not convert twice
+                        |> Array.fromList
+                        |> Array.toIndexedList
+                model_ =
+                    { model
+                    | blends = Dict.fromList newBlends
+                    }
+                sendOneBlend (layerId, newBlend) =
+                    sendNewBlend { layer = layerId, blend = convertBlend newBlend }
             in
-                { model | blends = Dict.fromList newBlends
-                }
-                ! (newBlends |> List.map
-                    (\(layerId, newBlend) ->
-                        sendNewBlend { layer = layerId, blend = convertBlend newBlend }
-                    ))
+                model_ !
+                    ((newBlends |> List.map sendOneBlend)
+                    ++ [ sendNewCodeFrom model_.blends ])
         ApplyColors colors ->
             { model | colors = colors
             }
@@ -255,7 +264,38 @@ update msg model =
                        )
                     |> Dict.fromList
             } ! []
+        SetBlendType layerId blendType ->
+            let
+                curBlend = Dict.get layerId model.blends |> Maybe.withDefault None
+                newBlend = case blendType of
+                    "webgl" -> case curBlend of
+                                   WebGLBlend _ -> curBlend
+                                   _ -> WebGLBlend WGLB.default
+                    "svg" -> case curBlend of
+                                   SVGBlend _ -> curBlend
+                                   _ -> SVGBlend SVGB.default
+                    _ -> None
+                model_ =
+                    { model
+                    | blends = model.blends |> Dict.insert layerId newBlend
+                    }
+            in
+                model_ !
+                    [ sendNewBlend { layer = layerId, blend = convertBlend newBlend }
+                    , sendNewCodeFrom model_.blends
+                    ]
         Resize newSize -> { model | size = newSize } ! []
+
+
+queueBlends : List (Int, Blend) -> List (Cmd Msg)
+queueBlends blends =
+    blends |> List.map
+        (\(layerId, newBlend) ->
+            sendNewBlend { layer = layerId, blend = convertBlend newBlend }
+        )
+
+sendNewCodeFrom : Blends -> Cmd Msg
+sendNewCodeFrom blends = Dict.values blends |> encodeAll |> sendNewCode
 
 
 adaptColors : Array (Array String) -> Colors
@@ -270,6 +310,9 @@ subscriptions model =
     Sub.batch
         [ changeBlend (\{ layer, blend } ->
             ChangeBlend layer (blend |> adaptBlend)
+        )
+        , setBlendType (\{ layer, blendType } ->
+            SetBlendType layer blendType
         )
         , applyAllBlends (\encodedBlends ->
             ApplyAllBlends encodedBlends
@@ -300,6 +343,12 @@ main =
 
 
 port changeLayerCount : (Int -> msg) -> Sub msg
+
+port setBlendType :
+    ( { layer : Int
+      , blendType : String
+      }
+    -> msg) -> Sub msg
 
 port applyColors : (Array (Array String) -> msg) -> Sub msg
 

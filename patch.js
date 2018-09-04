@@ -46,6 +46,15 @@ function start(layers, updateLayers) {
         if (parsedQuery.blends) {
             layersNode.inlets['code'].receive(parsedQuery.blends);
         }
+    } else {
+        const codes = layers.map((layer, layerIdx) => {
+            if (layer.type == 'text') {
+                return '_normal';
+            } else {
+                return '00000000010010'; // FIXME: a dirty way to set default value
+            }
+        });
+        layersNode.inlets['code'].receive(codes.join(':'));
     }
 
     var paletteNode = patch.addNode('jb/palette').move(350, 250);
