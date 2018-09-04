@@ -495,7 +495,7 @@ layerToHtml : Layer -> Html Msg
 layerToHtml layer =
     case layer of
         TextLayer blend ->
-            JbText.view
+            JbText.view blend
         _ -> div [] []
 
 
