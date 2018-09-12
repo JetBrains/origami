@@ -97,3 +97,11 @@ svg.text-layer {
     left: 10px;
     z-index: 20;
 }
+
+.text-layer--jetbrains {
+    font-family: 'Gotham', Helvetica, sans-serif;
+    font-weight: 770;
+    text-transform: uppercase;
+    font-size: 110;
+    color: white;
+}
