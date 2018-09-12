@@ -78,6 +78,7 @@ type Msg
     | Locate Position
     | Import EncodedState
     | Export
+    | ExportZip
     | TimeTravel Float
     | BackToNow
     | Pause
@@ -264,6 +265,11 @@ update msg model =
         Export ->
             ( model
             , model |> prepareModel |> IE.encodeModel |> export_
+            )
+
+        ExportZip ->
+            ( model
+            , model |> prepareModel |> IE.encodeModel |> exportZip_
             )
 
         TimeTravel timeShift ->
@@ -585,6 +591,9 @@ view model =
                 []
             , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
             , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
+            , input
+                [ type_ "button", onClick ExportZip, value "Export .zip" ]
+                [ text "Export .zip" ]
             ]
         , WebGL.toHtmlWith
             [ WebGL.antialias
@@ -635,6 +644,8 @@ port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
 port import_ : (String -> msg) -> Sub msg
 
 port export_ : String -> Cmd msg
+
+port exportZip_ : String -> Cmd msg
 
 port changeWGLBlend :
     ( { layer : Int

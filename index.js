@@ -4,6 +4,10 @@
 // include main style
 require('./index.css');
 
+const JSZip = require('jszip');
+const JSZipUtils = require('jszip-utils');
+const FileSaver = require('jszip/vendor/FileSaver');
+
 // initialize Elm Application
 const App = require('./src/Main.elm');
 //const mountNode = document.getElementById('elm-target');
@@ -165,12 +169,39 @@ const export_ = (app, exportedState) => {
     return JSON.stringify(stateObj, null, 2);
 }
 
+const exportZip_ = (app, exportedState) => {
+    JSZipUtils.getBinaryContent('./run-json-scene.js', (err, runJsonScene) => {
+        if (err) {
+            throw err;
+        }
+
+        console.log('runJsonScene', runJsonScene);
+        const sceneJson = export_(app, exportedState);
+        const zip = new JSZip();
+        const js = zip.folder("js");
+        js.file('run-json-scene.js', runJsonScene, { binary: true });
+        zip.file('scene.js', 'module.exports = ' + exportedState + ';');
+        zip.generateAsync({type:"blob"})
+            .then(function(content) {
+                new FileSaver(content, "export.zip");
+            });
+    });
+}
+
 const prepareImportExport = () => {
-    app.ports.export_.subscribe(function(exportedState) {
+    app.ports.export_.subscribe((exportedState) => {
         const exportCode = export_(app, exportedState);
 
         document.getElementById('export-target').className = 'shown';
         document.getElementById('export-code').value = exportCode;
+    });
+    app.ports.exportZip_.subscribe((exportedState) => {
+        try {
+            exportZip_(app, exportedState);
+        } catch(e) {
+            console.error(e);
+            alert('Failed to create .zip');
+        }
     });
     document.getElementById('close-export').addEventListener('click', () => {
         document.getElementById('export-target').className = '';
@@ -196,6 +227,7 @@ const prepareImportExport = () => {
             alert('Failed to parse or send, incorrect format?');
         }
     });
+
 }
 
 registerToolkit(app, LayersNode, updateFssColors);
