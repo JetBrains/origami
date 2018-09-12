@@ -112,22 +112,65 @@ const exportScene = (scene) => {
     ));
 }
 
+const import_ = (app, importedState) => {
+    const parsedState = JSON.parse(importedState);
+    scenes = {};
+    layers = [];
+    parsedState.layers.forEach((layer, index) => {
+        layers[index] = {
+            type: layer.type,
+            config: layer.config
+        };
+        //scenes[index] = layer.scene;
+    });
+    app.ports.pause.send(null);
+    app.ports.initLayers.send(layers.map((l) => l.type));
+    app.ports.import_.send(JSON.stringify({
+        theta: parsedState.theta,
+        size: parsedState.size,
+        mouse: parsedState.mouse,
+        now: parsedState.now,
+        layers: parsedState.layers.map((layer) => (
+            { type_ : layer.type,
+                blend: layer.blend,
+                config: ''
+            }
+        ))
+    }));
+    parsedState.layers.forEach((layer, index) => {
+        if (layer.type == 'fss-mirror') {
+            const scene = buildFSS(layer.config, layer.sceneFuzz);
+            scenes[index] = scene;
+            app.ports.configureMirroredFss.send([ layer.config, index ]);
+            app.ports.rebuildFss.send([ scene, index ]);
+        }
+    });
+    const mergedBlends = parsedState.layers.map(layer => layer.blend).join(':');
+    window.location.hash = '#blends=' + mergedBlends;
+    //if (layersNode) layersNode.inlets['code'].receive(mergedBlends);
+}
+
+const export_ = (app, exportedState) => {
+    app.ports.pause.send(null);
+    const stateObj = JSON.parse(exportedState);
+    stateObj.layers.forEach((layer, index) => {
+        layer.config = layers[index] ? layers[index].config : {};
+        console.log(index, 'ambient', layer.config.lights.ambient);
+        console.log(index, 'diffuse', layer.config.lights.diffuse);
+        layer.sceneFuzz = layer.type == 'fss-mirror'
+            ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
+            : null;
+    })
+    console.log(stateObj);
+    return JSON.stringify(stateObj, null, 2);
+}
+
 const prepareImportExport = () => {
     app.ports.export_.subscribe(function(exportedState) {
-        app.ports.pause.send(null);
-        const stateObj = JSON.parse(exportedState);
-        stateObj.layers.forEach((layer, index) => {
-            layer.config = layers[index] ? layers[index].config : {};
-            console.log(index, 'ambient', layer.config.lights.ambient);
-            console.log(index, 'diffuse', layer.config.lights.diffuse);
-            layer.sceneFuzz = layer.type == 'fss-mirror'
-                ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
-                : null;
-        })
-        console.log(stateObj);
+        const exportCode = export_(app, exportedState);
 
         document.getElementById('export-target').className = 'shown';
-        document.getElementById('export-code').value = JSON.stringify(stateObj, null, 2);
+        document.getElementById('export-code').value = exportCode;
     });
     document.getElementById('close-export').addEventListener('click', () => {
         document.getElementById('export-target').className = '';
@@ -143,41 +186,8 @@ const prepareImportExport = () => {
     document.getElementById('import').addEventListener('click', () => {
         try {
             if (document.getElementById('import-code').value) {
-                const parsedState = JSON.parse(document.getElementById('import-code').value);
-                scenes = {};
-                layers = [];
-                parsedState.layers.forEach((layer, index) => {
-                    layers[index] = {
-                        type: layer.type,
-                        config: layer.config
-                    };
-                    //scenes[index] = layer.scene;
-                });
-                app.ports.pause.send(null);
-                app.ports.initLayers.send(layers.map((l) => l.type));
-                app.ports.import_.send(JSON.stringify({
-                    theta: parsedState.theta,
-                    size: parsedState.size,
-                    mouse: parsedState.mouse,
-                    now: parsedState.now,
-                    layers: parsedState.layers.map((layer) => (
-                        { type_ : layer.type,
-                          blend: layer.blend,
-                          config: ''
-                        }
-                    ))
-                }));
-                parsedState.layers.forEach((layer, index) => {
-                    if (layer.type == 'fss-mirror') {
-                        const scene = buildFSS(layer.config, layer.sceneFuzz);
-                        scenes[index] = scene;
-                        app.ports.configureMirroredFss.send([ layer.config, index ]);
-                        app.ports.rebuildFss.send([ scene, index ]);
-                    }
-                });
-                const mergedBlends = parsedState.layers.map(layer => layer.blend).join(':');
-                window.location.hash = '#blends=' + mergedBlends;
-                //if (layersNode) layersNode.inlets['code'].receive(mergedBlends);
+                const importCode = JSON.parse(document.getElementById('import-code').value);
+                import_(app, importCode);
             } else {
                 alert('Nothing to import');
             }
