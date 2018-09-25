@@ -60,6 +60,7 @@ type alias Model =
     , theta : Float
     , layers : List Layer
     , size : ( Int, Int )
+    , origin : ( Int, Int )
     , mouse : ( Int, Int)
     , now : Time
     , timeShift : Time
@@ -88,6 +89,10 @@ type Msg
     | NoOp
 
 
+sizeCoef : Float
+sizeCoef = 1.2
+
+
 emptyModel : Model
 emptyModel =
     { paused = False
@@ -96,6 +101,7 @@ emptyModel =
     , theta = 0.1
     , layers = [ ]
     , size = ( 1500, 800 )
+    , origin = ( 0, 0 )
     , mouse = ( 0, 0 )
     , now = 0.0
     , timeShift = 0.0
@@ -206,8 +212,12 @@ update msg model =
         Resize { width, height } ->
             ( { model
               | size =
-                    ( toFloat width  * 1.2 |> floor
-                    , toFloat height * 1.2 |> floor
+                    ( toFloat width  * sizeCoef |> floor
+                    , toFloat height * sizeCoef |> floor
+                    )
+              , origin =
+                    ( -1 * toFloat width  * (1 - sizeCoef) |> ceiling
+                    , -1 * toFloat height * (1 - sizeCoef) |> ceiling
                     )
               }
             , Cmd.none
@@ -572,8 +582,8 @@ layerToEntities model viewport layer =
 
 
 getViewportState : Model -> Viewport.State
-getViewportState { paused, size, theta } =
-    { paused = paused, size = size, theta = theta }
+getViewportState { paused, size, origin, theta } =
+    { paused = paused, size = size, origin = origin, theta = theta }
 
 
 view : Model -> Html Msg

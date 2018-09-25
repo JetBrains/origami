@@ -15,6 +15,7 @@ type alias State =
     { theta : Float
     -- , t : Float
     , size : ( Int, Int )
+    , origin : ( Int, Int )
     , paused : Bool
     }
 
@@ -28,14 +29,16 @@ type alias Viewport a =
     , cameraTranslate : Mat4
     , cameraRotate : Mat4
     , size : Vec2
+    , origin : Vec2
     , paused :  Bool
     }
 
 
 find : State -> Viewport {}
-find { theta, size, paused } =
+find { theta, size, origin, paused } =
     let
         ( width, height ) = size
+        ( shiftX, shiftY ) = origin
     in
         { rotation
             = Mat4.makeRotate (3 * theta) (vec3 0 0 1)
@@ -46,6 +49,7 @@ find { theta, size, paused } =
         , cameraTranslate = Mat4.makeTranslate (vec3 0 -0.35 0)
         , cameraRotate = Mat4.makeRotate (0.5) (vec3 0 0 1)
         , size = vec2 (toFloat width) (toFloat height)
+        , origin = vec2 (toFloat shiftX) (toFloat shiftY)
         , paused = paused
         }
 

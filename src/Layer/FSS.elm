@@ -34,6 +34,7 @@ type alias MConfig =
 
 type alias Mouse = ( Int, Int )
 type alias Size = ( Int, Int )
+type alias Origin = ( Int, Int )
 type alias Clip = ( Float, Float )
 type alias Mirror = Float
 
@@ -158,6 +159,7 @@ makeEntity viewport now mouse config maybeScene settings mesh =
                     Nothing -> (0, 0)
                 )
             |> Maybe.withDefault (0, 0)
+        offset = (0, 0)
     in
         WebGL.entityWith
             settings
@@ -168,6 +170,7 @@ makeEntity viewport now mouse config maybeScene settings mesh =
                 viewport
                 now
                 size
+                offset
                 mouse
                 lights
                 config)
@@ -329,11 +332,12 @@ uniforms
      : Viewport {}
     -> Time
     -> Size
+    -> Origin
     -> Mouse
     -> List SLight
     -> Config
     -> Uniforms
-uniforms v now size mouse lights config =
+uniforms v now size origin mouse lights config =
     let
         adaptedLights = lights |> adaptLights size
         width = Vec2.getX v.size
@@ -359,6 +363,7 @@ uniforms v now size mouse lights config =
         , cameraTranslate = v.cameraTranslate
         , cameraRotate = v.cameraRotate
         , size = v.size
+        , origin = v.origin
         }
 
 
