@@ -12,12 +12,16 @@ import InlineSvg exposing (inline)
 shiftX = 0
 shiftY = 0
 
+svgWidth = 200
+shiftX = 200
+shiftY = 70
+
 
 view : (Int, Int) -> Blend.Blend -> Html a
 view ( w, h ) blend =
     let
-        posX = (w // 2) - shiftX
-        posY = (h // 2) - shiftY
+        posX = w - shiftX
+        posY = h - shiftY
     in
         div
             [ HAttrs.style
