@@ -230,6 +230,7 @@ defaultUniforms viewport =
     , specularExponent = 4
 
     , size = vec2 400 300
+    , origin = vec2 0 0
     , outputSize = vec2 800 600
     , aoIntensity = 0.15
     , aoSpread = 9.2
