@@ -230,6 +230,21 @@ const prepareImportExport = () => {
 
 }
 
+const resize = () => {
+    layers.forEach((layer, index) => {
+        // layer.size = [ window.screen.width, window.screen.height ]
+        layer.size = [ window.innerWidth, window.innerHeight ]
+    });
+}
+
+const rebuild = () => {
+    layers.forEach((layer, index) => {
+        if (layer.type == 'fss-mirror') {
+            updateFssLayer(index, layer.config);
+        }
+    });
+}
+
 registerToolkit(app, LayersNode, updateFssColors);
 
 app.ports.initLayers.send(layers.map((l) => l.type));
@@ -237,11 +252,8 @@ app.ports.initLayers.send(layers.map((l) => l.type));
 prepareImportExport();
 
 setTimeout(function() {
-    layers.forEach((layer, index) => {
-        if (layer.type == 'fss-mirror') {
-            updateFssLayer(index, layer.config);
-        }
-    });
+    resize();
+    rebuild();
 
     const nodes = startPatching(layers, updateAllFssLayers);
 
@@ -259,6 +271,11 @@ setTimeout(function() {
             panelsHidden = !panelsHidden;
         }
       });
+
+    // window.addEventListener('resize', () => {
+    //     resize();
+    //     rebuild();
+    // });
 
     // setTimeout(function() {
     //     //updateFssColors(0, ['#000000', '#ffffff']);

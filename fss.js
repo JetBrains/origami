@@ -18,7 +18,6 @@ require('./node_modules/flat-surface-shader/source/Math');
 function buildFSS(config, source) {
     var scene = new FSS.Scene();
 
-
     var geometry = new FSS.Plane(config.size[0], config.size[1],
                                  config.faces[0], config.faces[1]);
     var material = new FSS.Material(config.material[0], config.material[1]);
@@ -55,12 +54,12 @@ function buildFSS(config, source) {
         diffuse.setPosition(0, 150, 15);
 
         //container.appendChild(renderer.element);
-        //window.addEventListener('resize', resize);
+        // window.addEventListener('resize', resize);
     }
 
-    function resize() {
-        //renderer.setSize(container.offsetWidth, container.offsetHeight);
-    }
+    // function resize() {
+    //     renderer.setSize(container.offsetWidth, container.offsetHeight);
+    // }
 
     /*function animate() {
         now = Date.now() - start;

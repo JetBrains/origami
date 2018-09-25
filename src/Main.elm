@@ -74,6 +74,7 @@ type Msg
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
     | ChangeSVGBlend LayerIndex SVGBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
+    --| RebuildOnClient LayerIndex FSS.SerializedScene
     | Rotate Float
     | Locate Position
     | Import EncodedState
@@ -203,7 +204,12 @@ update msg model =
             )
 
         Resize { width, height } ->
-            ( { model | size = ( width, height ) }
+            ( { model
+              | size =
+                    ( toFloat width  * 1.2 |> floor
+                    , toFloat height * 1.2 |> floor
+                    )
+              }
             , Cmd.none
             )
 
@@ -646,6 +652,8 @@ port import_ : (String -> msg) -> Sub msg
 port export_ : String -> Cmd msg
 
 port exportZip_ : String -> Cmd msg
+
+-- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg
 
 port changeWGLBlend :
     ( { layer : Int
