@@ -9,12 +9,12 @@ import Svg.Attributes as SAttrs
 import InlineSvg exposing (inline)
 
 
-shiftX = 0
-shiftY = 0
+--shiftX = 0
+--shiftY = 0
 
-svgWidth = 200
-shiftX = 200
-shiftY = 70
+svgWidth = 80
+shiftX = 1300
+shiftY = 500
 
 
 view : (Int, Int) -> Blend.Blend -> Html a
