@@ -30,6 +30,9 @@ import Layer.JbText as JbText
 
 type alias LayerIndex = Int
 
+type alias Size = (Int, Int)
+type alias Pos = (Int, Int)
+
 type LayerConfig
     -- FIXME: use type variable for that, or just a function!
     = LorenzConfig Lorenz.Config
@@ -59,9 +62,9 @@ type alias Model =
     , fps : Int
     , theta : Float
     , layers : List Layer
-    , size : ( Int, Int )
-    , origin : ( Int, Int )
-    , mouse : ( Int, Int)
+    , size : Size
+    , origin : Pos
+    , mouse : Pos
     , now : Time
     , timeShift : Time
     }
@@ -211,14 +214,8 @@ update msg model =
 
         Resize { width, height } ->
             ( { model
-              | size =
-                    ( toFloat width  * sizeCoef |> floor
-                    , toFloat height * sizeCoef |> floor
-                    )
-              , origin =
-                    ( -1 * toFloat width  * (1 - sizeCoef) |> ceiling
-                    , -1 * toFloat height * (1 - sizeCoef) |> ceiling
-                    )
+              | size = adaptSize ( width, height )
+              , origin = getOrigin ( width, height )
               }
             , Cmd.none
             )
@@ -273,6 +270,9 @@ update msg model =
                     , layers = List.map2 extractLayer model.layers src.layers
                     , mouse = src.mouse
                     , size = src.size
+                    , origin = src.origin
+                    -- , size = adaptSize src.size
+                    -- , origin = getOrigin src.size
                     } )
                 -- |> Debug.log "decoded model"
                 |> Maybe.withDefault model
@@ -373,6 +373,7 @@ prepareModel model =
     , layers = List.map prepareLayer model.layers
     , mouse = model.mouse
     , size = model.size
+    , origin = model.origin
     }
 
 
@@ -466,6 +467,20 @@ subscriptions model =
         , continue (\_ -> Continue)
         , triggerPause (\_ -> TriggerPause)
         ]
+
+
+adaptSize : Size -> Size
+adaptSize (width, height) =
+    ( toFloat width  * sizeCoef |> floor
+    , toFloat height * sizeCoef |> floor
+    )
+
+
+getOrigin : Size -> Pos
+getOrigin (width, height) =
+    ( toFloat width  * (1 - sizeCoef) / 2 |> ceiling
+    , toFloat height * (1 - sizeCoef) / 2 |> ceiling
+    )
 
 
 toLocal : (Int, Int) -> Position -> Maybe Position
@@ -619,7 +634,15 @@ view model =
             ]
             [ width (Tuple.first model.size)
             , height (Tuple.second model.size)
-            , style [ ( "display", "block" ), ("background-color", "#161616") ]
+            , style [
+                ( "display", "block" ),
+                ( "background-color", "#161616" ),
+                ( "transform", "translate("
+                    ++ (Tuple.first model.origin |> toString)
+                    ++ "px, "
+                    ++ (Tuple.second model.origin |> toString)
+                    ++ "px)" )
+            ]
             , onClick TriggerPause
             ]
             (mergeWebGLLayers model)

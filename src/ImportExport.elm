@@ -43,6 +43,7 @@ type alias Model =
     { theta : Float
     , layers : List Layer
     , size : (Int, Int)
+    , origin : (Int, Int)
     , mouse : (Int, Int)
     , now : Time
     }
@@ -88,6 +89,7 @@ encodeModel_ model =
         -- , ( "layers", E.list (List.filterMap
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
         , ( "size", encodeIntPair model.size )
+        , ( "origin", encodeIntPair model.size )
         , ( "mouse", encodeIntPair model.mouse )
         , ( "now", E.float model.now )
         ]
@@ -148,6 +150,7 @@ modelDecoder =
         |> D.required "theta" D.float
         |> D.required "layers" layersDecoder
         |> D.required "size" intPairDecoder
+        |> D.required "origin" intPairDecoder
         |> D.required "mouse" intPairDecoder
         |> D.required "now" D.float
 
