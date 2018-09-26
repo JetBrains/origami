@@ -93,7 +93,7 @@ type Msg
 
 
 sizeCoef : Float
-sizeCoef = 1.2
+sizeCoef = 1.0
 
 
 emptyModel : Model
@@ -533,7 +533,7 @@ layerToHtml : Model -> Layer -> Html Msg
 layerToHtml model layer =
     case layer of
         TextLayer blend ->
-            JbText.view model.size blend
+            JbText.view model.size model.origin blend
         _ -> div [] []
 
 

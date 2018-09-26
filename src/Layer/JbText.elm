@@ -9,19 +9,16 @@ import Svg.Attributes as SAttrs
 import InlineSvg exposing (inline)
 
 
---shiftX = 0
---shiftY = 0
-
 svgWidth = 80
-shiftX = 1300
-shiftY = 500
+shiftX = 320 -- half of the text width
+shiftY = 40 -- half of the text height
 
 
-view : (Int, Int) -> Blend.Blend -> Html a
-view ( w, h ) blend =
+view : (Int, Int) -> (Int, Int) -> Blend.Blend -> Html a
+view ( w, h ) ( x, y ) blend =
     let
-        posX = w - shiftX
-        posY = h - shiftY
+        posX = (toFloat w / 2) - toFloat x - shiftX
+        posY = (toFloat h / 2) - toFloat y - shiftY
     in
         div
             [ HAttrs.style
