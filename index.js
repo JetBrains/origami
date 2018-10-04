@@ -39,8 +39,8 @@ const defaultConfig =
     , material: [ '#ffffff', '#ffffff' ]
     , xRange: 0.8
     , yRange: 0.1
-    , size: [ 1550, 1200 ]
-    , faces: [ 12, 15 ]
+    , size: [ 3550, 3200 ]
+    , faces: [ 35, 35 ]
     , mirror: 0.5
     };
 
@@ -231,10 +231,19 @@ const prepareImportExport = () => {
 }
 
 const resize = () => {
-    layers.forEach((layer, index) => {
-        // layer.size = [ window.screen.width, window.screen.height ]
-        layer.size = [ window.innerWidth, window.innerHeight ]
+    layers = layers.map((layer) => {
+        if (layer.type == 'fss-mirror') {
+            const newLayer = deepClone(layer);
+            newLayer.config.size = [Math.floor(window.innerWidth * 2.5), Math.floor(window.innerHeight * 2.5)];
+            //newLayer.config.faces = [Math.floor(window.innerWidth / 300), Math.floor(window.innerHeight / 300)];
+            return newLayer;
+        } else {
+            return layer;
+        }
     });
+    console.log(layers.map(layer => {
+        return (layer.type == 'fss-mirror') ? [layer.config.size, layer.config.faces] : [];
+    }));
 }
 
 const rebuild = () => {
@@ -272,10 +281,10 @@ setTimeout(function() {
         }
       });
 
-    // window.addEventListener('resize', () => {
-    //     resize();
-    //     rebuild();
-    // });
+    window.addEventListener('resize', () => {
+        resize();
+        rebuild();
+    });
 
     // setTimeout(function() {
     //     //updateFssColors(0, ['#000000', '#ffffff']);
