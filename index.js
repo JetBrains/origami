@@ -170,22 +170,41 @@ const export_ = (app, exportedState) => {
     return JSON.stringify(stateObj, null, 2);
 }
 
+const zipMinified = false;
 const exportZip_ = (app, exportedState) => {
-    JSZipUtils.getBinaryContent('./run-json-scene.js', (err, runJsonScene) => {
-        if (err) {
-            throw err;
-        }
+    JSZipUtils.getBinaryContent('./run-scene.js', (err, runScene) => {
+        if (err) { throw err; }
 
-        console.log('runJsonScene', runJsonScene);
-        const sceneJson = export_(app, exportedState);
-        const zip = new JSZip();
-        const js = zip.folder("js");
-        js.file('run-json-scene.js', runJsonScene, { binary: true });
-        zip.file('scene.js', 'module.exports = ' + exportedState + ';');
-        zip.generateAsync({type:"blob"})
-            .then(function(content) {
-                new FileSaver(content, "export.zip");
-            });
+        JSZipUtils.getBinaryContent(
+            zipMinified ? './build/Main.min.js' : './build/Main.js',
+            (err, elmApp) => {
+            if (err) { throw err; }
+
+            const sceneJson = export_(app, exportedState);
+            const zip = new JSZip();
+            const js = zip.folder("js");
+            js.file('run-scene.js', runScene, { binary: true });
+            js.file(zipMinified ? 'Main.min.js' : 'Main.js', elmApp, { binary: true });
+            js.file('scene.js', 'window.jsGenScene = ' + sceneJson + ';');
+            zip.file('index.html', '<!doctype html><html>'
+                + '<head>'
+                    + '<meta charset="utf-8" />'
+                    + (zipMinified
+                            ? '<script src="./js/Main.min.js"></script>'
+                            : '<script src="./js/Main.js"></script>')
+                    + '<script src="./js/scene.js"></script>'
+                    + '<script src="./js/run-scene.js"></script>'
+                + '</head>'
+                + '<body>'
+                + '<div id="app"></div>'
+                    + '<script>if (window.runGenScene) { window.runGenScene(); } else { console.error(\'Scene not found\') }</script>'
+                + '</body>'
+            + '</html>');
+            zip.generateAsync({type:"blob"})
+                .then(function(content) {
+                    new FileSaver(content, "export.zip");
+                });
+        });
     });
 }
 
@@ -198,6 +217,7 @@ const prepareImportExport = () => {
     });
     app.ports.exportZip_.subscribe((exportedState) => {
         try {
+            console.log('exportedState', exportedState);
             exportZip_(app, exportedState);
         } catch(e) {
             console.error(e);
