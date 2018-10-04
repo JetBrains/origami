@@ -639,7 +639,7 @@ fragmentShader =
             return mod((mod(x, 13.0) + 1.0) * (mod(x, 123.0) + 1.0), 0.01) - 0.005;
         }
 
-        float brightness(vec4 color) {;
+        float brightness(vec4 color) {
                 return (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b);
         }
 

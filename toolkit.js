@@ -192,7 +192,7 @@ Rpd.nodetype('jb/palette', {
         //        instead
         if (updateFssColors && inlets.palette) {
             updateFssColors(0, inlets.palette.slice(0, 2));
-            updateFssColors(1, inlets.palette.slice(2, 3).concat('#fb4e76'));
+            updateFssColors(1, inlets.palette.slice(1, 2));
         }
         return {
             palette: inlets.palette,

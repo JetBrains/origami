@@ -99,6 +99,7 @@ const updateAllFssLayers = (updateConfig) => {
 }
 
 const updateFssColors = (index, colors) => {
+    // debugger;
     let newConfig = deepClone(defaultConfig);
     newConfig.lights.ambient[1] = colors[0];
     newConfig.lights.diffuse[1] = colors[1];

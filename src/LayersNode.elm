@@ -100,12 +100,12 @@ move x y =
     transform ("translate(" ++ toString x ++ ", " ++ toString y ++ ")")
 
 
-renderBlendFrom : Blends -> Int -> Svg Msg
-renderBlendFrom blends idx =
+renderBlendFrom : Blends -> Int -> Int -> Svg Msg
+renderBlendFrom blends count idx =
     g
         [ SA.style "alignment-baseline: hanging;"
         , class ("layer layer-" ++ toString idx)
-        , move 0 (idx * 90)
+        , move 0 ((count - idx - 1) * 90)
         ]
         [ text_ [ fill "black" ] [ text ("Layer " ++ toString idx) ]
         , blends
@@ -329,7 +329,7 @@ view : Model -> Html.Html Msg
 view { layerCount, size, blends } =
     svg
         (case size of ( w, h ) -> [ width (toString w), height (toString h) ])
-        (List.range 0 (layerCount - 1) |> List.map (renderBlendFrom blends) )
+        (List.range 0 (layerCount - 1) |> List.map (renderBlendFrom blends layerCount) )
 
 
 main : Program Never Model Msg
