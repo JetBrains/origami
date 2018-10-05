@@ -1,20 +1,20 @@
 window.FSSAvoidFloat32Array = true;
 
 //if (typeof window.require !== 'undefined') {
-require('./node_modules/flat-surface-shader/source/Core');
-require('./node_modules/flat-surface-shader/source/Vector3');
-require('./node_modules/flat-surface-shader/source/Vector4');
-require('./node_modules/flat-surface-shader/source/Vertex');
-require('./node_modules/flat-surface-shader/source/Color');
-require('./node_modules/flat-surface-shader/source/Triangle');
-require('./node_modules/flat-surface-shader/source/Object');
-require('./node_modules/flat-surface-shader/source/Light');
-require('./node_modules/flat-surface-shader/source/Material');
-require('./node_modules/flat-surface-shader/source/Geometry');
-require('./node_modules/flat-surface-shader/source/Plane');
-require('./node_modules/flat-surface-shader/source/Mesh');
-require('./node_modules/flat-surface-shader/source/Scene');
-require('./node_modules/flat-surface-shader/source/Math');
+require('flat-surface-shader/source/Core');
+require('flat-surface-shader/source/Vector3');
+require('flat-surface-shader/source/Vector4');
+require('flat-surface-shader/source/Vertex');
+require('flat-surface-shader/source/Color');
+require('flat-surface-shader/source/Triangle');
+require('flat-surface-shader/source/Object');
+require('flat-surface-shader/source/Light');
+require('flat-surface-shader/source/Material');
+require('flat-surface-shader/source/Geometry');
+require('flat-surface-shader/source/Plane');
+require('flat-surface-shader/source/Mesh');
+require('flat-surface-shader/source/Scene');
+require('flat-surface-shader/source/Math');
 //}
 
 function buildFSS(config, source) {

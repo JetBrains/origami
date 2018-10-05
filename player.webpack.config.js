@@ -13,10 +13,11 @@ module.exports = {
     },
 
     module: {
+      noParse: [ /flat-surface-shader/, /src/, /build/ ],
       rules: [
         {
           test:    /\.elm$/,
-          exclude: [/elm-stuff/, /node_modules/, /build/],
+          exclude: [ /elm-stuff/, /node_modules/, /build/ ],
           use: {
             loader: "elm-webpack-loader?verbose=true&warn=true"
           }
@@ -33,7 +34,7 @@ module.exports = {
         //   path.join(__dirname, "..", "gulp", "node_modules"),
         //   path.join(__dirname, "..", "scripts", "modules"),
         // ],
-        extensions: ['.js']
+        extensions: ['.js', '.elm']
         // modulesDirectories: [
         //   '/users/path/a/node_modules'
         // ]

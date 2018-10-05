@@ -11,7 +11,7 @@ module.exports = {
     },
 
     module: {
-      loaders: [
+      rules: [
         {
           test:    /\.elm$/,
           exclude: [/elm-stuff/, /node_modules/],
