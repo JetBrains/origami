@@ -13,16 +13,9 @@ module.exports = {
     module: {
       loaders: [
         {
-          test: /\.svg$/,
-          use: [ 'raw-loader' ]
-        },
-        {
           test:    /\.elm$/,
           exclude: [/elm-stuff/, /node_modules/],
           use: [
-            {
-              loader: "elm-svg-loader"
-            },
             {
               loader: "elm-webpack-loader?verbose=true&warn=true"
             }

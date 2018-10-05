@@ -1,5 +1,6 @@
 window.FSSAvoidFloat32Array = true;
 
+//if (typeof window.require !== 'undefined') {
 require('./node_modules/flat-surface-shader/source/Core');
 require('./node_modules/flat-surface-shader/source/Vector3');
 require('./node_modules/flat-surface-shader/source/Vector4');
@@ -14,6 +15,7 @@ require('./node_modules/flat-surface-shader/source/Plane');
 require('./node_modules/flat-surface-shader/source/Mesh');
 require('./node_modules/flat-surface-shader/source/Scene');
 require('./node_modules/flat-surface-shader/source/Math');
+//}
 
 function buildFSS(config, source) {
     var scene = new FSS.Scene();
