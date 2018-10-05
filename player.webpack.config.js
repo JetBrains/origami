@@ -1,15 +1,14 @@
 const path = require('path');
 
-// webpack.config.js
-module.exports = {
+const config = {
 
-    context: path.resolve(__dirname, '.'),
+    mode: 'production',
 
-    entry: './player.js',
+    entry: path.join(__dirname, 'player.js'),
 
     output: {
-      path: path.resolve(__dirname, '.'),
-      filename: './player.min.js'
+      path: path.join(__dirname, '.'),
+      filename: './player.bundle.js'
     },
 
     module: {
@@ -30,14 +29,9 @@ module.exports = {
     },
 
     resolve: {
-        // root: [
-        //   path.join(__dirname, "..", "gulp", "node_modules"),
-        //   path.join(__dirname, "..", "scripts", "modules"),
-        // ],
-        extensions: ['.js', '.elm']
-        // modulesDirectories: [
-        //   '/users/path/a/node_modules'
-        // ]
+        extensions: ['.js']
     }
 
 };
+
+module.exports = config;

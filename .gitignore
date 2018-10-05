@@ -15,4 +15,5 @@ app.js
 # scene file
 scene.js
 # minified player
+player.bundle.js
 player.min.js
