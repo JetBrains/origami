@@ -134,6 +134,7 @@ const import_ = (app, importedState) => {
     app.ports.import_.send(JSON.stringify({
         theta: parsedState.theta,
         size: parsedState.size,
+        origin: parsedState.origin,
         mouse: parsedState.mouse,
         now: parsedState.now,
         layers: parsedState.layers.map((layer) => (
@@ -171,36 +172,34 @@ const export_ = (app, exportedState) => {
     return JSON.stringify(stateObj, null, 2);
 }
 
-const zipMinified = false;
+// const promisedLoad = (filename) => {
+//     return new Promise((resolve, reject) => {
+//         JSZipUtils.getBinaryContent((err, content) => {
+//             if (err) reject(err);
+//             else resolve(content);
+//         });
+//     });
+// }
+
 const exportZip_ = (app, exportedState) => {
-    JSZipUtils.getBinaryContent('./run-scene.js', (err, runScene) => {
+    JSZipUtils.getBinaryContent(
+        './player.bundle.js', (err, playerBundle) => {
         if (err) { throw err; }
 
         JSZipUtils.getBinaryContent(
-            zipMinified ? './build/Main.min.js' : './build/Main.js',
-            (err, elmApp) => {
+            './index.player.html',
+            (err, playerHtml) => {
             if (err) { throw err; }
 
             const sceneJson = export_(app, exportedState);
             const zip = new JSZip();
-            const js = zip.folder("js");
-            js.file('run-scene.js', runScene, { binary: true });
-            js.file(zipMinified ? 'Main.min.js' : 'Main.js', elmApp, { binary: true });
-            js.file('scene.js', 'window.jsGenScene = ' + sceneJson + ';');
-            zip.file('index.html', '<!doctype html><html>'
-                + '<head>'
-                    + '<meta charset="utf-8" />'
-                    + (zipMinified
-                            ? '<script src="./js/Main.min.js"></script>'
-                            : '<script src="./js/Main.js"></script>')
-                    + '<script src="./js/scene.js"></script>'
-                    + '<script src="./js/run-scene.js"></script>'
-                + '</head>'
-                + '<body>'
-                + '<div id="app"></div>'
-                    + '<script>if (window.runGenScene) { window.runGenScene(); } else { console.error(\'Scene not found\') }</script>'
-                + '</body>'
-            + '</html>');
+            // const js = zip.folder("js");
+            // js.file('run-scene.js', runScene, { binary: true });
+            // js.file(zipMinified ? 'Main.min.js' : 'Main.js', elmApp, { binary: true });
+            // js.file('scene.js', 'window.jsGenScene = ' + sceneJson + ';');
+            zip.file('player.bundle.js', playerBundle, { binary: true });
+            zip.file('scene.js', 'window.jsGenScene = ' + sceneJson + ';');
+            zip.file('index.html', playerHtml, { binary: true });
             zip.generateAsync({type:"blob"})
                 .then(function(content) {
                     new FileSaver(content, "export.zip");
