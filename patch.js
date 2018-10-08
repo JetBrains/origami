@@ -92,13 +92,17 @@ function start(layers, updateLayers) {
     knobFacesY.inlets['max'].receive(140);
 
     var knobLightSpeed = patch.addNode('util/knob',
-        { process: function(inlets) {
+        { title: 'Speed',
+          process: function(inlets) {
                 const newLightSpeed =
                     Math.floor(inlets.knob * (inlets.max - inlets.min))
                     || DEFAULT_LIGHT_SPEED;
                 if (updateLayers) {
                     updateLayers(function(prevConfig) {
                         prevConfig.lights.speed = newLightSpeed;
+                        // prevConfig.lights.forEach(light => {
+                        //     light.speed = newLightSpeed;
+                        // });
                         return prevConfig;
                     });
                 }

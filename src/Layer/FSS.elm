@@ -151,6 +151,9 @@ makeEntity viewport now mouse config maybeScene settings mesh =
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
             |> Maybe.withDefault []
+        speed = case lights of
+            first::_ -> first.speed
+            _ -> 0
         size = maybeScene
             |> Maybe.map (\scene ->
                 List.head scene.meshes)
@@ -161,6 +164,12 @@ makeEntity viewport now mouse config maybeScene settings mesh =
                 )
             |> Maybe.withDefault (0, 0)
         offset = (0, 0)
+        state =
+            { now = now
+            , size = size
+            , origin = offset
+            , mouse = mouse
+            }
     in
         WebGL.entityWith
             settings
@@ -169,11 +178,8 @@ makeEntity viewport now mouse config maybeScene settings mesh =
             mesh
             (uniforms
                 viewport
-                now
-                size
-                offset
-                mouse
-                lights
+                state
+                ( lights, speed )
                 config)
 
 
@@ -331,18 +337,22 @@ type alias Varyings =
 
 type alias Speed = Float
 
+type alias State =
+    { now : Time
+    , size : Size
+    , origin : Origin
+    , mouse : Mouse
+    }
+
 uniforms
      : Viewport {}
-    -> Time
-    -> Size
-    -> Origin
-    -> Mouse
-    -> List SLight
+    -> State
+    -> ( List SLight, Speed )
     -> Config
     -> Uniforms
-uniforms v now size origin mouse lights config =
+uniforms v { now, size, origin, mouse } ( lights, speed ) config =
     let
-        adaptedLights = lights |> adaptLights size 590.0
+        adaptedLights = lights |> adaptLights size speed
         width = Vec2.getX v.size
         height = Vec2.getY v.size
         depth = 100.0
