@@ -4,8 +4,16 @@ elm-stuff
 repl-temp-*
 # node modules installation folder
 node_modules
+# idea dir
 .idea
 # built files
 build
 # DS_Store
 .DS_Store
+# app file
+app.js
+# scene file
+scene.js
+# minified player
+player.bundle.js
+player.min.js
