@@ -133,6 +133,7 @@ const import_ = (app, importedState) => {
     app.ports.import_.send(JSON.stringify({
         theta: parsedState.theta,
         size: parsedState.size,
+        origin: parsedState.origin,
         mouse: parsedState.mouse,
         now: parsedState.now,
         layers: parsedState.layers.map((layer) => (
