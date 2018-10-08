@@ -16,6 +16,7 @@ window.Rpd = require('./node_modules/rpd/src/rpd.js');
 
 const DEFAULT_FACES_BY_X = 12;
 const DEFAULT_FACES_BY_Y = 15;
+const DEFAULT_LIGHT_SPEED = 400;
 
 function parseQuery(query) {
     const params = {};
@@ -71,22 +72,40 @@ function start(layers, updateLayers) {
             return {};
           }
         }).move(360, 360);
-    knobFacesX.inlets['max'].receive(40);
+
+    knobFacesX.inlets['max'].receive(140);
+
     var knobFacesY = patch.addNode('util/knob',
         { process: function(inlets) {
-            const newFacesY =
-                Math.floor(inlets.knob * (inlets.max - inlets.min))
+                const newFacesY =
+                    Math.floor(inlets.knob * (inlets.max - inlets.min))
                     || DEFAULT_FACES_BY_Y;
-            if (updateLayers) {
-                updateLayers(function(prevConfig) {
-                    prevConfig.faces = [ prevConfig.faces[0], newFacesY ];
-                    return prevConfig;
-                });
+                if (updateLayers) {
+                    updateLayers(function(prevConfig) {
+                        prevConfig.faces = [ prevConfig.faces[0], newFacesY ];
+                        return prevConfig;
+                    });
+                }
+                return {};
             }
-            return {};
-        }
-        }).move(360, 450);
-    knobFacesY.inlets['max'].receive(40);
+        }).move(60, 250);
+    knobFacesY.inlets['max'].receive(140);
+
+    var knobLightSpeed = patch.addNode('util/knob',
+        { process: function(inlets) {
+                const newLightSpeed =
+                    Math.floor(inlets.knob * (inlets.max - inlets.min))
+                    || DEFAULT_LIGHT_SPEED;
+                if (updateLayers) {
+                    updateLayers(function(prevConfig) {
+                        prevConfig.lights.speed = newLightSpeed;
+                        return prevConfig;
+                    });
+                }
+                return {};
+            }
+        }).move(160, 350);
+    knobLightSpeed.inlets['max'].receive(1140);
 
     return {
         layersNode: layersNode,
