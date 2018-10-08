@@ -34,6 +34,7 @@ const defaultConfig =
     { lights:
         { ambient: [ '#000000', '#f45b69' ]
         , diffuse:  [ '#000000', '#e4fde1' ]
+        , speed: 400
         , count: 2
         }
     , material: [ '#ffffff', '#ffffff' ]
@@ -263,7 +264,7 @@ const resize = () => {
         }
     });
     console.log(layers.map(layer => {
-        return (layer.type == 'fss-mirror') ? [layer.config.size, layer.config.faces] : [];
+        return (layer.type == 'fss-mirror') ? [layer.config.size, layer.config.faces, layer.config.lights.lightspeed] : [];
     }));
 }
 

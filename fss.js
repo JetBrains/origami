@@ -25,11 +25,14 @@ function buildFSS(config, source) {
 
     var ambient = new FSS.Light(config.lights.ambient[0], config.lights.ambient[1]);
     var diffuse = new FSS.Light(config.lights.diffuse[0], config.lights.diffuse[1]);
+    ambient.speed = config.lights.speed;
+    diffuse.speed = config.lights.speed;
 
     function initialise() {
         scene.add(mesh);
         scene.add(ambient);
         scene.add(diffuse);
+
 
         var v, vertex;
         for (v = geometry.vertices.length - 1; v >= 0; v--) {
@@ -51,7 +54,7 @@ function buildFSS(config, source) {
         }
 
         ambient.setPosition(150, -50, 100);
-        diffuse.setPosition(0, 150, 15);
+        diffuse.setPosition(0, 150, 35);
 
         //container.appendChild(renderer.element);
         // window.addEventListener('resize', resize);

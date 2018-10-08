@@ -55,6 +55,7 @@ type alias SColor =
 type alias SLight =
     { ambient : SColor
     , diffuse : SColor
+    , speed : Speed
     , position : List Float
     , ray : List Float
     }
@@ -309,6 +310,7 @@ type alias Uniforms =
         , uLightPosition : Mat4
         , uLightAmbient : Mat4
         , uLightDiffuse : Mat4
+        , uLightSpeed : Float
         , uResolution : Vec3
         , uNow : Float
         , uMousePosition: Vec2
@@ -327,6 +329,7 @@ type alias Varyings =
 
 -- velocity
 
+type alias Speed = Float
 
 uniforms
      : Viewport {}
@@ -339,7 +342,7 @@ uniforms
     -> Uniforms
 uniforms v now size origin mouse lights config =
     let
-        adaptedLights = lights |> adaptLights size
+        adaptedLights = lights |> adaptLights size 590.0
         width = Vec2.getX v.size
         height = Vec2.getY v.size
         depth = 100.0
@@ -349,6 +352,7 @@ uniforms v now size origin mouse lights config =
         , uLightAmbient = adaptedLights.ambient
         , uLightDiffuse = adaptedLights.diffuse
         , uLightPosition = adaptedLights.position
+        , uLightSpeed = adaptedLights.speed
         , uNow = now
         , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
         , uSegment  = vec3 100 100 50
@@ -367,11 +371,8 @@ uniforms v now size origin mouse lights config =
         }
 
 
-type alias LRow = { ambient : Vec4, diffuse : Vec4, position : Vec3 }
-
-
-getRows : SLight -> LRow
-getRows light =
+getLightRows : SLight -> { ambient : Vec4, diffuse : Vec4, position : Vec3 }
+getLightRows light =
     { ambient =
         case light.ambient.rgba of
             r::g::b::a::_ -> vec4 r g b a
@@ -387,8 +388,8 @@ getRows light =
     }
 
 
-adaptLights : (Int, Int) -> List SLight -> { ambient : Mat4, diffuse : Mat4, position : Mat4 }
-adaptLights size srcLights =
+adaptLights : (Int, Int) -> Speed -> List SLight -> { ambient : Mat4, diffuse : Mat4, position : Mat4, speed : Speed }
+adaptLights size speed srcLights =
     let
         emptyVec4 = vec4 0 0 0 0
         emptyVec3 = vec3 0 0 0
@@ -397,7 +398,7 @@ adaptLights size srcLights =
             , diffuse = emptyVec4
             , position = emptyVec3
             }
-        lightRows = srcLights |> List.map getRows
+        lightRows = srcLights |> List.map getLightRows
     in
         case lightRows of
             [a] ->
@@ -406,36 +407,38 @@ adaptLights size srcLights =
                     rowB = ( a.diffuse, emptyVec4, emptyVec4, emptyVec4 )
                     rowC = ( a.position, emptyVec3, emptyVec3, emptyVec3 )
                 in
-                    lightsToMatrices size rowA rowB rowC
+                    lightsToMatrices size speed rowA rowB rowC
             [a,b] ->
                 let
                     rowA = ( a.ambient, b.ambient, emptyVec4, emptyVec4 )
                     rowB = ( a.diffuse, b.diffuse, emptyVec4, emptyVec4 )
                     rowC = ( a.position, b.position, emptyVec3, emptyVec3 )
                 in
-                    lightsToMatrices size rowA rowB rowC
+                    lightsToMatrices size speed rowA rowB rowC
             [a,b,c] ->
                 let
                     rowA = ( a.ambient, b.ambient, c.ambient, emptyVec4 )
                     rowB = ( a.diffuse, b.diffuse, c.diffuse, emptyVec4 )
                     rowC = ( a.position, b.position, c.position, emptyVec3 )
                 in
-                    lightsToMatrices size rowA rowB rowC
+                    lightsToMatrices size speed rowA rowB rowC
             a::b::c::d::_ ->
                 let
                     rowA = ( a.ambient, b.ambient, c.ambient, d.ambient )
                     rowB = ( a.diffuse, b.diffuse, c.diffuse, d.diffuse )
                     rowC = ( a.position, b.position, c.position, d.position )
                 in
-                    lightsToMatrices size rowA rowB rowC
+                    lightsToMatrices size speed rowA rowB rowC
             _ ->
                 { ambient = Mat4.identity
                 , diffuse = Mat4.identity
                 , position = Mat4.identity
+                , speed = speed
                 }
 
 lightsToMatrices
     : (Int, Int)
+    -> Speed
     -> ( Vec4, Vec4, Vec4, Vec4 )
     -> ( Vec4, Vec4, Vec4, Vec4 )
     ->  ( Vec3, Vec3, Vec3, Vec3 )
@@ -443,8 +446,9 @@ lightsToMatrices
     { ambient : Mat4
     , diffuse : Mat4
     , position : Mat4
+    , speed : Speed
     }
-lightsToMatrices (w, h) ( aa, ba, ca, da ) ( ad, bd, cd, dd ) ( ap, bp, cp, dp ) =
+lightsToMatrices (w, h) speed ( aa, ba, ca, da ) ( ad, bd, cd, dd ) ( ap, bp, cp, dp ) =
     { ambient = Mat4.fromRecord
         { m11 = Vec4.getX aa, m12 = Vec4.getY aa, m13 = Vec4.getZ aa, m14 = Vec4.getW aa
         , m21 = Vec4.getX ba, m22 = Vec4.getY ba, m23 = Vec4.getZ ba, m24 = Vec4.getW ba
@@ -463,13 +467,14 @@ lightsToMatrices (w, h) ( aa, ba, ca, da ) ( ad, bd, cd, dd ) ( ap, bp, cp, dp )
         , m31 = Vec3.getX cp, m32 = Vec3.getY cp, m33 = Vec3.getZ cp, m34 = 0
         , m41 = Vec3.getX dp, m42 = Vec3.getY dp, m43 = Vec3.getZ dp, m44 = 0
         } |> Mat4.transpose
+    , speed = speed
     }
 
 
 
 vertexShader : WebGL.Shader Vertex Uniforms Varyings
 vertexShader =
-    [glsl|
+     [glsl|
 
         // Precision
         precision mediump float;
@@ -504,6 +509,7 @@ vertexShader =
         uniform mat4 uLightPosition;
         uniform mat4 uLightAmbient;
         uniform mat4 uLightDiffuse;
+        uniform float uLightSpeed;
 
         uniform vec2 uMousePosition;
         uniform float uMirror;
@@ -554,7 +560,7 @@ vertexShader =
 
             // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
-            vec3 lightsSpeed = vec3(4000.0, 4000.0, 100.0);
+            vec3 lightsSpeed = vec3(uLightSpeed, uLightSpeed, 100.0);
             vec3 brightnessD = vec3(3.5, 3.5, 6.0);
             vec3 brightnessA = vec3(1.0, 1.0, 0.0);
 
@@ -611,7 +617,7 @@ vertexShader =
 
         }
 
-    |]
+   |]
 
 
 
