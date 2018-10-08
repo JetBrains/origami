@@ -31,9 +31,7 @@
     "build:fss:elm": "elm-make ./src/MainFSS.elm --output=build/MainFSS.js",
     "build:fss:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/MainFSS.js --output ./build/MainFSS.min.js",
     "build:fss": "npm run build:fss:elm && npm run build:fss:uglify",
-    "build:player:js": "./node_modules/.bin/webpack --config ./player.webpack.config.js",
-    "build:player:uglify": "./node_modules/uglify-js/bin/uglifyjs ./player.bundle.js --output ./player.min.js",
-    "build:player": "npm run build:player:js",
+    "build:player": "./node_modules/.bin/webpack --config ./player.webpack.config.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
