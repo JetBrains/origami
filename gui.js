@@ -91,20 +91,60 @@ const PRODUCTS = [
 const PRODUCT_TO_ID = {};
 PRODUCTS.forEach((product) => {
     PRODUCT_TO_ID[product.label] = product.id;
-})
+});
 const PRODUCTS_BY_ID = {};
 PRODUCTS.forEach((product) => {
     PRODUCTS_BY_ID[product.id] = product;
-})
+});
+
+BLEND_FUNCS =
+  { '+': 'customAdd'
+  , '-': 'customSubtract'
+  , 'R-': 'reverseSubtract'
+  // , '?': 'customAdd_'
+  };
+
+BLEND_FACTORS =
+  { '0': 'zero'
+  , '1': 'one'
+  , 'sC': 'srcColor'
+  , '1-sC': 'oneMinusSrcColor'
+  , 'dC': 'dstColor'
+  , '1-dC': 'oneMinusDstColor'
+  , 'sA': 'srcAlpha'
+  , '1-sA': 'oneMinusSrcAlpha'
+  , 'dA': 'dstAlpha'
+  , '1-dA': 'oneMinusDstAlpha'
+  , 'AS': 'srcAlphaSaturate'
+  , 'CC': 'constantColor'
+  , '1-CC': 'oneMinusConstantColor'
+  , 'CA': 'constantAlpha'
+  , '1-CA': 'oneMinusConstantAlpha'
+};
+
+TEXT_BLENDS =
+  [ 'normal', 'overlay' ];
 
 const Config = function() {
     this.lightSpeed = 540;
     this.facesX = 12;
     this.facesY = 15;
     this.palette = 'jetbrains';
-    this.color0 = '';
-    this.color1 = '';
-    this.color2 = '';
+    this.blendColor0 = [ 0, 0, 0, 0 ];
+    this.blendColorEqFn0 = 'customAdd';
+    this.blendColorEqFactor00 = 'one';
+    this.blendColorEqFactor10 = 'zero';
+    this.blendAlphaEqFn0 = 'customAdd';
+    this.blendAlphaEqFactor00 = 'one';
+    this.blendAlphaEqFactor10 = 'zero';
+    this.blendColor1 = [ 0, 0, 0, 0 ];
+    this.blendColorEqFn1 = 'customAdd';
+    this.blendColorEqFactor01 = 'one';
+    this.blendColorEqFactor11 = 'zero';
+    this.blendAlphaEqFn1 = 'customAdd';
+    this.blendAlphaEqFactor01 = 'one';
+    this.blendAlphaEqFactor11 = 'zero';
+    this.textBlend = 'normal';
     //this.explode = function() { ... };
 };
 
@@ -118,8 +158,19 @@ function start(layers, updateLayers, updateColors) {
         }
     }
 
+    function addBlend(gui, config, index) {
+      const folder = gui.addFolder('Blend' + index);
+      const color = folder.addColor(config, 'blendColor' + index);
+      const colorEqFn = folder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
+      const colorEqFactor0 = folder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
+      const colorEqFactor1 = folder.add(config, 'blendColorEqFactor1' + index, BLEND_FACTORS);
+      const alphaEqFn = folder.add(config, 'blendAlphaEqFn' + index, BLEND_FUNCS);
+      const alphaEqFactor0 = folder.add(config, 'blendAlphaEqFactor0' + index, BLEND_FACTORS);
+      const alphaEqFactor1 = folder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
+      //folder.open();
+    }
 
-    console.log(dat);
+
     const config = new Config();
     const gui = new dat.GUI();
     const lightSpeed = gui.add(config, 'lightSpeed').min(100).max(1140);
@@ -144,6 +195,11 @@ function start(layers, updateLayers, updateColors) {
         updateColors(0, palette.slice(0, 2));
         updateColors(1, palette.slice(1, 2));
     });
+
+    addBlend(gui, config, 0);
+    addBlend(gui, config, 1);
+
+    gui.add(config, 'textBlend', TEXT_BLENDS);
 
     // layers.map((layer, index) => {
     //     gui.addFolder()
