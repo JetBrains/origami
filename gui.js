@@ -99,28 +99,51 @@ PRODUCTS.forEach((product) => {
 });
 
 BLEND_FUNCS =
-  { '+': [ 'customAdd', 0 ]
-  , '-': [ 'customSubtract', 1 ]
-  , 'R-': [ 'reverseSubtract', 2 ]
-  // , '?': 'customAdd_'
+  { '+': 'customAdd'
+  , '-': 'customSubtract'
+  , 'R-': 'reverseSubtract'
+  };
+
+BLEND_FUNCS_IDS =
+  { 'customAdd': 0
+  , 'customSubtract': 1
+  , 'reverseSubtract': 2
   };
 
 BLEND_FACTORS =
-  { '0': [ 'zero', 0 ]
-  , '1': [ 'one', 1 ]
-  , 'sC': [ 'srcColor', 2 ]
-  , '1-sC': [ 'oneMinusSrcColor', 3 ]
-  , 'dC': [ 'dstColor', 4 ]
-  , '1-dC': [ 'oneMinusDstColor', 5 ]
-  , 'sA': [ 'srcAlpha', 6 ]
-  , '1-sA': [ 'oneMinusSrcAlpha', 7 ]
-  , 'dA': [ 'dstAlpha', 8 ]
-  , '1-dA': [ 'oneMinusDstAlpha', 9 ]
-  , 'AS': [ 'srcAlphaSaturate', 10 ]
-  , 'CC': [ 'constantColor', 11 ]
-  , '1-CC': [ 'oneMinusConstantColor', 12 ]
-  , 'CA': [ 'constantAlpha', 13 ]
-  , '1-CA': [ 'oneMinusConstantAlpha', 14 ]
+  { '0': 'zero'
+  , '1': 'one'
+  , 'sC': 'srcColor'
+  , '1-sC': 'oneMinusSrcColor'
+  , 'dC': 'dstColor'
+  , '1-dC': 'oneMinusDstColor'
+  , 'sA': 'srcAlpha'
+  , '1-sA': 'oneMinusSrcAlpha'
+  , 'dA': 'dstAlpha'
+  , '1-dA': 'oneMinusDstAlpha'
+  , 'AS': 'srcAlphaSaturate'
+  , 'CC': 'constantColor'
+  , '1-CC': 'oneMinusConstantColor'
+  , 'CA': 'constantAlpha'
+  , '1-CA': 'oneMinusConstantAlpha'
+};
+
+BLEND_FACTORS_IDS =
+  { 'zero': 0
+  , 'one': 1
+  , 'srcColor': 2
+  , 'oneMinusSrcColor': 3
+  , 'dstColor': 4
+  , 'oneMinusDstColor': 5
+  , 'srcAlpha': 6
+  , 'oneMinusSrcAlpha': 7
+  , 'dstAlpha': 8
+  , 'oneMinusDstAlpha': 9
+  , 'srcAlphaSaturate': 10
+  , 'constantColor': 11
+  , 'oneMinusConstantColor': 12
+  , 'constantAlpha': 13
+  , 'oneMinusConstantAlpha': 14
 };
 
 TEXT_BLENDS =
@@ -165,18 +188,30 @@ function start(layers, updateLayers, updateColors, changeWGLBlend, changeSVGBlen
 
     function updateBlend(index, f) {
       return function(value) {
+        const color = config['blendColor'+index];
         const curBlend =
-          { color: { r: value[0], g: value[1], b: value[2], a: value[3] }
-          , colorEq: [ config['blendColorEqFn'+index][1]
-                     , config['blendColorEqFactor0'+index][1]
-                     , config['blendColorEqFactor1'+index][1]
+          { color: { r: color[0], g: color[1], b: color[2], a: color[3] }
+          , colorEq: [ BLEND_FUNCS_IDS[config['blendColorEqFn'+index]]
+                     , BLEND_FACTORS_IDS[config['blendColorEqFactor0'+index]]
+                     , BLEND_FACTORS_IDS[config['blendColorEqFactor1'+index]]
                      ]
-          , alphaEq: [ config['blendAlphaEqFn'+index][1]
-                     , config['blendAlphaEqFactor0'+index][1]
-                     , config['blendAlphaEqFactor1'+index][1]
+          , alphaEq: [ BLEND_FUNCS_IDS[config['blendAlphaEqFn'+index]]
+                     , BLEND_FACTORS_IDS[config['blendAlphaEqFactor0'+index]]
+                     , BLEND_FACTORS_IDS[config['blendAlphaEqFactor1'+index]]
                      ]
           }
-        return f(curBlend, value);
+        const newBlend = f(curBlend, value);
+        console.log('new blend', index, newBlend)
+        console.log('new blend', index, 'color', config['blendColor'+index])
+        console.log('new blend', index, 'colorEq',
+          config['blendColorEqFn'+index],
+          config['blendColorEqFactor0'+index],
+          config['blendColorEqFactor1'+index]);
+        console.log('new blend', index, 'alphaEq',
+          config['blendAlphaEqFn'+index],
+          config['blendAlphaEqFactor0'+index],
+          config['blendAlphaEqFactor1'+index]);
+        changeWGLBlend(index, newBlend);
       }
     }
 
@@ -199,39 +234,40 @@ function start(layers, updateLayers, updateColors, changeWGLBlend, changeSVGBlen
       }));
       colorEqFn.onFinishChange(updateBlend(index, (blend, value) => {
         console.log('colorEqFn', index, value);
-        blend.colorEq[0] = value[1];
+        blend.colorEq[0] = BLEND_FUNCS_IDS[value];
         return blend;
       }));
       colorEqFactor0.onFinishChange(updateBlend(index, (blend, value) => {
         console.log('colorEqFactor0', index, value);
-        blend.colorEq[1] = value[1];
+        blend.colorEq[1] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       colorEqFactor1.onFinishChange(updateBlend(index, (blend, value) => {
         console.log('colorEqFactor1', index, value);
-        blend.colorEq[2] = value[1];
+        blend.colorEq[2] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       alphaEqFn.onFinishChange(updateBlend(index, (blend, value) => {
         console.log('alphaEqFn', index, value);
-        blend.alphaEq[0] = value[1];
+        blend.alphaEq[0] = BLEND_FUNCS_IDS[value];
         return blend;
       }));
       alphaEqFactor0.onFinishChange(updateBlend(index, (blend, value) => {
         console.log('alphaEqFactor0', index, value);
-        blend.alphaEq[1] = value[1];
+        blend.alphaEq[1] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       alphaEqFactor1.onFinishChange(updateBlend(index, (blend, value) => {
         console.log('alphaEqFactor1', index, value);
-        blend.alphaEq[2] = value[1];
+        blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
     }
 
 
     const config = new Config();
-    const gui = new dat.GUI();
+    const gui = new dat.GUI(/*{ load: JSON }*/);
+    gui.remember(config);
     const lightSpeed = gui.add(config, 'lightSpeed').min(100).max(1140);
     const facesX = gui.add(config, 'facesX').min(0).max(140).step(1);
     const facesY = gui.add(config, 'facesY').min(0).max(140).step(1);
@@ -258,7 +294,10 @@ function start(layers, updateLayers, updateColors, changeWGLBlend, changeSVGBlen
     addBlend(gui, config, 0);
     addBlend(gui, config, 1);
 
-    gui.add(config, 'textBlend', TEXT_BLENDS);
+    const textBlend = gui.add(config, 'textBlend', TEXT_BLENDS);
+    textBlend.onFinishChange((value) => {
+      changeSVGBlend(2, value);
+    });
 
     // layers.map((layer, index) => {
     //     gui.addFolder()
