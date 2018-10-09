@@ -1,3 +1,4 @@
+const deepClone = require('./deep-clone.js');
 const dat = require('dat.gui');
 
 const PRODUCTS = [
@@ -98,67 +99,89 @@ PRODUCTS.forEach((product) => {
 });
 
 BLEND_FUNCS =
-  { '+': 'customAdd'
-  , '-': 'customSubtract'
-  , 'R-': 'reverseSubtract'
+  { '+': [ 'customAdd', 0 ]
+  , '-': [ 'customSubtract', 1 ]
+  , 'R-': [ 'reverseSubtract', 2 ]
   // , '?': 'customAdd_'
   };
 
 BLEND_FACTORS =
-  { '0': 'zero'
-  , '1': 'one'
-  , 'sC': 'srcColor'
-  , '1-sC': 'oneMinusSrcColor'
-  , 'dC': 'dstColor'
-  , '1-dC': 'oneMinusDstColor'
-  , 'sA': 'srcAlpha'
-  , '1-sA': 'oneMinusSrcAlpha'
-  , 'dA': 'dstAlpha'
-  , '1-dA': 'oneMinusDstAlpha'
-  , 'AS': 'srcAlphaSaturate'
-  , 'CC': 'constantColor'
-  , '1-CC': 'oneMinusConstantColor'
-  , 'CA': 'constantAlpha'
-  , '1-CA': 'oneMinusConstantAlpha'
+  { '0': [ 'zero', 0 ]
+  , '1': [ 'one', 1 ]
+  , 'sC': [ 'srcColor', 2 ]
+  , '1-sC': [ 'oneMinusSrcColor', 3 ]
+  , 'dC': [ 'dstColor', 4 ]
+  , '1-dC': [ 'oneMinusDstColor', 5 ]
+  , 'sA': [ 'srcAlpha', 6 ]
+  , '1-sA': [ 'oneMinusSrcAlpha', 7 ]
+  , 'dA': [ 'dstAlpha', 8 ]
+  , '1-dA': [ 'oneMinusDstAlpha', 9 ]
+  , 'AS': [ 'srcAlphaSaturate', 10 ]
+  , 'CC': [ 'constantColor', 11 ]
+  , '1-CC': [ 'oneMinusConstantColor', 12 ]
+  , 'CA': [ 'constantAlpha', 13 ]
+  , '1-CA': [ 'oneMinusConstantAlpha', 14 ]
 };
 
 TEXT_BLENDS =
   [ 'normal', 'overlay' ];
 
 const Config = function() {
+    const customAdd = BLEND_FUNCS['+'];
+    const one = BLEND_FACTORS['1'];
+    const zero = BLEND_FACTORS['0'];
+
     this.lightSpeed = 540;
     this.facesX = 12;
     this.facesY = 15;
     this.palette = 'jetbrains';
     this.blendColor0 = [ 0, 0, 0, 0 ];
-    this.blendColorEqFn0 = 'customAdd';
-    this.blendColorEqFactor00 = 'one';
-    this.blendColorEqFactor10 = 'zero';
-    this.blendAlphaEqFn0 = 'customAdd';
-    this.blendAlphaEqFactor00 = 'one';
-    this.blendAlphaEqFactor10 = 'zero';
+    this.blendColorEqFn0 = customAdd;
+    this.blendColorEqFactor00 = one;
+    this.blendColorEqFactor10 = zero;
+    this.blendAlphaEqFn0 = customAdd;
+    this.blendAlphaEqFactor00 = one;
+    this.blendAlphaEqFactor10 = zero;
     this.blendColor1 = [ 0, 0, 0, 0 ];
-    this.blendColorEqFn1 = 'customAdd';
-    this.blendColorEqFactor01 = 'one';
-    this.blendColorEqFactor11 = 'zero';
-    this.blendAlphaEqFn1 = 'customAdd';
-    this.blendAlphaEqFactor01 = 'one';
-    this.blendAlphaEqFactor11 = 'zero';
+    this.blendColorEqFn1 = customAdd;
+    this.blendColorEqFactor01 = one;
+    this.blendColorEqFactor11 = zero;
+    this.blendAlphaEqFn1 = customAdd;
+    this.blendAlphaEqFactor01 = one;
+    this.blendAlphaEqFactor11 = zero;
     this.textBlend = 'normal';
     //this.explode = function() { ... };
 };
 
 
-function start(layers, updateLayers, updateColors) {
+function start(layers, updateLayers, updateColors, changeWGLBlend, changeSVGBlend) {
     function adaptExtConfig(f) {
         return function(value) {
-            updateLayers(function(prevConfig) {
+            updateLayers((prevConfig) => {
                 return f(value, prevConfig);
             });
         }
     }
 
+    function updateBlend(index, f) {
+      return function(value) {
+        const curBlend =
+          { color: { r: value[0], g: value[1], b: value[2], a: value[3] }
+          , colorEq: [ config['blendColorEqFn'+index][1]
+                     , config['blendColorEqFactor0'+index][1]
+                     , config['blendColorEqFactor1'+index][1]
+                     ]
+          , alphaEq: [ config['blendAlphaEqFn'+index][1]
+                     , config['blendAlphaEqFactor0'+index][1]
+                     , config['blendAlphaEqFactor1'+index][1]
+                     ]
+          }
+        return f(curBlend, value);
+      }
+    }
+
     function addBlend(gui, config, index) {
+
       const folder = gui.addFolder('Blend' + index);
       const color = folder.addColor(config, 'blendColor' + index);
       const colorEqFn = folder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
@@ -168,6 +191,42 @@ function start(layers, updateLayers, updateColors) {
       const alphaEqFactor0 = folder.add(config, 'blendAlphaEqFactor0' + index, BLEND_FACTORS);
       const alphaEqFactor1 = folder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
       //folder.open();
+
+      color.onFinishChange(updateBlend(index, (blend, value) => {
+        console.log('color', index, value);
+        blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
+        return blend;
+      }));
+      colorEqFn.onFinishChange(updateBlend(index, (blend, value) => {
+        console.log('colorEqFn', index, value);
+        blend.colorEq[0] = value[1];
+        return blend;
+      }));
+      colorEqFactor0.onFinishChange(updateBlend(index, (blend, value) => {
+        console.log('colorEqFactor0', index, value);
+        blend.colorEq[1] = value[1];
+        return blend;
+      }));
+      colorEqFactor1.onFinishChange(updateBlend(index, (blend, value) => {
+        console.log('colorEqFactor1', index, value);
+        blend.colorEq[2] = value[1];
+        return blend;
+      }));
+      alphaEqFn.onFinishChange(updateBlend(index, (blend, value) => {
+        console.log('alphaEqFn', index, value);
+        blend.alphaEq[0] = value[1];
+        return blend;
+      }));
+      alphaEqFactor0.onFinishChange(updateBlend(index, (blend, value) => {
+        console.log('alphaEqFactor0', index, value);
+        blend.alphaEq[1] = value[1];
+        return blend;
+      }));
+      alphaEqFactor1.onFinishChange(updateBlend(index, (blend, value) => {
+        console.log('alphaEqFactor1', index, value);
+        blend.alphaEq[2] = value[1];
+        return blend;
+      }));
     }
 
 
