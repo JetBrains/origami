@@ -19,11 +19,11 @@ const app = App.Main.embed(mountNode);
 //     app.ports.pause.send(null);
 // });
 
-const registerToolkit = require('./toolkit.js');
+//const registerToolkit = require('./toolkit.js');
 // const startPatching = require('./patch.js');
 const startGui = require('./gui.js');
 
-const LayersNode = require('./src/LayersNode.elm').LayersNode;
+//const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
 const buildFSS = require('./fss.js');
 
@@ -78,8 +78,8 @@ let layers = [
 
 let scenes = {};
 
-let layersNode = null;
-let paletteNode = null;
+// let layersNode = null;
+// let paletteNode = null;
 
 const updateFssLayer = (index, config) => {
     const scene = buildFSS(config);
@@ -276,7 +276,7 @@ const rebuild = () => {
     });
 }
 
-registerToolkit(app, LayersNode, updateFssColors);
+//registerToolkit(app, LayersNode, updateFssColors);
 
 app.ports.initLayers.send(layers.map((l) => l.type));
 
@@ -286,7 +286,7 @@ setTimeout(function() {
     resize();
     rebuild();
 
-    const nodes = startGui(layers, updateAllFssLayers);
+    const nodes = startGui(layers, updateAllFssLayers, updateFssColors);
 
     let panelsHidden = false;
 
