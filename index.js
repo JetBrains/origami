@@ -20,7 +20,8 @@ const app = App.Main.embed(mountNode);
 // });
 
 const registerToolkit = require('./toolkit.js');
-const startPatching = require('./patch.js');
+// const startPatching = require('./patch.js');
+const startGui = require('./gui.js');
 
 const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
@@ -285,10 +286,7 @@ setTimeout(function() {
     resize();
     rebuild();
 
-    const nodes = startPatching(layers, updateAllFssLayers);
-
-    layersNode = nodes.layersNode;
-    paletteNode = nodes.paletteNode;
+    const nodes = startGui(layers, updateAllFssLayers);
 
     let panelsHidden = false;
 
