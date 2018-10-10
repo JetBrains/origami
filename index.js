@@ -4,6 +4,7 @@
 // include main style
 require('./index.css');
 
+const deepClone = require('./deep-clone.js');
 const JSZip = require('jszip');
 const JSZipUtils = require('jszip-utils');
 const FileSaver = require('jszip/vendor/FileSaver');
@@ -26,10 +27,6 @@ const startGui = require('./gui.js');
 //const LayersNode = require('./src/LayersNode.elm').LayersNode;
 
 const buildFSS = require('./fss.js');
-
-function deepClone(obj) {
-    return JSON.parse(JSON.stringify(obj))
-}
 
 const defaultConfig =
     { lights:
@@ -286,7 +283,16 @@ setTimeout(function() {
     resize();
     rebuild();
 
+<<<<<<< HEAD
     const nodes = startGui(layers, updateAllFssLayers, updateFssColors);
+=======
+    const nodes = startGui(
+        layers,
+        updateAllFssLayers,
+        updateFssColors,
+        (index, blend) => { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) },
+        (index, blend) => { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) });
+>>>>>>> origin/master
 
     let panelsHidden = false;
 
