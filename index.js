@@ -283,16 +283,12 @@ setTimeout(function() {
     resize();
     rebuild();
 
-<<<<<<< HEAD
-    const nodes = startGui(layers, updateAllFssLayers, updateFssColors);
-=======
     const nodes = startGui(
         layers,
         updateAllFssLayers,
         updateFssColors,
         (index, blend) => { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) },
         (index, blend) => { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) });
->>>>>>> origin/master
 
     let panelsHidden = false;
 
