@@ -291,8 +291,8 @@ function start(layers, funcs) {
     }));
     palette.onFinishChange((value) => {
         const palette = PRODUCTS_BY_ID[value].palette;
-        funcs.updateColors(0, palette.slice(0, 2));
-        funcs.updateColors(1, palette.slice(1, 2));
+        funcs.updateFssColors(0, palette.slice(0, 2));
+        funcs.updateFssColors(1, palette.slice(1, 2));
     });
 
     addBlend(gui, config, 0);
