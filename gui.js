@@ -149,7 +149,7 @@ BLEND_FACTORS_IDS =
 TEXT_BLENDS =
   [ 'normal', 'overlay' ];
 
-const Config = function() {
+const Config = function(funcs) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
@@ -173,14 +173,18 @@ const Config = function() {
     this.blendAlphaEqFactor01 = one;
     this.blendAlphaEqFactor11 = zero;
     this.textBlend = 'normal';
-    //this.explode = function() { ... };
+    // -------
+    //this.timeShift = 0;
+    // this.getSceneJson = funcs.getSceneJson;
+    // this.loadSceneJson = funcs.loadSceneJson;
+    //this.exportZip = funcs.exportZip;
 };
 
 
-function start(layers, updateLayers, updateColors, changeWGLBlend, changeSVGBlend) {
+function start(layers, funcs) {
     function adaptExtConfig(f) {
         return function(value) {
-            updateLayers((prevConfig) => {
+            funcs.updateLayers((prevConfig) => {
                 return f(value, prevConfig);
             });
         }
@@ -211,7 +215,7 @@ function start(layers, updateLayers, updateColors, changeWGLBlend, changeSVGBlen
           config['blendAlphaEqFn'+index],
           config['blendAlphaEqFactor0'+index],
           config['blendAlphaEqFactor1'+index]);
-        changeWGLBlend(index, newBlend);
+        funcs.changeWGLBlend(index, newBlend);
       }
     }
 
@@ -287,8 +291,8 @@ function start(layers, updateLayers, updateColors, changeWGLBlend, changeSVGBlen
     }));
     palette.onFinishChange((value) => {
         const palette = PRODUCTS_BY_ID[value].palette;
-        updateColors(0, palette.slice(0, 2));
-        updateColors(1, palette.slice(1, 2));
+        funcs.updateFssColors(0, palette.slice(0, 2));
+        funcs.updateFssColors(1, palette.slice(1, 2));
     });
 
     addBlend(gui, config, 0);
@@ -296,7 +300,7 @@ function start(layers, updateLayers, updateColors, changeWGLBlend, changeSVGBlen
 
     const textBlend = gui.add(config, 'textBlend', TEXT_BLENDS);
     textBlend.onFinishChange((value) => {
-      changeSVGBlend(2, value);
+      funcs.changeSVGBlend(2, value);
     });
 
     // layers.map((layer, index) => {
