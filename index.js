@@ -137,8 +137,8 @@ const import_ = (app, importedState) => {
         now: parsedState.now,
         layers: parsedState.layers.map((layer) => (
             { type_ : layer.type,
-                blend: layer.blend,
-                config: ''
+              blend: layer.blend,
+              config: ''
             }
         ))
     }));
@@ -159,9 +159,13 @@ const export_ = (app, exportedState) => {
     app.ports.pause.send(null);
     const stateObj = JSON.parse(exportedState);
     stateObj.layers.forEach((layer, index) => {
-        layer.config = layers[index] ? layers[index].config : {};
-        console.log(index, 'ambient', layer.config.lights.ambient);
-        console.log(index, 'diffuse', layer.config.lights.diffuse);
+        layer.config = layers[index] && layers[index].config ? layers[index].config : {};
+        if (layer.config['lights']) {
+            console.log(index, 'ambient', layer.config.lights.ambient);
+            console.log(index, 'diffuse', layer.config.lights.diffuse);
+        } else {
+            console.log(index, 'no lights');
+        }
         layer.sceneFuzz = layer.type == 'fss-mirror'
             ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
             : null;
@@ -236,8 +240,7 @@ const prepareImportExport = () => {
     document.getElementById('import').addEventListener('click', () => {
         try {
             if (document.getElementById('import-code').value) {
-                const importCode = JSON.parse(document.getElementById('import-code').value);
-                import_(app, importCode);
+                import_(app, document.getElementById('import-code').value);
             } else {
                 alert('Nothing to import');
             }
@@ -285,10 +288,13 @@ setTimeout(function() {
 
     const nodes = startGui(
         layers,
-        updateAllFssLayers,
-        updateFssColors,
-        (index, blend) => { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) },
-        (index, blend) => { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) });
+        { updateAllFssLayers
+        , updateFssColors
+        , changeWGLBlend : (index, blend) =>
+            { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
+        , changeSVGBlend : (index, blend) =>
+            { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) }
+        });
 
     let panelsHidden = false;
 
@@ -302,10 +308,10 @@ setTimeout(function() {
         }
       });
 
-    window.addEventListener('resize', () => {
-        resize();
-        rebuild();
-    });
+    // window.addEventListener('resize', () => {
+    //     resize();
+    //     rebuild();
+    // });
 
     // setTimeout(function() {
     //     //updateFssColors(0, ['#000000', '#ffffff']);
