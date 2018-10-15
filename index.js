@@ -159,9 +159,13 @@ const export_ = (app, exportedState) => {
     app.ports.pause.send(null);
     const stateObj = JSON.parse(exportedState);
     stateObj.layers.forEach((layer, index) => {
-        layer.config = layers[index] ? layers[index].config : {};
-        console.log(index, 'ambient', layer.config.lights.ambient);
-        console.log(index, 'diffuse', layer.config.lights.diffuse);
+        layer.config = layers[index] && layers[index].config ? layers[index].config : {};
+        if (layer.config['lights']) {
+            console.log(index, 'ambient', layer.config.lights.ambient);
+            console.log(index, 'diffuse', layer.config.lights.diffuse);
+        } else {
+            console.log(index, 'no lights');
+        }
         layer.sceneFuzz = layer.type == 'fss-mirror'
             ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
             : null;
@@ -285,10 +289,13 @@ setTimeout(function() {
 
     const nodes = startGui(
         layers,
-        updateAllFssLayers,
-        updateFssColors,
-        (index, blend) => { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) },
-        (index, blend) => { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) });
+        { updateAllFssLayers
+        , updateFssColors
+        , changeWGLBlend : (index, blend) =>
+            { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
+        , changeSVGBlend : (index, blend) =>
+            { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) }
+        });
 
     let panelsHidden = false;
 
