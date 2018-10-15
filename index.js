@@ -137,8 +137,8 @@ const import_ = (app, importedState) => {
         now: parsedState.now,
         layers: parsedState.layers.map((layer) => (
             { type_ : layer.type,
-                blend: layer.blend,
-                config: ''
+              blend: layer.blend,
+              config: ''
             }
         ))
     }));
@@ -240,8 +240,7 @@ const prepareImportExport = () => {
     document.getElementById('import').addEventListener('click', () => {
         try {
             if (document.getElementById('import-code').value) {
-                const importCode = JSON.parse(document.getElementById('import-code').value);
-                import_(app, importCode);
+                import_(app, document.getElementById('import-code').value);
             } else {
                 alert('Nothing to import');
             }
@@ -309,10 +308,10 @@ setTimeout(function() {
         }
       });
 
-    window.addEventListener('resize', () => {
-        resize();
-        rebuild();
-    });
+    // window.addEventListener('resize', () => {
+    //     resize();
+    //     rebuild();
+    // });
 
     // setTimeout(function() {
     //     //updateFssColors(0, ['#000000', '#ffffff']);
