@@ -2,16 +2,20 @@ FROM node:8
 
 RUN mkdir /app
 WORKDIR /app
+
+COPY . /app
+
 RUN cd /app
 
-COPY package.json /app
 
 RUN npm install
 
-COPY elm-package.json /app
 
 RUN node_modules/.bin/elm-package install -y
 
-COPY . /app
+RUN npm run build:player
+
 EXPOSE 8080
+
 CMD ["npm", "start"]
+#CMD ["./node_modules/.bin/webpack-dev-server", "--mode=production"]
