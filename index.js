@@ -294,6 +294,8 @@ setTimeout(function() {
             { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
         , changeSVGBlend : (index, blend) =>
             { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) }
+        , changeProduct : (id) =>
+            { app.ports.changeProduct.send(id) }
         });
 
     let panelsHidden = false;
