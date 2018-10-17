@@ -30,10 +30,10 @@ module.exports = {
 
     devServer: {
       inline: true,
-      public: 'code2art.labs.jb.gg',
+      // public: 'code2art.labs.jb.gg',
       stats: { colors: true },
-      disableHostCheck: true,
-      host: '0.0.0.0',
-      port: 80
+      disableHostCheck: true
+      // host: '0.0.0.0',
+      // port: 80
     }
 };
