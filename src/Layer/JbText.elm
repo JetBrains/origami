@@ -5,8 +5,6 @@ module Layer.JbText exposing
 import Html exposing (..)
 import Html.Attributes as HAttrs
 import Svg.Blend as Blend
-import Svg.Attributes as SAttrs
-import InlineSvg exposing (inline)
 
 
 shiftX = 320 -- half of the text width
