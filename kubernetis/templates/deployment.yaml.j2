@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment {# https://kubernetes.io/docs/user-guide/deployments #}
+metadata:
+  name: {{ app_name }}
+spec:
+  replicas: {{ replicas_count }}
+  revisionHistoryLimit: {{ revision_history_limit | default('3') }}  {# https://kubernetes.io/docs/user-guide/deployments/#revision-history-limit  #}
+  selector:
+    matchLabels:
+      app: {{ app_name }}
+  strategy:
+    rollingUpdate:
+      maxUnavailable: {{ max_unavailable | default('0') }}
+      maxSurge: {{ max_surge | default('1') }}
+  template:
+    metadata:
+      {# Uncomment this for collect Prometheus metrics if Prometheus installed
+      annotations:
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "{{ app_port }}"
+        prometheus.io/scrape: "true"
+      #}
+      labels:
+        app: {{ app_name }}
+    spec:
+      terminationGracePeriodSeconds: {{ termination_grace_period_seconds | default('60') }} {# Time before SIGTERM and SIGKILL #}
+      volumes:
+      - configMap: {# Take content of config from ConfigMap with name, (see volumeMounts) #}
+          name: {{ app_name }}-nginx-conf
+        name: nginx-conf
+      containers:
+      - name: {{ app_name }}
+        image: {{ image_path }}:{{ image_version }}
+        ports:
+        - containerPort: {{ app_port }}
+        readinessProbe: {# Send traffic to this container only if http get / returns 200 #}
+          httpGet:
+            path: /
+            port: {{ app_port }}
+          initialDelaySeconds: 5
+          timeoutSeconds: 30
+        lifecycle:
+          preStop: {# preStop hook for zero downtime deployment #}
+            exec:
+              command: ["/bin/sh", "-c", "sleep 5"]
+        volumeMounts: {# Mount config defined in volumes to container #}
+        - mountPath: /etc/nginx/nginx.conf
+          name: nginx-conf
+          subPath: nginx.conf
+        securityContext:
+          runAsNonRoot: {{ runAsNonRoot }}
+          readOnlyRootFilesystem: {{ readOnlyRootFilesystem }}
+          runAsUser: {{ runAsUser }}
+          runAsGroup: {{ runAsGroup }}
