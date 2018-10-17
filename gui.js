@@ -184,7 +184,7 @@ const Config = function(funcs) {
 function start(layers, funcs) {
     function adaptExtConfig(f) {
         return function(value) {
-            funcs.updateLayers((prevConfig) => {
+            funcs.updateAllFssLayers((prevConfig) => {
                 return f(value, prevConfig);
             });
         }
