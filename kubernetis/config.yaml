@@ -1,0 +1,43 @@
+---
+common:
+  k8s_master_uri: https://kube-master-ha.spb.labs.intellij.net:6443
+  k8s_ca_base64: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMrVENDQWVHZ0F3SUJBZ0lKQUpTNGRVUDlIUE1ZTUEwR0NTcUdTSWIzRFFFQkN3VUFNQkl4RURBT0JnTlYKQkFNTUIydDFZbVV0WTJFd0lCY05NVGd3T1RBek1qSTBOalExV2hnUE1qRXhPREE0TVRBeU1qUTJORFZhTUJJeApFREFPQmdOVkJBTU1CMnQxWW1VdFkyRXdnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCCkFRRGowTzBlMXRhazVCcC9zVHJ6dmVQVGwyNlpzaWpSR0lSVnVBUS9abE80TnRCNklkZmhsemtDN0F4Mm5sRHAKeklvSkEzakZublNOTEZaSU1hUVlyWmtiZURSQVMzMVVNcWt1VXhGbm1PMlJUOU1iL2V4TS9TeFpsYWhhaGxOUgpVY0p3cUVyTnRMUkIwbGp5Zmw5d1ZwY3FZL0k3UDlZOWVVcDljTXRYV1B5ZjZ2djFacHplRVNoY2VqZml2ZWk1Ck5JNjFjS2Y5TUo4WjVmYzVkaWJJaEpXTkx3dCtUeGFCN2EzUnIwSGpPS0RPSGJxS280RVdhakRuRXpJKzErNEUKUnBsT2thQVBoUmlGRlBtTlhOejB5THZvTGl2bncySDFNeW53Q3hmNzJuWmRWbkoxdUxkWDVwRTYvMW9DVEdJQwo1QTlNZk9nYktxYTEwOHpJRmEyUnNkNTFBZ01CQUFHalVEQk9NQjBHQTFVZERnUVdCQlI4eW0yc2R6UEVZQTFuCk5lNng3ZEtUczd3NDJqQWZCZ05WSFNNRUdEQVdnQlI4eW0yc2R6UEVZQTFuTmU2eDdkS1RzN3c0MmpBTUJnTlYKSFJNRUJUQURBUUgvTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFDSzNIdlNUMnovUHhsZElDZzk2cTIrcG90eAo5dUZyRkRIWFpkUjlya3VjZWtWb1FXN0hqa01RdmZsdUFsNTNIZ1MwV29vbkZhZGR2K2RqRktrM3djTFRoY1JtCnhEakEvczBVeUY3eWRLeCtXeVBwc3NlRGtzblFTK3RleVB5Z0REajloVk1PaUpVa1A3aTlPcTZoT2p3cDE2bUMKUFNYUXVUTHNYMnR2Z2s0eGV1bGM1bzZCa2RxVkYwU0d2bTlSeTlnR0FNVGovcEJoMzZoV3Nhbi9NQWI2ajJGeQplRURnOTRHYWlRV2VtZ0RJTjlQQVNEd2t3dmtZNFJvejB3YXhoY2NEQnMyUFpzNjZYbzRlb0tWSVc5UGViWDJUCkF5OGtEbkxTeE1hZDQzWkI4d3VlT1paUEhmTEIyeFdGOHVEWFlVMUY5bnJTeWtuTG5FTDR2NjRYVFA3cgotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  k8s_token: "{{ env='K8S_TOKEN' }}"
+  k8s_namespace: code2art
+
+
+  app_name: code2art     # NEED_TO_CHANGE Name of application, by default it will accessable by https://my-app.labs.jb.gg (in this example: https://ksk.labs.jb.gg)
+  app_port: 8080      # NEED_TO_CHANGE    Application(nginx) listen this port in container. For java, python, go and other web servers its usually 3000, 5000, 8000 etc
+
+  replicas_count: 1
+  image_path: docker-registry.labs.intellij.net/code2art  # NEED_TO_CHANGE Change it to your application image
+  image_version: "{{ env='IMAGE_VERSION' }}"    # Takes IMAGE_VERSION from environment, 
+  
+  # You can create your own variables and use it at templates *.j2
+  nginx_worker_process: 1           # This is custom variable for this example only
+  nginx_worker_connections: 1024    # This is custom variable for this example only
+
+  runAsNonRoot: true  # On container startup verify that container not run from root
+  readOnlyRootFilesystem: false
+  runAsUser: 100
+  runAsGroup: 101
+
+staging:
+  templates:
+  - template: configmap.yaml.j2
+  - template: deployment.yaml.j2
+  - template: service.yaml.j2
+  - template: ingress.yaml.j2
+
+production:
+  # After k8s-handle start this section will be merged with common section, so
+  # all common variables like app_name, app_port and other will be available in templates rendering.
+  # But replicas_count will be overrided to 3, due to defined here
+  k8s_namespace: ksk-production
+  replicas_count: 3
+
+  templates:
+  - template: configmap.yaml.j2
+  - template: deployment.yaml.j2
+  - template: service.yaml.j2
+  - template: ingress.yaml.j2
