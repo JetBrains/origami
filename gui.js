@@ -157,7 +157,7 @@ const Config = function(funcs) {
     this.lightSpeed = 540;
     this.facesX = 12;
     this.facesY = 15;
-    this.palette = 'jetbrains';
+    this.product = 'jetbrains';
     this.blendColor0 = [ 0, 0, 0, 0 ];
     this.blendColorEqFn0 = customAdd;
     this.blendColorEqFactor00 = one;
@@ -275,7 +275,7 @@ function start(layers, funcs) {
     const lightSpeed = gui.add(config, 'lightSpeed').min(100).max(1140);
     const facesX = gui.add(config, 'facesX').min(0).max(140).step(1);
     const facesY = gui.add(config, 'facesY').min(0).max(140).step(1);
-    const palette = gui.add(config, 'palette', PRODUCT_TO_ID);
+    const product = gui.add(config, 'product', PRODUCT_TO_ID);
 
     lightSpeed.onFinishChange(adaptExtConfig(function(value, prevConfig) {
         prevConfig.lights.speed = value;
@@ -289,10 +289,11 @@ function start(layers, funcs) {
         prevConfig.faces = [ prevConfig.faces[0], value ];
         return prevConfig;
     }));
-    palette.onFinishChange((value) => {
-        const palette = PRODUCTS_BY_ID[value].palette;
-        funcs.updateFssColors(0, palette.slice(0, 2));
-        funcs.updateFssColors(1, palette.slice(1, 2));
+    product.onFinishChange((value) => {
+        const product = PRODUCTS_BY_ID[value];
+        funcs.updateFssColors(0, product.palette.slice(0, 2));
+        funcs.updateFssColors(1, product.palette.slice(1, 2));
+        funcs.changeProduct(product.id);
     });
 
     addBlend(gui, config, 0);

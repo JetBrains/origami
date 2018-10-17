@@ -19,6 +19,7 @@ import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 import Controls
 import ImportExport as IE exposing (EncodedState)
+import Product exposing (Product, getPalette, getName)
 
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
@@ -27,7 +28,6 @@ import Layer.FSS as FSS
 import Layer.Template as Template
 import Layer.JbText as JbText
 import Layer.SVGImage as SVGImage
-
 
 type alias LayerIndex = Int
 
@@ -677,6 +677,8 @@ port configureLorenz : ((Lorenz.Config, Int) -> msg) -> Sub msg
 port configureFss : ((FSS.Config, Int) -> msg) -> Sub msg
 
 port configureMirroredFss : ((FSS.MConfig, Int) -> msg) -> Sub msg
+
+port changeProduct : (String -> msg) -> Sub msg
 
 -- TODO: port to affect camera
 
