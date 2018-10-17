@@ -17,3 +17,4 @@ scene.js
 # minified player
 player.bundle.js
 player.min.js
+/npm-debug.log
