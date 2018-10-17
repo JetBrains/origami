@@ -26,6 +26,7 @@ import Layer.Voronoi as Voronoi
 import Layer.FSS as FSS
 import Layer.Template as Template
 import Layer.JbText as JbText
+import Layer.SVGImage as SVGImage
 
 
 type alias LayerIndex = Int
@@ -533,7 +534,8 @@ layerToHtml : Model -> Layer -> Html Msg
 layerToHtml model layer =
     case layer of
         TextLayer blend ->
-            JbText.view model.size model.origin blend
+            --JbText.view model.size model.origin blend
+            SVGImage.view model.size model.origin blend
         _ -> div [] []
 
 
