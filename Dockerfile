@@ -17,5 +17,5 @@ RUN npm run build:player
 
 EXPOSE 80
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "start:prod"]
 #CMD ["./node_modules/.bin/webpack-dev-server", "--mode=production"]

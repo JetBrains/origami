@@ -26,6 +26,7 @@
   },
   "scripts": {
     "start": "./node_modules/.bin/webpack-dev-server --mode=development",
+    "start:prod": "./node_modules/.bin/webpack-dev-server --mode=development --public code2art.labs.jb.gg --port 80 --host 0.0.0.0",
     "build:elm": "elm-make ./src/Main.elm --output=build/Main.js",
     "build:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/Main.js --output ./build/Main.min.js",
     "build": "npm run build:elm && npm run build:uglify",
