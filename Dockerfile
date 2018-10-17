@@ -15,7 +15,7 @@ RUN node_modules/.bin/elm-package install -y
 
 RUN npm run build:player
 
-EXPOSE 8080
+EXPOSE 80
 
 CMD ["npm", "start"]
 #CMD ["./node_modules/.bin/webpack-dev-server", "--mode=production"]
