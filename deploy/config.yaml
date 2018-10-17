@@ -19,8 +19,8 @@ common:
 
   runAsNonRoot: true  # On container startup verify that container not run from root
   readOnlyRootFilesystem: false
-  runAsUser: 100
-  runAsGroup: 101
+  runAsUser: 0
+  runAsGroup: 0
 
 staging:
   templates:
