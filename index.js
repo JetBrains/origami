@@ -197,6 +197,7 @@ setTimeout(function() {
         });
 
         app.ports.requestFssRebuild.subscribe((data) => {
+            console.log('rebuildFss', data);
             data.layers.map((layer, index) => {
                 if (layer.type_ == 'fss-mirror') {
                     const fssScene = buildFSS(data);
