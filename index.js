@@ -170,17 +170,17 @@ prepareImportExport();
 
 setTimeout(function() {
 
-    app.ports.startGui.subscribe(function(data) {
+    app.ports.startGui.subscribe((data) => {
         console.log('startGui', data);
         const gui = startGui(
             data.layers,
             data,
             { changeLightSpeed : (value) =>
-                { app.ports.changeLightSpeed.send(value) }
+                { app.ports.changeLightSpeed.send(Math.round(value)) }
             , changeFacesX : (value) =>
-                { app.ports.changeFacesX.send(value) }
+                { app.ports.changeFacesX.send(Math.round(value)) }
             , changeFacesY : (value) =>
-                { app.ports.changeFacesY.send(value) }
+                { app.ports.changeFacesY.send(Math.round(value)) }
             , changeWGLBlend : (index, blend) =>
                 { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
             , changeSVGBlend : (index, blend) =>
@@ -194,6 +194,15 @@ setTimeout(function() {
                 const fssScene = buildFSS(data);
                 app.ports.rebuildFss.send([ fssScene, index ]);
             }
+        });
+
+        app.ports.requestFssRebuild.subscribe((data) => {
+            data.layers.map((layer, index) => {
+                if (layer.type_ == 'fss-mirror') {
+                    const fssScene = buildFSS(data);
+                    app.ports.rebuildFss.send([ fssScene, index ]);
+                }
+            });
         });
     });
 

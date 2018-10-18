@@ -101,6 +101,9 @@ type alias Model =
     }
 
 
+type alias FssBuildOptions = GuiConfig
+
+
 type alias GuiConfig =
     { product : String
     , palette : List String
@@ -122,6 +125,9 @@ type Msg
     | RebuildFss LayerIndex FSS.SerializedScene
     --| RebuildOnClient LayerIndex FSS.SerializedScene
     | Rotate Float
+    | ChangeFacesX Int
+    | ChangeFacesY Int
+    | ChangeLightSpeed Int
     | ChangeProduct Product
     | Locate Position
     | Import EncodedState
@@ -146,12 +152,12 @@ emptyModel =
     , fps = 0
     , theta = 0.1
     , layers = initialLayers |> List.map createLayer
-    , size = ( 0, 0 )
+    , size = ( 1200, 1200 )
     , origin = ( 0, 0 )
     , mouse = ( 0, 0 )
     , now = 0.0
     , timeShift = 0.0
-    , faces = ( 35, 35 )
+    , faces = ( 15, 12 )
     , range = ( 0.8, 1.0 )
     , lightSpeed = 400
     , product = Product.JetBrains
@@ -256,6 +262,21 @@ update msg model =
             , Cmd.none
             )
 
+        ChangeFacesX facesX ->
+            ( { model | faces = model.faces |> Tuple.mapFirst (\_ -> facesX) }
+            , model |> extractFssBuildOptions |> requestFssRebuild
+            )
+
+        ChangeFacesY facesY ->
+            ( { model | faces = model.faces |> Tuple.mapSecond (\_ -> facesY) }
+            , model |> extractFssBuildOptions |> requestFssRebuild
+            )
+
+        ChangeLightSpeed lightSpeed ->
+            ( { model | lightSpeed = lightSpeed }
+            , model |> extractFssBuildOptions |> requestFssRebuild
+            )
+
         Rotate theta ->
             ( { model | theta = theta  }
             , Cmd.none
@@ -266,7 +287,7 @@ update msg model =
               | size = adaptSize ( width, height )
               , origin = getOrigin ( width, height )
               }
-            , Cmd.none
+            , model |> extractFssBuildOptions |> requestFssRebuild
             )
 
         Locate pos ->
@@ -351,7 +372,7 @@ update msg model =
 
         ChangeProduct product ->
             ( { model | product = product }
-            , Cmd.none
+            , model |> extractFssBuildOptions |> requestFssRebuild
             )
 
         _ -> ( model, Cmd.none )
@@ -486,11 +507,15 @@ prepareModel model =
     }
 
 
+extractFssBuildOptions : Model -> FssBuildOptions
+extractFssBuildOptions = prepareGuiConfig
+
+
 prepareGuiConfig : Model -> GuiConfig
 prepareGuiConfig model =
     { product = Product.encode model.product
     , palette = Product.getPalette model.product
-    , size = ( 1200, 500 )
+    , size = model.size
     , layers =
         model.layers |>
             List.map (\layer ->
@@ -556,6 +581,9 @@ subscriptions model =
           )
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
+        , changeFacesX ChangeFacesX
+        , changeFacesY ChangeFacesY
+        , changeLightSpeed ChangeLightSpeed
         , changeWGLBlend (\{ layer, blend } ->
             ChangeWGLBlend layer blend
           )
@@ -820,6 +848,12 @@ port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
 
 port import_ : (String -> msg) -> Sub msg
 
+port changeFacesX : (Int -> msg) -> Sub msg
+
+port changeFacesY : (Int -> msg) -> Sub msg
+
+port changeLightSpeed : (Int -> msg) -> Sub msg
+
 port changeWGLBlend :
     ( { layer : Int
       , blend : WGLBlend.Blend
@@ -837,7 +871,7 @@ port changeSVGBlend :
 
 port startGui : GuiConfig -> Cmd msg
 
--- TODO: port requestFss : FssConfig -> Cmd msg
+port requestFssRebuild : FssBuildOptions -> Cmd msg
 
 port export_ : String -> Cmd msg
 
