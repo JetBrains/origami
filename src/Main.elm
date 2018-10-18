@@ -172,6 +172,10 @@ init =
         ]
     )
 
+updateAndRebuildFssWith : Model -> ( Model, Cmd Msg )
+updateAndRebuildFssWith model =
+    ( model, model |> extractFssBuildOptions |> requestFssRebuild )
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -263,19 +267,16 @@ update msg model =
             )
 
         ChangeFacesX facesX ->
-            ( { model | faces = model.faces |> Tuple.mapFirst (\_ -> facesX) }
-            , model |> extractFssBuildOptions |> requestFssRebuild
-            )
+            updateAndRebuildFssWith
+                { model | faces = model.faces |> Tuple.mapFirst (\_ -> facesX) }
 
         ChangeFacesY facesY ->
-            ( { model | faces = model.faces |> Tuple.mapSecond (\_ -> facesY) }
-            , model |> extractFssBuildOptions |> requestFssRebuild
-            )
+            updateAndRebuildFssWith
+                { model | faces = model.faces |> Tuple.mapSecond (\_ -> facesY) }
 
         ChangeLightSpeed lightSpeed ->
-            ( { model | lightSpeed = lightSpeed }
-            , model |> extractFssBuildOptions |> requestFssRebuild
-            )
+            updateAndRebuildFssWith
+                { model | lightSpeed = lightSpeed }
 
         Rotate theta ->
             ( { model | theta = theta  }
@@ -371,9 +372,8 @@ update msg model =
             )
 
         ChangeProduct product ->
-            ( { model | product = product }
-            , model |> extractFssBuildOptions |> requestFssRebuild
-            )
+            updateAndRebuildFssWith
+                { model | product = product }
 
         _ -> ( model, Cmd.none )
 
@@ -515,7 +515,9 @@ prepareGuiConfig : Model -> GuiConfig
 prepareGuiConfig model =
     { product = Product.encode model.product
     , palette = Product.getPalette model.product
-    , size = model.size
+    , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |>floor
+             , Tuple.second model.size |> toFloat |> (*) 1.8 |>floor
+            )
     , layers =
         model.layers |>
             List.map (\layer ->
