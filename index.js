@@ -70,7 +70,7 @@ let layers = [
             }
         } */
     },
-    { type: 'text' }
+    { type: 'svg' }
 ];
 
 let scenes = {};
