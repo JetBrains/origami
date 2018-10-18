@@ -2,91 +2,64 @@ const deepClone = require('./deep-clone.js');
 const dat = require('dat.gui');
 
 const PRODUCTS = [
-    { label: 'JB', id: 'jetbrains',
-      palette: [ '#9151e1',  '#ec4476', '#fde74a']
+    { label: 'JB', id: 'jetbrains'
     },  // jetbrains-1
-    { label: 'D1', id: 'default1',
-      palette: [ '#f45b69',  '#e4fde1', 'rgba(0,0,0,0)']
+    { label: 'D1', id: 'default1'
     },  // default-1
-    { label: 'D2', id: 'default2',
-      palette: [ '#4b4e76',  '#fb4e76', 'rgba(0,0,0,0)']
+    { label: 'D2', id: 'default2'
     },  // default-2
-    { label: ' ',  id: 'empty0', palette: [ ]
+    { label: ' ',  id: 'empty0'
     },  // separator
-    { label: 'IJ',
-      id: 'intellij-idea',
-      palette: [ '#087cfa', '#fe315d', '#f97a12' ]
+    { label: 'IJ', id: 'intellij-idea'
     },  // idea // IJ_
-    { label: 'PS', id: 'phpstorm',
-      palette: [ '#b24eee', '#7660f4', '#fc378c' ]
+    { label: 'PS', id: 'phpstorm'
     },  // phpstorm // PS_
-    { label: 'PC',
-      id: 'pycharm',
-      palette: [ '#21d789', '#fcf84a', '#07c3f2' ]
+    { label: 'PC', id: 'pycharm'
     },  // pycharm // PC_
-    { label: 'RM', id: 'rubymine',
-      palette: [ '#fc2555', '#fd8638', '#8f41cd' ]
+    { label: 'RM', id: 'rubymine'
     },  // rubymine // RM_
-    { label: 'WS', id: 'webstorm',
-      palette: [ '#22cdd6', '#2888d4', '#feee56' ]
+    { label: 'WS', id: 'webstorm'
     },  // webstorm // WS_
-    { label: 'CL', id: 'clion',
-      palette: [ '#32d791', '#1a9edd', '#ea3a8c' ]
+    { label: 'CL', id: 'clion'
     },  // clion // CL_
-    { label: 'DG', id: 'datagrip',
-      palette: [ '#32d791', '#9779f5', '#fd5fe4' ]
+    { label: 'DG', id: 'datagrip'
     },  // // DG_
-    { label: 'AC', id: 'appcode',
-      palette: [ '#2b7fe3', '#25daee', '#30de95' ]
+    { label: 'AC', id: 'appcode'
     },  // appcode // AC_
-    { label: 'GO', id: 'gogland',
-      palette: [ '#078efc', '#bb4efc', '#3bea62' ]
+    { label: 'GO', id: 'gogland'
     },  // gogland // GO_
-    { label: ' ', id: 'empty1', palette: [ ]
+    { label: ' ', id: 'empty1'
     },  // separator
-    { label: 'R#', id: 'resharper',
-      palette: [ '#c21456', '#e14ce3', '#fdbc2c' ]
+    { label: 'R#', id: 'resharper'
     },  // resharper // R#_
-    { label: 'R++', id: 'resharper-cpp',
-      palette: [ '#fdbc2c', '#e14ce3', '#c21456' ]
+    { label: 'R++', id: 'resharper-cpp'
     },  // // R++_
-    { label: 'DC', id: 'dotcover',
-      palette: [ '#fd7522', '#786bfb', '#e14ce3' ]
+    { label: 'DC', id: 'dotcover'
     },  // dotcover // DC_
-    { label: 'DM', id: 'dotmemory',
-      palette: [ '#fdbc2c', '#786bfb', '#e14ce3' ]
+    { label: 'DM', id: 'dotmemory'
     },  // // DM_
-    { label: 'DP', id: 'dotpeek',
-      palette: [ '#23cbfc', '#786bfb', '#e14ce3' ]
+    { label: 'DP', id: 'dotpeek'
     },  // // DP_
-    { label: 'DT', id: 'dottrace',
-      palette: [ '#fc1681', '#786bfb', '#e14ce3' ]
+    { label: 'DT', id: 'dottrace'
     },  // dottrace // DT_
-    { label: 'RD', id: 'rider',
-      palette: [ '#c40b55', '#e800ca', '#ffbd00' ]
+    { label: 'RD', id: 'rider'
     },  // rider // RD_
     { label: ' ', id: 'empty2',
       palette: [ ]
     },  // separator
-    { label: 'TC', id: 'teamcity',
-      palette: [ '#22b1ef', '#9062f7', '#46e869' ]
+    { label: 'TC', id: 'teamcity'
     },  // teamcity // TC_
-    { label: 'YT', id: 'youtrack',
-      palette: [ '#22b1ef', '#9062f7', '#fc378c' ]
+    { label: 'YT', id: 'youtrack'
     },  // youtrack // YT_
-    { label: 'UP', id: 'upsource',
-      palette: [ '#22b1ef', '#9062f7', '#fd8224' ]
+    { label: 'UP', id: 'upsource'
     },  // upsource // UP_
-    { label: 'HB', id: 'hub',
-      palette: [ '#1fb9ee', '#965ff7', '#feec56' ]
+    { label: 'HB', id: 'hub'
     },  // hub // HB_
-    { label: ' ', id: 'empty3', palette: [ ]
+    { label: ' ', id: 'empty3'
     },  // separator
-    { label: 'KT', id: 'kotlin',
-      palette: [ '#1b84f2', '#24dea7', '#ed4baa' ]
+    { label: 'KT', id: 'kotlin'
     },   // kotlin // KT_
-    { label: 'MPS', id: 'mps',
-      palette: [ '#31d68b', '#3188cd', '#f1e969' ]
+    { label: 'MPS', id: 'mps'
     }  // mps // MPS_
 ];
 const PRODUCT_TO_ID = {};
@@ -182,19 +155,9 @@ const Config = function(defaults, funcs) {
 };
 
 
-function start(layers, defaults, palettes, funcs) {
-    function adaptExtConfig(f) {
-        return function(value) {
-            funcs.updateAllFssLayers((prevConfig) => {
-                return f(value, prevConfig);
-            });
-        }
-    }
-
+function start(layers, defaults, funcs) {
     function updateProduct(id) {
       const product = PRODUCTS_BY_ID[id];
-      funcs.updateFssColors(0, product.palette.slice(0, 2));
-      funcs.updateFssColors(1, product.palette.slice(1, 2));
       funcs.changeProduct(product.id);
     }
 
@@ -285,19 +248,10 @@ function start(layers, defaults, palettes, funcs) {
     const facesY = gui.add(config, 'facesY').min(0).max(140).step(1);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
 
-    lightSpeed.onFinishChange(adaptExtConfig(function(value, prevConfig) {
-        prevConfig.lights.speed = value;
-        return prevConfig;
-    }));
-    facesX.onFinishChange(adaptExtConfig(function(value, prevConfig) {
-        prevConfig.faces = [ value, prevConfig.faces[1] ];
-        return prevConfig;
-    }));
-    facesY.onFinishChange(adaptExtConfig(function(value, prevConfig) {
-        prevConfig.faces = [ prevConfig.faces[0], value ];
-        return prevConfig;
-    }));
-    product.onFinishChange(updateProduct);
+    lightSpeed.onFinishChange(funcs.changeLightSpeed);
+    facesX.onFinishChange(funcs.changeFacesX);
+    facesY.onFinishChange(funcs.changeFacesY);
+    product.onFinishChange(funcs.changeProduct);
 
     addBlend(gui, config, 0);
     addBlend(gui, config, 1);

@@ -28,69 +28,6 @@ const startGui = require('./gui.js');
 
 const buildFSS = require('./fss.js');
 
-// const defaultConfig =
-//     { lights:
-//         { ambient: [ '#000000', '#f45b69' ]
-//         , diffuse:  [ '#000000', '#e4fde1' ]
-//         , speed: 400
-//         , count: 2
-//         }
-//     , material: [ '#ffffff', '#ffffff' ]
-//     , xRange: 0.8
-//     , yRange: 0.1
-//     , size: [ 3550, 3200 ]
-//     , faces: [ 35, 35 ]
-//     , mirror: 0.5
-//     };
-
-// let layerOneConfig = deepClone(defaultConfig);
-// layerOneConfig.lights.ambient = [ '#000000', '#f45b69' ];
-// layerOneConfig.lights.diffuse = [ '#000000', '#e4fde1' ];
-
-// let layerTwoConfig = deepClone(defaultConfig);
-// layerTwoConfig.lights.ambient = [ '#000000', '#4b4e76' ];
-// layerOneConfig.lights.diffuse = [ '#000000', '#fb4e76' ];
-
-// let layers = [
-//     { type: 'fss-mirror', config: layerOneConfig
-//     },
-//     { type: 'fss-mirror', config: layerTwoConfig
-//     },
-//     { type: 'svg' }
-// ];
-
-let scenes = {};
-
-// let layersNode = null;
-// let paletteNode = null;
-
-const updateFssLayer = (index, config) => {
-    const scene = buildFSS(config);
-    app.ports.configureMirroredFss.send([ config, index ]);
-    app.ports.rebuildFss.send([ scene, index ]);
-    if (layers[index]) {
-        layers[index].config = deepClone(config);
-    }
-    scenes[index] = scene;
-}
-
-const updateAllFssLayers = (updateConfig) => {
-    layers.forEach((layer, index) => {
-        if (layer.type == 'fss-mirror') {
-            updateFssLayer(index,
-                updateConfig(deepClone(layer.config)));
-        }
-    });
-}
-
-const updateFssColors = (index, colors) => {
-    // debugger;
-    let newConfig = deepClone(defaultConfig);
-    newConfig.lights.ambient[1] = colors[0];
-    newConfig.lights.diffuse[1] = colors[1];
-    updateFssLayer(index, newConfig);
-}
-
 const exportScene = (scene) => {
     //console.log(scene);
     return scene.meshes[0].geometry.vertices.map((vertex) => (
@@ -159,15 +96,6 @@ const export_ = (app, exportedState) => {
     console.log(stateObj);
     return JSON.stringify(stateObj, null, 2);
 }
-
-// const promisedLoad = (filename) => {
-//     return new Promise((resolve, reject) => {
-//         JSZipUtils.getBinaryContent((err, content) => {
-//             if (err) reject(err);
-//             else resolve(content);
-//         });
-//     });
-// }
 
 const exportZip_ = (app, exportedState) => {
     JSZipUtils.getBinaryContent(
@@ -238,34 +166,6 @@ const prepareImportExport = () => {
 
 }
 
-const resize = () => {
-    layers = layers.map((layer) => {
-        if (layer.type == 'fss-mirror') {
-            const newLayer = deepClone(layer);
-            newLayer.config.size = [Math.floor(window.innerWidth * 2.5), Math.floor(window.innerHeight * 2.5)];
-            //newLayer.config.faces = [Math.floor(window.innerWidth / 300), Math.floor(window.innerHeight / 300)];
-            return newLayer;
-        } else {
-            return layer;
-        }
-    });
-    console.log(layers.map(layer => {
-        return (layer.type == 'fss-mirror') ? [layer.config.size, layer.config.faces, layer.config.lights.lightspeed] : [];
-    }));
-}
-
-const rebuild = () => {
-    layers.forEach((layer, index) => {
-        if (layer.type == 'fss-mirror') {
-            updateFssLayer(index, layer.config);
-        }
-    });
-}
-
-//registerToolkit(app, LayersNode, updateFssColors);
-
-// app.ports.initLayers.send(layers.map((l) => l.type));
-
 prepareImportExport();
 
 setTimeout(function() {
@@ -273,11 +173,14 @@ setTimeout(function() {
     app.ports.startGui.subscribe(function(data) {
         console.log('startGui', data);
         const gui = startGui(
-            data.config.layers,
-            data.config,
-            data.palettes,
-            { updateAllFssLayers
-            , updateFssColors
+            data.layers,
+            data,
+            { changeLightSpeed : (value) =>
+                { app.ports.changeLightSpeed.send(value) }
+            , changeFacesX : (value) =>
+                { app.ports.changeFacesX.send(value) }
+            , changeFacesY : (value) =>
+                { app.ports.changeFacesY.send(value) }
             , changeWGLBlend : (index, blend) =>
                 { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
             , changeSVGBlend : (index, blend) =>
@@ -285,8 +188,13 @@ setTimeout(function() {
             , changeProduct : (id) =>
                 { app.ports.changeProduct.send(id) }
             });
-        resize();
-        rebuild();
+
+        data.layers.forEach((layer, index) => {
+            if (layer.type_ == 'fss-mirror') {
+                const fssScene = buildFSS(data);
+                app.ports.rebuildFss.send([ fssScene, index ]);
+            }
+        });
     });
 
     app.ports.bang.send(null);
@@ -303,15 +211,6 @@ setTimeout(function() {
         }
       });
 
-    // window.addEventListener('resize', () => {
-    //     resize();
-    //     rebuild();
-    // });
-
-    // setTimeout(function() {
-    //     //updateFssColors(0, ['#000000', '#ffffff']);
-    //     updateFssColors(1, ['#ffffff', '#000000']);
-    // }, 100);
 }, 100);
 
 
