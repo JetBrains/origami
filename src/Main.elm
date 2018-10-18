@@ -103,8 +103,9 @@ type alias Model =
 
 type alias GuiConfig =
     { product : String
-    -- , palette : List String
+    , palette : List String
     , layers : List { type_: String, blend : String }
+    , size : ( Int, Int )
     , facesX : Int
     , facesY : Int
     , lightSpeed: Int
@@ -172,10 +173,7 @@ update msg model =
 
         Bang ->
             ( model
-            , startGui
-                { config = model |> prepareGuiConfig
-                , palettes = Product.exportPalettes
-                }
+            , model |> prepareGuiConfig |> startGui
             )
 
         Animate dt ->
@@ -491,7 +489,8 @@ prepareModel model =
 prepareGuiConfig : Model -> GuiConfig
 prepareGuiConfig model =
     { product = Product.encode model.product
-    -- , palette : List String
+    , palette = Product.getPalette model.product
+    , size = ( 1200, 500 )
     , layers =
         model.layers |>
             List.map (\layer ->
@@ -836,7 +835,7 @@ port changeSVGBlend :
 
 -- OUTGOING PORTS
 
-port startGui : { config : GuiConfig, palettes : Product.Palettes } -> Cmd msg
+port startGui : GuiConfig -> Cmd msg
 
 -- TODO: port requestFss : FssConfig -> Cmd msg
 

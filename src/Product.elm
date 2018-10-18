@@ -1,22 +1,17 @@
 module Product exposing
     ( Product(..)
     , Palette
-    , Palettes
     , getPalette
     , getName
     , decode
     , encode
     , getLogoPath
-    , exportPalettes
     )
 
 
 type alias Color = String
 
 type alias Palette = List Color
-
-type alias Palettes =
-    List { product : String, palette : Palette }
 
 
 type Product
@@ -189,38 +184,3 @@ getLogoPath product =
         Default2 -> Nothing
         product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ ".svg")
-
-
-exportPalettes : Palettes
-exportPalettes =
-    [ JetBrains
-    , Default1
-    , Default2
-    , IntelliJ
-    , PhpStorm
-    , PyCharm
-    , RubyMine
-    , WebStorm
-    , CLion
-    , DataGrip
-    , AppCode
-    , GogLand
-    , Resharper
-    , ResharperCpp
-    , DotCover
-    , DotMemory
-    , DotPeek
-    , DotTrace
-    , Rider
-    , TeamCity
-    , YouTrack
-    , UpSource
-    , Hub
-    , Kotlin
-    , MPS
-    , Unknown
-    ] |> List.map
-        (\product ->
-            { product = encode product
-            , palette = getPalette product
-            })
