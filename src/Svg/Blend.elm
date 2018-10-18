@@ -1,5 +1,5 @@
 module Svg.Blend exposing
-    ( Blend
+    ( Blend(..)
     , PortBlend
     , default
     , encode

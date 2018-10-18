@@ -35,7 +35,6 @@ function buildFSS(config, source) {
         scene.add(ambient);
         scene.add(diffuse);
 
-
         var v, vertex;
         for (v = geometry.vertices.length - 1; v >= 0; v--) {
             vertex = geometry.vertices[v];
