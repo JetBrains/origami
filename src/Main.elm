@@ -213,7 +213,7 @@ update msg model =
                             in
                                 FssLayer fssConfig curBlend maybeScene newMesh
                         ( MirroredFssLayer _ curBlend maybeScene _
-                        , MirroredFssConfig mirroredFssConfig ) ->
+                         , MirroredFssConfig mirroredFssConfig ) ->
                             let
                                 fssConfig = FSS.loadConfig mirroredFssConfig
                                 newMesh = maybeScene
