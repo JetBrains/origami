@@ -304,6 +304,8 @@ function start(layers, funcs) {
       funcs.changeSVGBlend(2, value);
     });
 
+    funcs.changeProduct('jetbrains');
+
     // layers.map((layer, index) => {
     //     gui.addFolder()
     // });
