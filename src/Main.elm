@@ -36,6 +36,18 @@ type alias LayerIndex = Int
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
+
+type LayerKind
+    = Lorenz
+    | Fractal
+    | Template
+    | Voronoi
+    | Fss
+    | FssMirrored
+    | Text
+    | SvgImage
+
+
 type LayerConfig
     -- FIXME: use type variable for that, or just a function!
     = LorenzConfig Lorenz.Config
@@ -60,6 +72,15 @@ type Layer
     -- | CanvasLayer (\_ -> )
 
 
+initialLayers : List LayerKind
+initialLayers =
+    [ FssMirrored
+    , FssMirrored
+    , Text
+    , SvgImage
+    ]
+
+
 type alias Model =
     { paused : Bool
     , autoRotate : Bool
@@ -71,14 +92,29 @@ type alias Model =
     , mouse : Pos
     , now : Time
     , timeShift : Time
+    , faces : ( Int, Int )
+    , range : ( Float, Float )
+    , lightSpeed : Int
     , product : Product
+    -- , lights (taken from product)
+    -- , material TODO
+    }
+
+
+type alias GuiConfig =
+    { product : String
+    -- , palette : List String
+    , layers : List { type_: String, blend : String }
+    , facesX : Int
+    , facesY : Int
+    , lightSpeed: Int
     }
 
 
 type Msg
-    = Animate Time
+    = Bang
+    | Animate Time
     | Resize Window.Size
-    | InitLayers (List String)
     | Configure LayerIndex LayerConfig
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
     | ChangeSVGBlend LayerIndex SVGBlend.Blend
@@ -108,13 +144,16 @@ emptyModel =
     , autoRotate = False
     , fps = 0
     , theta = 0.1
-    , layers = [ ]
+    , layers = initialLayers |> List.map createLayer
     , size = ( 0, 0 )
     , origin = ( 0, 0 )
     , mouse = ( 0, 0 )
     , now = 0.0
     , timeShift = 0.0
-    , product = Product.Unknown
+    , faces = ( 35, 35 )
+    , range = ( 0.8, 1.0 )
+    , lightSpeed = 400
+    , product = Product.JetBrains
     }
 
 
@@ -131,6 +170,14 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
 
+        Bang ->
+            ( model
+            , startGui
+                { config = model |> prepareGuiConfig
+                , palettes = Product.exportPalettes
+                }
+            )
+
         Animate dt ->
             (
                 { model
@@ -142,11 +189,6 @@ update msg model =
                             then model.now + dt + model.timeShift
                             else model.now
                  }
-            , Cmd.none
-            )
-
-        InitLayers layerTypes ->
-            ( { model | layers = layerTypes |> List.map createLayer }
             , Cmd.none
             )
 
@@ -314,14 +356,67 @@ update msg model =
             , Cmd.none
             )
 
-
         _ -> ( model, Cmd.none )
 
 
-createLayer : String -> Layer
+getLayerKind : Layer -> LayerKind
+getLayerKind layer =
+    case layer of
+        FssLayer _ _ _ _ -> Fss
+        MirroredFssLayer _ _ _ _ -> FssMirrored
+        LorenzLayer _ _ _ -> Lorenz
+        FractalLayer _ _ _ -> Fractal
+        VoronoiLayer _ _ _ -> Voronoi
+        TemplateLayer _ _ _ -> Template
+        TextLayer _ -> Text
+        SvgImageLayer _ -> SvgImage
+        _ -> Text -- FIXME: Empty Kind or Nothing
+
+
+getBlendString : Layer -> String
+getBlendString layer =
+    case layer of
+        FssLayer _ blend _ _ -> WGLBlend.encodeOne blend
+        MirroredFssLayer _ blend _ _ -> WGLBlend.encodeOne blend
+        LorenzLayer _ blend _ -> WGLBlend.encodeOne blend
+        FractalLayer _ blend _ -> WGLBlend.encodeOne blend
+        VoronoiLayer _ blend _ -> WGLBlend.encodeOne blend
+        TemplateLayer _ blend _ -> WGLBlend.encodeOne blend
+        TextLayer blend -> SVGBlend.encode blend
+        SvgImageLayer blend -> SVGBlend.encode blend
+        _ -> SVGBlend.encode SVGBlend.default
+
+
+encodeLayerKind : LayerKind -> String
+encodeLayerKind kind =
+    case kind of
+        Fss -> "fss"
+        FssMirrored -> "fss-mirror"
+        Lorenz -> "lorenz"
+        Template -> "template"
+        Voronoi -> "voronoi"
+        Fractal -> "fractal"
+        Text -> "text"
+        SvgImage -> "svg"
+
+decodeLayerKind : String -> Maybe LayerKind
+decodeLayerKind code =
+    case code of
+        "fss" -> Just Fss
+        "fss-mirror" -> Just FssMirrored
+        "lorenz" -> Just Lorenz
+        "template" -> Just Template
+        "voronoi" -> Just Voronoi
+        "fractal" -> Just Fractal
+        "text" -> Just Text
+        "svg" -> Just SvgImage
+        _ -> Nothing
+
+
+createLayer : LayerKind -> Layer
 createLayer code =
     case code of
-        "fss" ->
+        Fss ->
             let fssConfig = FSS.init
             in
                 FssLayer
@@ -329,7 +424,7 @@ createLayer code =
                     WGLBlend.default
                     Nothing
                     (FSS.build fssConfig Nothing)
-        "fss-mirror" ->
+        FssMirrored ->
             let mirrorConfig = FSS.initM
                 fssConfig = FSS.init
             in
@@ -338,23 +433,22 @@ createLayer code =
                     WGLBlend.default
                     Nothing
                     (FSS.build fssConfig Nothing)
-        "lorenz" ->
+        Lorenz ->
             let lorenzConfig = Lorenz.init
             in LorenzLayer lorenzConfig WGLBlend.default (lorenzConfig |> Lorenz.build)
-        "template" ->
+        Template ->
             let templateConfig = Template.init
             in TemplateLayer templateConfig WGLBlend.default (templateConfig |> Template.build)
-        "voronoi" ->
+        Voronoi ->
             let voronoiConfig = Voronoi.init
             in VoronoiLayer voronoiConfig WGLBlend.default (voronoiConfig |> Voronoi.build)
-        "fractal" ->
+        Fractal ->
             let fractalConfig = Fractal.init
             in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
-        "text" ->
+        Text ->
             TextLayer SVGBlend.default
-        "svg" ->
+        SvgImage ->
             SvgImageLayer SVGBlend.default
-        _ -> Unknown
 
 
 extractLayer : Layer -> IE.Layer -> Layer
@@ -391,6 +485,22 @@ prepareModel model =
     , mouse = model.mouse
     , size = model.size
     , origin = model.origin
+    }
+
+
+prepareGuiConfig : Model -> GuiConfig
+prepareGuiConfig model =
+    { product = Product.encode model.product
+    -- , palette : List String
+    , layers =
+        model.layers |>
+            List.map (\layer ->
+                { type_ = getLayerKind layer |> encodeLayerKind
+                , blend = getBlendString layer
+                })
+    , facesX = Tuple.first model.faces
+    , facesY = Tuple.second model.faces
+    , lightSpeed = model.lightSpeed
     }
 
 
@@ -432,7 +542,8 @@ updateLayer index f model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ AnimationFrame.diffs Animate
+        [ bang (\_ -> Bang)
+        , AnimationFrame.diffs Animate
         , Window.resizes Resize
         -- , clicks (\pos ->
         --     toLocal model.size pos
@@ -446,7 +557,6 @@ subscriptions model =
           )
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
-        , initLayers (\layerTypes -> InitLayers (Array.toList layerTypes))
         , changeWGLBlend (\{ layer, blend } ->
             ChangeWGLBlend layer blend
           )
@@ -683,6 +793,10 @@ main =
         }
 
 
+-- INGOING PORTS
+
+port bang : (() -> msg) -> Sub msg
+
 port pause : (() -> msg) -> Sub msg
 
 port continue : (() -> msg) -> Sub msg
@@ -707,12 +821,6 @@ port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
 
 port import_ : (String -> msg) -> Sub msg
 
-port export_ : String -> Cmd msg
-
-port exportZip_ : String -> Cmd msg
-
--- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg
-
 port changeWGLBlend :
     ( { layer : Int
       , blend : WGLBlend.Blend
@@ -724,3 +832,17 @@ port changeSVGBlend :
       , blend : SVGBlend.PortBlend
       }
     -> msg) -> Sub msg
+
+
+-- OUTGOING PORTS
+
+port startGui : { config : GuiConfig, palettes : Product.Palettes } -> Cmd msg
+
+-- TODO: port requestFss : FssConfig -> Cmd msg
+
+port export_ : String -> Cmd msg
+
+port exportZip_ : String -> Cmd msg
+
+-- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg
+

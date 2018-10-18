@@ -146,18 +146,18 @@ BLEND_FACTORS_IDS =
   , 'oneMinusConstantAlpha': 14
 };
 
-TEXT_BLENDS =
+SVG_BLENDS =
   [ 'normal', 'overlay' ];
 
-const Config = function(funcs) {
+const Config = function(defaults, funcs) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
 
-    this.lightSpeed = 540;
-    this.facesX = 12;
-    this.facesY = 15;
-    this.product = 'jetbrains';
+    this.lightSpeed = defaults.lightSpeed;
+    this.facesX = defaults.facesX;
+    this.facesY = defaults.facesY;
+    this.product = defaults.product;
     this.blendColor0 = [ 0, 0, 0, 0 ];
     this.blendColorEqFn0 = customAdd;
     this.blendColorEqFactor00 = one;
@@ -173,6 +173,7 @@ const Config = function(funcs) {
     this.blendAlphaEqFactor01 = one;
     this.blendAlphaEqFactor11 = zero;
     this.textBlend = 'normal';
+    this.logoBlend = 'normal';
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -181,7 +182,7 @@ const Config = function(funcs) {
 };
 
 
-function start(layers, funcs) {
+function start(layers, defaults, palettes, funcs) {
     function adaptExtConfig(f) {
         return function(value) {
             funcs.updateAllFssLayers((prevConfig) => {
@@ -276,7 +277,7 @@ function start(layers, funcs) {
     }
 
 
-    const config = new Config();
+    const config = new Config(defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
     gui.remember(config);
     const lightSpeed = gui.add(config, 'lightSpeed').min(100).max(1140);
@@ -301,9 +302,14 @@ function start(layers, funcs) {
     addBlend(gui, config, 0);
     addBlend(gui, config, 1);
 
-    const textBlend = gui.add(config, 'logoBlend', TEXT_BLENDS);
+    const textBlend = gui.add(config, 'textBlend', SVG_BLENDS);
     textBlend.onFinishChange((value) => {
       funcs.changeSVGBlend(2, value);
+    });
+
+    const logoBlend = gui.add(config, 'logoBlend', SVG_BLENDS);
+    logoBlend.onFinishChange((value) => {
+      funcs.changeSVGBlend(3, value);
     });
 
     updateProduct('jetbrains');
