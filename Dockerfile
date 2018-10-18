@@ -1,22 +1,16 @@
 FROM node:8
 
 RUN mkdir /app
+
 WORKDIR /app
 
 COPY . /app
 
-RUN cd /app
+RUN npm install && ./node_modules/.bin/elm-package install -y
+
+RUN npm run build && npm run build:player
 
 
-RUN npm install
+FROM nginx:1.15
 
-
-RUN node_modules/.bin/elm-package install -y
-
-RUN npm run build
-RUN npm run build:player
-
-EXPOSE 8080
-
-#CMD ["npm", "run", "start:prod"]
-#CMD ["./node_modules/.bin/webpack-dev-server", "--mode=production"]
+COPY --from=0 /app /usr/share/nginx/html

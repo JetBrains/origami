@@ -7,7 +7,7 @@ common:
 
 
   app_name: code2art     # NEED_TO_CHANGE Name of application, by default it will accessable by https://my-app.labs.jb.gg (in this example: https://ksk.labs.jb.gg)
-  app_port: 8080      # NEED_TO_CHANGE    Application(nginx) listen this port in container. For java, python, go and other web servers its usually 3000, 5000, 8000 etc
+  app_port: 80      # NEED_TO_CHANGE    Application(nginx) listen this port in container. For java, python, go and other web servers its usually 3000, 5000, 8000 etc
 
   replicas_count: 1
   image_path: docker-registry.labs.intellij.net/code2art  # NEED_TO_CHANGE Change it to your application image
