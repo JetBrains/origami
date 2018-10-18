@@ -299,7 +299,7 @@ function start(layers, funcs) {
     addBlend(gui, config, 0);
     addBlend(gui, config, 1);
 
-    const textBlend = gui.add(config, 'textBlend', TEXT_BLENDS);
+    const textBlend = gui.add(config, 'logoBlend', TEXT_BLENDS);
     textBlend.onFinishChange((value) => {
       funcs.changeSVGBlend(2, value);
     });

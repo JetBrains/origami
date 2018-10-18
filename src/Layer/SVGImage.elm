@@ -11,19 +11,21 @@ import Svg.Attributes as SAttrs
 import Product exposing (Product)
 
 -- defaultSize = 110
-imageWidth = 200
-imageHeight = 200
+imageWidth = 120
+imageHeight = 120
 
 
 view : (Int, Int) -> (Int, Int) -> Product -> Blend.Blend -> Html a
 view ( w, h ) ( x, y ) product blend =
     let
         --scale = toFloat w / defaultWidth
-        posX = (toFloat w / 2) - toFloat x - (toFloat imageWidth / 2)
-        posY = (toFloat h / 2) - toFloat y - (toFloat imageHeight / 2)
+
+        posX = (toFloat w ) - toFloat x - (toFloat imageWidth) - 50
+        posY = (toFloat h ) - toFloat y - (toFloat imageHeight) - 50
         logoPath = case Product.getLogoPath product of
             Just fileName -> "./assets/" ++ fileName
             Nothing -> ""
+
     in
         div
             [ HAttrs.style
