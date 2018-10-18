@@ -5,26 +5,15 @@ common:
   k8s_token: "{{ env='K8S_TOKEN' }}"
   k8s_namespace: code2art
 
-
   app_name: code2art     # NEED_TO_CHANGE Name of application, by default it will accessable by https://my-app.labs.jb.gg (in this example: https://ksk.labs.jb.gg)
   app_port: 80      # NEED_TO_CHANGE    Application(nginx) listen this port in container. For java, python, go and other web servers its usually 3000, 5000, 8000 etc
 
   replicas_count: 1
   image_path: docker-registry.labs.intellij.net/code2art  # NEED_TO_CHANGE Change it to your application image
   image_version: "{{ env='IMAGE_VERSION' }}"    # Takes IMAGE_VERSION from environment, 
-  
-  # You can create your own variables and use it at templates *.j2
-  nginx_worker_process: 1           # This is custom variable for this example only
-  nginx_worker_connections: 1024    # This is custom variable for this example only
-
-  runAsNonRoot: true  # On container startup verify that container not run from root
-  readOnlyRootFilesystem: false
-  runAsUser: 0
-  runAsGroup: 0
 
 staging:
   templates:
-  - template: configmap.yaml.j2
   - template: deployment.yaml.j2
   - template: service.yaml.j2
   - template: ingress.yaml.j2
