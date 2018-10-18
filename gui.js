@@ -190,6 +190,13 @@ function start(layers, funcs) {
         }
     }
 
+    function updateProduct(id) {
+      const product = PRODUCTS_BY_ID[id];
+      funcs.updateFssColors(0, product.palette.slice(0, 2));
+      funcs.updateFssColors(1, product.palette.slice(1, 2));
+      funcs.changeProduct(product.id);
+    }
+
     function updateBlend(index, f) {
       return function(value) {
         const color = config['blendColor'+index];
@@ -289,12 +296,7 @@ function start(layers, funcs) {
         prevConfig.faces = [ prevConfig.faces[0], value ];
         return prevConfig;
     }));
-    product.onFinishChange((value) => {
-        const product = PRODUCTS_BY_ID[value];
-        funcs.updateFssColors(0, product.palette.slice(0, 2));
-        funcs.updateFssColors(1, product.palette.slice(1, 2));
-        funcs.changeProduct(product.id);
-    });
+    product.onFinishChange(updateProduct);
 
     addBlend(gui, config, 0);
     addBlend(gui, config, 1);
@@ -304,7 +306,7 @@ function start(layers, funcs) {
       funcs.changeSVGBlend(2, value);
     });
 
-    funcs.changeProduct('jetbrains');
+    updateProduct('jetbrains');
 
     // layers.map((layer, index) => {
     //     gui.addFolder()
