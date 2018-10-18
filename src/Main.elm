@@ -19,7 +19,8 @@ import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 import Controls
 import ImportExport as IE exposing (EncodedState)
-import Product exposing (Product, getPalette, getName)
+import Product exposing (Product)
+import Product as Product
 
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
@@ -28,6 +29,7 @@ import Layer.FSS as FSS
 import Layer.Template as Template
 import Layer.JbText as JbText
 import Layer.SVGImage as SVGImage
+
 
 type alias LayerIndex = Int
 
@@ -68,6 +70,7 @@ type alias Model =
     , mouse : Pos
     , now : Time
     , timeShift : Time
+    , product : Product
     }
 
 
@@ -81,6 +84,7 @@ type Msg
     | RebuildFss LayerIndex FSS.SerializedScene
     --| RebuildOnClient LayerIndex FSS.SerializedScene
     | Rotate Float
+    | ChangeProduct Product
     | Locate Position
     | Import EncodedState
     | Export
@@ -109,6 +113,7 @@ emptyModel =
     , mouse = ( 0, 0 )
     , now = 0.0
     , timeShift = 0.0
+    , product = Product.Unknown
     }
 
 
@@ -301,6 +306,12 @@ update msg model =
             , Cmd.none
             )
 
+        ChangeProduct product ->
+            ( { model | product = product }
+            , Cmd.none
+            )
+
+
         _ -> ( model, Cmd.none )
 
 
@@ -429,6 +440,7 @@ subscriptions model =
                 |> Maybe.withDefault NoOp
           )
         , rotate Rotate
+        , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
         , initLayers (\layerTypes -> InitLayers (Array.toList layerTypes))
         , changeWGLBlend (\{ layer, blend } ->
             ChangeWGLBlend layer blend
@@ -535,7 +547,7 @@ layerToHtml model layer =
     case layer of
         TextLayer blend ->
             --JbText.view model.size model.origin blend
-            SVGImage.view model.size model.origin blend
+            SVGImage.view model.size model.origin model.product blend
         _ -> div [] []
 
 
