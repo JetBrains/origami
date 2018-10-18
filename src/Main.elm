@@ -55,6 +55,7 @@ type Layer
     | FssLayer FSS.Config WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | MirroredFssLayer FSS.MConfig WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | TextLayer SVGBlend.Blend
+    | SvgImageLayer SVGBlend.Blend
     | Unknown
     -- | CanvasLayer (\_ -> )
 
@@ -208,6 +209,8 @@ update msg model =
                     case layer of
                         TextLayer _ ->
                             TextLayer newBlend
+                        SvgImageLayer _ ->
+                            SvgImageLayer newBlend
                         _ -> layer
                 )
             , Cmd.none
@@ -349,6 +352,8 @@ createLayer code =
             in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
         "text" ->
             TextLayer SVGBlend.default
+        "svg" ->
+            SvgImageLayer SVGBlend.default
         _ -> Unknown
 
 
@@ -514,6 +519,7 @@ isWebGLLayer : Layer -> Bool
 isWebGLLayer layer =
     case layer of
         TextLayer _ -> False
+        SvgImageLayer _ -> False
         Unknown -> False
         _ -> True
 
@@ -522,6 +528,7 @@ isHtmlLayer : Layer -> Bool
 isHtmlLayer layer =
     case layer of
         TextLayer _ -> True
+        SvgImageLayer _ -> True
         Unknown -> False
         _ -> False
 
@@ -546,7 +553,8 @@ layerToHtml : Model -> Layer -> Html Msg
 layerToHtml model layer =
     case layer of
         TextLayer blend ->
-            --JbText.view model.size model.origin blend
+            JbText.view model.size model.origin blend
+        SvgImageLayer blend ->
             SVGImage.view model.size model.origin model.product blend
         _ -> div [] []
 
@@ -602,6 +610,7 @@ layerToEntities model viewport layer =
             --     [ DepthTest.default, WGLBlend.produce blend ]
             --     (Template.init |> Template.build)
             -- ]
+        SvgImageLayer _ -> []
         Unknown -> []
             -- [ Template.makeEntity
             --     viewport
