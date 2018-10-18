@@ -28,50 +28,36 @@ const startGui = require('./gui.js');
 
 const buildFSS = require('./fss.js');
 
-const defaultConfig =
-    { lights:
-        { ambient: [ '#000000', '#f45b69' ]
-        , diffuse:  [ '#000000', '#e4fde1' ]
-        , speed: 400
-        , count: 2
-        }
-    , material: [ '#ffffff', '#ffffff' ]
-    , xRange: 0.8
-    , yRange: 0.1
-    , size: [ 3550, 3200 ]
-    , faces: [ 35, 35 ]
-    , mirror: 0.5
-    };
+// const defaultConfig =
+//     { lights:
+//         { ambient: [ '#000000', '#f45b69' ]
+//         , diffuse:  [ '#000000', '#e4fde1' ]
+//         , speed: 400
+//         , count: 2
+//         }
+//     , material: [ '#ffffff', '#ffffff' ]
+//     , xRange: 0.8
+//     , yRange: 0.1
+//     , size: [ 3550, 3200 ]
+//     , faces: [ 35, 35 ]
+//     , mirror: 0.5
+//     };
 
-let layerOneConfig = deepClone(defaultConfig);
-layerOneConfig.lights.ambient = [ '#000000', '#f45b69' ];
-layerOneConfig.lights.diffuse = [ '#000000', '#e4fde1' ];
+// let layerOneConfig = deepClone(defaultConfig);
+// layerOneConfig.lights.ambient = [ '#000000', '#f45b69' ];
+// layerOneConfig.lights.diffuse = [ '#000000', '#e4fde1' ];
 
-let layerTwoConfig = deepClone(defaultConfig);
-layerTwoConfig.lights.ambient = [ '#000000', '#4b4e76' ];
-layerOneConfig.lights.diffuse = [ '#000000', '#fb4e76' ];
+// let layerTwoConfig = deepClone(defaultConfig);
+// layerTwoConfig.lights.ambient = [ '#000000', '#4b4e76' ];
+// layerOneConfig.lights.diffuse = [ '#000000', '#fb4e76' ];
 
-let layers = [
-    { type: 'fss-mirror', config: layerOneConfig
-        /* { ...defaultConfig
-        , lights:
-            { ambient: [ '#000000', '#f45b69' ]
-            , diffuse:  [ '#000000', '#e4fde1' ]
-            , count: 2
-            }
-        } */
-    },
-    { type: 'fss-mirror', config: layerTwoConfig
-        /* { ...defaultConfig
-        , lights:
-            { ambient: [ '#000000', '#4b4e76' ]
-            , diffuse:  [ '#000000', '#fb4e76' ]
-            , count: 2
-            }
-        } */
-    },
-    { type: 'svg' }
-];
+// let layers = [
+//     { type: 'fss-mirror', config: layerOneConfig
+//     },
+//     { type: 'fss-mirror', config: layerTwoConfig
+//     },
+//     { type: 'svg' }
+// ];
 
 let scenes = {};
 
@@ -278,25 +264,32 @@ const rebuild = () => {
 
 //registerToolkit(app, LayersNode, updateFssColors);
 
-app.ports.initLayers.send(layers.map((l) => l.type));
+// app.ports.initLayers.send(layers.map((l) => l.type));
 
 prepareImportExport();
 
 setTimeout(function() {
-    resize();
-    rebuild();
 
-    const nodes = startGui(
-        layers,
-        { updateAllFssLayers
-        , updateFssColors
-        , changeWGLBlend : (index, blend) =>
-            { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
-        , changeSVGBlend : (index, blend) =>
-            { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) }
-        , changeProduct : (id) =>
-            { app.ports.changeProduct.send(id) }
-        });
+    app.ports.startGui.subscribe(function(data) {
+        console.log('startGui', data);
+        const gui = startGui(
+            data.config.layers,
+            data.config,
+            data.palettes,
+            { updateAllFssLayers
+            , updateFssColors
+            , changeWGLBlend : (index, blend) =>
+                { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
+            , changeSVGBlend : (index, blend) =>
+                { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) }
+            , changeProduct : (id) =>
+                { app.ports.changeProduct.send(id) }
+            });
+        resize();
+        rebuild();
+    });
+
+    app.ports.bang.send(null);
 
     let panelsHidden = false;
 

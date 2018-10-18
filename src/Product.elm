@@ -1,13 +1,22 @@
 module Product exposing
     ( Product(..)
+    , Palette
+    , Palettes
     , getPalette
     , getName
     , decode
+    , encode
     , getLogoPath
+    , exportPalettes
     )
 
 
 type alias Color = String
+
+type alias Palette = List Color
+
+type alias Palettes =
+    List { product : String, palette : Palette }
 
 
 type Product
@@ -39,7 +48,15 @@ type Product
     | Unknown
 
 
-getPalette : Product -> List Color
+-- These were the default ones
+
+-- layerOneConfig.lights.ambient = [ '#000000', '#f45b69' ];
+-- layerOneConfig.lights.diffuse = [ '#000000', '#e4fde1' ];
+
+-- layerTwoConfig.lights.ambient = [ '#000000', '#4b4e76' ];
+-- layerOneConfig.lights.diffuse = [ '#000000', '#fb4e76' ];
+
+getPalette : Product -> Palette
 getPalette product =
     case product of
         JetBrains -> [ "#9151e1",  "#ec4476", "#fde74a" ]
@@ -133,31 +150,77 @@ decode id =
         _ -> Unknown
 
 
+encode : Product -> String
+encode product =
+    case product of
+        JetBrains -> "jetbrains"
+        IntelliJ -> "intellij-idea"
+        PhpStorm -> "phpstorm"
+        PyCharm -> "pycharm"
+        RubyMine -> "rubymine"
+        WebStorm -> "webstorm"
+        CLion -> "clion"
+        DataGrip -> "datagrip"
+        AppCode -> "appcode"
+        GogLand -> "gogland"
+        Resharper -> "resharper"
+        ResharperCpp -> "resharper-cpp"
+        DotCover -> "dotcover"
+        DotMemory -> "dotmemory"
+        DotPeek -> "dotpeek"
+        DotTrace -> "dottrace"
+        Rider -> "rider"
+        TeamCity -> "teamcity"
+        YouTrack -> "youtrack"
+        UpSource -> "upsource"
+        Hub -> "hub"
+        Kotlin -> "kotlin"
+        MPS -> "mps"
+        Default1 -> "default1"
+        Default2 -> "default2"
+        Unknown -> "unknown"
+
+
 getLogoPath : Product -> Maybe String
 getLogoPath product =
     (case product of
-        JetBrains -> Just "jetbrains"
-        IntelliJ -> Just "intellij-idea"
-        PhpStorm -> Just "phpstorm"
-        PyCharm -> Just "pycharm"
-        RubyMine -> Just "rubymine"
-        WebStorm -> Just "webstorm"
-        CLion -> Just "clion"
-        DataGrip -> Just "datagrip"
-        AppCode -> Just "appcode"
-        GogLand -> Just "gogland"
-        Resharper -> Just "resharper"
-        ResharperCpp -> Just "resharper-cpp"
-        DotCover -> Just "dotcover"
-        DotMemory -> Just "dotmemory"
-        DotPeek -> Just "dotpeek"
-        DotTrace -> Just "dottrace"
-        Rider -> Just "rider"
-        TeamCity -> Just "teamcity"
-        YouTrack -> Just "youtrack"
-        UpSource -> Just "upsource"
-        Hub -> Just "hub"
-        Kotlin -> Just "kotlin"
-        MPS -> Just "mps"
-        _ -> Nothing)
+        Unknown -> Nothing
+        Default1 -> Nothing
+        Default2 -> Nothing
+        product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ ".svg")
+
+
+exportPalettes : Palettes
+exportPalettes =
+    [ JetBrains
+    , Default1
+    , Default2
+    , IntelliJ
+    , PhpStorm
+    , PyCharm
+    , RubyMine
+    , WebStorm
+    , CLion
+    , DataGrip
+    , AppCode
+    , GogLand
+    , Resharper
+    , ResharperCpp
+    , DotCover
+    , DotMemory
+    , DotPeek
+    , DotTrace
+    , Rider
+    , TeamCity
+    , YouTrack
+    , UpSource
+    , Hub
+    , Kotlin
+    , MPS
+    , Unknown
+    ] |> List.map
+        (\product ->
+            { product = encode product
+            , palette = getPalette product
+            })
