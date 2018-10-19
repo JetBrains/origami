@@ -29,6 +29,7 @@ import Layer.FSS as FSS
 import Layer.Template as Template
 import Layer.JbText as JbText
 import Layer.SVGImage as SVGImage
+import Layer.Vignette as Vignette
 
 
 type alias LayerIndex = Int
@@ -46,6 +47,7 @@ type LayerKind
     | FssMirrored
     | Text
     | SvgImage
+    | Vignette
 
 
 type LayerConfig
@@ -66,6 +68,7 @@ type Layer
     | TemplateLayer Template.Config WGLBlend.Blend Template.Mesh
     | FssLayer FSS.Config WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | MirroredFssLayer FSS.MConfig WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | VignetteLayer Vignette.Config WGLBlend.Blend
     | TextLayer SVGBlend.Blend
     | SvgImageLayer SVGBlend.Blend
     | Unknown
@@ -76,6 +79,7 @@ initialLayers : List LayerKind
 initialLayers =
     [ FssMirrored
     , FssMirrored
+    , Vignette
     , Text
     , SvgImage
     ]
@@ -96,6 +100,7 @@ type alias Model =
     , range : ( Float, Float )
     , lightSpeed : Int
     , product : Product
+    , vignette: Float
     -- , lights (taken from product)
     -- , material TODO
     }
@@ -112,6 +117,7 @@ type alias GuiConfig =
     , facesX : Int
     , facesY : Int
     , lightSpeed: Int
+    , vignette: Float
     }
 
 
@@ -128,6 +134,7 @@ type Msg
     | ChangeFacesX Int
     | ChangeFacesY Int
     | ChangeLightSpeed Int
+    | ChangeVignette Float
     | ChangeProduct Product
     | Locate Position
     | Import EncodedState
@@ -144,29 +151,24 @@ type Msg
 sizeCoef : Float
 sizeCoef = 1.0
 
-
-emptyModel : Model
-emptyModel =
-    { paused = False
-    , autoRotate = False
-    , fps = 0
-    , theta = 0.1
-    , layers = initialLayers |> List.map createLayer
-    , size = ( 1200, 1200 )
-    , origin = ( 0, 0 )
-    , mouse = ( 0, 0 )
-    , now = 0.0
-    , timeShift = 0.0
-    , faces = ( 15, 12 )
-    , range = ( 0.8, 1.0 )
-    , lightSpeed = 400
-    , product = Product.JetBrains
-    }
-
-
 init : ( Model, Cmd Msg )
 init =
-    ( emptyModel
+    ( { paused = False
+      , autoRotate = False
+      , fps = 0
+      , theta = 0.1
+      , layers = initialLayers |> List.map createLayer
+      , size = ( 1200, 1200 )
+      , origin = ( 0, 0 )
+      , mouse = ( 0, 0 )
+      , now = 0.0
+      , timeShift = 0.0
+      , faces = ( 15, 12 )
+      , range = ( 0.8, 1.0 )
+      , lightSpeed = 400
+      , product = Product.JetBrains
+      , vignette = 1.0
+      }
     , Cmd.batch
         [ Task.perform Resize Window.size
         ]
@@ -248,6 +250,8 @@ update msg model =
                             FssLayer cfg newBlend scene mesh
                         MirroredFssLayer cfg _ scene mesh ->
                             MirroredFssLayer cfg newBlend scene mesh
+                        VignetteLayer cfg _ ->
+                            VignetteLayer cfg newBlend
                         _ -> layer
                 )
             , Cmd.none
@@ -375,6 +379,22 @@ update msg model =
             updateAndRebuildFssWith
                 { model | product = product }
 
+        ChangeVignette opacity ->
+            ( { model
+              | layers =
+                  List.map
+                      (\layer ->
+                         case layer of
+                            VignetteLayer config blend ->
+                                VignetteLayer
+                                    { config | opacity = opacity }
+                                    blend
+                            _ -> layer
+                      )
+                      model.layers }
+            , Cmd.none
+            )
+
         _ -> ( model, Cmd.none )
 
 
@@ -389,6 +409,7 @@ getLayerKind layer =
         TemplateLayer _ _ _ -> Template
         TextLayer _ -> Text
         SvgImageLayer _ -> SvgImage
+        VignetteLayer _ _ -> Vignette
         _ -> Text -- FIXME: Empty Kind or Nothing
 
 
@@ -401,6 +422,7 @@ getBlendString layer =
         FractalLayer _ blend _ -> WGLBlend.encodeOne blend
         VoronoiLayer _ blend _ -> WGLBlend.encodeOne blend
         TemplateLayer _ blend _ -> WGLBlend.encodeOne blend
+        VignetteLayer _ blend -> WGLBlend.encodeOne blend
         TextLayer blend -> SVGBlend.encode blend
         SvgImageLayer blend -> SVGBlend.encode blend
         _ -> SVGBlend.encode SVGBlend.default
@@ -417,6 +439,8 @@ encodeLayerKind kind =
         Fractal -> "fractal"
         Text -> "text"
         SvgImage -> "svg"
+        Vignette -> "vignette"
+
 
 decodeLayerKind : String -> Maybe LayerKind
 decodeLayerKind code =
@@ -429,6 +453,7 @@ decodeLayerKind code =
         "fractal" -> Just Fractal
         "text" -> Just Text
         "svg" -> Just SvgImage
+        "vignette" -> Just Vignette
         _ -> Nothing
 
 
@@ -464,6 +489,8 @@ createLayer code =
         Fractal ->
             let fractalConfig = Fractal.init
             in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
+        Vignette ->
+            VignetteLayer Vignette.init WGLBlend.default
         Text ->
             TextLayer SVGBlend.default
         SvgImage ->
@@ -515,8 +542,8 @@ prepareGuiConfig : Model -> GuiConfig
 prepareGuiConfig model =
     { product = Product.encode model.product
     , palette = Product.getPalette model.product
-    , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |>floor
-             , Tuple.second model.size |> toFloat |> (*) 1.8 |>floor
+    , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
+             , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
             )
     , layers =
         model.layers |>
@@ -527,6 +554,7 @@ prepareGuiConfig model =
     , facesX = Tuple.first model.faces
     , facesY = Tuple.second model.faces
     , lightSpeed = model.lightSpeed
+    , vignette = model.vignette
     }
 
 
@@ -537,7 +565,7 @@ timeShiftRange = 500.0
 adaptTimeShift : String -> Time
 adaptTimeShift v =
     let floatV = String.toFloat v
-        |> Result.withDefault 0.0
+         |> Result.withDefault 0.0
     in (floatV - 50.0) / 100.0 * timeShiftRange
 
 
@@ -548,7 +576,7 @@ extractTimeShift v =
 
 configureWhenMatches : LayerIndex -> Model -> LayerConfig -> (Layer -> Bool) -> Msg
 configureWhenMatches index { layers } config f =
-    case Array.fromList layers|>Array.get index of
+    case Array.fromList layers |> Array.get index of
         Just layer -> if (f layer) then Configure index config else NoOp
         Nothing -> NoOp
 
@@ -743,6 +771,12 @@ layerToEntities model viewport layer =
             in
                 (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
                 (layerToEntities model viewport (FssLayer config2 blend serialized fss))
+        VignetteLayer config blend ->
+            [ Vignette.makeEntity
+                  viewport
+                  config
+                  [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
+            ]
         TextLayer _ -> []
             -- [ Template.makeEntity
             --     viewport
@@ -855,6 +889,8 @@ port changeFacesX : (Int -> msg) -> Sub msg
 port changeFacesY : (Int -> msg) -> Sub msg
 
 port changeLightSpeed : (Int -> msg) -> Sub msg
+
+port changeVignette : (Float -> msg) -> Sub msg
 
 port changeWGLBlend :
     ( { layer : Int

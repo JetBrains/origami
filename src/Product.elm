@@ -54,7 +54,7 @@ type Product
 getPalette : Product -> Palette
 getPalette product =
     case product of
-        JetBrains -> [ "#9151e1",  "#ec4476", "#fde74a" ]
+        JetBrains -> [ "#ff4d6b",  "#8158a7", "#feed00" ]
         Default1 -> [ "#f45b69",  "#e4fde1", "#rgba(0,0,0,0)" ]
         Default2 -> [ "#4b4e76",  "#fb4e76", "#rgba(0,0,0,0)" ]
         IntelliJ -> [ "#087cfa",  "#fe315d", "#f97a12" ]

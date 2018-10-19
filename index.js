@@ -170,15 +170,17 @@ prepareImportExport();
 
 setTimeout(function() {
 
-    app.ports.startGui.subscribe((data) => {
-        console.log('startGui', data);
+    app.ports.startGui.subscribe((model) => {
+        console.log('startGui', model);
         const gui = startGui(
-            data.layers,
-            data,
+            model.layers,
+            model,
             { changeLightSpeed : (value) =>
                 { app.ports.changeLightSpeed.send(Math.round(value)) }
             , changeFacesX : (value) =>
                 { app.ports.changeFacesX.send(Math.round(value)) }
+            , changeVignette : (value) =>
+            { app.ports.changeVignette.send(Math.round(value)) }
             , changeFacesY : (value) =>
                 { app.ports.changeFacesY.send(Math.round(value)) }
             , changeWGLBlend : (index, blend) =>
@@ -189,18 +191,18 @@ setTimeout(function() {
                 { app.ports.changeProduct.send(id) }
             });
 
-        data.layers.forEach((layer, index) => {
+        model.layers.forEach((layer, index) => {
             if (layer.type_ == 'fss-mirror') {
-                const fssScene = buildFSS(data);
+                const fssScene = buildFSS(model);
                 app.ports.rebuildFss.send([ fssScene, index ]);
             }
         });
 
-        app.ports.requestFssRebuild.subscribe((data) => {
-            console.log('rebuildFss', data);
-            data.layers.map((layer, index) => {
+        app.ports.requestFssRebuild.subscribe((model) => {
+            console.log('rebuildFss', model);
+            model.layers.map((layer, index) => {
                 if (layer.type_ == 'fss-mirror') {
-                    const fssScene = buildFSS(data);
+                    const fssScene = buildFSS(model);
                     app.ports.rebuildFss.send([ fssScene, index ]);
                 }
             });
