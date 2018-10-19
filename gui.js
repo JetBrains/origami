@@ -147,6 +147,7 @@ const Config = function(defaults, funcs) {
     this.blendAlphaEqFactor11 = zero;
     this.textBlend = 'normal';
     this.logoBlend = 'normal';
+    this.vignette = defaults.vignette;
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -247,11 +248,13 @@ function start(layers, defaults, funcs) {
     const facesX = gui.add(config, 'facesX').min(0).max(140).step(1);
     const facesY = gui.add(config, 'facesY').min(0).max(140).step(1);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
+    const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);
 
     lightSpeed.onFinishChange(funcs.changeLightSpeed);
     facesX.onFinishChange(funcs.changeFacesX);
     facesY.onFinishChange(funcs.changeFacesY);
     product.onFinishChange(funcs.changeProduct);
+    vignette.onFinishChange(funcs.changeVignette);
 
     addBlend(gui, config, 0);
     addBlend(gui, config, 1);

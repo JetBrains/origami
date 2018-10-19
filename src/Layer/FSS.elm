@@ -312,8 +312,7 @@ v4fromList list =
 
 type alias Uniforms =
     Viewport
-        { uResolution : Vec3
-        , uLightPosition : Mat4
+        { uLightPosition : Mat4
         , uLightAmbient : Mat4
         , uLightDiffuse : Mat4
         , uLightSpeed : Float
@@ -614,7 +613,7 @@ vertexShader =
 
 
            // Multiplied by gradients
-             vColor = vColor * aColor;
+            vColor = vColor * aColor;
              // vMirror = vec3(uMirror, 0.0);
 
             // Set gl_Position
@@ -658,29 +657,6 @@ fragmentShader =
                 return (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b);
         }
 
-        vec3 vignette() {
-
-            vec2 st = gl_FragCoord.xy/uResolution.xy;
-             float pct = 0.0;
-
-             // a. The DISTANCE from the pixel to the center
-             pct = distance(st,vec2(0.5));
-
-             // b. The LENGTH of the vector
-             //    from the pixel to the center
-              vec2 toCenter = vec2(0.5)-st;
-              pct = length(toCenter);
-
-             // c. The SQUARE ROOT of the vector
-             //    from the pixel to the center
-             // vec2 tC = vec2(0.5)-st;
-             // pct = sqrt(tC.x*tC.x+tC.y*tC.y);
-
-            return vec3(pct, 0, 0);
-
-
-        }
-
         // Main
         void main() {
 
@@ -703,12 +679,6 @@ fragmentShader =
                // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
              //  gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.55, 0.35))), 2.0));
-
-            // add vignette
-
-
-
-             gl_FragColor += vec4( vignette(), 1.0 );
 
         }
 
