@@ -269,6 +269,7 @@ function start(layers, defaults, funcs) {
       funcs.changeSVGBlend(3, value);
     });
 
+
     updateProduct('jetbrains');
 
     // layers.map((layer, index) => {
