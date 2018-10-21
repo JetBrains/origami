@@ -494,7 +494,7 @@ createLayer code =
             let fractalConfig = Fractal.init
             in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
         Vignette ->
-            VignetteLayer Vignette.init WGLBlend.default
+            WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
         Text ->
             TextLayer SVGBlend.default
         SvgImage ->
