@@ -204,8 +204,8 @@ function start(layers, defaults, funcs) {
       }
     }
 
-    function addWebGLBlend(gui, config, index) {
-      const folder = gui.addFolder('Layer ' + index + ' Blend');
+    function addWebGLBlend(gui, config, layer, index) {
+      const folder = gui.addFolder('Layer ' + index + ' Blend' + ' (' + layer.kind + ')');
       const color = folder.addColor(config, 'blendColor' + index);
       const colorEqFn = folder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
       const colorEqFactor0 = folder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
@@ -252,6 +252,14 @@ function start(layers, defaults, funcs) {
       }));
     }
 
+    function addSVGBlend(gui, config, layer, index) {
+      const folder = gui.addFolder('Layer ' + index + ' Blend' + ' (' + layer.kind + ')');
+      const blendControl = folder.add(config, 'layer' + index + 'Blend', SVG_BLENDS);
+      blendControl.onFinishChange((value) => {
+        funcs.changeSVGBlend(index, value);
+      });
+    }
+
 
     const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
@@ -270,12 +278,9 @@ function start(layers, defaults, funcs) {
 
     layers.forEach((layer, index) => {
       if (layer.webglOrSvg == 'webgl') {
-        addWebGLBlend(gui, config, index);
+        addWebGLBlend(gui, config, layer, index);
       } else {
-        const blendControl = gui.add(config, 'layer' + index + 'Blend', SVG_BLENDS);
-        blendControl.onFinishChange((value) => {
-          funcs.changeSVGBlend(index, value);
-        });
+        addSVGBlend(gui, config, layer, index);
       }
     });
 
