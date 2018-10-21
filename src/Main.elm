@@ -112,7 +112,11 @@ type alias FssBuildOptions = GuiConfig
 type alias GuiConfig =
     { product : String
     , palette : List String
-    , layers : List { type_: String, blend : String }
+    , layers : List
+        { kind: String
+        , blend : String
+        , webglOrSvg: String
+        }
     , size : ( Int, Int )
     , facesX : Int
     , facesY : Int
@@ -548,8 +552,9 @@ prepareGuiConfig model =
     , layers =
         model.layers |>
             List.map (\layer ->
-                { type_ = getLayerKind layer |> encodeLayerKind
+                { kind = getLayerKind layer |> encodeLayerKind
                 , blend = getBlendString layer
+                , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
                 })
     , facesX = Tuple.first model.faces
     , facesY = Tuple.second model.faces
