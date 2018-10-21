@@ -112,8 +112,6 @@ vertexShader =
 
 
         void main () {
-            // gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate * vec4(position, 1.0);
-            // gl_Position = perspective * camera * rotation * vec4(position, 1.0);
             gl_Position =  vec4(position, 1.0);
             vColor = vec4(uColor, 0.0);
         }
@@ -146,7 +144,7 @@ fragmentShader =
         void main() {
 
             gl_FragColor.rgb = uColor;
-            gl_FragColor.a = mix(gl_FragColor.a , uOpacity, pow(smoothstep(0.0, 0.67, vignette()), 2.0));
+            gl_FragColor.a = mix(gl_FragColor.a , uOpacity, pow(smoothstep(0.0, 0.4, vignette()), 2.0));
 
         }
     |]
