@@ -678,7 +678,7 @@ fragmentShader =
 
                // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
-             //  gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.55, 0.35))), 2.0));
+               //gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.55, 0.35))), 2.0));
 
         }
 
