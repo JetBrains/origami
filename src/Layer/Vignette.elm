@@ -5,7 +5,8 @@ module Layer.Vignette exposing
     , init
     )
 
-import Math.Vector3 as Vec3 exposing (vec3, Vec3)
+import Math.Vector4 as Vec4 exposing (vec4, Vec4)
+import Math.Vector3 as Vec3 exposing (Vec3, fromTuple, vec3)
 import WebGL
 import WebGL.Settings exposing (Setting)
 
@@ -36,7 +37,7 @@ makeEntity viewport config settings =
         settings
         vertexShader
         fragmentShader
-        mesh
+        (mesh config.color)
         (uniforms viewport config)
 
 
@@ -50,12 +51,18 @@ type alias Vertex =
     }
 
 
-mesh : Mesh
-mesh =
+mesh : Color -> Mesh
+mesh color =
     WebGL.triangles
-        [ ( Vertex (vec3 0 0 0) (vec3 1 0 0)
-          , Vertex (vec3 1 1 0) (vec3 0 1 0)
-          , Vertex (vec3 1 -1 0) (vec3 0 0 1)
+        [ (
+            Vertex (vec3 1 1 0) (fromTuple color)
+          , Vertex (vec3 -1 1 0) (fromTuple color)
+          , Vertex (vec3 -1 -1 0) (fromTuple color)
+          )
+         ,(
+            Vertex (vec3 -1 -1 0) (fromTuple color)
+          , Vertex (vec3 1 1 0) (fromTuple color)
+          , Vertex (vec3 1 -1 0) (fromTuple color)
           )
         ]
 
@@ -88,35 +95,33 @@ uniforms v { opacity, color } =
        , paused = v.paused
        , uOpacity = opacity
        , uColor = vec3 r g b
-       , uResolution = vec3 2000.0 2000.0 0
+       , uResolution = vec3 (0.5*2340.0) (0.5*1280.0) 0
        }
 
 
-vertexShader : WebGL.Shader Vertex Uniforms { }
+vertexShader : WebGL.Shader Vertex Uniforms { vColor : Vec4 }
 vertexShader =
     [glsl|
+        precision mediump float;
 
         attribute vec3 position;
+        attribute vec3 color;
 
-        uniform mat4 cameraTranslate;
-        uniform mat4 cameraRotate;
-        uniform mat4 perspective;
-        uniform mat4 camera;
-        uniform mat4 rotation;
+        uniform vec3 uColor;
+        varying vec4 vColor;
 
-        //varying vec3 vColor;
 
         void main () {
             // gl_Position = perspective * camera * rotation * cameraTranslate * cameraRotate * vec4(position, 1.0);
             // gl_Position = perspective * camera * rotation * vec4(position, 1.0);
-            gl_Position = perspective * camera * rotation * vec4(position, 1.0);
-            //vColor = color;
+            gl_Position =  vec4(position, 1.0);
+            vColor = vec4(uColor, 0.0);
         }
 
     |]
 
 
-fragmentShader : WebGL.Shader {} Uniforms {}
+fragmentShader : WebGL.Shader {} Uniforms { vColor : Vec4 }
 fragmentShader =
     [glsl|
 
@@ -127,37 +132,25 @@ fragmentShader =
         uniform float uOpacity;
         uniform vec3 uResolution;
 
-        vec3 vignette() {
+        varying vec4 vColor;
 
+
+
+        float vignette() {
             vec2 st = gl_FragCoord.xy/uResolution.xy;
-             float pct = 0.0;
-
-             // a. The DISTANCE from the pixel to the center
-             pct = distance(st,vec2(0.5));
-
-             // b. The LENGTH of the vector
-             //    from the pixel to the center
-             // vec2 toCenter = vec2(0.5)-st;
-             // pct = length(toCenter);
-
-             // c. The SQUARE ROOT of the vector
-             //    from the pixel to the center
-             // vec2 tC = vec2(0.5)-st;
-             // pct = sqrt(tC.x*tC.x+tC.y*tC.y);
-
-            return vec3(pct, 0, 0);
-
+            float pct = 0.0;
+            return distance(st,vec2(0.5));
         }
+
 
         // Main
         void main() {
+            gl_FragColor.rgb = uColor;
+
+          //  gl_FragColor.a = vignette() * uOpacity;
+            gl_FragColor.a = mix(gl_FragColor.a, 1.0, pow(smoothstep(0.0, 0.9, vignette()), 2.0));
 
 
-            // Set gl_FragColor
-            gl_FragColor = vec4(uColor, 1.0);
-
-
-            gl_FragColor += vec4( vignette(), 1.0 );
 
         }
     |]
