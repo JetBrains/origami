@@ -122,7 +122,7 @@ BLEND_FACTORS_IDS =
 SVG_BLENDS =
   [ 'normal', 'overlay' ];
 
-const Config = function(defaults, funcs) {
+const Config = function(layers, defaults, funcs) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
@@ -131,22 +131,35 @@ const Config = function(defaults, funcs) {
     this.facesX = defaults.facesX;
     this.facesY = defaults.facesY;
     this.product = defaults.product;
-    this.blendColor0 = [ 0, 0, 0, 0 ];
-    this.blendColorEqFn0 = customAdd;
-    this.blendColorEqFactor00 = one;
-    this.blendColorEqFactor10 = zero;
-    this.blendAlphaEqFn0 = customAdd;
-    this.blendAlphaEqFactor00 = one;
-    this.blendAlphaEqFactor10 = zero;
-    this.blendColor1 = [ 0, 0, 0, 0 ];
-    this.blendColorEqFn1 = customAdd;
-    this.blendColorEqFactor01 = one;
-    this.blendColorEqFactor11 = zero;
-    this.blendAlphaEqFn1 = customAdd;
-    this.blendAlphaEqFactor01 = one;
-    this.blendAlphaEqFactor11 = zero;
-    this.textBlend = 'normal';
-    this.logoBlend = 'normal';
+    layers.forEach((layer, index) => {
+      if (layer.webglOrSvg == 'webgl') {
+        this['blendColor' + index] = [ 0, 0, 0, 0 ];
+        this['blendColorEqFn' + index] = customAdd;
+        this['blendColorEqFactor0' + index] = one;
+        this['blendColorEqFactor1' + index] = zero;
+        this['blendAlphaEqFn' + index] = customAdd;
+        this['blendAlphaEqFactor0' + index] = one;
+        this['blendAlphaEqFactor1' + index] = zero;
+      } else {
+        this['layer' + index + 'Blend'] = 'normal';
+      }
+    });
+    // this.blendColor0 = [ 0, 0, 0, 0 ];
+    // this.blendColorEqFn0 = customAdd;
+    // this.blendColorEqFactor00 = one;
+    // this.blendColorEqFactor10 = zero;
+    // this.blendAlphaEqFn0 = customAdd;
+    // this.blendAlphaEqFactor00 = one;
+    // this.blendAlphaEqFactor10 = zero;
+    // this.blendColor1 = [ 0, 0, 0, 0 ];
+    // this.blendColorEqFn1 = customAdd;
+    // this.blendColorEqFactor01 = one;
+    // this.blendColorEqFactor11 = zero;
+    // this.blendAlphaEqFn1 = customAdd;
+    // this.blendAlphaEqFactor01 = one;
+    // this.blendAlphaEqFactor11 = zero;
+    // this.textBlend = 'normal';
+    // this.logoBlend = 'normal';
     this.vignette = defaults.vignette;
     // -------
     //this.timeShift = 0;
@@ -162,7 +175,7 @@ function start(layers, defaults, funcs) {
       funcs.changeProduct(product.id);
     }
 
-    function updateBlend(index, f) {
+    function updateWebGLBlend(index, f) {
       return function(value) {
         const color = config['blendColor'+index];
         const curBlend =
@@ -191,9 +204,8 @@ function start(layers, defaults, funcs) {
       }
     }
 
-    function addBlend(gui, config, index) {
-
-      const folder = gui.addFolder('Blend' + index);
+    function addWebGLBlend(gui, config, index) {
+      const folder = gui.addFolder('Layer ' + index + ' Blend');
       const color = folder.addColor(config, 'blendColor' + index);
       const colorEqFn = folder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
       const colorEqFactor0 = folder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
@@ -203,37 +215,37 @@ function start(layers, defaults, funcs) {
       const alphaEqFactor1 = folder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
       //folder.open();
 
-      color.onFinishChange(updateBlend(index, (blend, value) => {
+      color.onFinishChange(updateWebGLBlend(index, (blend, value) => {
         console.log('color', index, value);
         blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
         return blend;
       }));
-      colorEqFn.onFinishChange(updateBlend(index, (blend, value) => {
+      colorEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
         console.log('colorEqFn', index, value);
         blend.colorEq[0] = BLEND_FUNCS_IDS[value];
         return blend;
       }));
-      colorEqFactor0.onFinishChange(updateBlend(index, (blend, value) => {
+      colorEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
         console.log('colorEqFactor0', index, value);
         blend.colorEq[1] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
-      colorEqFactor1.onFinishChange(updateBlend(index, (blend, value) => {
+      colorEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
         console.log('colorEqFactor1', index, value);
         blend.colorEq[2] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
-      alphaEqFn.onFinishChange(updateBlend(index, (blend, value) => {
+      alphaEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
         console.log('alphaEqFn', index, value);
         blend.alphaEq[0] = BLEND_FUNCS_IDS[value];
         return blend;
       }));
-      alphaEqFactor0.onFinishChange(updateBlend(index, (blend, value) => {
+      alphaEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
         console.log('alphaEqFactor0', index, value);
         blend.alphaEq[1] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
-      alphaEqFactor1.onFinishChange(updateBlend(index, (blend, value) => {
+      alphaEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
         console.log('alphaEqFactor1', index, value);
         blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
         return blend;
@@ -241,7 +253,7 @@ function start(layers, defaults, funcs) {
     }
 
 
-    const config = new Config(defaults, funcs);
+    const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
     gui.remember(config);
     const lightSpeed = gui.add(config, 'lightSpeed').min(100).max(1140);
@@ -256,18 +268,27 @@ function start(layers, defaults, funcs) {
     product.onFinishChange(funcs.changeProduct);
     vignette.onFinishChange(funcs.changeVignette);
 
-    addBlend(gui, config, 0);
-    addBlend(gui, config, 1);
-
-    const textBlend = gui.add(config, 'textBlend', SVG_BLENDS);
-    textBlend.onFinishChange((value) => {
-      funcs.changeSVGBlend(2, value);
+    layers.forEach((layer, index) => {
+      if (layer.webglOrSvg == 'webgl') {
+        addWebGLBlend(gui, config, index);
+      } else {
+        const blendControl = gui.add(config, 'layer' + index + 'Blend', SVG_BLENDS);
+        blendControl.onFinishChange((value) => {
+          funcs.changeSVGBlend(index, value);
+        });
+      }
     });
 
-    const logoBlend = gui.add(config, 'logoBlend', SVG_BLENDS);
-    logoBlend.onFinishChange((value) => {
-      funcs.changeSVGBlend(3, value);
-    });
+
+    // const textBlend = gui.add(config, 'textBlend', SVG_BLENDS);
+    // textBlend.onFinishChange((value) => {
+    //   funcs.changeSVGBlend(2, value);
+    // });
+
+    // const logoBlend = gui.add(config, 'logoBlend', SVG_BLENDS);
+    // logoBlend.onFinishChange((value) => {
+    //   funcs.changeSVGBlend(3, value);
+    // });
 
 
     updateProduct('jetbrains');

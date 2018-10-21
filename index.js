@@ -59,7 +59,7 @@ const import_ = (app, importedState) => {
         mouse: parsedState.mouse,
         now: parsedState.now,
         layers: parsedState.layers.map((layer) => (
-            { type_ : layer.type,
+            { kind : layer.type,
               blend: layer.blend,
               config: ''
             }
@@ -192,7 +192,7 @@ setTimeout(function() {
             });
 
         model.layers.forEach((layer, index) => {
-            if (layer.type_ == 'fss-mirror') {
+            if (layer.kind == 'fss-mirror') {
                 const fssScene = buildFSS(model);
                 app.ports.rebuildFss.send([ fssScene, index ]);
             }
@@ -201,7 +201,7 @@ setTimeout(function() {
         app.ports.requestFssRebuild.subscribe((model) => {
             console.log('rebuildFss', model);
             model.layers.map((layer, index) => {
-                if (layer.type_ == 'fss-mirror') {
+                if (layer.kind == 'fss-mirror') {
                     const fssScene = buildFSS(model);
                     app.ports.rebuildFss.send([ fssScene, index ]);
                 }
