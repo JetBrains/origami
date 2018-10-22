@@ -3,6 +3,7 @@ module WebGL.Blend exposing
     , Color
     , Equation
     , produce
+    , build
     , default
     , allFuncs
     , allFactors
@@ -21,6 +22,8 @@ import Array
 
 import WebGL.Settings exposing (Setting)
 import WebGL.Settings.Blend as B
+
+import List.Extra as LE
 
 {- To support complex blending methods like the ones from Photoshop,
    it is required either to have WebGL2 enabled and use MIN/MAX extentions, or
@@ -50,6 +53,10 @@ type alias Blend
       }
 
 
+type alias Function
+    = B.Factor -> B.Factor -> B.Blender
+
+
 default : Blend
 default =
     { color = Nothing
@@ -58,34 +65,56 @@ default =
     }
 
 
-allFuncs : Array.Array (B.Factor -> B.Factor -> B.Blender)
-allFuncs =
-    Array.fromList
-        [ B.customAdd
-        , B.customSubtract
-        , B.customReverseSubtract
-        ]
+build : ( Function, B.Factor, B.Factor ) -> ( Function, B.Factor, B.Factor ) -> Blend
+build ( colorFunc, colorFactor0, colorFactor1 ) ( alphaFunc, alphaFactor0, alphaFactor1 ) =
+    { color = Nothing
+    , colorEq =
+        ( LE.elemIndex colorFunc allFuncsList |> Maybe.withDefault 0
+        , LE.elemIndex colorFactor0 allFactorsList |> Maybe.withDefault 1
+        , LE.elemIndex colorFactor1 allFactorsList |> Maybe.withDefault 0
+        )
+    , alphaEq =
+        ( LE.elemIndex alphaFunc allFuncsList |> Maybe.withDefault 0
+        , LE.elemIndex alphaFactor0 allFactorsList |> Maybe.withDefault 1
+        , LE.elemIndex alphaFactor1 allFactorsList |> Maybe.withDefault 0
+        )
+    }
+
+
+allFuncsList : List Function
+allFuncsList =
+    [ B.customAdd
+    , B.customSubtract
+    , B.customReverseSubtract
+    ]
+
+
+allFuncs : Array.Array Function
+allFuncs = Array.fromList allFuncsList
+
+
+allFactorsList : List B.Factor
+allFactorsList =
+    [ B.zero
+    , B.one
+    , B.srcColor
+    , B.oneMinusSrcColor
+    , B.dstColor
+    , B.oneMinusDstColor
+    , B.srcAlpha
+    , B.oneMinusSrcAlpha
+    , B.dstAlpha
+    , B.oneMinusDstAlpha
+    , B.srcAlphaSaturate
+    , B.constantColor
+    , B.oneMinusConstantColor
+    , B.constantAlpha
+    , B.oneMinusConstantAlpha
+    ]
 
 
 allFactors : Array.Array B.Factor
-allFactors =
-    Array.fromList
-        [ B.zero
-        , B.one
-        , B.srcColor
-        , B.oneMinusSrcColor
-        , B.dstColor
-        , B.oneMinusDstColor
-        , B.srcAlpha
-        , B.oneMinusSrcAlpha
-        , B.dstAlpha
-        , B.oneMinusDstAlpha
-        , B.srcAlphaSaturate
-        , B.constantColor
-        , B.oneMinusConstantColor
-        , B.constantAlpha
-        , B.oneMinusConstantAlpha
-        ]
+allFactors = Array.fromList allFactorsList
 
 
 produce : Blend -> Setting
