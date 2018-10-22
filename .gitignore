@@ -18,3 +18,4 @@ scene.js
 player.bundle.js
 player.min.js
 /npm-debug.log
+.vscode/

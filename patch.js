@@ -15,7 +15,7 @@ require('./node_modules/rpd/src/toolkit/util/svg.js');
 window.Rpd = require('./node_modules/rpd/src/rpd.js');
 
 const DEFAULT_FACES_BY_X = 12;
-const DEFAULT_FACES_BY_Y = 15;
+const DEFAULT_FACES_BY_Y = 1;
 const DEFAULT_LIGHT_SPEED = 400;
 
 function parseQuery(query) {
