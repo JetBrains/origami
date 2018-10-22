@@ -264,10 +264,10 @@ function start(layers, defaults, funcs) {
     const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
     gui.remember(config);
-    const lightSpeed = gui.add(config, 'lightSpeed').min(100).max(1140);
-    const facesX = gui.add(config, 'facesX').min(0).max(140).step(1);
-    const facesY = gui.add(config, 'facesY').min(0).max(140).step(1);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
+    const lightSpeed = gui.add(config, 'lightSpeed').name('agile').min(100).max(1140);
+    const facesX = gui.add(config, 'facesX').name('granularity').min(1).max(50).step(1);
+    const facesY = gui.add(config, 'facesY').name('fishy').min(1).max(30).step(1);
     const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);
 
     lightSpeed.onFinishChange(funcs.changeLightSpeed);
