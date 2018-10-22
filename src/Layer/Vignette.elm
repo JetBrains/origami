@@ -95,7 +95,7 @@ uniforms v { opacity, color } =
        , paused = v.paused
        , uOpacity = opacity
        , uColor = vec3 r g b
-       , uResolution = vec3 (2340.0) (1280.0) 0
+       , uResolution = vec3 2340.0 1280.0 0
 
        }
 
@@ -145,7 +145,7 @@ fragmentShader =
         void main() {
 
             gl_FragColor.rgb = uColor;
-            gl_FragColor.a = mix(gl_FragColor.a , uOpacity, pow(smoothstep(0.0, 0.4, vignette()), 2.0));
+            gl_FragColor.a = mix(gl_FragColor.a , uOpacity, pow(smoothstep(0.0, 0.67, vignette()), 2.0));
 
         }
     |]

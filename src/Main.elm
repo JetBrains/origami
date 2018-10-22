@@ -828,16 +828,15 @@ view model =
                 [ text "Export .zip" ]
             ]
         , WebGL.toHtmlWith
-            [ WebGL.antialias
-            , WebGL.alpha True
-            , WebGL.clearColor 0.0862745098 0.0862745098 0.0862745098 1.0
+            [ WebGL.alpha False
+            , WebGL.clearColor 0.0 0.0 0.0 1.0
             --, WebGL.depth 0.5
             ]
             [ width (Tuple.first model.size)
             , height (Tuple.second model.size)
             , style [
                 ( "display", "block" ),
-                ( "background-color", "#161616" ),
+                -- ( "background-color", "#161616" ),
                 ( "transform", "translate("
                     ++ (Tuple.first model.origin |> toString)
                     ++ "px, "
