@@ -95,7 +95,8 @@ uniforms v { opacity, color } =
        , paused = v.paused
        , uOpacity = opacity
        , uColor = vec3 r g b
-       , uResolution = vec3 (0.5*2340.0) (0.5*1280.0) 0
+       , uResolution = vec3 (2340.0) (1280.0) 0
+
        }
 
 

@@ -100,7 +100,7 @@ type alias Model =
     , range : ( Float, Float )
     , lightSpeed : Int
     , product : Product
-    , vignette: Float
+    , vignette : Float
     -- , lights (taken from product)
     -- , material TODO
     }
@@ -167,7 +167,7 @@ init =
       , mouse = ( 0, 0 )
       , now = 0.0
       , timeShift = 0.0
-      , faces = ( 15, 12 )
+      , faces = ( 15, 1 )
       , range = ( 0.8, 1.0 )
       , lightSpeed = 400
       , product = Product.JetBrains
