@@ -494,7 +494,8 @@ createLayer code =
             let fractalConfig = Fractal.init
             in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
         Vignette ->
-            WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
+            -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
+            VignetteLayer Vignette.init WGLBlend.default
         Text ->
             TextLayer SVGBlend.default
         SvgImage ->
@@ -828,7 +829,9 @@ view model =
                 [ text "Export .zip" ]
             ]
         , WebGL.toHtmlWith
-            [ WebGL.alpha False
+            [ 
+            --   WebGL.antialias,
+              WebGL.alpha True
             , WebGL.clearColor 0.0 0.0 0.0 1.0
             --, WebGL.depth 0.5
             ]
