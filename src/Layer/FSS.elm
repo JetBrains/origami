@@ -646,8 +646,9 @@ fragmentShader =
         uniform float uNow;
         uniform vec2 uClip;
 
-        vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, 1.0);
 
+        float vignette = 0.00003;
+        vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, vignette);
         float noise(vec2 seed, float time) {
             float x = (seed.x / 3.14159 + 4.0) * (seed.y / 13.0 + 4.0) * ((fract(time) + 1.0) * 10.0);
             return mod((mod(x, 13.0) + 1.0) * (mod(x, 123.0) + 1.0), 0.01) - 0.005;
@@ -675,10 +676,13 @@ fragmentShader =
             // Set gl_FragColor
                gl_FragColor = vColor;
 
-
-               // noise by brightness
+            // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
-               //gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.55, 0.35))), 2.0));
+            
+            // vignette
+            if (vignette !=0.0) {
+            //    gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.5))), 2.0));
+            }
 
         }
 
