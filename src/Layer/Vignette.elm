@@ -26,7 +26,7 @@ type alias Color = ( Float, Float, Float )
 
 init : Config
 init =
-    { opacity = 1.0
+    { opacity = 0.3
     , color = ( 0.0, 0.0, 0.0 )
     }
 
@@ -144,8 +144,11 @@ fragmentShader =
         // Main
         void main() {
 
-            gl_FragColor.rgb = uColor;
-            gl_FragColor.a = mix(gl_FragColor.a , uOpacity, pow(smoothstep(0.0, 0.67, vignette()), 2.0));
+             gl_FragColor = vec4(uColor, 0.5);
+             gl_FragColor.a = mix(gl_FragColor.a , uOpacity, pow(smoothstep(0.0, 0.47, vignette()), 2.0));
+
+
+
 
         }
     |]
