@@ -354,6 +354,8 @@ uniforms v { now, size, origin, mouse } ( lights, speed ) config =
         adaptedLights = lights |> adaptLights size speed
         width = Vec2.getX v.size
         height = Vec2.getY v.size
+        -- width = Tuple.first size |> toFloat
+        -- height = Tuple.second size |> toFloat
         depth = 100.0
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
@@ -678,7 +680,7 @@ fragmentShader =
 
             // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
-            
+
             // vignette
             if (vignette !=0.0) {
             //    gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.5))), 2.0));

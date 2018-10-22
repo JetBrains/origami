@@ -132,6 +132,7 @@ const Config = function(layers, defaults, funcs) {
     this.facesY = defaults.facesY;
     this.product = defaults.product;
     layers.forEach((layer, index) => {
+      // TODO: load blend value from layer
       if (layer.webglOrSvg == 'webgl') {
         this['blendColor' + index] = [ 0, 0, 0, 0 ];
         this['blendColorEqFn' + index] = customAdd;
@@ -144,22 +145,6 @@ const Config = function(layers, defaults, funcs) {
         this['layer' + index + 'Blend'] = 'normal';
       }
     });
-    // this.blendColor0 = [ 0, 0, 0, 0 ];
-    // this.blendColorEqFn0 = customAdd;
-    // this.blendColorEqFactor00 = one;
-    // this.blendColorEqFactor10 = zero;
-    // this.blendAlphaEqFn0 = customAdd;
-    // this.blendAlphaEqFactor00 = one;
-    // this.blendAlphaEqFactor10 = zero;
-    // this.blendColor1 = [ 0, 0, 0, 0 ];
-    // this.blendColorEqFn1 = customAdd;
-    // this.blendColorEqFactor01 = one;
-    // this.blendColorEqFactor11 = zero;
-    // this.blendAlphaEqFn1 = customAdd;
-    // this.blendAlphaEqFactor01 = one;
-    // this.blendAlphaEqFactor11 = zero;
-    // this.textBlend = 'normal';
-    // this.logoBlend = 'normal';
     this.vignette = defaults.vignette;
     // -------
     //this.timeShift = 0;
@@ -190,16 +175,16 @@ function start(layers, defaults, funcs) {
                      ]
           }
         const newBlend = f(curBlend, value);
-        console.log('new blend', index, newBlend)
-        console.log('new blend', index, 'color', config['blendColor'+index])
-        console.log('new blend', index, 'colorEq',
-          config['blendColorEqFn'+index],
-          config['blendColorEqFactor0'+index],
-          config['blendColorEqFactor1'+index]);
-        console.log('new blend', index, 'alphaEq',
-          config['blendAlphaEqFn'+index],
-          config['blendAlphaEqFactor0'+index],
-          config['blendAlphaEqFactor1'+index]);
+        // console.log('new blend', index, newBlend)
+        // console.log('new blend', index, 'color', config['blendColor'+index])
+        // console.log('new blend', index, 'colorEq',
+        //   config['blendColorEqFn'+index],
+        //   config['blendColorEqFactor0'+index],
+        //   config['blendColorEqFactor1'+index]);
+        // console.log('new blend', index, 'alphaEq',
+        //   config['blendAlphaEqFn'+index],
+        //   config['blendAlphaEqFactor0'+index],
+        //   config['blendAlphaEqFactor1'+index]);
         funcs.changeWGLBlend(index, newBlend);
       }
     }
@@ -216,37 +201,37 @@ function start(layers, defaults, funcs) {
       //folder.open();
 
       color.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        console.log('color', index, value);
+        // console.log('color', index, value);
         blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
         return blend;
       }));
       colorEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        console.log('colorEqFn', index, value);
+        // console.log('colorEqFn', index, value);
         blend.colorEq[0] = BLEND_FUNCS_IDS[value];
         return blend;
       }));
       colorEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        console.log('colorEqFactor0', index, value);
+        // console.log('colorEqFactor0', index, value);
         blend.colorEq[1] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       colorEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        console.log('colorEqFactor1', index, value);
+        // console.log('colorEqFactor1', index, value);
         blend.colorEq[2] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       alphaEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        console.log('alphaEqFn', index, value);
+        // console.log('alphaEqFn', index, value);
         blend.alphaEq[0] = BLEND_FUNCS_IDS[value];
         return blend;
       }));
       alphaEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        console.log('alphaEqFactor0', index, value);
+        // console.log('alphaEqFactor0', index, value);
         blend.alphaEq[1] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       alphaEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        console.log('alphaEqFactor1', index, value);
+        // console.log('alphaEqFactor1', index, value);
         blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
