@@ -297,7 +297,8 @@ update msg model =
               | size = adaptSize ( width, height )
               , origin = getOrigin ( width, height )
               }
-            , model |> extractFssBuildOptions |> requestFssRebuild
+            -- , model |> extractFssBuildOptions |> requestFssRebuild
+            , Cmd.none
             )
 
         Locate pos ->
@@ -833,28 +834,28 @@ view model =
                 [ type_ "button", onClick ExportZip, value "Export .zip" ]
                 [ text "Export .zip" ]
             ]
-        , WebGL.toHtmlWith
-            [
-            --   WebGL.antialias,
-              WebGL.alpha True
-            , WebGL.clearColor 0.0 0.0 0.0 1.0
-            --, WebGL.depth 0.5
-            ]
-            [ width (Tuple.first model.size)
-            , height (Tuple.second model.size)
-            , style [
-                ( "display", "block" ),
-                -- ( "background-color", "#161616" ),
-                ( "transform", "translate("
-                    ++ (Tuple.first model.origin |> toString)
-                    ++ "px, "
-                    ++ (Tuple.second model.origin |> toString)
-                    ++ "px)" )
-            ]
-            , onClick TriggerPause
-            ]
-            (mergeWebGLLayers model)
-        , div [] (mergeHtmlLayers model)
+        , mergeWebGLLayers model |>
+            WebGL.toHtmlWith
+                [ WebGL.alpha True
+                --, WebGL.antialias,
+                , WebGL.clearColor 0.0 0.0 0.0 1.0
+                --, WebGL.depth 0.5
+                ]
+                [ width (Tuple.first model.size)
+                , height (Tuple.second model.size)
+                , style
+                    [ ( "display", "block" )
+                    --, ( "background-color", "#161616" )
+                    ,   ( "transform", "translate("
+                        ++ (Tuple.first model.origin |> toString)
+                        ++ "px, "
+                        ++ (Tuple.second model.origin |> toString)
+                        ++ "px)"
+                        )
+                    ]
+                , onClick TriggerPause
+                ]
+        , mergeHtmlLayers model |> div []
         ]
 
 
