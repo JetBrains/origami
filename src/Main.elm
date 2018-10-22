@@ -80,7 +80,7 @@ initialLayers : List LayerKind
 initialLayers =
     [ FssMirrored
     , FssMirrored
-    , Vignette
+    -- , Vignette
     , Text
     , SvgImage
     ]
@@ -168,9 +168,9 @@ init =
       , mouse = ( 0, 0 )
       , now = 0.0
       , timeShift = 0.0
-      , faces = ( 15, 1 )
-      , range = ( 0.8, 1.0 )
-      , lightSpeed = 400
+      , faces = ( 17, 1 )
+      , range = ( 2.8, 1.0 )
+      , lightSpeed = 600
       , product = Product.JetBrains
       , vignette = 1.0
       }
@@ -836,10 +836,10 @@ view model =
             ]
         , WebGL.toHtmlWith
             [
-            --   WebGL.antialias,
+              WebGL.antialias,
               WebGL.alpha True
             , WebGL.clearColor 0.0 0.0 0.0 1.0
-            --, WebGL.depth 0.5
+            -- , WebGL.depth 0.5
             ]
             [ width (Tuple.first model.size)
             , height (Tuple.second model.size)
