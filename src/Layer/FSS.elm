@@ -539,6 +539,7 @@ vertexShader =
 
 
 
+
        // Don't ask
        vec2 _m = uMousePosition * vec2(1.0, -1.0) + vec2( -150.0,  (200.0 + uResolution.y / 2.0));
        vec2 mousePosition =  vec2(_m.x - uResolution.x / 2.0, _m.y - uResolution.y / 10.0 ) / uResolution.xy * 2.0;
@@ -578,7 +579,7 @@ vertexShader =
             // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
             vec3 lightsSpeed = vec3(uLightSpeed, uLightSpeed, 100.0);
-            vec3 brightnessD = vec3(3.5, 3.5, 6.0);
+            vec3 brightnessD = vec3(2.5, 2.5, 1.0);
             vec3 brightnessA = vec3(1.0, 1.0, 0.0);
 
 
@@ -626,8 +627,7 @@ vertexShader =
 
 
            // Multiplied by gradients
-            vColor = vColor * aColor;
-             // vMirror = vec3(uMirror, 0.0);
+              vColor = vColor * mix(vColor, aColor, 0.8);
 
             // Set gl_Position
           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
@@ -660,8 +660,11 @@ fragmentShader =
         uniform vec2 uClip;
 
 
-        float vignette = 0.00003;
-        vec4 bgColor = vec4(0.0862745098, 0.0862745098, 0.0862745098, vignette);
+
+        vec4 bgColor = vec4(0.0, 0.0, 0.0, 1.0);
+
+        float vignette = 1.0;
+
         float noise(vec2 seed, float time) {
             float x = (seed.x / 3.14159 + 4.0) * (seed.y / 13.0 + 4.0) * ((fract(time) + 1.0) * 10.0);
             return mod((mod(x, 13.0) + 1.0) * (mod(x, 123.0) + 1.0), 0.01) - 0.005;
@@ -690,12 +693,11 @@ fragmentShader =
                gl_FragColor = vColor;
 
             // noise by brightness
-               gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 80.0), 0.016 / pow(brightness(vColor), 0.5));
+               gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor), 0.5));
 
-            // vignette
-            if (vignette !=0.0) {
-            //    gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(0.0, 0.67, distance(actPos, vec2(0.5))), 2.0));
-            }
+               gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))), 2.0));
+
+
 
         }
 
