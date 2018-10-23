@@ -44,7 +44,8 @@ type LayerKind
     | Fractal
     | Template
     | Voronoi
-    | Fss (Maybe FSS.Clip)
+    | Fss
+    | MirroredFss
     | Text
     | SvgImage
     | Vignette
@@ -67,6 +68,7 @@ type Layer
     | VoronoiLayer Voronoi.Config WGLBlend.Blend Voronoi.Mesh
     | TemplateLayer Template.Config WGLBlend.Blend Template.Mesh
     | FssLayer FSS.Model WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | MirroredFssLayer FSS.Model WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | VignetteLayer Vignette.Config WGLBlend.Blend
     | TextLayer SVGBlend.Blend
     | SvgImageLayer SVGBlend.Blend
@@ -76,8 +78,8 @@ type Layer
 
 initialLayers : List LayerKind
 initialLayers =
-    [ Fss <| Nothing
-    , Fss <| Just (0.5, 1)
+    [ MirroredFss
+    , MirroredFss
     -- , Vignette
     , Text
     , SvgImage
@@ -408,7 +410,8 @@ update msg model =
 getLayerKind : Layer -> LayerKind
 getLayerKind layer =
     case layer of
-        FssLayer { clip } _ _ _ -> Fss clip
+        FssLayer _ _ _ _ -> Fss
+        MirroredFssLayer _ _ _ _ -> MirroredFss
         LorenzLayer _ _ _ -> Lorenz
         FractalLayer _ _ _ -> Fractal
         VoronoiLayer _ _ _ -> Voronoi
@@ -455,7 +458,8 @@ getBlendForPort layer =
 encodeLayerKind : LayerKind -> String
 encodeLayerKind kind =
     case kind of
-        Fss _ -> "fss"
+        Fss -> "fss"
+        MirroredFss -> "fss" -- should be different from Fss?
         Lorenz -> "lorenz"
         Template -> "template"
         Voronoi -> "voronoi"
@@ -482,11 +486,19 @@ encodeLayerKind kind =
 createLayer : LayerKind -> Layer
 createLayer code =
     case code of
-        Fss maybeClip ->
+        Fss ->
             let fssConfig = FSS.init
             in
                 FssLayer
-                    { fssConfig | clip = maybeClip }
+                    fssConfig
+                    WGLBlend.default
+                    Nothing
+                    (FSS.build fssConfig Nothing)
+        MirroredFss ->
+            let fssConfig = FSS.init
+            in
+                MirroredFssLayer
+                    fssConfig
                     WGLBlend.default
                     Nothing
                     (FSS.build fssConfig Nothing)
@@ -780,13 +792,15 @@ layerToEntities model viewport layer =
                 [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                 fss
             ]
-        -- MirroredFssLayer fssConfig blend serialized fss ->
-        --     let
-        --         config1 = { fssConfig | clip = Just ( FSS.defaultMirror, 1 ) }
-        --         config2 = { fssConfig | clip = Just ( 0, 1.0 - FSS.defaultMirror ) }
-        --     in
-        --         (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
-        --         (layerToEntities model viewport (FssLayer config2 blend serialized fss))
+        MirroredFssLayer fssConfig blend serialized fss ->
+            let
+                --config1 = { fssConfig | clip = Just ( FSS.defaultMirror, 1 ) }
+                --config2 = { fssConfig | clip = Just ( 0, 1.0 - FSS.defaultMirror ) }
+                config1 = { fssConfig | clip = Just ( FSS.defaultMirror, 1 ) }
+                config2 = { fssConfig | clip = Just ( 0, 1.0 - FSS.defaultMirror ) }
+            in
+                (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
+                (layerToEntities model viewport (FssLayer config2 blend serialized fss))
         VignetteLayer config blend ->
             [ Vignette.makeEntity
                   viewport
