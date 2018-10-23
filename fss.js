@@ -28,16 +28,16 @@ function buildFSS(model, source) {
     var material = new FSS.Material(palette[0], palette[1]);
     var mesh = new FSS.Mesh(geometry, material);
 
-    var ambient = new FSS.Light(palette[0], palette[1]);
-    var diffuse = new FSS.Light(palette[2], palette[2]);
+    var light1 = new FSS.Light(palette[0], palette[1]);
+    var light2 = new FSS.Light(palette[1], palette[2]);
     
-    ambient.speed = model.lightSpeed;
-    diffuse.speed = model.lightSpeed;
+    light1.speed = model.lightSpeed;
+    light2.speed = model.lightSpeed;
 
     function initialise() {
         scene.add(mesh);
-        scene.add(ambient);
-        scene.add(diffuse);
+        scene.add(light1);
+        scene.add(light2);
 
         var v, vertex;
         for (v = geometry.vertices.length - 1; v >= 0; v--) {
@@ -58,8 +58,8 @@ function buildFSS(model, source) {
                 : Math.randomInRange(0.2, 0.7);
         }
 
-        ambient.setPosition(150, -50, 100);
-        diffuse.setPosition(0, 150, 35);
+        light1.setPosition(150, -50, 100);
+        light2.setPosition(0, 150, 35);
 
         //container.appendChild(renderer.element);
         // window.addEventListener('resize', resize);
