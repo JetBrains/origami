@@ -53,7 +53,7 @@ function buildFSS(model, source) {
                 : Math.randomInRange(0, Math.PIM2);
             vertex.gradient = source && source[v]
                 ? source[v].gradient
-                : Math.randomInRange(0.2, 0.7);
+                : Math.randomInRange(0.2, 0.8);
         }
 
         ambient.setPosition(150, -50, 100);
