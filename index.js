@@ -168,7 +168,10 @@ const prepareImportExport = () => {
 
 prepareImportExport();
 
-setTimeout(function() {
+setTimeout(function() { // FIXME: change to document.ready
+
+    const hiddenLink = document.createElement('a');
+    hiddenLink.download = 'jetbrains-art-v2.png';
 
     app.ports.startGui.subscribe((model) => {
         console.log('startGui', model);
@@ -196,6 +199,20 @@ setTimeout(function() {
                       parseInt(size[0]),
                       parseInt(size[1])
                   ]) }
+            , savePng : () => {
+                var canvas = document.querySelector('.webgl-layers');
+                if (!canvas) return;
+                requestAnimationFrame(() => { // without that, image buffer will be empty
+                    var blob = canvas.toBlob(function(blob) {
+                        var url = URL.createObjectURL(blob);
+
+                        hiddenLink.href = url;
+                        hiddenLink.click();
+                        //URL.revokeObjectURL(url);
+                    });
+                });
+
+            }
             });
 
         model.layers.forEach((layer, index) => {
