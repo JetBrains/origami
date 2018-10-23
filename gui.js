@@ -177,6 +177,9 @@ const Config = function(layers, defaults, funcs) {
     });
     this.vignette = defaults.vignette;
     this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
+    this.amplitudeX = defaults.amplitude[0];
+    this.amplitudeY = defaults.amplitude[1];
+    this.amplitudeZ = defaults.amplitude[2];
     this.savePng = funcs.savePng;
     // -------
     //this.timeShift = 0;
@@ -281,6 +284,10 @@ function start(layers, defaults, funcs) {
     const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     const savePng = gui.add(config, 'savePng');
+    const amplitudeFolder = gui.addFolder('amplitude');
+    const amplitudeX = amplitudeFolder.add(config, 'amplitudeX').min(0.0).max(1.0);
+    const amplitudeY = amplitudeFolder.add(config, 'amplitudeY').min(0.0).max(1.0);
+    const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ').min(0.0).max(1.0);
 
     lightSpeed.onFinishChange(funcs.changeLightSpeed);
     facesX.onFinishChange(funcs.changeFacesX);
@@ -288,6 +295,15 @@ function start(layers, defaults, funcs) {
     product.onFinishChange(funcs.changeProduct);
     vignette.onFinishChange(funcs.changeVignette);
     customSize.onFinishChange(funcs.setCustomSize);
+    amplitudeX.onFinishChange(value => {
+      funcs.changeAmplitude(value, null, null);
+    });
+    amplitudeY.onFinishChange(value => {
+      funcs.changeAmplitude(null, value, null);
+    });
+    amplitudeZ.onFinishChange(value => {
+      funcs.changeAmplitude(null, null, value);
+    });    
 
     layers.forEach((layer, index) => {
       if (layer.webglOrSvg == 'webgl') {

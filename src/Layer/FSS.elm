@@ -2,6 +2,7 @@ module Layer.FSS exposing
     ( Config, MConfig, loadConfig
     , Mesh
     , SerializedScene
+    , Amplitude, AmplitudeChange
     , makeEntity
     , build
     , emptyMesh
@@ -37,6 +38,10 @@ type alias Size = ( Int, Int )
 type alias Origin = ( Int, Int )
 type alias Clip = ( Float, Float )
 type alias Mirror = Float
+type alias Amplitude = ( Float, Float, Float )
+type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
+
+
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -141,12 +146,13 @@ makeEntity
      : Viewport {}
     -> Time
     -> Mouse
+    -> Amplitude
     -> Config
     -> Maybe SerializedScene
     -> List Setting
     -> Mesh
     -> WebGL.Entity
-makeEntity viewport now mouse config maybeScene settings mesh =
+makeEntity viewport now mouse amplitude config maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -164,11 +170,12 @@ makeEntity viewport now mouse config maybeScene settings mesh =
                 )
             |> Maybe.withDefault (0, 0)
         offset = (0, 0)
-        state =
+        model =
             { now = now
             , meshSize = meshSize
             , origin = offset
             , mouse = mouse
+            , amplitude = amplitude
             }
     in
         WebGL.entityWith
@@ -180,7 +187,7 @@ makeEntity viewport now mouse config maybeScene settings mesh =
                 -- (viewport |> Debug.log "viewport")
                 -- (state |> Debug.log "state")
                 viewport
-                state
+                model
                 ( lights, speed )
                 config)
 
@@ -321,6 +328,7 @@ type alias Uniforms =
         , uResolution : Vec3
         , uNow : Float
         , uMousePosition: Vec2
+        , uAmplitude: Vec3
         , uSegment : Vec3
         , uMirror : Float
         , uClip : Vec2
@@ -339,20 +347,21 @@ type alias Varyings =
 
 type alias Speed = Float
 
-type alias State =
+type alias Model =
     { now : Time
     , meshSize : Size
     , origin : Origin
     , mouse : Mouse
+    , amplitude : ( Float, Float, Float )
     }
 
 uniforms
      : Viewport {}
-    -> State
+    -> Model
     -> ( List SLight, Speed )
     -> Config
     -> Uniforms
-uniforms v { now, meshSize, origin, mouse } ( lights, speed ) config =
+uniforms v { now, meshSize, origin, mouse, amplitude } ( lights, speed ) config =
     let
         adaptedLights = lights |> adaptLights meshSize speed
         (meshWidth, meshHeight) = meshSize
@@ -361,6 +370,7 @@ uniforms v { now, meshSize, origin, mouse } ( lights, speed ) config =
         -- width = Tuple.first size |> toFloat
         -- height = Tuple.second size |> toFloat
         depth = 100.0
+        ( amplitudeX, amplitudeY, amplitudeZ ) = amplitude
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -374,6 +384,7 @@ uniforms v { now, meshSize, origin, mouse } ( lights, speed ) config =
         , uMirror = if config.hasMirror then 1.0 else 0.0
         , uClip = vec2 (Tuple.first config.clip) (Tuple.second config.clip)
         , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
+        , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
 
         , paused = v.paused
         , rotation = v.rotation
@@ -528,6 +539,8 @@ vertexShader =
         uniform mat4 uLightDiffuse;
         uniform float uLightSpeed;
 
+        uniform vec3 uAmplitude;
+
         uniform vec2 uMousePosition;
         uniform float uMirror;
         uniform vec2 uClip;
@@ -574,7 +587,8 @@ vertexShader =
 
 
             // Calculate the vertex position
-            vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment;
+            //vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment;
+            vec3 amplitudes = uAmplitude * uSegment;
 
             // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
@@ -609,7 +623,8 @@ vertexShader =
 
 
             // Iterate through lights
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 1; i++) {
+            // for (int i = 0; i < 2; i++) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * oscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
                 vec4 lightAmbient = brightnessA[i] * uLightAmbient[i];
                 vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
