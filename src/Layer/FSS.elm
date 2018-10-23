@@ -154,7 +154,7 @@ makeEntity viewport now mouse config maybeScene settings mesh =
         speed = case lights of
             first::_ -> first.speed
             _ -> 0
-        size = maybeScene
+        meshSize = maybeScene
             |> Maybe.map (\scene ->
                 List.head scene.meshes)
             |> Maybe.map (\maybeMesh ->
@@ -166,7 +166,7 @@ makeEntity viewport now mouse config maybeScene settings mesh =
         offset = (0, 0)
         state =
             { now = now
-            , size = size
+            , meshSize = meshSize
             , origin = offset
             , mouse = mouse
             }
@@ -177,6 +177,8 @@ makeEntity viewport now mouse config maybeScene settings mesh =
             fragmentShader
             mesh
             (uniforms
+                -- (viewport |> Debug.log "viewport")
+                -- (state |> Debug.log "state")
                 viewport
                 state
                 ( lights, speed )
@@ -322,6 +324,7 @@ type alias Uniforms =
         , uSegment : Vec3
         , uMirror : Float
         , uClip : Vec2
+        , uScale : Vec2
         }
 
 
@@ -338,7 +341,7 @@ type alias Speed = Float
 
 type alias State =
     { now : Time
-    , size : Size
+    , meshSize : Size
     , origin : Origin
     , mouse : Mouse
     }
@@ -349,11 +352,14 @@ uniforms
     -> ( List SLight, Speed )
     -> Config
     -> Uniforms
-uniforms v { now, size, origin, mouse } ( lights, speed ) config =
+uniforms v { now, meshSize, origin, mouse } ( lights, speed ) config =
     let
-        adaptedLights = lights |> adaptLights size speed
+        adaptedLights = lights |> adaptLights meshSize speed
+        (meshWidth, meshHeight) = meshSize
         width = Vec2.getX v.size
         height = Vec2.getY v.size
+        -- width = Tuple.first size |> toFloat
+        -- height = Tuple.second size |> toFloat
         depth = 100.0
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
@@ -367,6 +373,7 @@ uniforms v { now, size, origin, mouse } ( lights, speed ) config =
         , uSegment  = vec3 100 100 50
         , uMirror = if config.hasMirror then 1.0 else 0.0
         , uClip = vec2 (Tuple.first config.clip) (Tuple.second config.clip)
+        , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
 
         , paused = v.paused
         , rotation = v.rotation
@@ -510,6 +517,7 @@ vertexShader =
 
 
         uniform vec3 uResolution;
+        uniform vec2 uScale;
 
         uniform vec3 uSegment;
         uniform bool paused;
@@ -566,7 +574,7 @@ vertexShader =
 
 
             // Calculate the vertex position
-            vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment / uResolution * 2.0;
+            vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment;
 
             // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
@@ -576,7 +584,7 @@ vertexShader =
 
 
             position = aPosition;
-            position = position / uResolution * 2.0;
+            //position = position;
             //position = vec3(1.0 - position.x, position.y, position.z);
 
             if (!paused) {
@@ -591,6 +599,11 @@ vertexShader =
 
 
             position += attenuator (time, duration) * amplitudes * oscillators(speed * time + phase);
+
+            position /= uResolution * vec3(uScale, 1.0);
+
+            position *= 4.0;
+            ;
 
 
 
@@ -614,8 +627,13 @@ vertexShader =
 
 
            // Multiplied by gradients
+<<<<<<< HEAD
               vColor = vColor * mix(vColor, aColor, 0.9);
              
+=======
+              vColor = vColor * mix(vColor, aColor, 0.8);
+
+>>>>>>> f403e47a24951933c5bea9b636d1e8e47a8665f1
             // Set gl_Position
           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
 
@@ -647,7 +665,7 @@ fragmentShader =
         uniform vec2 uClip;
 
 
-    
+
         vec4 bgColor = vec4(0.0, 0.0, 0.0, 1.0);
 
         float vignette = 1.0;
@@ -681,11 +699,18 @@ fragmentShader =
 
             // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor), 0.5));
+<<<<<<< HEAD
             
             // vignette
                gl_FragColor =  mix(gl_FragColor, bgColor, pow(smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))), 2.0));
             
   
+=======
+
+               gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))), 2.0));
+
+
+>>>>>>> f403e47a24951933c5bea9b636d1e8e47a8665f1
 
         }
 
