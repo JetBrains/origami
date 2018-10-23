@@ -1,6 +1,7 @@
 const deepClone = require('./deep-clone.js');
 const dat = require('dat.gui');
 
+
 const PRODUCTS = [
     { label: 'JB', id: 'jetbrains'
     },  // jetbrains-1
@@ -71,17 +72,20 @@ PRODUCTS.forEach((product) => {
     PRODUCTS_BY_ID[product.id] = product;
 });
 
+
 BLEND_FUNCS =
   { '+': 'customAdd'
   , '-': 'customSubtract'
   , 'R-': 'reverseSubtract'
   };
 
+
 BLEND_FUNCS_IDS =
   { 'customAdd': 0
   , 'customSubtract': 1
   , 'reverseSubtract': 2
   };
+
 
 BLEND_FACTORS =
   { '0': 'zero'
@@ -101,6 +105,7 @@ BLEND_FACTORS =
   , '1-CA': 'oneMinusConstantAlpha'
 };
 
+
 BLEND_FACTORS_IDS =
   { 'zero': 0
   , 'one': 1
@@ -119,8 +124,20 @@ BLEND_FACTORS_IDS =
   , 'oneMinusConstantAlpha': 14
 };
 
+
 SVG_BLENDS =
   [ 'normal', 'overlay' ];
+
+
+PREDEFINED_SIZES =
+  { '1920x1980': [ 1920, 1980 ]
+  , '1366x768': [ 1366, 768 ]
+  , '1440x900': [ 1440, 900 ]
+  , '1536x864': [ 1536, 864 ]
+  , '1680x1050': [ 1680, 1050 ]
+  , '480x360': [ 480, 360 ]
+  };
+
 
 const Config = function(layers, defaults, funcs) {
     const customAdd = BLEND_FUNCS['+'];
@@ -131,21 +148,34 @@ const Config = function(layers, defaults, funcs) {
     this.facesX = defaults.facesX;
     this.facesY = defaults.facesY;
     this.product = defaults.product;
+    const funcKeys = Object.keys(BLEND_FUNCS);
+    const factorKeys = Object.keys(BLEND_FACTORS);
     layers.forEach((layer, index) => {
-      // TODO: load blend value from layer
       if (layer.webglOrSvg == 'webgl') {
-        this['blendColor' + index] = [ 0, 0, 0, 0 ];
-        this['blendColorEqFn' + index] = customAdd;
-        this['blendColorEqFactor0' + index] = one;
-        this['blendColorEqFactor1' + index] = zero;
-        this['blendAlphaEqFn' + index] = customAdd;
-        this['blendAlphaEqFactor0' + index] = one;
-        this['blendAlphaEqFactor1' + index] = zero;
+        if (layer.blend[0]) {
+          const blend = layer.blend[0];
+          this['blendColor' + index] = blend.color || [ 0, 0, 0, 0 ]; // FIXME: get RGBA components
+          this['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[blend.colorEq[0]]];
+          this['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[1]]];
+          this['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[2]]];
+          this['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[blend.alphaEq[0]]];
+          this['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[1]]];
+          this['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[2]]];
+        } else {
+          this['blendColor' + index] = [ 0, 0, 0, 0 ];
+          this['blendColorEqFn' + index] = customAdd;
+          this['blendColorEqFactor0' + index] = one;
+          this['blendColorEqFactor1' + index] = zero;
+          this['blendAlphaEqFn' + index] = customAdd;
+          this['blendAlphaEqFactor0' + index] = one;
+          this['blendAlphaEqFactor1' + index] = zero;
+        }
       } else {
-        this['layer' + index + 'Blend'] = 'normal';
+        this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
     });
     this.vignette = defaults.vignette;
+    this.customSize = defaults.customSize;
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -201,37 +231,30 @@ function start(layers, defaults, funcs) {
       //folder.open();
 
       color.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        // console.log('color', index, value);
         blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
         return blend;
       }));
       colorEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        // console.log('colorEqFn', index, value);
         blend.colorEq[0] = BLEND_FUNCS_IDS[value];
         return blend;
       }));
       colorEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        // console.log('colorEqFactor0', index, value);
         blend.colorEq[1] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       colorEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        // console.log('colorEqFactor1', index, value);
         blend.colorEq[2] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       alphaEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        // console.log('alphaEqFn', index, value);
         blend.alphaEq[0] = BLEND_FUNCS_IDS[value];
         return blend;
       }));
       alphaEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        // console.log('alphaEqFactor0', index, value);
         blend.alphaEq[1] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
       alphaEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        // console.log('alphaEqFactor1', index, value);
         blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
         return blend;
       }));
@@ -254,12 +277,14 @@ function start(layers, defaults, funcs) {
     const facesX = gui.add(config, 'facesX').name('granularity').min(1).max(50).step(1);
     const facesY = gui.add(config, 'facesY').name('fishy').min(1).max(30).step(1);
     const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);
+    const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES);
 
     lightSpeed.onFinishChange(funcs.changeLightSpeed);
     facesX.onFinishChange(funcs.changeFacesX);
     facesY.onFinishChange(funcs.changeFacesY);
     product.onFinishChange(funcs.changeProduct);
     vignette.onFinishChange(funcs.changeVignette);
+    customSize.onFinishChange(funcs.setCustomSize);
 
     layers.forEach((layer, index) => {
       if (layer.webglOrSvg == 'webgl') {
