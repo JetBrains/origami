@@ -29,5 +29,5 @@ view ( w, h ) ( x, y ) blend =
                 , ("font-size", toString defaultSize ++ "px")
                 ]
             ]
-            [ span [ HAttrs.class "text-layer text-layer--jetbrains" ] [ text " " ]
+            [ span [ HAttrs.class "text-layer text-layer--jetbrains" ] [ text "Jetbrains" ]
             ]

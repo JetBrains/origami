@@ -192,13 +192,15 @@ setTimeout(function() { // FIXME: change to document.ready
                 { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) }
             , changeProduct : (id) =>
                 { app.ports.changeProduct.send(id) }
-            , setCustomSize : (value) =>
-                { // value.split(',').map(parseInt) is not working
-                  const size = value.split(',');
-                  app.ports.setCustomSize.send([
-                      parseInt(size[0]),
-                      parseInt(size[1])
-                  ]) }
+            , setCustomSize : (value) => {
+                const width = parseInt(size[0]);
+                const height = parseInt(size[1]);
+                if (width > 0 && height > 0) {
+                app.ports.setCustomSize.send([ width, height ]);
+                } else {
+                app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
+                }
+            }
             , savePng : () => {
                 var canvas = document.querySelector('.webgl-layers');
                 if (!canvas) return;
@@ -211,7 +213,6 @@ setTimeout(function() { // FIXME: change to document.ready
                         //URL.revokeObjectURL(url);
                     });
                 });
-
             }
             });
 

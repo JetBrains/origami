@@ -81,7 +81,7 @@ initialLayers =
     [ FssMirrored
     , FssMirrored
     -- , Vignette
-    , Text
+    --, Text
     , SvgImage
     ]
 

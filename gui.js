@@ -130,7 +130,8 @@ SVG_BLENDS =
 
 
 PREDEFINED_SIZES =
-  { '1920x1980': [ 1920, 1980 ]
+  { 'window': [0, 0]
+  , '1920x1980': [ 1920, 1980 ]
   , '1366x768': [ 1366, 768 ]
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
@@ -175,8 +176,7 @@ const Config = function(layers, defaults, funcs) {
       }
     });
     this.vignette = defaults.vignette;
-    this.customSize = defaults.customSize;
-
+    this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
     this.savePng = funcs.savePng;
     // -------
     //this.timeShift = 0;
