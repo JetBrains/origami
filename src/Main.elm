@@ -115,7 +115,7 @@ type alias GuiConfig =
     , palette : List String
     , layers : List
         { kind: String
-        , blend : String
+        , blend : IE.PortBlend
         , webglOrSvg: String
         }
     , size : ( Int, Int )
@@ -123,6 +123,7 @@ type alias GuiConfig =
     , facesY : Int
     , lightSpeed: Int
     , vignette: Float
+    , customSize : Maybe (Int, Int)
     }
 
 
@@ -434,6 +435,26 @@ getBlendString layer =
         _ -> SVGBlend.encode SVGBlend.default
 
 
+getBlendForPort : Layer -> IE.PortBlend
+getBlendForPort layer =
+    ( case layer of
+        FssLayer _ blend _ _ -> Just blend
+        MirroredFssLayer _ blend _ _ -> Just blend
+        LorenzLayer _ blend _ -> Just blend
+        FractalLayer _ blend _ -> Just blend
+        VoronoiLayer _ blend _ -> Just blend
+        TemplateLayer _ blend _ -> Just blend
+        VignetteLayer _ blend -> Just blend
+        _ -> Nothing
+    , case layer of
+        TextLayer blend ->
+            SVGBlend.encode blend |> Just
+        SvgImageLayer blend ->
+            SVGBlend.encode blend |> Just
+        _ -> Nothing
+    )
+
+
 encodeLayerKind : LayerKind -> String
 encodeLayerKind kind =
     case kind of
@@ -560,13 +581,14 @@ prepareGuiConfig model =
         model.layers |>
             List.map (\layer ->
                 { kind = getLayerKind layer |> encodeLayerKind
-                , blend = getBlendString layer
+                , blend = getBlendForPort layer
                 , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
                 })
     , facesX = Tuple.first model.faces
     , facesY = Tuple.second model.faces
     , lightSpeed = model.lightSpeed
     , vignette = model.vignette
+    , customSize = Nothing
     }
 
 
@@ -626,6 +648,14 @@ subscriptions model =
         , changeFacesX ChangeFacesX
         , changeFacesY ChangeFacesY
         , changeLightSpeed ChangeLightSpeed
+        , setCustomSize
+            (\(w, h) ->
+                let
+                    (newW, newH) =
+                        if (w > 0 && h > 0) then (w, h)
+                        else model.size
+                in
+                    Window.Size newW newH |> Resize)
         , changeWGLBlend (\{ layer, blend } ->
             ChangeWGLBlend layer blend
           )
@@ -841,7 +871,8 @@ view model =
                 , WebGL.clearColor 0.0 0.0 0.0 1.0
                 --, WebGL.depth 0.5
                 ]
-                [ width (Tuple.first model.size)
+                [ H.class "webgl-layers"
+                , width (Tuple.first model.size)
                 , height (Tuple.second model.size)
                 , style
                     [ ( "display", "block" )
@@ -855,7 +886,7 @@ view model =
                     ]
                 , onClick TriggerPause
                 ]
-        , mergeHtmlLayers model |> div []
+        , mergeHtmlLayers model |> div [ H.class "svg-layers"]
         ]
 
 
@@ -904,6 +935,8 @@ port changeFacesY : (Int -> msg) -> Sub msg
 port changeLightSpeed : (Int -> msg) -> Sub msg
 
 port changeVignette : (Float -> msg) -> Sub msg
+
+port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
 port changeWGLBlend :
     ( { layer : Int
