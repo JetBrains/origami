@@ -32,7 +32,6 @@ type alias PortBlend =
 type LayerType
     = Unknown
     | Fss
-    | MirroredFss
 
 
 -- type Config
@@ -73,8 +72,7 @@ encodeLayerType type_ =
     E.string
         (case type_ of
             Unknown -> "unknown"
-            Fss -> "fss"
-            MirroredFss -> "fss-mirror")
+            Fss -> "fss")
 
 
 encodeLayer : Layer -> E.Value
@@ -114,7 +112,6 @@ determineLayerType : String -> LayerType
 determineLayerType layerTypeStr =
     case layerTypeStr of
         "fss" -> Fss
-        "fss-mirror" -> MirroredFss
         _ -> Unknown
 
 

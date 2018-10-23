@@ -31,11 +31,11 @@ const import_ = (app, importedState) => {
         ))
     }));
     parsedState.layers.forEach((layer, index) => {
-        if (layer.type == 'fss-mirror') {
+        if (layer.type == 'fss') {
             const scene = buildFSS(layer.config, layer.sceneFuzz);
             scenes[index] = scene;
             console.log('import FSS', scene, layer.config);
-            app.ports.configureMirroredFss.send([ layer.config, index ]);
+            app.ports.configureFss.send([ layer.config, index ]);
             app.ports.rebuildFss.send([ scene, index ]);
         }
     });
