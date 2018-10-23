@@ -193,12 +193,13 @@ setTimeout(function() { // FIXME: change to document.ready
             , changeProduct : (id) =>
                 { app.ports.changeProduct.send(id) }
             , setCustomSize : (value) => {
+                const size = value.split(',');
                 const width = parseInt(size[0]);
                 const height = parseInt(size[1]);
                 if (width > 0 && height > 0) {
-                app.ports.setCustomSize.send([ width, height ]);
+                    app.ports.setCustomSize.send([ width, height ]);
                 } else {
-                app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
+                    app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
                 }
             }
             , savePng : () => {
