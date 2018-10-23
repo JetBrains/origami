@@ -44,8 +44,7 @@ type LayerKind
     | Fractal
     | Template
     | Voronoi
-    | Fss
-    | FssMirrored
+    | Fss (Maybe FSS.Clip)
     | Text
     | SvgImage
     | Vignette
@@ -56,8 +55,8 @@ type LayerConfig
     = LorenzConfig Lorenz.Config
     | FractalConfig Fractal.Config
     | VoronoiConfig Voronoi.Config
-    | FssConfig FSS.Config
-    | MirroredFssConfig FSS.MConfig
+    | FssConfig FSS.Model
+    | MirroredFssConfig FSS.Model
     | TemplateConfig Template.Config
 
 
@@ -67,8 +66,7 @@ type Layer
     | FractalLayer Fractal.Config WGLBlend.Blend Fractal.Mesh
     | VoronoiLayer Voronoi.Config WGLBlend.Blend Voronoi.Mesh
     | TemplateLayer Template.Config WGLBlend.Blend Template.Mesh
-    | FssLayer FSS.Config WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | MirroredFssLayer FSS.MConfig WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | FssLayer FSS.Model WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
     | VignetteLayer Vignette.Config WGLBlend.Blend
     | TextLayer SVGBlend.Blend
     | SvgImageLayer SVGBlend.Blend
@@ -78,10 +76,10 @@ type Layer
 
 initialLayers : List LayerKind
 initialLayers =
-    [ FssMirrored
-    , FssMirrored
+    [ Fss <| Nothing
+    , Fss <| Just (0.5, 1)
     -- , Vignette
-    --, Text
+    , Text
     , SvgImage
     ]
 
@@ -159,6 +157,7 @@ type Msg
 sizeCoef : Float
 sizeCoef = 1.0
 
+
 init : ( Model, Cmd Msg )
 init =
     ( { paused = False
@@ -168,13 +167,13 @@ init =
       , layers = initialLayers |> List.map createLayer
       , size = ( 1200, 1200 )
       , origin = ( 0, 0 )
-      , mouse = ( 0, 0 )
+      , mouse = FSS.defaultMouse
       , now = 0.0
       , timeShift = 0.0
-      , faces = ( 17, 17 )
+      , faces = FSS.defaultFaces
       , range = ( 0.8, 1.0 )
-      , amplitude = ( 0.5, 0.5, 0.2 )
-      , lightSpeed = 600
+      , amplitude = FSS.defaultAmplitude
+      , lightSpeed = FSS.defaultLightSpeed
       , product = Product.JetBrains
       , vignette = 1.0
       }
@@ -182,6 +181,7 @@ init =
         [ Task.perform Resize Window.size
         ]
     )
+
 
 updateAndRebuildFssWith : Model -> ( Model, Cmd Msg )
 updateAndRebuildFssWith model =
@@ -227,14 +227,6 @@ update msg model =
                                 newMesh = maybeScene |> FSS.build fssConfig
                             in
                                 FssLayer fssConfig curBlend maybeScene newMesh
-                        ( MirroredFssLayer _ curBlend maybeScene _
-                         , MirroredFssConfig mirroredFssConfig ) ->
-                            let
-                                fssConfig = FSS.loadConfig mirroredFssConfig
-                                newMesh = maybeScene
-                                    |> FSS.build fssConfig
-                            in
-                                MirroredFssLayer mirroredFssConfig curBlend maybeScene newMesh
                         ( TemplateLayer _ curBlend _, TemplateConfig templateConfig ) ->
                             TemplateLayer templateConfig curBlend (templateConfig |> Template.build)
                         _ -> Unknown
@@ -257,8 +249,6 @@ update msg model =
                             VoronoiLayer cfg newBlend mesh
                         FssLayer cfg _ scene mesh ->
                             FssLayer cfg newBlend scene mesh
-                        MirroredFssLayer cfg _ scene mesh ->
-                            MirroredFssLayer cfg newBlend scene mesh
                         VignetteLayer cfg _ ->
                             VignetteLayer cfg newBlend
                         _ -> layer
@@ -320,12 +310,6 @@ update msg model =
                                 newMesh = maybeScene |> FSS.build cfg
                             in
                                 FssLayer cfg blend maybeScene newMesh
-                        MirroredFssLayer mirrorCfg blend _ mesh ->
-                            let
-                                maybeScene = Just serializedScene
-                                newMesh = maybeScene |> FSS.build (FSS.loadConfig mirrorCfg)
-                            in
-                                MirroredFssLayer mirrorCfg blend maybeScene newMesh
                         _ -> layer
                 )
             , Cmd.none
@@ -406,17 +390,17 @@ update msg model =
             )
 
         ChangeAmplitude ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
-            let 
+            let
                 ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ ) = model.amplitude
-            in     
-                ( { model 
-                | amplitude = 
-                    ( Maybe.withDefault currentAmplitudeX newAmplitudeX 
-                    , Maybe.withDefault currentAmplitudeY newAmplitudeY 
-                    , Maybe.withDefault currentAmplitudeZ newAmplitudeZ 
+            in
+                ( { model
+                | amplitude =
+                    ( Maybe.withDefault currentAmplitudeX newAmplitudeX
+                    , Maybe.withDefault currentAmplitudeY newAmplitudeY
+                    , Maybe.withDefault currentAmplitudeZ newAmplitudeZ
                     ) }
-                , Cmd.none    
-                )    
+                , Cmd.none
+                )
 
         NoOp -> ( model, Cmd.none )
 
@@ -424,8 +408,7 @@ update msg model =
 getLayerKind : Layer -> LayerKind
 getLayerKind layer =
     case layer of
-        FssLayer _ _ _ _ -> Fss
-        MirroredFssLayer _ _ _ _ -> FssMirrored
+        FssLayer { clip } _ _ _ -> Fss clip
         LorenzLayer _ _ _ -> Lorenz
         FractalLayer _ _ _ -> Fractal
         VoronoiLayer _ _ _ -> Voronoi
@@ -440,7 +423,6 @@ getBlendString : Layer -> String
 getBlendString layer =
     case layer of
         FssLayer _ blend _ _ -> WGLBlend.encodeOne blend
-        MirroredFssLayer _ blend _ _ -> WGLBlend.encodeOne blend
         LorenzLayer _ blend _ -> WGLBlend.encodeOne blend
         FractalLayer _ blend _ -> WGLBlend.encodeOne blend
         VoronoiLayer _ blend _ -> WGLBlend.encodeOne blend
@@ -455,7 +437,6 @@ getBlendForPort : Layer -> IE.PortBlend
 getBlendForPort layer =
     ( case layer of
         FssLayer _ blend _ _ -> Just blend
-        MirroredFssLayer _ blend _ _ -> Just blend
         LorenzLayer _ blend _ -> Just blend
         FractalLayer _ blend _ -> Just blend
         VoronoiLayer _ blend _ -> Just blend
@@ -474,8 +455,7 @@ getBlendForPort layer =
 encodeLayerKind : LayerKind -> String
 encodeLayerKind kind =
     case kind of
-        Fss -> "fss"
-        FssMirrored -> "fss-mirror"
+        Fss _ -> "fss"
         Lorenz -> "lorenz"
         Template -> "template"
         Voronoi -> "voronoi"
@@ -485,38 +465,28 @@ encodeLayerKind kind =
         Vignette -> "vignette"
 
 
-decodeLayerKind : String -> Maybe LayerKind
-decodeLayerKind code =
-    case code of
-        "fss" -> Just Fss
-        "fss-mirror" -> Just FssMirrored
-        "lorenz" -> Just Lorenz
-        "template" -> Just Template
-        "voronoi" -> Just Voronoi
-        "fractal" -> Just Fractal
-        "text" -> Just Text
-        "svg" -> Just SvgImage
-        "vignette" -> Just Vignette
-        _ -> Nothing
+-- decodeLayerKind : String -> Maybe LayerKind
+-- decodeLayerKind code =
+--     case code of
+--         "fss" -> Just (Fss Nothing) -- FIXME: not Nothing
+--         "lorenz" -> Just Lorenz
+--         "template" -> Just Template
+--         "voronoi" -> Just Voronoi
+--         "fractal" -> Just Fractal
+--         "text" -> Just Text
+--         "svg" -> Just SvgImage
+--         "vignette" -> Just Vignette
+--         _ -> Nothing
 
 
 createLayer : LayerKind -> Layer
 createLayer code =
     case code of
-        Fss ->
+        Fss maybeClip ->
             let fssConfig = FSS.init
             in
                 FssLayer
-                    fssConfig
-                    WGLBlend.default
-                    Nothing
-                    (FSS.build fssConfig Nothing)
-        FssMirrored ->
-            let mirrorConfig = FSS.initM
-                fssConfig = FSS.init
-            in
-                MirroredFssLayer
-                    mirrorConfig
+                    { fssConfig | clip = maybeClip }
                     WGLBlend.default
                     Nothing
                     (FSS.build fssConfig Nothing)
@@ -548,8 +518,8 @@ createLayer code =
 extractLayer : Layer -> IE.Layer -> Layer
 extractLayer curLayer srcLayer =
     case ( srcLayer.type_, curLayer ) of
-        ( IE.MirroredFss,  MirroredFssLayer config blend scene mesh ) ->
-            MirroredFssLayer config srcLayer.blend scene mesh
+        ( IE.Fss, FssLayer config blend scene mesh ) ->
+            FssLayer config srcLayer.blend scene mesh
         _ -> Unknown
 
 
@@ -558,12 +528,6 @@ prepareLayer layer =
     case layer of
         FssLayer config blend maybeScene mesh ->
             { type_ = IE.Fss
-            , blend = blend
-            -- , config = config
-            -- , mesh = mesh
-            }
-        MirroredFssLayer config blend maybeScene mesh ->
-            { type_ = IE.MirroredFss
             , blend = blend
             -- , config = config
             -- , mesh = mesh
@@ -588,9 +552,9 @@ extractFssBuildOptions = prepareGuiConfig
 
 prepareGuiConfig : Model -> GuiConfig
 prepareGuiConfig model =
-    let 
+    let
         ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
-    in 
+    in
         { product = Product.encode model.product
         , palette = Product.getPalette model.product
         , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
@@ -692,18 +656,10 @@ subscriptions model =
                 )
           )
         , configureFss (\(fssConfig, layerIndex) ->
-            configureWhenMatches layerIndex model (FssConfig fssConfig)
+            configureWhenMatches layerIndex model (FSS.fromPortModel fssConfig |> FssConfig)
                 (\layer ->
                     case layer of
                         FssLayer _ _ _ _ -> True
-                        _ -> False
-                )
-          )
-        , configureMirroredFss (\(mirroredFssConfig, layerIndex) ->
-            configureWhenMatches layerIndex model (MirroredFssConfig mirroredFssConfig)
-                (\layer ->
-                    case layer of
-                        MirroredFssLayer _ _ _ _ -> True
                         _ -> False
                 )
           )
@@ -819,22 +775,18 @@ layerToEntities model viewport layer =
         FssLayer config blend serialized fss ->
             [ FSS.makeEntity
                 viewport
-                model.now
-                model.mouse
-                model.amplitude
                 config
                 serialized
                 [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                 fss
             ]
-        MirroredFssLayer mConfig blend serialized fss ->
-            let
-                fssConfig = FSS.loadConfig mConfig
-                config1 = { fssConfig | clip = ( mConfig.mirror, 1 ) }
-                config2 = { fssConfig | clip = ( 0, mConfig.mirror ), hasMirror = True }
-            in
-                (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
-                (layerToEntities model viewport (FssLayer config2 blend serialized fss))
+        -- MirroredFssLayer fssConfig blend serialized fss ->
+        --     let
+        --         config1 = { fssConfig | clip = Just ( FSS.defaultMirror, 1 ) }
+        --         config2 = { fssConfig | clip = Just ( 0, 1.0 - FSS.defaultMirror ) }
+        --     in
+        --         (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
+        --         (layerToEntities model viewport (FssLayer config2 blend serialized fss))
         VignetteLayer config blend ->
             [ Vignette.makeEntity
                   viewport
@@ -938,9 +890,9 @@ port initLayers : (Array String -> msg) -> Sub msg
 
 port configureLorenz : ((Lorenz.Config, Int) -> msg) -> Sub msg
 
-port configureFss : ((FSS.Config, Int) -> msg) -> Sub msg
+port configureFss : ((FSS.PortModel, Int) -> msg) -> Sub msg
 
-port configureMirroredFss : ((FSS.MConfig, Int) -> msg) -> Sub msg
+port configureMirroredFss : ((FSS.PortModel, Int) -> msg) -> Sub msg
 
 port changeProduct : (String -> msg) -> Sub msg
 

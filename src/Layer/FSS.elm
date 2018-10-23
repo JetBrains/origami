@@ -1,12 +1,20 @@
 module Layer.FSS exposing
-    ( Config, MConfig, loadConfig
+    ( Model, PortModel
+    , RenderMode(..)
     , Mesh
     , SerializedScene
     , Amplitude, AmplitudeChange
+    , Clip
     , makeEntity
+    , fromPortModel
     , build
     , emptyMesh
-    , init, initM
+    , defaultMirror
+    , defaultAmplitude
+    , defaultMouse
+    , defaultFaces
+    , defaultLightSpeed
+    , init
     )
 
 
@@ -22,16 +30,6 @@ import Time exposing (Time)
 import Viewport exposing (Viewport)
 
 
-type alias Config =
-    { hasMirror : Bool -- normal of the mirror
-    , clip : Clip -- max and min values of X for clipping
-    }
-
-
-type alias MConfig =
-    { mirror : Mirror
-    }
-
 
 type alias Mouse = ( Int, Int )
 type alias Size = ( Int, Int )
@@ -40,14 +38,36 @@ type alias Clip = ( Float, Float )
 type alias Mirror = Float
 type alias Amplitude = ( Float, Float, Float )
 type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
-
-
+type alias Speed = Float
 
 
 type alias Mesh = WebGL.Mesh Vertex
 
 
--- Serialization
+type RenderMode
+    = Triangles
+    | Lines
+    | Points
+
+
+type alias PortModel =
+    { now : Time
+    , origin : Origin
+    , mouse : Mouse
+    , renderMode : String
+    , amplitude : ( Float, Float, Float )
+    , clip : Maybe Clip -- max and min values of X for clipping
+    }
+
+
+type alias Model =
+    { now : Time
+    , origin : Origin
+    , mouse : Mouse
+    , renderMode : RenderMode
+    , amplitude : ( Float, Float, Float )
+    , clip : Maybe Clip -- max and min values of X for clipping
+    }
 
 
 type alias SColor =
@@ -125,35 +145,52 @@ type alias SerializedScene =
 
 -- Base logic
 
-init : Config
+defaultAmplitude : ( Float, Float, Float )
+defaultAmplitude = ( 0.5, 0.5, 0.2 )
+
+
+defaultMirror : Float
+defaultMirror = 0.5
+
+
+defaultMouse : Mouse
+defaultMouse = ( 0, 0 )
+
+
+defaultFaces : ( Int, Int )
+defaultFaces = ( 17, 17 )
+
+
+defaultLightSpeed : Int
+defaultLightSpeed = 600
+
+
+init : Model
 init =
-    { hasMirror = False -- normal of the mirror
-    , clip = (-1, -1) -- max and min values of X for clipping
+    { now = 0
+    , origin = (0, 0)
+    , mouse = defaultMouse
+    , renderMode = Triangles
+    , amplitude = defaultAmplitude
+    , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
     }
 
 
-initM : MConfig
-initM =
-    { mirror = 0.5
-    }
-
-
-loadConfig : MConfig -> Config
-loadConfig _ = init
+fromPortModel : PortModel -> Model
+fromPortModel portModel =
+    { portModel | renderMode = Triangles }
 
 
 makeEntity
      : Viewport {}
-    -> Time
-    -> Mouse
-    -> Amplitude
-    -> Config
+    -> Model
     -> Maybe SerializedScene
     -> List Setting
     -> Mesh
     -> WebGL.Entity
-makeEntity viewport now mouse amplitude config maybeScene settings mesh =
+makeEntity viewport model maybeScene settings mesh =
     let
+        { now, mouse, amplitude } = model
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
             |> Maybe.withDefault []
@@ -170,13 +207,6 @@ makeEntity viewport now mouse amplitude config maybeScene settings mesh =
                 )
             |> Maybe.withDefault (0, 0)
         offset = (0, 0)
-        model =
-            { now = now
-            , meshSize = meshSize
-            , origin = offset
-            , mouse = mouse
-            , amplitude = amplitude
-            }
     in
         WebGL.entityWith
             settings
@@ -184,12 +214,10 @@ makeEntity viewport now mouse amplitude config maybeScene settings mesh =
             fragmentShader
             mesh
             (uniforms
-                -- (viewport |> Debug.log "viewport")
-                -- (state |> Debug.log "state")
                 viewport
                 model
-                ( lights, speed )
-                config)
+                meshSize
+                ( lights, speed ))
 
 
 -- Mesh
@@ -227,8 +255,8 @@ emptyMesh =
     WebGL.triangles []
 
 
-build : Config -> Maybe SerializedScene -> Mesh
-build config maybeScene =
+build : Model -> Maybe SerializedScene -> Mesh
+build model maybeScene =
     WebGL.triangles
     -- WebGL.lines
     -- WebGL.points
@@ -246,18 +274,16 @@ build config maybeScene =
                                                       mesh.material
                                                       mesh.side
                                                       mesh.geometry.triangles
-
-
                         in
-                            -- List.map 
+                            -- List.map
                             --     (\(v1, v2, _) -> (v1, v2))
                             --     convertedTriangles
-                            -- List.foldl (\(v1, v2, v3) lines -> 
+                            -- List.foldl (\(v1, v2, v3) lines ->
                             --     lines ++ [ (v1, v2) ] ++ [ (v2, v3) ]
                             -- ) [] convertedTriangles
-                            -- List.foldl (\(v1, v2, v3) lines -> 
+                            -- List.foldl (\(v1, v2, v3) lines ->
                             --     lines ++ [ v1 ] ++ [ v2 ] ++ [ v3 ]
-                            -- ) [] convertedTriangles                            
+                            -- ) [] convertedTriangles
                             convertedTriangles
                             --(Debug.log "triangles" [ triangle ])
                     Nothing -> []
@@ -350,30 +376,19 @@ type alias Uniforms =
 type alias Varyings =
     { vColor : Vec4
     , vPosition : Vec3
-    , vMirror : Vec3
+    --, vMirror : Vec3
     }
 
-
--- velocity
-
-type alias Speed = Float
-
-type alias Model =
-    { now : Time
-    , meshSize : Size
-    , origin : Origin
-    , mouse : Mouse
-    , amplitude : ( Float, Float, Float )
-    }
 
 uniforms
      : Viewport {}
     -> Model
+    -> ( Int, Int )
     -> ( List SLight, Speed )
-    -> Config
     -> Uniforms
-uniforms v { now, meshSize, origin, mouse, amplitude } ( lights, speed ) config =
+uniforms v model meshSize ( lights, speed ) =
     let
+        { now, origin, mouse, amplitude } = model
         adaptedLights = lights |> adaptLights meshSize speed
         (meshWidth, meshHeight) = meshSize
         width = Vec2.getX v.size
@@ -381,6 +396,9 @@ uniforms v { now, meshSize, origin, mouse, amplitude } ( lights, speed ) config 
         -- width = Tuple.first size |> toFloat
         -- height = Tuple.second size |> toFloat
         depth = 100.0
+        ( mirror, clip ) = case model.clip of
+            Just clip -> ( 1.0, clip )
+            Nothing -> ( 0.0, (-1, -1) )
         ( amplitudeX, amplitudeY, amplitudeZ ) = amplitude
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
@@ -392,8 +410,8 @@ uniforms v { now, meshSize, origin, mouse, amplitude } ( lights, speed ) config 
         , uNow = now
         , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
         , uSegment  = vec3 100 100 50
-        , uMirror = if config.hasMirror then 1.0 else 0.0
-        , uClip = vec2 (Tuple.first config.clip) (Tuple.second config.clip)
+        , uMirror = mirror
+        , uClip = vec2 (Tuple.first clip) (Tuple.second clip)
         , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
 
@@ -559,7 +577,7 @@ vertexShader =
         // Varyings
         varying vec4 vColor;
         varying vec3 vPosition;
-        varying vec3 vMirror;
+        //varying vec3 vMirror;
 
 
 
@@ -655,12 +673,12 @@ vertexShader =
 
            // Multiplied by gradients
               vColor *= mix(aColor, vColor, abs(position.z) );
-             
+
             // Set gl_Position
           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
 
           if (uMirror > 0.0) {
-              gl_Position.x = - gl_Position.x;
+              gl_Position.x = -1.0 * gl_Position.x;
           }
 
         }
@@ -680,7 +698,7 @@ fragmentShader =
         // Varyings
         varying vec4 vColor;
         varying vec3 vPosition;
-        varying vec3 vMirror;
+        //varying vec3 vMirror;
 
         uniform vec3 uResolution;
         uniform float uNow;
@@ -721,11 +739,11 @@ fragmentShader =
 
             // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor), 0.5));
-            
+
             // vignette
                gl_FragColor =  mix(gl_FragColor, bgColor, pow(smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))), 2.0));
-            
-  
+
+
 
         }
 

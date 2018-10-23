@@ -66,10 +66,10 @@ const import_ = (app, importedState) => {
         ))
     }));
     parsedState.layers.forEach((layer, index) => {
-        if (layer.type == 'fss-mirror') {
+        if (layer.type == 'fss') {
             const scene = buildFSS(layer.config, layer.sceneFuzz);
             scenes[index] = scene;
-            app.ports.configureMirroredFss.send([ layer.config, index ]);
+            app.ports.configureFss.send([ layer.config, index ]);
             app.ports.rebuildFss.send([ scene, index ]);
         }
     });
@@ -89,7 +89,7 @@ const export_ = (app, exportedState) => {
         } else {
             console.log(index, 'no lights');
         }
-        layer.sceneFuzz = layer.type == 'fss-mirror'
+        layer.sceneFuzz = layer.type == 'fss'
             ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
             : null;
     })
@@ -221,7 +221,7 @@ setTimeout(function() { // FIXME: change to document.ready
             });
 
         model.layers.forEach((layer, index) => {
-            if (layer.kind == 'fss-mirror') {
+            if (layer.kind == 'fss') {
                 const fssScene = buildFSS(model);
                 app.ports.rebuildFss.send([ fssScene, index ]);
             }
@@ -230,7 +230,7 @@ setTimeout(function() { // FIXME: change to document.ready
         app.ports.requestFssRebuild.subscribe((model) => {
             console.log('rebuildFss', model);
             model.layers.map((layer, index) => {
-                if (layer.kind == 'fss-mirror') {
+                if (layer.kind == 'fss') {
                     const fssScene = buildFSS(model);
                     app.ports.rebuildFss.send([ fssScene, index ]);
                 }
