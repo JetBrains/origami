@@ -24,7 +24,8 @@ function buildFSS(model, source) {
 
     var geometry = new FSS.Plane(model.size[0], model.size[1],
                                  model.facesX, model.facesY);
-    var material = new FSS.Material('#ffffff', '#ffffff');
+    //var material = new FSS.Material('#00ffff', '#ffff00');
+    var material = new FSS.Material(palette[0], palette[1]);
     var mesh = new FSS.Mesh(geometry, material);
 
     var ambient = new FSS.Light(palette[0], palette[1]);
