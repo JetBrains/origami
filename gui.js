@@ -274,8 +274,8 @@ function start(layers, defaults, funcs) {
     gui.remember(config);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const lightSpeed = gui.add(config, 'lightSpeed').name('agile').min(100).max(1140);
-    const facesX = gui.add(config, 'facesX').name('granularity').min(1).max(50).step(1);
-    const facesY = gui.add(config, 'facesY').name('fishy').min(1).max(30).step(1);
+    const facesX = gui.add(config, 'facesX').name('col').min(1).max(100).step(1);
+    const facesY = gui.add(config, 'facesY').name('row').min(1).max(100).step(1);
     const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES);
 
