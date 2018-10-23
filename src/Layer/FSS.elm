@@ -592,7 +592,8 @@ vertexShader =
                 vec2 dir = normalize(dist);
                 float r = length(dist);
                 r = clamp (r, 1.0, 2.0);
-                disturb= vec3( 0.005 * dir / (r * r) , 0.0);
+                disturb = vec3( 0.005 * dir / (r * r) , 0.0);
+                // disturb /= uResolution * vec3(uScale, 1.0);
             }
 
             position += disturb;
@@ -608,7 +609,7 @@ vertexShader =
 
 
             // Iterate through lights
-            for (int i = 0; i < 1; i++) {
+            for (int i = 0; i < 2; i++) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * oscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
                 vec4 lightAmbient = brightnessA[i] * uLightAmbient[i];
                 vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
