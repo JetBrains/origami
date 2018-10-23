@@ -297,7 +297,8 @@ update msg model =
               | size = adaptSize ( width, height )
               , origin = getOrigin ( width, height )
               }
-            , model |> extractFssBuildOptions |> requestFssRebuild
+            -- , model |> extractFssBuildOptions |> requestFssRebuild
+            , Cmd.none
             )
 
         Locate pos ->
@@ -495,10 +496,9 @@ createLayer code =
             let fractalConfig = Fractal.init
             in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
         Vignette ->
-            WGLBlend.Blend
-                Nothing
-                (0, 6, 7)
-                (0, 1, 7)
+            WGLBlend.build
+                (B.customAdd, B.srcAlpha, B.oneMinusSrcAlpha)
+                (B.customAdd, B.one, B.oneMinusSrcAlpha)
                 |> VignetteLayer Vignette.init
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
@@ -834,28 +834,28 @@ view model =
                 [ type_ "button", onClick ExportZip, value "Export .zip" ]
                 [ text "Export .zip" ]
             ]
-        , WebGL.toHtmlWith
-            [
-              WebGL.antialias,
-              WebGL.alpha True
-            , WebGL.clearColor 0.0 0.0 0.0 1.0
-            -- , WebGL.depth 0.5
-            ]
-            [ width (Tuple.first model.size)
-            , height (Tuple.second model.size)
-            , style [
-                ( "display", "block" ),
-                -- ( "background-color", "#161616" ),
-                ( "transform", "translate("
-                    ++ (Tuple.first model.origin |> toString)
-                    ++ "px, "
-                    ++ (Tuple.second model.origin |> toString)
-                    ++ "px)" )
-            ]
-            , onClick TriggerPause
-            ]
-            (mergeWebGLLayers model)
-        , div [] (mergeHtmlLayers model)
+        , mergeWebGLLayers model |>
+            WebGL.toHtmlWith
+                [ WebGL.antialias
+                , WebGL.alpha True
+                , WebGL.clearColor 0.0 0.0 0.0 1.0
+                --, WebGL.depth 0.5
+                ]
+                [ width (Tuple.first model.size)
+                , height (Tuple.second model.size)
+                , style
+                    [ ( "display", "block" )
+                    --, ( "background-color", "#161616" )
+                    ,   ( "transform", "translate("
+                        ++ (Tuple.first model.origin |> toString)
+                        ++ "px, "
+                        ++ (Tuple.second model.origin |> toString)
+                        ++ "px)"
+                        )
+                    ]
+                , onClick TriggerPause
+                ]
+        , mergeHtmlLayers model |> div []
         ]
 
 
