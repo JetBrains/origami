@@ -154,7 +154,7 @@ makeEntity viewport now mouse config maybeScene settings mesh =
         speed = case lights of
             first::_ -> first.speed
             _ -> 0
-        size = maybeScene
+        meshSize = maybeScene
             |> Maybe.map (\scene ->
                 List.head scene.meshes)
             |> Maybe.map (\maybeMesh ->
@@ -166,7 +166,7 @@ makeEntity viewport now mouse config maybeScene settings mesh =
         offset = (0, 0)
         state =
             { now = now
-            , size = size
+            , meshSize = meshSize
             , origin = offset
             , mouse = mouse
             }
@@ -177,6 +177,8 @@ makeEntity viewport now mouse config maybeScene settings mesh =
             fragmentShader
             mesh
             (uniforms
+                -- (viewport |> Debug.log "viewport")
+                -- (state |> Debug.log "state")
                 viewport
                 state
                 ( lights, speed )
@@ -322,6 +324,7 @@ type alias Uniforms =
         , uSegment : Vec3
         , uMirror : Float
         , uClip : Vec2
+        , uScale : Vec2
         }
 
 
@@ -338,7 +341,7 @@ type alias Speed = Float
 
 type alias State =
     { now : Time
-    , size : Size
+    , meshSize : Size
     , origin : Origin
     , mouse : Mouse
     }
@@ -349,9 +352,10 @@ uniforms
     -> ( List SLight, Speed )
     -> Config
     -> Uniforms
-uniforms v { now, size, origin, mouse } ( lights, speed ) config =
+uniforms v { now, meshSize, origin, mouse } ( lights, speed ) config =
     let
-        adaptedLights = lights |> adaptLights size speed
+        adaptedLights = lights |> adaptLights meshSize speed
+        (meshWidth, meshHeight) = meshSize
         width = Vec2.getX v.size
         height = Vec2.getY v.size
         -- width = Tuple.first size |> toFloat
@@ -369,6 +373,7 @@ uniforms v { now, size, origin, mouse } ( lights, speed ) config =
         , uSegment  = vec3 100 100 50
         , uMirror = if config.hasMirror then 1.0 else 0.0
         , uClip = vec2 (Tuple.first config.clip) (Tuple.second config.clip)
+        , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
 
         , paused = v.paused
         , rotation = v.rotation
@@ -512,6 +517,7 @@ vertexShader =
 
 
         uniform vec3 uResolution;
+        uniform vec2 uScale;
 
         uniform vec3 uSegment;
         uniform bool paused;
@@ -567,7 +573,7 @@ vertexShader =
 
 
             // Calculate the vertex position
-            vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment / uResolution * 2.0;
+            vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment;
 
             // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
@@ -577,7 +583,7 @@ vertexShader =
 
 
             position = aPosition;
-            position = position / uResolution * 2.0;
+            //position = position;
             //position = vec3(1.0 - position.x, position.y, position.z);
 
             if (!paused) {
@@ -592,6 +598,11 @@ vertexShader =
 
 
             position += attenuator (time, duration) * amplitudes * oscillators(speed * time + phase);
+
+            position /= uResolution * vec3(uScale, 1.0);
+
+            position *= 4.0;
+            ;
 
 
 
