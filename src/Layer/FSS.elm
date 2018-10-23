@@ -571,7 +571,7 @@ vertexShader =
             // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
             vec3 lightsSpeed = vec3(uLightSpeed, uLightSpeed, 100.0);
-            vec3 brightnessD = vec3(2.5, 2.5, 1.0);
+            vec3 brightnessD = vec3(3.5, 2.5, 2.0);
             vec3 brightnessA = vec3(1.0, 1.0, 0.0);
 
 
@@ -614,7 +614,7 @@ vertexShader =
 
 
            // Multiplied by gradients
-              vColor = vColor * mix(vColor, aColor, 0.8);
+              vColor = vColor * mix(vColor, aColor, 0.9);
              
             // Set gl_Position
           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
@@ -681,8 +681,9 @@ fragmentShader =
 
             // noise by brightness
                gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor), 0.5));
-
-               gl_FragColor = mix(gl_FragColor, bgColor, pow(smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))), 2.0));
+            
+            // vignette
+               gl_FragColor =  mix(gl_FragColor, bgColor, pow(smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))), 2.0));
             
   
 
