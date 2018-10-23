@@ -1,1 +1,18 @@
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" x="0" y="0" width="70" height="70" viewBox="0 0 70 70" xml:space="preserve"><linearGradient id="a" gradientUnits="userSpaceOnUse" x1="10.879" y1="26.793" x2="47.049" y2="63.717"><stop offset=".097" stop-color="#E343E6"/><stop offset=".108" stop-color="#D948E8"/><stop offset=".165" stop-color="#AC5DEF"/><stop offset=".222" stop-color="#876FF5"/><stop offset=".279" stop-color="#6B7DF9"/><stop offset=".336" stop-color="#5687FC"/><stop offset=".392" stop-color="#4A8DFE"/><stop offset=".446" stop-color="#468FFF"/><stop offset=".935" stop-color="#00CAFF"/></linearGradient><path fill="url(#a)" d="M44.3 20.9L5.2 30.3 0 40.8 14.1 70 49.3 63.9z"/><linearGradient id="b" gradientUnits="userSpaceOnUse" x1="9.66" y1="55.746" x2="32.843" y2="36.427"><stop offset=".097" stop-color="#E343E6"/><stop offset=".118" stop-color="#DE45E7"/><stop offset=".289" stop-color="#B951F0"/><stop offset=".462" stop-color="#9D5AF6"/><stop offset=".632" stop-color="#8861FB"/><stop offset=".802" stop-color="#7C65FE"/><stop offset=".968" stop-color="#7866FF"/></linearGradient><path fill="url(#b)" d="M65.8 31.5L38.2 14 0 22.1 0 40.8 62.6 53.3z"/><linearGradient id="c" gradientUnits="userSpaceOnUse" x1="39.855" y1="16.927" x2="56.356" y2="50.653"><stop offset=".199" stop-color="#E343E6"/><stop offset=".31" stop-color="#DA46E8"/><stop offset=".491" stop-color="#C24EEE"/><stop offset=".718" stop-color="#9A5BF7"/><stop offset=".887" stop-color="#7866FF"/></linearGradient><path fill="url(#c)" d="M70 31.3L39.6 0 15.8 7.2 23.6 30.9 62.6 53.3z"/><linearGradient id="d" gradientUnits="userSpaceOnUse" x1="19.875" y1="18.305" x2="61.328" y2="8.256"><stop offset=".097" stop-color="#E343E6"/><stop offset=".175" stop-color="#DA48E7"/><stop offset=".302" stop-color="#C157EA"/><stop offset=".464" stop-color="#996FEE"/><stop offset=".653" stop-color="#6290F4"/><stop offset=".863" stop-color="#1CB9FC"/><stop offset=".941" stop-color="#00CAFF"/></linearGradient><path fill="url(#d)" d="M64.5 19.6L61.8 0 51.3 0 39.6 0 15.8 7.2 23.6 30.9z"/><g><path fill="#000" d="M13.4 13.4H56.6V56.6H13.4z"/><path fill="#FFF" d="M17.4 48.5H33.599999999999994V51.2H17.4z"/><g fill="#FFF"><path d="M17.5,19.1h7c5.6,0,9.5,3.9,9.5,8.9v0.1c0,5-3.9,8.9-9.5,8.9h-7V19.1z M21.4,22.7v10.8h3 c3.2,0,5.4-2.2,5.4-5.3v-0.1c0-3.2-2.2-5.4-5.4-5.4H21.4z"/><path d="M35.6,19.1h7.3c4.3,0,6.9,2.5,6.9,6.2v0.1c0,4.1-3.2,6.3-7.2,6.3h-3V37h-3.9V19.1z M42.6,28.1 c2,0,3.1-1.2,3.1-2.7v-0.1c0-1.8-1.2-2.7-3.2-2.7h-3v5.5H42.6z"/></g></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 70 70" style="enable-background:new 0 0 70 70;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;}
+</style>
+<g>
+	<path d="M13.4,13.4h43.2v43.2H13.4V13.4z"/>
+	<path class="st0" d="M17.4,48.5h16.2v2.7H17.4V48.5z"/>
+	<g>
+		<path class="st0" d="M17.5,19.1h7c5.6,0,9.5,3.9,9.5,8.9v0.1c0,5-3.9,8.9-9.5,8.9h-7V19.1z M21.4,22.7v10.8h3
+			c3.2,0,5.4-2.2,5.4-5.3v-0.1c0-3.2-2.2-5.4-5.4-5.4H21.4z"/>
+		<path class="st0" d="M35.6,19.1h7.3c4.3,0,6.9,2.5,6.9,6.2v0.1c0,4.1-3.2,6.3-7.2,6.3h-3V37h-3.9L35.6,19.1L35.6,19.1z M42.6,28.1
+			c2,0,3.1-1.2,3.1-2.7v-0.1c0-1.8-1.2-2.7-3.2-2.7h-3v5.5C39.5,28.1,42.6,28.1,42.6,28.1z"/>
+	</g>
+</g>
+</svg>
