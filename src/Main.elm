@@ -123,6 +123,7 @@ type alias GuiConfig =
     , facesY : Int
     , lightSpeed: Int
     , vignette: Float
+    , customSize : Maybe (Int, Int)
     }
 
 
@@ -587,6 +588,7 @@ prepareGuiConfig model =
     , facesY = Tuple.second model.faces
     , lightSpeed = model.lightSpeed
     , vignette = model.vignette
+    , customSize = Nothing
     }
 
 
@@ -646,6 +648,14 @@ subscriptions model =
         , changeFacesX ChangeFacesX
         , changeFacesY ChangeFacesY
         , changeLightSpeed ChangeLightSpeed
+        , setCustomSize
+            (\(w, h) ->
+                let
+                    (newW, newH) =
+                        if (w > 0 && h > 0) then (w, h)
+                        else model.size
+                in
+                    Window.Size newW newH |> Resize)
         , changeWGLBlend (\{ layer, blend } ->
             ChangeWGLBlend layer blend
           )
@@ -861,7 +871,8 @@ view model =
                 , WebGL.clearColor 0.0 0.0 0.0 1.0
                 --, WebGL.depth 0.5
                 ]
-                [ width (Tuple.first model.size)
+                [ H.class "webgl-layers"
+                , width (Tuple.first model.size)
                 , height (Tuple.second model.size)
                 , style
                     [ ( "display", "block" )
@@ -875,7 +886,7 @@ view model =
                     ]
                 , onClick TriggerPause
                 ]
-        , mergeHtmlLayers model |> div []
+        , mergeHtmlLayers model |> div [ H.class "svg-layers"]
         ]
 
 
@@ -924,6 +935,8 @@ port changeFacesY : (Int -> msg) -> Sub msg
 port changeLightSpeed : (Int -> msg) -> Sub msg
 
 port changeVignette : (Float -> msg) -> Sub msg
+
+port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
 port changeWGLBlend :
     ( { layer : Int
