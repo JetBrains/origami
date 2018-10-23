@@ -215,6 +215,9 @@ setTimeout(function() { // FIXME: change to document.ready
                     });
                 });
             }
+            , changeAmplitude : (x, y, z) => {
+                app.ports.changeAmplitude.send([ x, y, z ]);
+            }
             });
 
         model.layers.forEach((layer, index) => {

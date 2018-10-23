@@ -99,6 +99,7 @@ type alias Model =
     , timeShift : Time
     , faces : ( Int, Int )
     , range : ( Float, Float )
+    , amplitude : FSS.Amplitude
     , lightSpeed : Int
     , product : Product
     , vignette : Float
@@ -108,7 +109,6 @@ type alias Model =
 
 
 type alias FssBuildOptions = GuiConfig
-
 
 type alias GuiConfig =
     { product : String
@@ -123,6 +123,7 @@ type alias GuiConfig =
     , facesY : Int
     , lightSpeed: Int
     , vignette: Float
+    , amplitude : FSS.AmplitudeChange
     , customSize : Maybe (Int, Int)
     }
 
@@ -141,6 +142,7 @@ type Msg
     | ChangeFacesY Int
     | ChangeLightSpeed Int
     | ChangeVignette Float
+    | ChangeAmplitude FSS.AmplitudeChange
     | ChangeProduct Product
     | Locate Position
     | Import EncodedState
@@ -171,6 +173,7 @@ init =
       , timeShift = 0.0
       , faces = ( 17, 17 )
       , range = ( 0.8, 1.0 )
+      , amplitude = ( 0.5, 0.5, 0.2 )
       , lightSpeed = 600
       , product = Product.JetBrains
       , vignette = 1.0
@@ -402,7 +405,20 @@ update msg model =
             , Cmd.none
             )
 
-        _ -> ( model, Cmd.none )
+        ChangeAmplitude ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
+            let 
+                ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ ) = model.amplitude
+            in     
+                ( { model 
+                | amplitude = 
+                    ( Maybe.withDefault currentAmplitudeX newAmplitudeX 
+                    , Maybe.withDefault currentAmplitudeY newAmplitudeY 
+                    , Maybe.withDefault currentAmplitudeZ newAmplitudeZ 
+                    ) }
+                , Cmd.none    
+                )    
+
+        NoOp -> ( model, Cmd.none )
 
 
 getLayerKind : Layer -> LayerKind
@@ -572,24 +588,28 @@ extractFssBuildOptions = prepareGuiConfig
 
 prepareGuiConfig : Model -> GuiConfig
 prepareGuiConfig model =
-    { product = Product.encode model.product
-    , palette = Product.getPalette model.product
-    , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
-             , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
-            )
-    , layers =
-        model.layers |>
-            List.map (\layer ->
-                { kind = getLayerKind layer |> encodeLayerKind
-                , blend = getBlendForPort layer
-                , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
-                })
-    , facesX = Tuple.first model.faces
-    , facesY = Tuple.second model.faces
-    , lightSpeed = model.lightSpeed
-    , vignette = model.vignette
-    , customSize = Nothing
-    }
+    let 
+        ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
+    in 
+        { product = Product.encode model.product
+        , palette = Product.getPalette model.product
+        , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
+                , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
+                )
+        , layers =
+            model.layers |>
+                List.map (\layer ->
+                    { kind = getLayerKind layer |> encodeLayerKind
+                    , blend = getBlendForPort layer
+                    , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
+                    })
+        , facesX = Tuple.first model.faces
+        , facesY = Tuple.second model.faces
+        , amplitude = ( Just amplitudeX, Just amplitudeY, Just amplitudeZ )
+        , lightSpeed = model.lightSpeed
+        , vignette = model.vignette
+        , customSize = Nothing
+        }
 
 
 timeShiftRange : Float
@@ -648,6 +668,7 @@ subscriptions model =
         , changeFacesX ChangeFacesX
         , changeFacesY ChangeFacesY
         , changeLightSpeed ChangeLightSpeed
+        , changeAmplitude ChangeAmplitude
         , setCustomSize
             (\(w, h) ->
                 let
@@ -800,6 +821,7 @@ layerToEntities model viewport layer =
                 viewport
                 model.now
                 model.mouse
+                model.amplitude
                 config
                 serialized
                 [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
@@ -935,6 +957,8 @@ port changeFacesY : (Int -> msg) -> Sub msg
 port changeLightSpeed : (Int -> msg) -> Sub msg
 
 port changeVignette : (Float -> msg) -> Sub msg
+
+port changeAmplitude : (FSS.AmplitudeChange -> msg) -> Sub msg
 
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
