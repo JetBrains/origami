@@ -104,3 +104,9 @@ svg.text-layer {
     text-transform: uppercase;
     color: white;
 }
+
+.webgl-sample {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
