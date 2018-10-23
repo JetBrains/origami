@@ -1,1 +1,17 @@
-<svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64"><defs><linearGradient id="a" x1="6" y1="34.28" x2="58" y2="34.28" gradientTransform="matrix(1 0 0 -1 0 66.28)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fe315d"/><stop offset=".078" stop-color="#cb417e"/><stop offset=".16" stop-color="#9e4e9b"/><stop offset=".247" stop-color="#755bb4"/><stop offset=".339" stop-color="#5365ca"/><stop offset=".436" stop-color="#386ddb"/><stop offset=".541" stop-color="#2374e9"/><stop offset=".658" stop-color="#1478f3"/><stop offset=".794" stop-color="#0b7bf8"/><stop offset="1" stop-color="#087cfa"/></linearGradient><linearGradient id="b" x1="6.068" y1="25.28" x2="30.563" y2="25.28" gradientTransform="matrix(1 0 0 -1 0 66.28)" gradientUnits="userSpaceOnUse"><stop offset=".258" stop-color="#f97a12"/><stop offset=".459" stop-color="#b07b58"/><stop offset=".724" stop-color="#577bae"/><stop offset=".91" stop-color="#1e7ce5"/><stop offset="1" stop-color="#087cfa"/></linearGradient><linearGradient id="c" x1="44.934" y1="27.072" x2="47.934" y2="63.822" xlink:href="#a"/><linearGradient id="d" x1="17.862" y1="62.076" x2="38.46" y2="-22.443" gradientTransform="matrix(1 0 0 -1 0 66.28)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fe315d"/><stop offset=".04" stop-color="#f63462"/><stop offset=".104" stop-color="#df3a71"/><stop offset=".167" stop-color="#c24383"/><stop offset=".291" stop-color="#ad4a91"/><stop offset=".55" stop-color="#755bb4"/><stop offset=".917" stop-color="#1d76ed"/><stop offset="1" stop-color="#087cfa"/></linearGradient></defs><title>IntelliJIDEA_comm_64</title><path fill="url(#a)" d="M6 6H58V58H6z"/><path fill="url(#b)" d="M6 24L6 58 30.6 32 6 24z"/><path fill="url(#c)" d="M40.734 6L35.4 12.4 43.8 39.6 58 22.748 58 14.732 47.316 6 40.734 6z"/><path fill="url(#d)" d="M6 58L13.89 58 30.8 51.8 48 25.4 30.98 6 6 6 6 14.73 6 27.152 15.6 30.4 6 58z"/><g><path d="M12 12H52V52H12z"/><path fill="#fff" d="M15.8 44.4H30.8V47H15.8z"/><path fill="#fff" d="M26.6 20.2L26.6 17.2 18.2 17.2 18.2 20.2 20.6 20.2 20.6 30.8 18.2 30.8 18.2 33.8 26.6 33.8 26.6 30.8 24.2 30.8 24.2 20.2 26.6 20.2z"/><path d="M34.4,34a5.45244,5.45244,0,0,1-3.2-.8A6.25265,6.25265,0,0,1,29,31.4l2.2-2.6a3.8015,3.8015,0,0,0,3,1.6,2.27106,2.27106,0,0,0,1.6-.6,2.98585,2.98585,0,0,0,.6-2V17.2h3.8V28a10.13229,10.13229,0,0,1-.4,2.6,2.9123,2.9123,0,0,1-1.2,1.8,9.39415,9.39415,0,0,1-1.8,1.2,4.33035,4.33035,0,0,1-2.4.4" fill="#fff"/></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 64 64" style="enable-background:new 0 0 64 64;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;}
+</style>
+<title>IntelliJIDEA_comm_64</title>
+<g>
+	<path d="M12,12h40v40H12V12z"/>
+	<path class="st0" d="M15.8,44.4h15V47h-15V44.4z"/>
+	<path class="st0" d="M26.6,20.2v-3h-8.4v3h2.4v10.6h-2.4v3h8.4v-3h-2.4V20.2H26.6z"/>
+	<path class="st0" d="M34.4,34c-1.1,0.1-2.2-0.2-3.2-0.8c-0.9-0.4-1.6-1-2.2-1.8l2.2-2.6c0.7,1,1.8,1.6,3,1.6c0.6,0,1.2-0.2,1.6-0.6
+		c0.4-0.6,0.6-1.3,0.6-2V17.2h3.8V28c0,0.9-0.2,1.8-0.4,2.6c-0.2,0.7-0.6,1.4-1.2,1.8c-0.6,0.5-1.2,0.9-1.8,1.2
+		C36.1,34,35.2,34.1,34.4,34"/>
+</g>
+</svg>

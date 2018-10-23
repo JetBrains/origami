@@ -277,7 +277,7 @@ function start(layers, defaults, funcs) {
     const facesX = gui.add(config, 'facesX').name('col').min(1).max(100).step(1);
     const facesY = gui.add(config, 'facesY').name('row').min(1).max(100).step(1);
     const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);
-    const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES);
+    const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
 
     lightSpeed.onFinishChange(funcs.changeLightSpeed);
     facesX.onFinishChange(funcs.changeFacesX);
