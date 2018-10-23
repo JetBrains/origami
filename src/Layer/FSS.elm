@@ -230,6 +230,8 @@ emptyMesh =
 build : Config -> Maybe SerializedScene -> Mesh
 build config maybeScene =
     WebGL.triangles
+    -- WebGL.lines
+    -- WebGL.points
         (maybeScene
             |> Maybe.map (\scene ->
                 case List.head scene.meshes of
@@ -247,6 +249,15 @@ build config maybeScene =
 
 
                         in
+                            -- List.map 
+                            --     (\(v1, v2, _) -> (v1, v2))
+                            --     convertedTriangles
+                            -- List.foldl (\(v1, v2, v3) lines -> 
+                            --     lines ++ [ (v1, v2) ] ++ [ (v2, v3) ]
+                            -- ) [] convertedTriangles
+                            -- List.foldl (\(v1, v2, v3) lines -> 
+                            --     lines ++ [ v1 ] ++ [ v2 ] ++ [ v3 ]
+                            -- ) [] convertedTriangles                            
                             convertedTriangles
                             --(Debug.log "triangles" [ triangle ])
                     Nothing -> []
