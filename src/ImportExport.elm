@@ -4,6 +4,7 @@ module ImportExport exposing
     , Model
     , Layer, LayerType(..)
     , EncodedState
+    , PortBlend
     , defaultLayer
     )
 
@@ -13,9 +14,19 @@ import Json.Decode as D exposing (int, string, float, Decoder, Value)
 import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
 import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
 
-import WebGL.Blend as WGLBlend exposing (Blend)
+import WebGL.Blend as WGLBlend
+import Svg.Blend as SVGBlend
 
 type alias EncodedState = String
+
+
+-- kinda Either, but for ports:
+--    ( Just WebGLBlend, Nothing ) --> WebGL Blend
+--    ( Nothing, Just String ) --> SVG Blend
+--    ( Nothing, Nothing ) --> None
+--    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
+type alias PortBlend =
+    ( Maybe WGLBlend.Blend, Maybe SVGBlend.PortBlend )
 
 
 type LayerType
@@ -33,7 +44,7 @@ type LayerType
 
 type alias Layer =
     { type_ : LayerType
-    , blend : Blend
+    , blend : WGLBlend.Blend
     --, config : Config
     --, mesh : FSS.Mesh
     }

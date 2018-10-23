@@ -115,7 +115,7 @@ type alias GuiConfig =
     , palette : List String
     , layers : List
         { kind: String
-        , blend : String
+        , blend : IE.PortBlend
         , webglOrSvg: String
         }
     , size : ( Int, Int )
@@ -434,6 +434,26 @@ getBlendString layer =
         _ -> SVGBlend.encode SVGBlend.default
 
 
+getBlendForPort : Layer -> IE.PortBlend
+getBlendForPort layer =
+    ( case layer of
+        FssLayer _ blend _ _ -> Just blend
+        MirroredFssLayer _ blend _ _ -> Just blend
+        LorenzLayer _ blend _ -> Just blend
+        FractalLayer _ blend _ -> Just blend
+        VoronoiLayer _ blend _ -> Just blend
+        TemplateLayer _ blend _ -> Just blend
+        VignetteLayer _ blend -> Just blend
+        _ -> Nothing
+    , case layer of
+        TextLayer blend ->
+            SVGBlend.encode blend |> Just
+        SvgImageLayer blend ->
+            SVGBlend.encode blend |> Just
+        _ -> Nothing
+    )
+
+
 encodeLayerKind : LayerKind -> String
 encodeLayerKind kind =
     case kind of
@@ -560,7 +580,7 @@ prepareGuiConfig model =
         model.layers |>
             List.map (\layer ->
                 { kind = getLayerKind layer |> encodeLayerKind
-                , blend = getBlendString layer
+                , blend = getBlendForPort layer
                 , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
                 })
     , facesX = Tuple.first model.faces
