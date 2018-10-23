@@ -189,6 +189,13 @@ setTimeout(function() {
                 { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) }
             , changeProduct : (id) =>
                 { app.ports.changeProduct.send(id) }
+            , setCustomSize : (value) =>
+                { // value.split(',').map(parseInt) is not working
+                  const size = value.split(',');
+                  app.ports.setCustomSize.send([
+                      parseInt(size[0]),
+                      parseInt(size[1])
+                  ]) }
             });
 
         model.layers.forEach((layer, index) => {
