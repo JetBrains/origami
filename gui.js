@@ -131,18 +131,30 @@ const Config = function(layers, defaults, funcs) {
     this.facesX = defaults.facesX;
     this.facesY = defaults.facesY;
     this.product = defaults.product;
+    const funcKeys = Object.keys(BLEND_FUNCS);
+    const factorKeys = Object.keys(BLEND_FACTORS);
     layers.forEach((layer, index) => {
-      // TODO: load blend value from layer
       if (layer.webglOrSvg == 'webgl') {
-        this['blendColor' + index] = [ 0, 0, 0, 0 ];
-        this['blendColorEqFn' + index] = customAdd;
-        this['blendColorEqFactor0' + index] = one;
-        this['blendColorEqFactor1' + index] = zero;
-        this['blendAlphaEqFn' + index] = customAdd;
-        this['blendAlphaEqFactor0' + index] = one;
-        this['blendAlphaEqFactor1' + index] = zero;
+        if (layer.blend[0]) {
+          const blend = layer.blend[0];
+          this['blendColor' + index] = blend.color || [ 0, 0, 0, 0 ]; // FIXME: get RGBA components
+          this['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[blend.colorEq[0]]];
+          this['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[1]]];
+          this['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[2]]];
+          this['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[blend.alphaEq[0]]];
+          this['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[1]]];
+          this['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[2]]];
+        } else {
+          this['blendColor' + index] = [ 0, 0, 0, 0 ];
+          this['blendColorEqFn' + index] = customAdd;
+          this['blendColorEqFactor0' + index] = one;
+          this['blendColorEqFactor1' + index] = zero;
+          this['blendAlphaEqFn' + index] = customAdd;
+          this['blendAlphaEqFactor0' + index] = one;
+          this['blendAlphaEqFactor1' + index] = zero;
+        }
       } else {
-        this['layer' + index + 'Blend'] = 'normal';
+        this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
     });
     this.vignette = defaults.vignette;
