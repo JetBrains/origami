@@ -321,6 +321,12 @@ update msg ({ fss, vignette } as model) =
                                 newMesh = maybeScene |> FSS.build model.fss
                             in
                                 FssLayer blend maybeScene newMesh
+                        MirroredFssLayer blend _ mesh ->
+                            let
+                                maybeScene = Just serializedScene
+                                newMesh = maybeScene |> FSS.build model.fss
+                            in
+                                MirroredFssLayer blend maybeScene newMesh
                         _ -> layer
                 )
             , Cmd.none
@@ -462,7 +468,7 @@ encodeLayerKind : LayerKind -> String
 encodeLayerKind kind =
     case kind of
         Fss -> "fss"
-        MirroredFss -> "fss" -- should be different from Fss?
+        MirroredFss -> "fss-mirror" -- should be different from Fss?
         Lorenz -> "lorenz"
         Template -> "template"
         Voronoi -> "voronoi"
@@ -525,6 +531,8 @@ extractLayer curLayer srcLayer =
     case ( srcLayer.type_, curLayer ) of
         ( IE.Fss, FssLayer blend scene mesh ) ->
             FssLayer srcLayer.blend scene mesh
+        ( IE.MirroredFss, MirroredFssLayer blend scene mesh ) ->
+            MirroredFssLayer srcLayer.blend scene mesh
         _ -> Unknown
 
 
@@ -534,8 +542,10 @@ prepareLayer layer =
         FssLayer blend maybeScene mesh ->
             { type_ = IE.Fss
             , blend = blend
-            -- , config = config
-            -- , mesh = mesh
+            }
+        MirroredFssLayer blend maybeScene mesh ->
+            { type_ = IE.MirroredFss
+            , blend = blend
             }
         _ -> IE.defaultLayer
 
@@ -736,47 +746,55 @@ layerToHtml model layer =
 layerToEntities : Model -> Viewport {} -> Layer -> List WebGL.Entity
 layerToEntities ({ fss } as model) viewport layer =
     case layer of
-        LorenzLayer blend lorenz ->
+        LorenzLayer blend mesh ->
             [ Lorenz.makeEntity
                 viewport
                 [ DepthTest.default, WGLBlend.produce blend ]
-                lorenz
+                mesh
             ]
-        FractalLayer blend fractal ->
+        FractalLayer blend mesh ->
             [ Fractal.makeEntity
                 viewport
                 [ DepthTest.default, WGLBlend.produce blend ]
-                fractal
+                mesh
             ]
-        TemplateLayer blend template ->
+        TemplateLayer blend mesh ->
             [ Template.makeEntity
                 viewport
                 [ DepthTest.default, WGLBlend.produce blend ]
-                template
+                mesh
             ]
-        VoronoiLayer blend voronoi ->
+        VoronoiLayer blend mesh ->
             [ Voronoi.makeEntity
                 viewport
                 [ DepthTest.default, WGLBlend.produce blend ]
-                voronoi
-            ]
-        FssLayer blend serialized mesh ->
-            [ FSS.makeEntity
-                model.now
-                model.mouse
-                viewport
-                model.fss
-                serialized
-                [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                 mesh
             ]
+        FssLayer blend serialized mesh ->
+            let
+                ser = case serialized of
+                    Just _ -> "just" -- Debug.log "just" "just"
+                    Nothing -> "nothing" -- Debug.log "nothing" "nothing"
+            in
+                [ FSS.makeEntity
+                    model.now
+                    model.mouse
+                    viewport
+                    model.fss
+                    serialized
+                    [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
+                    mesh
+                ]
         MirroredFssLayer blend serialized mesh ->
             let
                 --config1 = { fssConfig | clip = Just ( FSS.defaultMirror, 1 ) }
                 --config2 = { fssConfig | clip = Just ( 0, 1.0 - FSS.defaultMirror ) }
+                -- ser = case serialized of
+                --     Just _ -> Debug.log "just" "just"
+                --     Nothing -> Debug.log "nothing" "nothing"
                 model1 =
                     { model | fss =
-                        { fss | clip = Just ( 0, FSS.defaultMirror ) }
+                        { fss | clip = Nothing }
                     }
                 model2 =
                     { model | fss =
