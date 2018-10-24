@@ -431,18 +431,18 @@ getLayerKind layer =
         _ -> Text -- FIXME: Empty Kind or Nothing
 
 
-getBlendString : Layer -> String
-getBlendString layer =
-    case layer of
-        FssLayer blend _ _ -> WGLBlend.encodeOne blend
-        LorenzLayer blend _ -> WGLBlend.encodeOne blend
-        FractalLayer blend _ -> WGLBlend.encodeOne blend
-        VoronoiLayer blend _ -> WGLBlend.encodeOne blend
-        TemplateLayer blend _ -> WGLBlend.encodeOne blend
-        VignetteLayer blend -> WGLBlend.encodeOne blend
-        TextLayer blend -> SVGBlend.encode blend
-        SvgImageLayer blend -> SVGBlend.encode blend
-        _ -> SVGBlend.encode SVGBlend.default
+-- getBlendString : Layer -> String
+-- getBlendString layer =
+--     case layer of
+--         FssLayer blend _ _ -> WGLBlend.encodeOne blend
+--         LorenzLayer blend _ -> WGLBlend.encodeOne blend
+--         FractalLayer blend _ -> WGLBlend.encodeOne blend
+--         VoronoiLayer blend _ -> WGLBlend.encodeOne blend
+--         TemplateLayer blend _ -> WGLBlend.encodeOne blend
+--         VignetteLayer blend -> WGLBlend.encodeOne blend
+--         TextLayer blend -> SVGBlend.encode blend
+--         SvgImageLayer blend -> SVGBlend.encode blend
+--         _ -> SVGBlend.encode SVGBlend.default
 
 
 getBlendForPort : Layer -> IE.PortBlend
@@ -468,7 +468,7 @@ encodeLayerKind : LayerKind -> String
 encodeLayerKind kind =
     case kind of
         Fss -> "fss"
-        MirroredFss -> "fss-mirror" -- should be different from Fss?
+        MirroredFss -> "fss-mirror"
         Lorenz -> "lorenz"
         Template -> "template"
         Voronoi -> "voronoi"
@@ -771,33 +771,24 @@ layerToEntities ({ fss } as model) viewport layer =
                 mesh
             ]
         FssLayer blend serialized mesh ->
-            let
-                ser = case serialized of
-                    Just _ -> "just" -- Debug.log "just" "just"
-                    Nothing -> "nothing" -- Debug.log "nothing" "nothing"
-            in
-                [ FSS.makeEntity
-                    model.now
-                    model.mouse
-                    viewport
-                    model.fss
-                    serialized
-                    [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
-                    mesh
-                ]
+            [ FSS.makeEntity
+                model.now
+                model.mouse
+                viewport
+                model.fss
+                serialized
+                [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
+                mesh
+            ]
         MirroredFssLayer blend serialized mesh ->
             let
-                --config1 = { fssConfig | clip = Just ( FSS.defaultMirror, 1 ) }
-                --config2 = { fssConfig | clip = Just ( 0, 1.0 - FSS.defaultMirror ) }
-                -- ser = case serialized of
-                --     Just _ -> Debug.log "just" "just"
-                --     Nothing -> Debug.log "nothing" "nothing"
                 model1 =
                     { model | fss =
-                        { fss | clip = Nothing }
+                        { fss | clip = Nothing } -- FIXME: why Nothing?
                     }
                 model2 =
                     { model | fss =
+                        -- FIXME: use clip value from config
                         { fss | clip = Just ( FSS.defaultMirror, 1 ) }
                     }
             in
