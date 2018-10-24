@@ -283,7 +283,7 @@ function start(layers, defaults, funcs) {
     const facesY = gui.add(config, 'facesY').name('row').min(1).max(100).step(1);
     const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
-    const savePng = gui.add(config, 'savePng');
+    const savePng = gui.add(config, 'savePng').name('save png');
     const amplitudeFolder = gui.addFolder('amplitude');
     const amplitudeX = amplitudeFolder.add(config, 'amplitudeX').min(0.0).max(1.0);
     const amplitudeY = amplitudeFolder.add(config, 'amplitudeY').min(0.0).max(1.0);
@@ -303,7 +303,7 @@ function start(layers, defaults, funcs) {
     });
     amplitudeZ.onFinishChange(value => {
       funcs.changeAmplitude(null, null, value);
-    });    
+    });
 
     layers.forEach((layer, index) => {
       if (layer.webglOrSvg == 'webgl') {
