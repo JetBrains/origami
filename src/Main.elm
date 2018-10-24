@@ -38,6 +38,7 @@ type alias LayerIndex = Int
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
+type alias LayerChange = LayerConfig -> LayerConfig
 
 type LayerKind
     = Lorenz
@@ -75,19 +76,17 @@ type Layer
     -- | CanvasLayer (\_ -> )
 
 
-initialLayers : List ( LayerKind, Maybe LayerConfig )
+initialLayers : List ( LayerKind, LayerChange )
 initialLayers =
-    [ ( MirroredFss, Nothing )
+    [ ( MirroredFss, identity )
     , ( MirroredFss
-      , let
-            defaultConfig = FSS.init
-        in
-            { defaultConfig | renderMode = FSS.Lines }
-                |> FssConfig |> Just
+      , (\(FssConfig prevConfig) ->
+            { prevConfig | renderMode = FSS.Lines } |> FssConfig
+        )
       )
     -- , ( Vignette, Nothing )
-    , ( Text, Nothing )
-    , ( SvgImage, Nothing )
+    , ( Text, identity )
+    , ( SvgImage, identity )
     ]
 
 
@@ -96,7 +95,7 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , layers : List ( Layer, Maybe LayerConfig )
+    , layers : List ( Layer, LayerChange )
     , size : Size
     , origin : Pos
     , mouse : (Int, Int)
@@ -171,7 +170,9 @@ init =
       , autoRotate = False
       , fps = 0
       , theta = 0.1
-      , layers = initialLayers |> List.map createLayer
+      , layers = initialLayers |> List.map
+            (\(kind, changeF) ->
+                ( createLayer kind changeF, changeF ))
       , size = ( 1200, 1200 )
       , origin = ( 0, 0 )
       , mouse = ( 0, 0 )
@@ -361,7 +362,8 @@ update msg ({ fss, vignette } as model) =
                     { model
                     | theta = src.theta
                     , now = src.now
-                    , layers = List.map2 extractLayer model.layers src.layers
+                    , layers =
+                        List.map2 extractLayer model.layers src.layers
                     , mouse = src.mouse
                     , size = src.size
                     , origin = src.origin
@@ -502,55 +504,75 @@ encodeLayerKind kind =
 --         _ -> Nothing
 
 
-createLayer : ( LayerKind, Maybe LayerConfig ) -> ( Layer, LayerConfig )
-createLayer ( kind, maybeConfig ) =
-    case ( kind, maybeConfig )  of
-        ( Fss, Just (FssConfig config) ) ->
-            FSS.build config Nothing
-                |> FssLayer WGLBlend.default Nothing
-        ( Fss, Nothing ) ->
-            FSS.build FSS.init Nothing
-                |> FssLayer WGLBlend.default Nothing
-        ( MirroredFss, Just (FssConfig config) ) ->
-            FSS.build config Nothing
-                |> MirroredFssLayer
+createLayer : LayerKind -> LayerChange -> Layer
+createLayer kind changeF =
+    case kind of
+        Fss ->
+            let
+                config =
+                    case FssConfig FSS.init |> changeF of
+                        FssConfig newConfig -> newConfig
+                        _ -> FSS.init
+            in
+                FSS.build config Nothing
+                    |> FssLayer WGLBlend.default Nothing
+        MirroredFss ->
+            let
+                config =
+                    case FssConfig FSS.init |> changeF of
+                        FssConfig newConfig -> newConfig
+                        _ -> FSS.init
+            in
+                FSS.build config Nothing
+                    |> MirroredFssLayer
                         WGLBlend.default
                         -- (WGLBlend.build
                         --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
                         --    (B.customAdd, B.srcColor, B.zero)
                         -- )
                         Nothing
-        ( MirroredFss, Nothing ) ->
-            FSS.build FSS.init Nothing
-                |> MirroredFssLayer
-                        WGLBlend.default
-                        Nothing
-        ( Lorenz, Just (LorenzConfig config) ) ->
-            Lorenz.build config |> LorenzLayer WGLBlend.default
-        ( Lorenz, Nothing ) ->
-            Lorenz.build Lorenz.init |> LorenzLayer WGLBlend.default
-        ( Template, Just (TemplateConfig config) ) ->
-            Template.build config |> TemplateLayer WGLBlend.default
-        ( Template, Nothing ) ->
-            Template.build Template.init |> TemplateLayer WGLBlend.default
-        ( Voronoi, Just (VoronoiConfig config) ) ->
-            Voronoi.build config |> VoronoiLayer WGLBlend.default
-        ( Voronoi, Nothing ) ->
-            Voronoi.build Voronoi.init |> VoronoiLayer WGLBlend.default
-        ( Fractal, Just (FractalConfig config) ) ->
-            Fractal.build config |> FractalLayer WGLBlend.default
-        ( Fractal, Nothing ) ->
-            Fractal.build Fractal.init |> FractalLayer WGLBlend.default
-        ( Vignette, _ ) ->
+        Lorenz ->
+            let
+                config =
+                    case LorenzConfig Lorenz.init |> changeF of
+                        LorenzConfig newConfig -> newConfig
+                        _ -> Lorenz.init
+            in
+                Lorenz.build config |> LorenzLayer WGLBlend.default
+        Template ->
+            let
+                config =
+                    case TemplateConfig Template.init |> changeF of
+                        TemplateConfig newConfig -> newConfig
+                        _ -> Template.init
+            in
+                Template.build config |> TemplateLayer WGLBlend.default
+        Voronoi ->
+            let
+                config =
+                    case VoronoiConfig Voronoi.init |> changeF of
+                        VoronoiConfig newConfig -> newConfig
+                        _ -> Template.init
+            in
+                Voronoi.build config |> VoronoiLayer WGLBlend.default
+        Fractal ->
+            let
+                config =
+                    case FractalConfig Fractal.init |> changeF of
+                        FractalConfig newConfig -> newConfig
+                        _ -> Fractal.init
+            in
+                Fractal.build config |> FractalLayer WGLBlend.default
+        Vignette ->
             WGLBlend.build
                 (B.customAdd, B.srcAlpha, B.oneMinusSrcAlpha)
                 (B.customAdd, B.one, B.oneMinusSrcAlpha)
                 |> VignetteLayer
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
-        ( Text, _ ) ->
+        Text ->
             TextLayer SVGBlend.default
-        ( SvgImage, _ ) ->
+        SvgImage ->
             SvgImageLayer SVGBlend.default
         _ ->
             TextLayer SVGBlend.default -- FIXME: UnknownLayer
