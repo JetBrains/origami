@@ -698,6 +698,7 @@ fragmentShader =
         uniform vec3 uResolution;
         uniform float uNow;
         uniform vec2 uClip;
+        uniform vec2 uScale;
 
 
 
@@ -718,13 +719,15 @@ fragmentShader =
         void main() {
 
             vec2 actPos = gl_FragCoord.xy / uResolution.xy;
-            // if (actPos.x > 0.6) discard;
+
+            //if (actPos.x < 0.5) discard;
             // if ((vMirror.x >= 0.0) && (vMirror.y >= 0.0)) {
 
             // }
 
-            if ((uClip.x >= 0.0) && (uClip.y >= 0.0)) {
-                if ((actPos.x >= uClip.x) && (actPos.x <= uClip.y)) {
+            // here uClip.y is not Y coord, but upper limit for X
+            if ((uClip.x >= 0.0) || (uClip.y >= 0.0)) {
+                if ((actPos.x <= uClip.x) || (actPos.x >= uClip.y)) {
                     discard;
                 }
             }

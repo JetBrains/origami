@@ -784,12 +784,14 @@ layerToEntities ({ fss } as model) viewport layer =
             let
                 model1 =
                     { model | fss =
-                        { fss | clip = Nothing } -- FIXME: why Nothing?
+                        { fss | clip = Just (0.4, 0.6) }
+                        --{ fss | clip = Just (0.4, 0.6) }
                     }
                 model2 =
                     { model | fss =
+                        { fss | clip = Just (0.0, 0.1) }
                         -- FIXME: use clip value from config
-                        { fss | clip = Just ( FSS.defaultMirror, 1 ) }
+                        -- { fss | clip = Just (0.0, 0.1) }
                     }
             in
                 (layerToEntities model1 viewport (FssLayer blend serialized mesh)) ++
