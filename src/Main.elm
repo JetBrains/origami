@@ -745,7 +745,7 @@ layerToHtml : Model -> Layer -> Html Msg
 layerToHtml model layer =
     case layer of
         TextLayer blend ->
-            JbText.view model.size model.origin blend
+            JbText.view model.product model.size model.origin blend
         SvgImageLayer blend ->
             SVGImage.view model.size model.origin model.product blend
         _ -> div [] []
