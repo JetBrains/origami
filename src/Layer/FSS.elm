@@ -45,6 +45,7 @@ type alias Mesh = WebGL.Mesh Vertex
 type RenderMode
     = Triangles
     | Lines
+    | PartialLines
     | Points
 
 
@@ -162,7 +163,7 @@ defaultLightSpeed = 600
 init : Model
 init =
     { faces = defaultFaces
-    , renderMode = Triangles
+    , renderMode = Points
     , amplitude = defaultAmplitude
     , mirror = False
     , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
@@ -170,9 +171,19 @@ init =
     }
 
 
+parseRenderMode : String -> RenderMode
+parseRenderMode str =
+    case str of
+        "triangles" -> Triangles
+        "lines" -> Lines
+        "partial-lines" -> PartialLines
+        "points" -> Points
+        _ -> Triangles
+
+
 fromPortModel : PortModel -> Model
 fromPortModel portModel =
-    { portModel | renderMode = Triangles }
+    { portModel | renderMode = parseRenderMode portModel.renderMode }
 
 
 makeEntity
@@ -254,38 +265,38 @@ emptyMesh =
 
 build : Model -> Maybe SerializedScene -> Mesh
 build model maybeScene =
-    WebGL.triangles
-    -- WebGL.lines
-    -- WebGL.points
-        (maybeScene
+    let
+        convertedTriangles =
+            (maybeScene
             |> Maybe.map (\scene ->
                 case List.head scene.meshes of
                     Just mesh ->
-                        let
-                            triangle =
-                                ( quickVertex (vec3 0 0 0)
-                                , quickVertex (vec3 1 1 0)
-                                , quickVertex (vec3 1 -1 0)
-                                )
-                            convertedTriangles  = convertTriangles
-                                                      mesh.material
-                                                      mesh.side
-                                                      mesh.geometry.triangles
-                        in
-                            -- List.map
-                            --     (\(v1, v2, _) -> (v1, v2))
-                            --     convertedTriangles
-                            -- List.foldl (\(v1, v2, v3) lines ->
-                            --     lines ++ [ (v1, v2) ] ++ [ (v2, v3) ]
-                            -- ) [] convertedTriangles
-                            -- List.foldl (\(v1, v2, v3) lines ->
-                            --     lines ++ [ v1 ] ++ [ v2 ] ++ [ v3 ]
-                            -- ) [] convertedTriangles
-                            convertedTriangles
-                            --(Debug.log "triangles" [ triangle ])
+                        convertTriangles
+                            mesh.material
+                            mesh.side
+                            mesh.geometry.triangles
                     Nothing -> []
             )
             |> Maybe.withDefault [ ])
+    in
+        case model.renderMode of
+            Triangles -> WebGL.triangles convertedTriangles
+            PartialLines ->
+                WebGL.lines <|
+                    List.map
+                        (\(v1, v2, _) -> (v1, v2))
+                        convertedTriangles
+            Lines ->
+                WebGL.lines <|
+                    List.foldl (\(v1, v2, v3) lines ->
+                            lines ++ [ (v1, v2) ] ++ [ (v2, v3) ]
+                        ) [] convertedTriangles
+            Points ->
+                WebGL.points <|
+                    List.foldl (\(v1, v2, v3) lines ->
+                        lines ++ [ v1 ] ++ [ v2 ] ++ [ v3 ]
+                    ) [] convertedTriangles
+
 
 
 
