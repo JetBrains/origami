@@ -75,13 +75,19 @@ type Layer
     -- | CanvasLayer (\_ -> )
 
 
-initialLayers : List LayerKind
+initialLayers : List ( LayerKind, Maybe LayerConfig )
 initialLayers =
-    [ MirroredFss
-    , MirroredFss
-    -- , Vignette
-    , Text
-    , SvgImage
+    [ ( MirroredFss, Nothing )
+    , ( MirroredFss
+      , let
+            defaultConfig = FSS.init
+        in
+            { defaultConfig | renderMode = FSS.Lines }
+                |> FssConfig |> Just
+      )
+    -- , ( Vignette, Nothing )
+    , ( Text, Nothing )
+    , ( SvgImage, Nothing )
     ]
 
 
@@ -90,7 +96,7 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , layers : List Layer
+    , layers : List ( Layer, Maybe LayerConfig )
     , size : Size
     , origin : Pos
     , mouse : (Int, Int)
@@ -496,42 +502,58 @@ encodeLayerKind kind =
 --         _ -> Nothing
 
 
-createLayer : LayerKind -> Layer
-createLayer code =
-    case code of
-        Fss ->
-            FssLayer
-                WGLBlend.default
-                Nothing
-                (FSS.build FSS.init Nothing)
-        MirroredFss ->
-            MirroredFssLayer
-                WGLBlend.default
-                -- (WGLBlend.build
-                --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
-                --    (B.customAdd, B.srcColor, B.zero)
-                -- )
-                Nothing
-                (FSS.build FSS.init Nothing)
-        Lorenz ->
-            LorenzLayer WGLBlend.default (Lorenz.init |> Lorenz.build)
-        Template ->
-            TemplateLayer WGLBlend.default (Template.init |> Template.build)
-        Voronoi ->
-            VoronoiLayer WGLBlend.default (Voronoi.init |> Voronoi.build)
-        Fractal ->
-            FractalLayer WGLBlend.default (Fractal.init |> Fractal.build)
-        Vignette ->
+createLayer : ( LayerKind, Maybe LayerConfig ) -> ( Layer, LayerConfig )
+createLayer ( kind, maybeConfig ) =
+    case ( kind, maybeConfig )  of
+        ( Fss, Just (FssConfig config) ) ->
+            FSS.build config Nothing
+                |> FssLayer WGLBlend.default Nothing
+        ( Fss, Nothing ) ->
+            FSS.build FSS.init Nothing
+                |> FssLayer WGLBlend.default Nothing
+        ( MirroredFss, Just (FssConfig config) ) ->
+            FSS.build config Nothing
+                |> MirroredFssLayer
+                        WGLBlend.default
+                        -- (WGLBlend.build
+                        --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
+                        --    (B.customAdd, B.srcColor, B.zero)
+                        -- )
+                        Nothing
+        ( MirroredFss, Nothing ) ->
+            FSS.build FSS.init Nothing
+                |> MirroredFssLayer
+                        WGLBlend.default
+                        Nothing
+        ( Lorenz, Just (LorenzConfig config) ) ->
+            Lorenz.build config |> LorenzLayer WGLBlend.default
+        ( Lorenz, Nothing ) ->
+            Lorenz.build Lorenz.init |> LorenzLayer WGLBlend.default
+        ( Template, Just (TemplateConfig config) ) ->
+            Template.build config |> TemplateLayer WGLBlend.default
+        ( Template, Nothing ) ->
+            Template.build Template.init |> TemplateLayer WGLBlend.default
+        ( Voronoi, Just (VoronoiConfig config) ) ->
+            Voronoi.build config |> VoronoiLayer WGLBlend.default
+        ( Voronoi, Nothing ) ->
+            Voronoi.build Voronoi.init |> VoronoiLayer WGLBlend.default
+        ( Fractal, Just (FractalConfig config) ) ->
+            Fractal.build config |> FractalLayer WGLBlend.default
+        ( Fractal, Nothing ) ->
+            Fractal.build Fractal.init |> FractalLayer WGLBlend.default
+        ( Vignette, _ ) ->
             WGLBlend.build
                 (B.customAdd, B.srcAlpha, B.oneMinusSrcAlpha)
                 (B.customAdd, B.one, B.oneMinusSrcAlpha)
                 |> VignetteLayer
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
-        Text ->
+        ( Text, _ ) ->
             TextLayer SVGBlend.default
-        SvgImage ->
+        ( SvgImage, _ ) ->
             SvgImageLayer SVGBlend.default
+        _ ->
+            TextLayer SVGBlend.default -- FIXME: UnknownLayer
 
 
 extractLayer : Layer -> IE.Layer -> Layer
@@ -562,7 +584,9 @@ prepareModel : Model -> IE.Model
 prepareModel model =
     { theta = model.theta
     , now = model.now
-    , layers = List.map prepareLayer model.layers
+    , layers = model.layers
+        |> List.map Tuple.first
+        |> List.map prepareLayer
     , mouse = model.mouse
     , size = model.size
     , origin = model.origin
@@ -585,7 +609,7 @@ prepareGuiConfig ({ fss } as model) =
                 )
         , layers =
             model.layers |>
-                List.map (\layer ->
+                List.map (\(layer, _) ->
                     { kind = getLayerKind layer |> encodeLayerKind
                     , blend = getBlendForPort layer
                     , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
@@ -620,9 +644,9 @@ updateLayer index f model =
     let layersArray = Array.fromList model.layers
     in
         case layersArray |> Array.get index of
-            Just layer ->
+            Just ( layer, maybeConfig ) ->
                 { model
-                | layers = layersArray |> Array.set index (f layer) |> Array.toList
+                | layers = layersArray |> Array.set index (f layer, maybeConfig) |> Array.toList
                 }
             Nothing -> model
 
@@ -730,6 +754,7 @@ mergeWebGLLayers model =
     let viewport = getViewportState model |> Viewport.find
     in
         model.layers
+            |> List.map Tuple.first
             |> List.filter isWebGLLayer
             |> List.concatMap (layerToEntities model viewport)
 
@@ -737,6 +762,7 @@ mergeWebGLLayers model =
 mergeHtmlLayers : Model -> List (Html Msg)
 mergeHtmlLayers model =
     model.layers
+        |> List.map Tuple.first
         |> List.filter isHtmlLayer
         |> List.map (layerToHtml model)
 
