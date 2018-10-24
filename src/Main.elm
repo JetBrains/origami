@@ -57,19 +57,18 @@ type LayerConfig
     | FractalConfig Fractal.Config
     | VoronoiConfig Voronoi.Config
     | FssConfig FSS.Model
-    | MirroredFssConfig FSS.Model
     | TemplateConfig Template.Config
 
 
 type Layer
     -- FIXME: use type variable for that, or just a function!
-    = LorenzLayer Lorenz.Config WGLBlend.Blend Lorenz.Mesh
-    | FractalLayer Fractal.Config WGLBlend.Blend Fractal.Mesh
-    | VoronoiLayer Voronoi.Config WGLBlend.Blend Voronoi.Mesh
-    | TemplateLayer Template.Config WGLBlend.Blend Template.Mesh
-    | FssLayer FSS.Model WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | MirroredFssLayer FSS.Model WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | VignetteLayer Vignette.Config WGLBlend.Blend
+    = LorenzLayer WGLBlend.Blend Lorenz.Mesh
+    | FractalLayer WGLBlend.Blend Fractal.Mesh
+    | VoronoiLayer WGLBlend.Blend Voronoi.Mesh
+    | TemplateLayer WGLBlend.Blend Template.Mesh
+    | FssLayer WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | MirroredFssLayer WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
+    | VignetteLayer WGLBlend.Blend
     | TextLayer SVGBlend.Blend
     | SvgImageLayer SVGBlend.Blend
     | Unknown
@@ -94,15 +93,15 @@ type alias Model =
     , layers : List Layer
     , size : Size
     , origin : Pos
-    , mouse : Pos
+    , mouse : (Int, Int)
     , now : Time
     , timeShift : Time
-    , faces : ( Int, Int )
-    , range : ( Float, Float )
-    , amplitude : FSS.Amplitude
-    , lightSpeed : Int
     , product : Product
-    , vignette : Float
+    , vignette : Vignette.Config
+    , fss : FSS.Model
+    , lorenz : Lorenz.Config
+    -- voronoi : Voronoi.Config
+    -- fractal : Fractal.Config
     -- , lights (taken from product)
     -- , material TODO
     }
@@ -169,15 +168,14 @@ init =
       , layers = initialLayers |> List.map createLayer
       , size = ( 1200, 1200 )
       , origin = ( 0, 0 )
-      , mouse = FSS.defaultMouse
+      , mouse = ( 0, 0 )
       , now = 0.0
       , timeShift = 0.0
-      , faces = FSS.defaultFaces
-      , range = ( 0.8, 1.0 )
-      , amplitude = FSS.defaultAmplitude
-      , lightSpeed = FSS.defaultLightSpeed
+      --, range = ( 0.8, 1.0 )
       , product = Product.JetBrains
-      , vignette = 1.0
+      , fss = FSS.init
+      , vignette = Vignette.init
+      , lorenz = Lorenz.init
       }
     , Cmd.batch
         [ Task.perform Resize Window.size
@@ -191,7 +189,7 @@ updateAndRebuildFssWith model =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg ({ fss, vignette } as model) =
     case msg of
 
         Bang ->
@@ -218,19 +216,24 @@ update msg model =
                 (\layer ->
                     case ( layer, config ) of
                         -- FIXME: simplify
-                        ( LorenzLayer _ curBlend _, LorenzConfig lorenzConfig ) ->
-                            LorenzLayer lorenzConfig curBlend (lorenzConfig |> Lorenz.build)
-                        ( FractalLayer _ curBlend _, FractalConfig fractalConfig ) ->
-                            FractalLayer fractalConfig curBlend (fractalConfig |> Fractal.build)
-                        ( VoronoiLayer _ curBlend _, VoronoiConfig voronoiConfig ) ->
-                            VoronoiLayer voronoiConfig curBlend (voronoiConfig |> Voronoi.build)
-                        ( FssLayer _ curBlend maybeScene _, FssConfig fssConfig ) ->
+                        ( LorenzLayer curBlend _, LorenzConfig lorenzConfig ) ->
+                            LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
+                        ( FractalLayer curBlend _, FractalConfig fractalConfig ) ->
+                            FractalLayer curBlend (fractalConfig |> Fractal.build)
+                        ( VoronoiLayer curBlend _, VoronoiConfig voronoiConfig ) ->
+                            VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
+                        ( FssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
                             let
                                 newMesh = maybeScene |> FSS.build fssConfig
                             in
-                                FssLayer fssConfig curBlend maybeScene newMesh
-                        ( TemplateLayer _ curBlend _, TemplateConfig templateConfig ) ->
-                            TemplateLayer templateConfig curBlend (templateConfig |> Template.build)
+                                FssLayer curBlend maybeScene newMesh
+                        ( MirroredFssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
+                            let
+                                newMesh = maybeScene |> FSS.build fssConfig
+                            in
+                                MirroredFssLayer curBlend maybeScene newMesh
+                        ( TemplateLayer curBlend _, TemplateConfig templateConfig ) ->
+                            TemplateLayer curBlend (templateConfig |> Template.build)
                         _ -> Unknown
                 )
             , Cmd.none
@@ -241,18 +244,18 @@ update msg model =
                 (\layer ->
                     case layer of
                         -- FIXME: simplify
-                        TemplateLayer cfg _ mesh ->
-                            TemplateLayer cfg newBlend mesh
-                        LorenzLayer cfg _ mesh ->
-                            LorenzLayer cfg newBlend mesh
-                        FractalLayer cfg _ mesh ->
-                            FractalLayer cfg newBlend mesh
-                        VoronoiLayer cfg _ mesh ->
-                            VoronoiLayer cfg newBlend mesh
-                        FssLayer cfg _ scene mesh ->
-                            FssLayer cfg newBlend scene mesh
-                        VignetteLayer cfg _ ->
-                            VignetteLayer cfg newBlend
+                        TemplateLayer _ mesh ->
+                            TemplateLayer newBlend mesh
+                        LorenzLayer _ mesh ->
+                            LorenzLayer newBlend mesh
+                        FractalLayer _ mesh ->
+                            FractalLayer newBlend mesh
+                        VoronoiLayer _ mesh ->
+                            VoronoiLayer newBlend mesh
+                        FssLayer _ scene mesh ->
+                            FssLayer newBlend scene mesh
+                        VignetteLayer _ ->
+                            VignetteLayer newBlend
                         _ -> layer
                 )
             , Cmd.none
@@ -273,15 +276,21 @@ update msg model =
 
         ChangeFacesX facesX ->
             updateAndRebuildFssWith
-                { model | faces = model.faces |> Tuple.mapFirst (\_ -> facesX) }
+                { model | fss =
+                    { fss | faces = fss.faces |> Tuple.mapFirst (\_ -> facesX) }
+                }
 
         ChangeFacesY facesY ->
             updateAndRebuildFssWith
-                { model | faces = model.faces |> Tuple.mapSecond (\_ -> facesY) }
+                { model | fss =
+                    { fss | faces = fss.faces |> Tuple.mapSecond (\_ -> facesY) }
+                }
 
         ChangeLightSpeed lightSpeed ->
             updateAndRebuildFssWith
-                { model | lightSpeed = lightSpeed }
+                { model | fss =
+                    { fss | lightSpeed = lightSpeed }
+                }
 
         Rotate theta ->
             ( { model | theta = theta  }
@@ -306,12 +315,12 @@ update msg model =
             ( model |> updateLayer index
                 (\layer ->
                     case layer of
-                        FssLayer cfg blend _ mesh ->
+                        FssLayer blend _ mesh ->
                             let
                                 maybeScene = Just serializedScene
-                                newMesh = maybeScene |> FSS.build cfg
+                                newMesh = maybeScene |> FSS.build model.fss
                             in
-                                FssLayer cfg blend maybeScene newMesh
+                                FssLayer blend maybeScene newMesh
                         _ -> layer
                 )
             , Cmd.none
@@ -376,31 +385,25 @@ update msg model =
                 { model | product = product }
 
         ChangeVignette opacity ->
-            ( { model
-              | layers =
-                  List.map
-                      (\layer ->
-                         case layer of
-                            VignetteLayer config blend ->
-                                VignetteLayer
-                                    { config | opacity = opacity }
-                                    blend
-                            _ -> layer
-                      )
-                      model.layers }
+            ( { model | vignette =
+                { vignette | opacity = opacity }
+            }
             , Cmd.none
             )
 
         ChangeAmplitude ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
             let
-                ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ ) = model.amplitude
+                ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ )
+                    = fss.amplitude
             in
-                ( { model
-                | amplitude =
-                    ( Maybe.withDefault currentAmplitudeX newAmplitudeX
-                    , Maybe.withDefault currentAmplitudeY newAmplitudeY
-                    , Maybe.withDefault currentAmplitudeZ newAmplitudeZ
-                    ) }
+                ( { model | fss =
+                    { fss | amplitude =
+                        ( Maybe.withDefault currentAmplitudeX newAmplitudeX
+                        , Maybe.withDefault currentAmplitudeY newAmplitudeY
+                        , Maybe.withDefault currentAmplitudeZ newAmplitudeZ
+                        )
+                    }
+                  }
                 , Cmd.none
                 )
 
@@ -410,27 +413,27 @@ update msg model =
 getLayerKind : Layer -> LayerKind
 getLayerKind layer =
     case layer of
-        FssLayer _ _ _ _ -> Fss
-        MirroredFssLayer _ _ _ _ -> MirroredFss
-        LorenzLayer _ _ _ -> Lorenz
-        FractalLayer _ _ _ -> Fractal
-        VoronoiLayer _ _ _ -> Voronoi
-        TemplateLayer _ _ _ -> Template
+        FssLayer _ _ _ -> Fss
+        MirroredFssLayer _ _ _ -> MirroredFss
+        LorenzLayer _ _ -> Lorenz
+        FractalLayer _ _ -> Fractal
+        VoronoiLayer _ _ -> Voronoi
+        TemplateLayer _ _ -> Template
         TextLayer _ -> Text
         SvgImageLayer _ -> SvgImage
-        VignetteLayer _ _ -> Vignette
+        VignetteLayer _ -> Vignette
         _ -> Text -- FIXME: Empty Kind or Nothing
 
 
 getBlendString : Layer -> String
 getBlendString layer =
     case layer of
-        FssLayer _ blend _ _ -> WGLBlend.encodeOne blend
-        LorenzLayer _ blend _ -> WGLBlend.encodeOne blend
-        FractalLayer _ blend _ -> WGLBlend.encodeOne blend
-        VoronoiLayer _ blend _ -> WGLBlend.encodeOne blend
-        TemplateLayer _ blend _ -> WGLBlend.encodeOne blend
-        VignetteLayer _ blend -> WGLBlend.encodeOne blend
+        FssLayer blend _ _ -> WGLBlend.encodeOne blend
+        LorenzLayer blend _ -> WGLBlend.encodeOne blend
+        FractalLayer blend _ -> WGLBlend.encodeOne blend
+        VoronoiLayer blend _ -> WGLBlend.encodeOne blend
+        TemplateLayer blend _ -> WGLBlend.encodeOne blend
+        VignetteLayer blend -> WGLBlend.encodeOne blend
         TextLayer blend -> SVGBlend.encode blend
         SvgImageLayer blend -> SVGBlend.encode blend
         _ -> SVGBlend.encode SVGBlend.default
@@ -439,12 +442,12 @@ getBlendString layer =
 getBlendForPort : Layer -> IE.PortBlend
 getBlendForPort layer =
     ( case layer of
-        FssLayer _ blend _ _ -> Just blend
-        LorenzLayer _ blend _ -> Just blend
-        FractalLayer _ blend _ -> Just blend
-        VoronoiLayer _ blend _ -> Just blend
-        TemplateLayer _ blend _ -> Just blend
-        VignetteLayer _ blend -> Just blend
+        FssLayer blend _ _ -> Just blend
+        LorenzLayer blend _ -> Just blend
+        FractalLayer blend _ -> Just blend
+        VoronoiLayer blend _ -> Just blend
+        TemplateLayer blend _ -> Just blend
+        VignetteLayer blend -> Just blend
         _ -> Nothing
     , case layer of
         TextLayer blend ->
@@ -487,38 +490,28 @@ createLayer : LayerKind -> Layer
 createLayer code =
     case code of
         Fss ->
-            let fssConfig = FSS.init
-            in
-                FssLayer
-                    fssConfig
-                    WGLBlend.default
-                    Nothing
-                    (FSS.build fssConfig Nothing)
+            FssLayer
+                WGLBlend.default
+                Nothing
+                (FSS.build FSS.init Nothing)
         MirroredFss ->
-            let fssConfig = FSS.init
-            in
-                MirroredFssLayer
-                    fssConfig
-                    WGLBlend.default
-                    Nothing
-                    (FSS.build fssConfig Nothing)
+            MirroredFssLayer
+                WGLBlend.default
+                Nothing
+                (FSS.build FSS.init Nothing)
         Lorenz ->
-            let lorenzConfig = Lorenz.init
-            in LorenzLayer lorenzConfig WGLBlend.default (lorenzConfig |> Lorenz.build)
+            LorenzLayer WGLBlend.default (Lorenz.init |> Lorenz.build)
         Template ->
-            let templateConfig = Template.init
-            in TemplateLayer templateConfig WGLBlend.default (templateConfig |> Template.build)
+            TemplateLayer WGLBlend.default (Template.init |> Template.build)
         Voronoi ->
-            let voronoiConfig = Voronoi.init
-            in VoronoiLayer voronoiConfig WGLBlend.default (voronoiConfig |> Voronoi.build)
+            VoronoiLayer WGLBlend.default (Voronoi.init |> Voronoi.build)
         Fractal ->
-            let fractalConfig = Fractal.init
-            in FractalLayer fractalConfig WGLBlend.default (fractalConfig |> Fractal.build)
+            FractalLayer WGLBlend.default (Fractal.init |> Fractal.build)
         Vignette ->
             WGLBlend.build
                 (B.customAdd, B.srcAlpha, B.oneMinusSrcAlpha)
                 (B.customAdd, B.one, B.oneMinusSrcAlpha)
-                |> VignetteLayer Vignette.init
+                |> VignetteLayer
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
         Text ->
@@ -530,15 +523,15 @@ createLayer code =
 extractLayer : Layer -> IE.Layer -> Layer
 extractLayer curLayer srcLayer =
     case ( srcLayer.type_, curLayer ) of
-        ( IE.Fss, FssLayer config blend scene mesh ) ->
-            FssLayer config srcLayer.blend scene mesh
+        ( IE.Fss, FssLayer blend scene mesh ) ->
+            FssLayer srcLayer.blend scene mesh
         _ -> Unknown
 
 
 prepareLayer : Layer -> IE.Layer
 prepareLayer layer =
     case layer of
-        FssLayer config blend maybeScene mesh ->
+        FssLayer blend maybeScene mesh ->
             { type_ = IE.Fss
             , blend = blend
             -- , config = config
@@ -563,9 +556,9 @@ extractFssBuildOptions = prepareGuiConfig
 
 
 prepareGuiConfig : Model -> GuiConfig
-prepareGuiConfig model =
+prepareGuiConfig ({ fss } as model) =
     let
-        ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
+        ( amplitudeX, amplitudeY, amplitudeZ ) = fss.amplitude
     in
         { product = Product.encode model.product
         , palette = Product.getPalette model.product
@@ -579,11 +572,11 @@ prepareGuiConfig model =
                     , blend = getBlendForPort layer
                     , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
                     })
-        , facesX = Tuple.first model.faces
-        , facesY = Tuple.second model.faces
+        , facesX = Tuple.first model.fss.faces
+        , facesY = Tuple.second model.fss.faces
         , amplitude = ( Just amplitudeX, Just amplitudeY, Just amplitudeZ )
-        , lightSpeed = model.lightSpeed
-        , vignette = model.vignette
+        , lightSpeed = model.fss.lightSpeed
+        , vignette = model.vignette.opacity
         , customSize = Nothing
         }
 
@@ -602,13 +595,6 @@ adaptTimeShift v =
 extractTimeShift : Time -> String
 extractTimeShift v =
     (v / timeShiftRange * 100.0) + 50.0 |> toString
-
-
-configureWhenMatches : LayerIndex -> Model -> LayerConfig -> (Layer -> Bool) -> Msg
-configureWhenMatches index { layers } config f =
-    case Array.fromList layers |> Array.get index of
-        Just layer -> if (f layer) then Configure index config else NoOp
-        Nothing -> NoOp
 
 
 updateLayer : Int -> (Layer -> Layer) -> Model -> Model
@@ -660,20 +646,10 @@ subscriptions model =
             ChangeSVGBlend layer (SVGBlend.decode blend)
           )
         , configureLorenz (\(lorenzConfig, layerIndex) ->
-            configureWhenMatches layerIndex model (LorenzConfig lorenzConfig)
-                (\layer ->
-                    case layer of
-                        LorenzLayer _ _ _ -> True
-                        _ -> False
-                )
+            Configure layerIndex (LorenzConfig lorenzConfig)
           )
         , configureFss (\(fssConfig, layerIndex) ->
-            configureWhenMatches layerIndex model (FSS.fromPortModel fssConfig |> FssConfig)
-                (\layer ->
-                    case layer of
-                        FssLayer _ _ _ _ -> True
-                        _ -> False
-                )
+            FSS.fromPortModel fssConfig |> FssConfig |> Configure layerIndex
           )
         , rebuildFss (\(serializedMesh, layerIndex) ->
             RebuildFss layerIndex serializedMesh
@@ -758,53 +734,61 @@ layerToHtml model layer =
 
 
 layerToEntities : Model -> Viewport {} -> Layer -> List WebGL.Entity
-layerToEntities model viewport layer =
+layerToEntities ({ fss } as model) viewport layer =
     case layer of
-        LorenzLayer _ blend lorenz ->
+        LorenzLayer blend lorenz ->
             [ Lorenz.makeEntity
                 viewport
                 [ DepthTest.default, WGLBlend.produce blend ]
                 lorenz
             ]
-        FractalLayer _ blend fractal ->
+        FractalLayer blend fractal ->
             [ Fractal.makeEntity
                 viewport
                 [ DepthTest.default, WGLBlend.produce blend ]
                 fractal
             ]
-        TemplateLayer _ blend template ->
+        TemplateLayer blend template ->
             [ Template.makeEntity
                 viewport
                 [ DepthTest.default, WGLBlend.produce blend ]
                 template
             ]
-        VoronoiLayer _ blend voronoi ->
+        VoronoiLayer blend voronoi ->
             [ Voronoi.makeEntity
                 viewport
                 [ DepthTest.default, WGLBlend.produce blend ]
                 voronoi
             ]
-        FssLayer config blend serialized fss ->
+        FssLayer blend serialized mesh ->
             [ FSS.makeEntity
+                model.now
+                model.mouse
                 viewport
-                config
+                model.fss
                 serialized
                 [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
-                fss
+                mesh
             ]
-        MirroredFssLayer fssConfig blend serialized fss ->
+        MirroredFssLayer blend serialized mesh ->
             let
                 --config1 = { fssConfig | clip = Just ( FSS.defaultMirror, 1 ) }
                 --config2 = { fssConfig | clip = Just ( 0, 1.0 - FSS.defaultMirror ) }
-                config1 = { fssConfig | clip = Just ( FSS.defaultMirror, 1 ) }
-                config2 = { fssConfig | clip = Just ( 0, 1.0 - FSS.defaultMirror ) }
+                model1 =
+                    { model | fss =
+                        { fss | clip = Just ( 0, FSS.defaultMirror ) }
+                    }
+                model2 =
+                    { model | fss =
+                        { fss | clip = Just ( FSS.defaultMirror, 1 ) }
+                    }
             in
-                (layerToEntities model viewport (FssLayer config1 blend serialized fss)) ++
-                (layerToEntities model viewport (FssLayer config2 blend serialized fss))
-        VignetteLayer config blend ->
+                (layerToEntities model1 viewport (FssLayer blend serialized mesh)) ++
+                (layerToEntities model2 viewport (FssLayer blend serialized mesh))
+        VignetteLayer blend ->
             [ Vignette.makeEntity
                   viewport
-                  config
+                  model.vignette
                   [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
             ]
         TextLayer _ -> []
