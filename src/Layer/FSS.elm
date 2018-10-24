@@ -52,6 +52,7 @@ type alias PortModel =
     { renderMode : String
     , amplitude : ( Float, Float, Float )
     , faces : Faces
+    , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
     , lightSpeed : Int
     }
@@ -61,6 +62,7 @@ type alias Model =
     { renderMode : RenderMode
     , amplitude : ( Float, Float, Float )
     , faces : Faces
+    , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
     , lightSpeed : Int
     }
@@ -162,6 +164,7 @@ init =
     { faces = defaultFaces
     , renderMode = Triangles
     , amplitude = defaultAmplitude
+    , mirror = False
     , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
     , lightSpeed = defaultLightSpeed
     }
@@ -391,9 +394,8 @@ uniforms now mouse v model meshSize ( lights, speed ) =
         -- width = Tuple.first size |> toFloat
         -- height = Tuple.second size |> toFloat
         depth = 100.0
-        ( mirror, clip ) = case model.clip of
-            Just clip -> ( 1.0, clip )
-            Nothing -> ( 0.0, (-1, -1) )
+        mirror = if model.mirror then 1.0 else 0.0
+        clip =  model.clip |> Maybe.withDefault ( -1, -1 )
         ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
