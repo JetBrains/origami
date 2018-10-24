@@ -84,7 +84,7 @@ const export_ = (app, exportedState) => {
     app.ports.pause.send(null);
     const stateObj = JSON.parse(exportedState);
     stateObj.layers.forEach((layer, index) => {
-        layer.config = layers[index] && layers[index].config ? layers[index].config : {};
+        //layer.config = layers[index] && layers[index].config ? layers[index].config : {};
         if (layer.config['lights']) {
             console.log(index, 'ambient', layer.config.lights.ambient);
             console.log(index, 'diffuse', layer.config.lights.diffuse);
