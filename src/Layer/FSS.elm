@@ -163,7 +163,7 @@ defaultLightSpeed = 600
 init : Model
 init =
     { faces = defaultFaces
-    , renderMode = Points
+    , renderMode = Triangles
     , amplitude = defaultAmplitude
     , mirror = False
     , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
@@ -338,8 +338,6 @@ convertVertex color material triangle side v =
     , aV0 = v3fromList v.v0
     , aPhi = v.time
     }
-
-
 
 
 v3fromList : List Float -> Vec3
