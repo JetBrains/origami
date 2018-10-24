@@ -31,7 +31,7 @@ const import_ = (app, importedState) => {
         ))
     }));
     parsedState.layers.forEach((layer, index) => {
-        if (layer.type == 'fss') {
+        if (layer.type == 'fss' || layer.type == 'fss-mirror')  {
             const scene = buildFSS(layer.config, layer.sceneFuzz);
             scenes[index] = scene;
             console.log('import FSS', scene, layer.config);

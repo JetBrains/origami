@@ -28,6 +28,8 @@ const startGui = require('./gui.js');
 
 const buildFSS = require('./fss.js');
 
+const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror'
+
 const exportScene = (scene) => {
     //console.log(scene);
     return scene.meshes[0].geometry.vertices.map((vertex) => (
@@ -66,7 +68,7 @@ const import_ = (app, importedState) => {
         ))
     }));
     parsedState.layers.forEach((layer, index) => {
-        if (layer.type == 'fss') {
+        if (isFss(layer)) {
             const scene = buildFSS(layer.config, layer.sceneFuzz);
             scenes[index] = scene;
             app.ports.configureFss.send([ layer.config, index ]);
@@ -89,7 +91,7 @@ const export_ = (app, exportedState) => {
         } else {
             console.log(index, 'no lights');
         }
-        layer.sceneFuzz = layer.type == 'fss'
+        layer.sceneFuzz = isFss(layer)
             ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
             : null;
     })
@@ -221,7 +223,7 @@ setTimeout(function() { // FIXME: change to document.ready
             });
 
         model.layers.forEach((layer, index) => {
-            if (layer.kind == 'fss') {
+            if (isFss(layer)) {
                 const fssScene = buildFSS(model);
                 app.ports.rebuildFss.send([ fssScene, index ]);
             }
@@ -230,7 +232,7 @@ setTimeout(function() { // FIXME: change to document.ready
         app.ports.requestFssRebuild.subscribe((model) => {
             console.log('rebuildFss', model);
             model.layers.map((layer, index) => {
-                if (layer.kind == 'fss') {
+                if (isFss(layer)) {
                     const fssScene = buildFSS(model);
                     app.ports.rebuildFss.send([ fssScene, index ]);
                 }

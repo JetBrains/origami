@@ -36,7 +36,7 @@ function start(layers, updateLayers) {
     var layersNode = patch.addNode('jb/layers').move(80, 250);
     layersNode.inlets['count'].receive(layers.length);
     layersNode.inlets['colors'].receive(layers.map((layer) => {
-        return  (layer.type === 'fss') || (layer.type === 'fss')
+        return  (layer.type === 'fss') || (layer.type === 'fss-mirror')
             ? [ layer.config.lights.ambient[1]
               , layer.config.lights.diffuse[1]
               ]
