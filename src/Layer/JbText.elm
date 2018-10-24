@@ -5,6 +5,7 @@ module Layer.JbText exposing
 import Html exposing (..)
 import Html.Attributes as HAttrs
 import Svg.Blend as Blend
+import Product exposing (..)
 
 
 shiftX = 320 -- half of the text width
@@ -12,8 +13,8 @@ shiftY = 40 -- half of the text height
 defaultSize = 110
 defaultWidth = 1500.0
 
-view : (Int, Int) -> (Int, Int) -> Blend.Blend -> Html a
-view ( w, h ) ( x, y ) blend =
+view : Product -> (Int, Int) -> (Int, Int) -> Blend.Blend -> Html a
+view product ( w, h ) ( x, y ) blend =
     let
         scale = toFloat w / defaultWidth
         posX = (toFloat w / 2) - toFloat x - shiftX
@@ -29,5 +30,5 @@ view ( w, h ) ( x, y ) blend =
                 , ("font-size", toString defaultSize ++ "px")
                 ]
             ]
-            [ span [ HAttrs.class "text-layer text-layer--jetbrains" ] [ text "Jetbrains" ]
+            [ span [ HAttrs.class "text-layer text-layer--jetbrains" ] [ text <| getName product ]
             ]
