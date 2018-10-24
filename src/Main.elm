@@ -254,6 +254,8 @@ update msg ({ fss, vignette } as model) =
                             VoronoiLayer newBlend mesh
                         FssLayer _ scene mesh ->
                             FssLayer newBlend scene mesh
+                        MirroredFssLayer _ scene mesh ->
+                            MirroredFssLayer newBlend scene mesh
                         VignetteLayer _ ->
                             VignetteLayer newBlend
                         _ -> layer
@@ -435,6 +437,7 @@ getLayerKind layer =
 -- getBlendString layer =
 --     case layer of
 --         FssLayer blend _ _ -> WGLBlend.encodeOne blend
+--         MirroredFssLayer blend _ _ -> WGLBlend.encodeOne blend
 --         LorenzLayer blend _ -> WGLBlend.encodeOne blend
 --         FractalLayer blend _ -> WGLBlend.encodeOne blend
 --         VoronoiLayer blend _ -> WGLBlend.encodeOne blend
@@ -449,6 +452,7 @@ getBlendForPort : Layer -> IE.PortBlend
 getBlendForPort layer =
     ( case layer of
         FssLayer blend _ _ -> Just blend
+        MirroredFssLayer blend _ _ -> Just blend
         LorenzLayer blend _ -> Just blend
         FractalLayer blend _ -> Just blend
         VoronoiLayer blend _ -> Just blend
@@ -503,6 +507,10 @@ createLayer code =
         MirroredFss ->
             MirroredFssLayer
                 WGLBlend.default
+                -- (WGLBlend.build
+                --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
+                --    (B.customAdd, B.srcColor, B.zero)
+                -- )
                 Nothing
                 (FSS.build FSS.init Nothing)
         Lorenz ->

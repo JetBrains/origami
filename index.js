@@ -224,15 +224,16 @@ setTimeout(function() { // FIXME: change to document.ready
 
         model.layers.forEach((layer, index) => {
             if (isFss(layer)) {
+                console.log('rebuild FSS layer', index);
                 const fssScene = buildFSS(model);
                 app.ports.rebuildFss.send([ fssScene, index ]);
             }
         });
 
         app.ports.requestFssRebuild.subscribe((model) => {
-            console.log('rebuildFss', model);
             model.layers.map((layer, index) => {
                 if (isFss(layer)) {
+                    console.log('forced to rebuild FSS layer', index);
                     const fssScene = buildFSS(model);
                     app.ports.rebuildFss.send([ fssScene, index ]);
                 }
