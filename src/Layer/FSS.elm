@@ -10,10 +10,9 @@ module Layer.FSS exposing
     , build
     , emptyMesh
     , defaultMirror
-    , defaultAmplitude
-    , defaultMouse
-    , defaultFaces
-    , defaultLightSpeed
+    -- , defaultAmplitude
+    -- , defaultFaces
+    -- , defaultLightSpeed
     , init
     )
 
@@ -32,8 +31,7 @@ import Viewport exposing (Viewport)
 
 
 type alias Mouse = ( Int, Int )
-type alias Size = ( Int, Int )
-type alias Origin = ( Int, Int )
+type alias Faces = ( Int, Int )
 type alias Clip = ( Float, Float )
 type alias Mirror = Float
 type alias Amplitude = ( Float, Float, Float )
@@ -51,22 +49,20 @@ type RenderMode
 
 
 type alias PortModel =
-    { now : Time
-    , origin : Origin
-    , mouse : Mouse
-    , renderMode : String
+    { renderMode : String
     , amplitude : ( Float, Float, Float )
+    , faces : Faces
     , clip : Maybe Clip -- max and min values of X for clipping
+    , lightSpeed : Int
     }
 
 
 type alias Model =
-    { now : Time
-    , origin : Origin
-    , mouse : Mouse
-    , renderMode : RenderMode
+    { renderMode : RenderMode
     , amplitude : ( Float, Float, Float )
+    , faces : Faces
     , clip : Maybe Clip -- max and min values of X for clipping
+    , lightSpeed : Int
     }
 
 
@@ -153,10 +149,6 @@ defaultMirror : Float
 defaultMirror = 0.5
 
 
-defaultMouse : Mouse
-defaultMouse = ( 0, 0 )
-
-
 defaultFaces : ( Int, Int )
 defaultFaces = ( 17, 17 )
 
@@ -167,12 +159,11 @@ defaultLightSpeed = 600
 
 init : Model
 init =
-    { now = 0
-    , origin = (0, 0)
-    , mouse = defaultMouse
+    { faces = defaultFaces
     , renderMode = Triangles
     , amplitude = defaultAmplitude
     , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
+    , lightSpeed = defaultLightSpeed
     }
 
 
@@ -182,15 +173,16 @@ fromPortModel portModel =
 
 
 makeEntity
-     : Viewport {}
+     : Time
+    -> Mouse
+    -> Viewport {}
     -> Model
     -> Maybe SerializedScene
     -> List Setting
     -> Mesh
     -> WebGL.Entity
-makeEntity viewport model maybeScene settings mesh =
+makeEntity now mouse viewport model maybeScene settings mesh =
     let
-        { now, mouse, amplitude } = model
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
             |> Maybe.withDefault []
@@ -214,6 +206,8 @@ makeEntity viewport model maybeScene settings mesh =
             fragmentShader
             mesh
             (uniforms
+                now
+                mouse
                 viewport
                 model
                 meshSize
@@ -381,14 +375,15 @@ type alias Varyings =
 
 
 uniforms
-     : Viewport {}
+     : Time
+    -> Mouse
+    -> Viewport {}
     -> Model
     -> ( Int, Int )
     -> ( List SLight, Speed )
     -> Uniforms
-uniforms v model meshSize ( lights, speed ) =
+uniforms now mouse v model meshSize ( lights, speed ) =
     let
-        { now, origin, mouse, amplitude } = model
         adaptedLights = lights |> adaptLights meshSize speed
         (meshWidth, meshHeight) = meshSize
         width = Vec2.getX v.size
@@ -399,7 +394,7 @@ uniforms v model meshSize ( lights, speed ) =
         ( mirror, clip ) = case model.clip of
             Just clip -> ( 1.0, clip )
             Nothing -> ( 0.0, (-1, -1) )
-        ( amplitudeX, amplitudeY, amplitudeZ ) = amplitude
+        ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
