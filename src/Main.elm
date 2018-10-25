@@ -81,7 +81,7 @@ initialLayers =
     [ ( MirroredFss, identity )
     , ( MirroredFss
       , changeIfFss
-            (\prevConfig -> { prevConfig | renderMode = FSS.Lines })
+            (\prevConfig -> { prevConfig | renderMode = FSS.PartialLines })
       )
     -- , ( Vignette, Nothing )
     , ( Text, identity )
