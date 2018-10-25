@@ -279,7 +279,7 @@ build model maybeScene =
             )
             |> Maybe.withDefault [ ])
     in
-        case model.renderMode of
+        case Debug.log "renderMode" model.renderMode of
             Triangles -> WebGL.triangles convertedTriangles
             PartialLines ->
                 WebGL.lines <|
@@ -296,8 +296,6 @@ build model maybeScene =
                     List.foldl (\(v1, v2, v3) lines ->
                         lines ++ [ v1 ] ++ [ v2 ] ++ [ v3 ]
                     ) [] convertedTriangles
-
-
 
 
 

@@ -38,7 +38,7 @@ type alias LayerIndex = Int
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
-type alias LayerChange = LayerConfig -> LayerConfig
+type alias ConfigChange = LayerConfig -> LayerConfig
 
 type LayerKind
     = Lorenz
@@ -76,13 +76,12 @@ type Layer
     -- | CanvasLayer (\_ -> )
 
 
-initialLayers : List ( LayerKind, LayerChange )
+initialLayers : List ( LayerKind, ConfigChange )
 initialLayers =
     [ ( MirroredFss, identity )
     , ( MirroredFss
-      , (\(FssConfig prevConfig) ->
-            { prevConfig | renderMode = FSS.Lines } |> FssConfig
-        )
+      , changeIfFss
+            (\prevConfig -> { prevConfig | renderMode = FSS.Lines })
       )
     -- , ( Vignette, Nothing )
     , ( Text, identity )
@@ -95,7 +94,7 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , layers : List ( Layer, LayerChange )
+    , layers : List ( Layer, ConfigChange )
     , size : Size
     , origin : Pos
     , mouse : (Int, Int)
@@ -220,8 +219,8 @@ update msg ({ fss, vignette } as model) =
 
         Configure index config ->
             ( model |> updateLayer index
-                (\layer ->
-                    case ( layer, config ) of
+                (\(layer, changeF) ->
+                    case ( layer, changeF config ) of
                         -- FIXME: simplify
                         ( LorenzLayer curBlend _, LorenzConfig lorenzConfig ) ->
                             LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
@@ -248,7 +247,7 @@ update msg ({ fss, vignette } as model) =
 
         ChangeWGLBlend index newBlend ->
             ( model |> updateLayer index
-                (\layer ->
+                (\(layer, _) ->
                     case layer of
                         -- FIXME: simplify
                         TemplateLayer _ mesh ->
@@ -272,7 +271,7 @@ update msg ({ fss, vignette } as model) =
 
         ChangeSVGBlend index newBlend ->
             ( model |> updateLayer index
-                (\layer ->
+                (\(layer, _) ->
                     case layer of
                         TextLayer _ ->
                             TextLayer newBlend
@@ -322,18 +321,20 @@ update msg ({ fss, vignette } as model) =
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
-                (\layer ->
+                (\(layer, changeF) ->
                     case layer of
                         FssLayer blend _ mesh ->
                             let
                                 maybeScene = Just serializedScene
-                                newMesh = maybeScene |> FSS.build model.fss
+                                newMesh = maybeScene
+                                    |> FSS.build (applyFssChange changeF model.fss)
                             in
                                 FssLayer blend maybeScene newMesh
                         MirroredFssLayer blend _ mesh ->
                             let
                                 maybeScene = Just serializedScene
-                                newMesh = maybeScene |> FSS.build model.fss
+                                newMesh = maybeScene
+                                    |> FSS.build (applyFssChange changeF model.fss)
                             in
                                 MirroredFssLayer blend maybeScene newMesh
                         _ -> layer
@@ -364,6 +365,7 @@ update msg ({ fss, vignette } as model) =
                     , now = src.now
                     , layers =
                         List.map2 extractLayer model.layers src.layers
+                            |> List.map (\layer -> (layer, identity))
                     , mouse = src.mouse
                     , size = src.size
                     , origin = src.origin
@@ -504,24 +506,20 @@ encodeLayerKind kind =
 --         _ -> Nothing
 
 
-createLayer : LayerKind -> LayerChange -> Layer
+createLayer : LayerKind -> ConfigChange -> Layer
 createLayer kind changeF =
     case kind of
         Fss ->
             let
                 config =
-                    case FssConfig FSS.init |> changeF of
-                        FssConfig newConfig -> newConfig
-                        _ -> FSS.init
+                    applyFssChange changeF FSS.init
             in
                 FSS.build config Nothing
                     |> FssLayer WGLBlend.default Nothing
         MirroredFss ->
             let
                 config =
-                    case FssConfig FSS.init |> changeF of
-                        FssConfig newConfig -> newConfig
-                        _ -> FSS.init
+                    applyFssChange changeF FSS.init
             in
                 FSS.build config Nothing
                     |> MirroredFssLayer
@@ -574,12 +572,10 @@ createLayer kind changeF =
             TextLayer SVGBlend.default
         SvgImage ->
             SvgImageLayer SVGBlend.default
-        _ ->
-            TextLayer SVGBlend.default -- FIXME: UnknownLayer
 
 
-extractLayer : Layer -> IE.Layer -> Layer
-extractLayer curLayer srcLayer =
+extractLayer : ( Layer, ConfigChange ) -> IE.Layer -> Layer
+extractLayer ( curLayer, changeLayer ) srcLayer =
     case ( srcLayer.type_, curLayer ) of
         ( IE.Fss, FssLayer blend scene mesh ) ->
             FssLayer srcLayer.blend scene mesh
@@ -661,14 +657,16 @@ extractTimeShift v =
     (v / timeShiftRange * 100.0) + 50.0 |> toString
 
 
-updateLayer : Int -> (Layer -> Layer) -> Model -> Model
+updateLayer : Int -> ((Layer, ConfigChange) -> Layer) -> Model -> Model
 updateLayer index f model =
     let layersArray = Array.fromList model.layers
     in
         case layersArray |> Array.get index of
-            Just ( layer, maybeConfig ) ->
+            Just ( layer, changeF ) ->
                 { model
-                | layers = layersArray |> Array.set index (f layer, maybeConfig) |> Array.toList
+                | layers = layersArray
+                    |> Array.set index (f (layer, changeF), changeF)
+                    |> Array.toList
                 }
             Nothing -> model
 
@@ -753,6 +751,21 @@ mapControls model controlsMsg =
         Controls.Rotate th -> Rotate th
 
 
+applyFssChange : ConfigChange -> FSS.Model -> FSS.Model
+applyFssChange changeF fssModel =
+    case changeF <| FssConfig fssModel of
+        FssConfig newModel -> newModel
+        _ -> fssModel
+
+
+changeIfFss : (FSS.Model -> FSS.Model) -> ConfigChange
+changeIfFss adjustFss =
+    \conf ->
+        case conf of
+            FssConfig prevConfig -> adjustFss prevConfig |> FssConfig
+            _ -> conf
+
+
 isWebGLLayer : Layer -> Bool
 isWebGLLayer layer =
     case layer of
@@ -760,7 +773,6 @@ isWebGLLayer layer =
         SvgImageLayer _ -> False
         Unknown -> False
         _ -> True
-
 
 isHtmlLayer : Layer -> Bool
 isHtmlLayer layer =
@@ -776,21 +788,19 @@ mergeWebGLLayers model =
     let viewport = getViewportState model |> Viewport.find
     in
         model.layers
-            |> List.map Tuple.first
-            |> List.filter isWebGLLayer
+            |> List.filter (Tuple.first >> isWebGLLayer)
             |> List.concatMap (layerToEntities model viewport)
 
 
 mergeHtmlLayers : Model -> List (Html Msg)
 mergeHtmlLayers model =
     model.layers
-        |> List.map Tuple.first
-        |> List.filter isHtmlLayer
+        |> List.filter (Tuple.first >> isHtmlLayer)
         |> List.map (layerToHtml model)
 
 
-layerToHtml : Model -> Layer -> Html Msg
-layerToHtml model layer =
+layerToHtml : Model -> ( Layer, ConfigChange ) -> Html Msg
+layerToHtml model ( layer, _ ) =
     case layer of
         TextLayer blend ->
             JbText.view model.product model.size model.origin blend
@@ -799,8 +809,8 @@ layerToHtml model layer =
         _ -> div [] []
 
 
-layerToEntities : Model -> Viewport {} -> Layer -> List WebGL.Entity
-layerToEntities ({ fss } as model) viewport layer =
+layerToEntities : Model -> Viewport {} -> ( Layer, ConfigChange ) -> List WebGL.Entity
+layerToEntities ({ fss } as model) viewport ( layer, changeF ) =
     case layer of
         LorenzLayer blend mesh ->
             [ Lorenz.makeEntity
@@ -831,7 +841,7 @@ layerToEntities ({ fss } as model) viewport layer =
                 model.now
                 model.mouse
                 viewport
-                model.fss
+                (applyFssChange changeF model.fss)
                 serialized
                 [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                 mesh
@@ -840,16 +850,30 @@ layerToEntities ({ fss } as model) viewport layer =
             let
                 -- TODO: store clip position in the layer
                 model1 =
-                    { model | fss =
-                        { fss | clip = Just (0.0, FSS.defaultMirror), mirror = True }
+                    { model
+                    | fss =
+                        model.fss
+                            --|> applyFssChange changeF
+                            |> (\fss ->
+                                { fss
+                                | clip = Just (0.0, FSS.defaultMirror)
+                                , mirror = True
+                                }
+                            )
                     }
                 model2 =
-                    { model | fss =
-                        { fss | clip = Just (FSS.defaultMirror, 1.0) }
+                    { model
+                    | fss =
+                        model.fss
+                            -- |> applyFssChange changeF
+                            |> (\fss ->
+                                { fss
+                                | clip = Just ( FSS.defaultMirror, 1.0 )
+                                })
                     }
             in
-                (layerToEntities model1 viewport (FssLayer blend serialized mesh)) ++
-                (layerToEntities model2 viewport (FssLayer blend serialized mesh))
+                layerToEntities model1 viewport ((FssLayer blend serialized mesh), changeF) ++
+                layerToEntities model2 viewport ((FssLayer blend serialized mesh), changeF)
         VignetteLayer blend ->
             [ Vignette.makeEntity
                   viewport
