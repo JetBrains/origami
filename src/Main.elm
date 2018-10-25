@@ -79,10 +79,10 @@ type Layer
 initialLayers : List ( LayerKind, ConfigChange )
 initialLayers =
     [ ( MirroredFss, identity )
-    , ( MirroredFss
-      , changeIfFss
-            (\prevConfig -> { prevConfig | renderMode = FSS.PartialLines })
-      )
+    , ( MirroredFss, identity )
+    --   , changeIfFss
+    --         (\prevConfig -> { prevConfig | renderMode = FSS.PartialLines })
+    --   )
     -- , ( Vignette, Nothing )
     , ( Text, identity )
     , ( SvgImage, identity )
