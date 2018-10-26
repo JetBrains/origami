@@ -80,9 +80,14 @@ initialLayers : List ( LayerKind, ConfigChange )
 initialLayers =
     [ ( MirroredFss, identity )
     , ( MirroredFss, identity )
-    --   , changeIfFss
-    --         (\prevConfig -> { prevConfig | renderMode = FSS.PartialLines })
-    --   )
+    , ( MirroredFss
+      , changeIfFss
+            (\prevConfig ->
+                { prevConfig
+                | renderMode = FSS.PartialLines
+                , shareMesh = True
+                })
+      )
     -- , ( Vignette, Nothing )
     , ( Text, identity )
     , ( SvgImage, identity )
@@ -766,6 +771,18 @@ changeIfFss adjustFss =
             _ -> conf
 
 
+findTopAndGet : (Layer -> Int -> Maybe a) -> a -> Model -> a
+findTopAndGet getF default model =
+    model.layers
+        |> List.indexedMap (,)
+        |> List.foldl (\(index, (layer, _)) result ->
+                -- if (index < maxIndex) && predicate layer
+                -- then getF layer
+                -- else default
+                getF layer index |> Maybe.withDefault default
+            ) default
+
+
 isWebGLLayer : Layer -> Bool
 isWebGLLayer layer =
     case layer of
@@ -789,18 +806,22 @@ mergeWebGLLayers model =
     in
         model.layers
             |> List.filter (Tuple.first >> isWebGLLayer)
-            |> List.concatMap (layerToEntities model viewport)
+            |> List.indexedMap (,)
+            -- |> List.concatMap (uncurry >> layerToEntities model viewport)
+            |> List.concatMap (\(index, layer) ->
+                    layerToEntities model viewport index layer
+               )
 
 
 mergeHtmlLayers : Model -> List (Html Msg)
 mergeHtmlLayers model =
     model.layers
         |> List.filter (Tuple.first >> isHtmlLayer)
-        |> List.map (layerToHtml model)
+        |> List.indexedMap (layerToHtml model)
 
 
-layerToHtml : Model -> ( Layer, ConfigChange ) -> Html Msg
-layerToHtml model ( layer, _ ) =
+layerToHtml : Model -> Int -> ( Layer, ConfigChange ) -> Html Msg
+layerToHtml model index ( layer, _ ) =
     case layer of
         TextLayer blend ->
             JbText.view model.product model.size model.origin blend
@@ -809,8 +830,8 @@ layerToHtml model ( layer, _ ) =
         _ -> div [] []
 
 
-layerToEntities : Model -> Viewport {} -> ( Layer, ConfigChange ) -> List WebGL.Entity
-layerToEntities ({ fss } as model) viewport ( layer, changeF ) =
+layerToEntities : Model -> Viewport {} -> Int -> ( Layer, ConfigChange ) -> List WebGL.Entity
+layerToEntities ({ fss } as model) viewport index ( layer, changeF ) =
     case layer of
         LorenzLayer blend mesh ->
             [ Lorenz.makeEntity
@@ -837,14 +858,31 @@ layerToEntities ({ fss } as model) viewport ( layer, changeF ) =
                 mesh
             ]
         FssLayer blend serialized mesh ->
-            [ FSS.makeEntity
-                model.now
-                model.mouse
-                viewport
-                (applyFssChange changeF model.fss)
-                serialized
-                [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
-                mesh
+            let
+                fssModel = applyFssChange changeF model.fss
+                maybeBorrowedMesh =
+                    if (fssModel.shareMesh) then
+                        model |>
+                            findTopAndGet
+                                (\layer otherIndex ->
+                                    if otherIndex < index then
+                                        case layer of
+                                            FssLayer _ _ otherMesh -> Just otherMesh
+                                            MirroredFssLayer _ _ otherMesh -> Just otherMesh
+                                            _ -> Nothing
+                                    else Nothing
+                                )
+                                mesh
+                    else mesh
+            in
+                [ FSS.makeEntity
+                    model.now
+                    model.mouse
+                    viewport
+                    fssModel
+                    serialized
+                    [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
+                    maybeBorrowedMesh
             ]
         MirroredFssLayer blend serialized mesh ->
             let
@@ -872,8 +910,10 @@ layerToEntities ({ fss } as model) viewport ( layer, changeF ) =
                                 })
                     }
             in
-                layerToEntities model1 viewport ((FssLayer blend serialized mesh), changeF) ++
-                layerToEntities model2 viewport ((FssLayer blend serialized mesh), changeF)
+                layerToEntities model1 viewport index
+                    ((FssLayer blend serialized mesh), changeF) ++
+                layerToEntities model2 viewport index
+                    ((FssLayer blend serialized mesh), changeF)
         VignetteLayer blend ->
             [ Vignette.makeEntity
                   viewport

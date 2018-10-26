@@ -56,6 +56,7 @@ type alias PortModel =
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
     , lightSpeed : Int
+    , shareMesh : Bool
     }
 
 
@@ -66,6 +67,7 @@ type alias Model =
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
     , lightSpeed : Int
+    , shareMesh : Bool
     }
 
 
@@ -168,6 +170,7 @@ init =
     , mirror = False
     , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
     , lightSpeed = defaultLightSpeed
+    , shareMesh = False
     }
 
 
@@ -183,7 +186,9 @@ parseRenderMode str =
 
 fromPortModel : PortModel -> Model
 fromPortModel portModel =
-    { portModel | renderMode = parseRenderMode portModel.renderMode }
+    { portModel
+    | renderMode = parseRenderMode portModel.renderMode
+    }
 
 
 makeEntity
@@ -279,7 +284,7 @@ build model maybeScene =
             )
             |> Maybe.withDefault [ ])
     in
-        case Debug.log "renderMode" model.renderMode of
+        case model.renderMode of
             Triangles -> WebGL.triangles convertedTriangles
             PartialLines ->
                 WebGL.lines <|
