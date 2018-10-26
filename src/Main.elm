@@ -79,7 +79,7 @@ type Layer
 initialLayers : List ( LayerKind, ConfigChange )
 initialLayers =
     [ ( MirroredFss, identity )
-    , ( MirroredFss, identity )
+    --, ( MirroredFss, identity )
     , ( MirroredFss
       , changeIfFss
             (\prevConfig ->
@@ -860,27 +860,29 @@ layerToEntities ({ fss } as model) viewport index ( layer, changeF ) =
         FssLayer blend serialized mesh ->
             let
                 fssModel = applyFssChange changeF model.fss
-                maybeBorrowedMesh =
+                ( maybeBorrowedSerialized, maybeBorrowedMesh ) =
                     if (fssModel.shareMesh) then
                         model |>
                             findTopAndGet
                                 (\layer otherIndex ->
                                     if otherIndex < index then
                                         case layer of
-                                            FssLayer _ _ otherMesh -> Just otherMesh
-                                            MirroredFssLayer _ _ otherMesh -> Just otherMesh
+                                            FssLayer _ otherSerialized otherMesh ->
+                                                Just ( otherSerialized, otherMesh )
+                                            MirroredFssLayer _ otherSerialized otherMesh ->
+                                                Just ( otherSerialized, otherMesh )
                                             _ -> Nothing
                                     else Nothing
                                 )
-                                mesh
-                    else mesh
+                                ( serialized, mesh )
+                    else ( serialized, mesh )
             in
                 [ FSS.makeEntity
                     model.now
                     model.mouse
                     viewport
                     fssModel
-                    serialized
+                    maybeBorrowedSerialized
                     [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                     maybeBorrowedMesh
             ]
