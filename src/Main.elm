@@ -79,7 +79,7 @@ type Layer
 initialLayers : List ( LayerKind, ConfigChange )
 initialLayers =
     [ ( MirroredFss, identity )
-    --, ( MirroredFss, identity )
+    , ( MirroredFss, identity )
     , ( MirroredFss
       , changeIfFss
             (\prevConfig ->
@@ -775,12 +775,12 @@ findTopAndGet : (Layer -> Int -> Maybe a) -> a -> Model -> a
 findTopAndGet getF default model =
     model.layers
         |> List.indexedMap (,)
-        |> List.foldl (\(index, (layer, _)) result ->
-                -- if (index < maxIndex) && predicate layer
-                -- then getF layer
-                -- else default
-                getF layer index |> Maybe.withDefault default
-            ) default
+        |> List.foldr (\(index, (layer, _)) result ->
+                case result of
+                    Just result -> Just result
+                    Nothing -> getF layer index
+            ) Nothing
+        |> Maybe.withDefault default
 
 
 isWebGLLayer : Layer -> Bool
@@ -861,21 +861,22 @@ layerToEntities ({ fss } as model) viewport index ( layer, changeF ) =
             let
                 fssModel = applyFssChange changeF model.fss
                 ( maybeBorrowedSerialized, maybeBorrowedMesh ) =
-                    if (fssModel.shareMesh) then
-                        model |>
-                            findTopAndGet
-                                (\layer otherIndex ->
-                                    if otherIndex < index then
-                                        case layer of
-                                            FssLayer _ otherSerialized otherMesh ->
-                                                Just ( otherSerialized, otherMesh )
-                                            MirroredFssLayer _ otherSerialized otherMesh ->
-                                                Just ( otherSerialized, otherMesh )
-                                            _ -> Nothing
-                                    else Nothing
-                                )
-                                ( serialized, mesh )
-                    else ( serialized, mesh )
+                    ( serialized, mesh )
+                    -- if (fssModel.shareMesh) then
+                    --     model |>
+                    --         findTopAndGet
+                    --             (\layer otherIndex ->
+                    --                 if otherIndex < index then
+                    --                     case layer of
+                    --                         FssLayer _ otherSerialized otherMesh ->
+                    --                             Just ( otherSerialized, otherMesh )
+                    --                         MirroredFssLayer _ otherSerialized otherMesh ->
+                    --                             Just ( otherSerialized, otherMesh )
+                    --                         _ -> Nothing
+                    --                 else Nothing
+                    --             )
+                    --             ( serialized, mesh )
+                    -- else ( serialized, mesh )
             in
                 [ FSS.makeEntity
                     model.now
@@ -884,7 +885,7 @@ layerToEntities ({ fss } as model) viewport index ( layer, changeF ) =
                     fssModel
                     maybeBorrowedSerialized
                     [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
-                    maybeBorrowedMesh
+                    maybeBorrowedMesh -- seems this mesh is already built with "Triangles", so there's no sense in reusing it
             ]
         MirroredFssLayer blend serialized mesh ->
             let
