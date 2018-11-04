@@ -76,6 +76,13 @@ type Layer
     -- | CanvasLayer (\_ -> )
 
 
+type alias LayerDef =
+    { layer: Layer
+    , changeF: ConfigChange
+    , isOn: Bool
+    }
+
+
 initialLayers : List ( LayerKind, ConfigChange )
 initialLayers =
     [ ( MirroredFss, identity )
@@ -99,7 +106,7 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , layers : List ( Layer, ConfigChange )
+    , layers : List LayerDef
     , size : Size
     , origin : Pos
     , mouse : (Int, Int)
@@ -176,7 +183,10 @@ init =
       , theta = 0.1
       , layers = initialLayers |> List.map
             (\(kind, changeF) ->
-                ( createLayer kind changeF, changeF ))
+                { layer = createLayer kind changeF
+                , changeF = changeF
+                , isOn = True
+                })
       , size = ( 1200, 1200 )
       , origin = ( 0, 0 )
       , mouse = ( 0, 0 )
@@ -224,7 +234,7 @@ update msg ({ fss, vignette } as model) =
 
         Configure index config ->
             ( model |> updateLayer index
-                (\(layer, changeF) ->
+                (\{ layer, changeF } ->
                     case ( layer, changeF config ) of
                         -- FIXME: simplify
                         ( LorenzLayer curBlend _, LorenzConfig lorenzConfig ) ->
@@ -252,7 +262,7 @@ update msg ({ fss, vignette } as model) =
 
         ChangeWGLBlend index newBlend ->
             ( model |> updateLayer index
-                (\(layer, _) ->
+                (\{ layer } ->
                     case layer of
                         -- FIXME: simplify
                         TemplateLayer _ mesh ->
@@ -276,7 +286,7 @@ update msg ({ fss, vignette } as model) =
 
         ChangeSVGBlend index newBlend ->
             ( model |> updateLayer index
-                (\(layer, _) ->
+                (\{ layer } ->
                     case layer of
                         TextLayer _ ->
                             TextLayer newBlend
@@ -326,7 +336,7 @@ update msg ({ fss, vignette } as model) =
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
-                (\(layer, changeF) ->
+                (\{ layer, changeF } ->
                     case layer of
                         FssLayer blend _ mesh ->
                             let
@@ -369,8 +379,9 @@ update msg ({ fss, vignette } as model) =
                     | theta = src.theta
                     , now = src.now
                     , layers =
-                        List.map2 extractLayer model.layers src.layers
-                            |> List.map (\layer -> (layer, identity))
+                        src.layers
+                            |> List.map2 extractLayer model.layers
+                            |> List.map (\layer -> (layer, identity, True))
                     , mouse = src.mouse
                     , size = src.size
                     , origin = src.origin
@@ -579,8 +590,8 @@ createLayer kind changeF =
             SvgImageLayer SVGBlend.default
 
 
-extractLayer : ( Layer, ConfigChange ) -> IE.Layer -> Layer
-extractLayer ( curLayer, changeLayer ) srcLayer =
+extractLayer : Layer -> IE.Layer -> Layer
+extractLayer curLayer srcLayer =
     case ( srcLayer.type_, curLayer ) of
         ( IE.Fss, FssLayer blend scene mesh ) ->
             FssLayer srcLayer.blend scene mesh
@@ -628,11 +639,11 @@ prepareGuiConfig ({ fss } as model) =
         { product = Product.encode model.product
         , palette = Product.getPalette model.product
         , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
-                , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
-                )
+                 , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
+                 )
         , layers =
             model.layers |>
-                List.map (\(layer, _) ->
+                List.map (\{ layer } ->
                     { kind = getLayerKind layer |> encodeLayerKind
                     , blend = getBlendForPort layer
                     , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
@@ -662,15 +673,15 @@ extractTimeShift v =
     (v / timeShiftRange * 100.0) + 50.0 |> toString
 
 
-updateLayer : Int -> ((Layer, ConfigChange) -> Layer) -> Model -> Model
+updateLayer : Int -> (LayerDef -> Layer) -> Model -> Model
 updateLayer index f model =
     let layersArray = Array.fromList model.layers
     in
         case layersArray |> Array.get index of
-            Just ( layer, changeF ) ->
+            Just { changeF } as layerDef ->
                 { model
                 | layers = layersArray
-                    |> Array.set index (f (layer, changeF), changeF)
+                    |> Array.set index (f layerDef, changeF)
                     |> Array.toList
                 }
             Nothing -> model
@@ -820,7 +831,7 @@ mergeHtmlLayers model =
         |> List.indexedMap (layerToHtml model)
 
 
-layerToHtml : Model -> Int -> ( Layer, ConfigChange ) -> Html Msg
+layerToHtml : Model -> Int -> LayerDef -> Html Msg
 layerToHtml model index ( layer, _ ) =
     case layer of
         TextLayer blend ->
@@ -830,7 +841,7 @@ layerToHtml model index ( layer, _ ) =
         _ -> div [] []
 
 
-layerToEntities : Model -> Viewport {} -> Int -> ( Layer, ConfigChange ) -> List WebGL.Entity
+layerToEntities : Model -> Viewport {} -> Int -> LayerDef -> List WebGL.Entity
 layerToEntities ({ fss } as model) viewport index ( layer, changeF ) =
     case layer of
         LorenzLayer blend mesh ->
