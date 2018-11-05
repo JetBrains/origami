@@ -11,12 +11,12 @@ import Viewport exposing (Viewport)
 type alias Mesh = WebGL.Mesh Vertex
 
 
-type alias Config =
+type alias Model =
     {
     }
 
 
-init : Config
+init : Model
 init = {}
 
 
@@ -39,7 +39,7 @@ type alias Vertex =
     }
 
 
-build : Config -> Mesh
+build : Model -> Mesh
 build _ =
     WebGL.triangles
         [ ( Vertex (vec3 0 0 0) (vec3 1 0 0)

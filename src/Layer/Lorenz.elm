@@ -1,5 +1,5 @@
 module Layer.Lorenz exposing
-    ( Config
+    ( Model
     , Mesh
     , init
     , makeEntity
@@ -11,7 +11,6 @@ import Array exposing (Array)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3, getX, getY, getZ)
 import WebGL
 import WebGL.Settings exposing (Setting)
-import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 
 import Viewport exposing (Viewport)
@@ -23,7 +22,7 @@ type alias Triangle = ( Vertex, Vertex, Vertex )
 type alias Mesh = WebGL.Mesh Vertex
 
 
-type alias Config =
+type alias Model =
     { sigma : Float
     , beta : Float
     , rho : Float
@@ -56,7 +55,7 @@ type alias Uniforms =
 
 
 
-init : Config
+init : Model
 init =
     { sigma = 10
     , beta = 8 / 3
@@ -77,8 +76,8 @@ makeEntity viewport settings mesh =
         ( uniforms viewport )
 
 
-build : Config -> Mesh
-build config =
+build : Model -> Mesh
+build model =
     let
         x0 = 0.1
         y0 = 0
@@ -94,11 +93,11 @@ build config =
 --                        Just prev -> positions ++ [ prev |> step config ]
 --                        Nothing -> [ ( vec3 x0 y0 z0, vec3 x0 y0 z0 ) ]
 --            ) []
-        vertices = List.range 1 config.numVertices
+        vertices = List.range 1 model.numVertices
             |> List.foldr (\_ positions ->
                 case positions of
                     [] -> [ vec3 x0 y0 z0 ]
-                    prev :: _ -> (prev |> step config) :: positions
+                    prev :: _ -> (prev |> step model) :: positions
             ) []
         scaledVertices = vertices
              |> List.map scaleVertex -- TODO: do it with camera matrix!
@@ -109,7 +108,7 @@ build config =
             |> Array.indexedMap (addPrevSumNormals verticesWithSumNormals)
     in
         verticesWithBothSumNormals
-            |> Array.map (trianglePairAt config.thickness)
+            |> Array.map (trianglePairAt model.thickness)
             |> flattenTriangles
             |> WebGL.triangles
 
@@ -123,15 +122,15 @@ flattenTriangles src =
 
 
 
-step : Config -> Vec3 -> Vec3
-step config v =
+step : Model -> Vec3 -> Vec3
+step model v =
     let
         ( x, y, z ) = ( getX v, getY v, getZ v )
-        σ = config.sigma
-        β = config.beta
-        ρ = config.rho
+        σ = model.sigma
+        β = model.beta
+        ρ = model.rho
         -- δt = config.dt / 1000
-        δt = config.step
+        δt = model.step
         δx = σ * (y - x) * δt
         δy = ( x * (ρ - z) - y ) * δt
         δz = ( x * y - β * z ) * δt
