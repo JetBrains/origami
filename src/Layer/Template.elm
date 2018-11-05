@@ -1,5 +1,5 @@
 module Layer.Template exposing
-    ( Config
+    ( Model
     , Mesh
     , makeEntity
     , build
@@ -13,13 +13,13 @@ import WebGL.Settings exposing (Setting)
 import Viewport exposing (Viewport)
 
 
-type alias Config = {}
+type alias Model = {}
 
 
 type alias Mesh = WebGL.Mesh Vertex
 
 
-init : Config
+init : Model
 init = {}
 
 
@@ -43,8 +43,8 @@ type alias Vertex =
     }
 
 
-build : Config -> Mesh
-build config =
+build : Model -> Mesh
+build model =
     WebGL.triangles
         [ ( Vertex (vec3 0 0 0) (vec3 1 0 0)
           , Vertex (vec3 1 1 0) (vec3 0 1 0)

@@ -9,20 +9,20 @@ import Html exposing (Html, text, div, input, br)
 import Html.Attributes as A exposing (width, height, style, type_, min, max, step)
 
 
-import Layer.Lorenz exposing (Config)
+import Layer.Lorenz exposing (Model)
 
 
 type Msg
-    = Configure Config
+    = Configure Model
     | Rotate Float
 
 
-controls : Int -> Float -> Config -> Html Msg
-controls numVertices theta config =
+controls : Int -> Float -> Model -> Html Msg
+controls numVertices theta model =
     div [ ]
         [ input [ type_ "range", A.min "10", A.max "10000", A.step "30"
                 , onInput (\iStr ->
-                    Configure { config
+                    Configure { model
                               | numVertices = String.toInt iStr
                                   |> Result.withDefault numVertices
                               }
@@ -40,45 +40,45 @@ controls numVertices theta config =
         , br [] []
         , input [ type_ "range", A.min "0", A.max "100", A.step "0.1"
                 , onInput (\fStr ->
-                    Configure { config
+                    Configure { model
                               | sigma = String.toFloat fStr
-                                  |> Result.withDefault config.sigma
+                                  |> Result.withDefault model.sigma
                               }
                     )
                 ]
                 [ ]
-        , text ("sigma : " ++ toString config.sigma)
+        , text ("sigma : " ++ toString model.sigma)
         , br [] []
         , input [ type_ "range", A.min "0", A.max "15", A.step "0.01"
                 , onInput (\fStr ->
-                    Configure { config
+                    Configure { model
                               | beta = String.toFloat fStr
-                                   |> Result.withDefault config.beta
+                                   |> Result.withDefault model.beta
                               }
                     )
                 ]
                 [ ]
-        , text ("beta : " ++ toString config.beta)
+        , text ("beta : " ++ toString model.beta)
         , br [] []
         , input [ type_ "range", A.min "0", A.max "100", A.step "0.5"
                 , onInput (\fStr ->
-                    Configure { config
+                    Configure { model
                               | rho = String.toFloat fStr
-                                  |> Result.withDefault config.rho
+                                  |> Result.withDefault model.rho
                               }
                     )
                 ]
                 [ ]
-        , text ("rho : " ++ toString config.rho)
+        , text ("rho : " ++ toString model.rho)
         , br [] []
         , input [ type_ "range", A.min "0", A.max "1", A.step "0.001"
                 , onInput (\fStr ->
-                    Configure { config
+                    Configure { model
                               | step = String.toFloat fStr
-                                  |> Result.withDefault config.step
+                                  |> Result.withDefault model.step
                               }
                     )
                 ]
                 [ ]
-        , text ("step : " ++ toString config.step)
+        , text ("step : " ++ toString model.step)
         ]
