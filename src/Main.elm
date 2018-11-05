@@ -52,8 +52,12 @@ type LayerKind
     | Vignette
 
 
+-- type LayerBlend
+--     = WGLB WGLBlend.Blend
+--     | SVGB SVGBlend.Blend
+
+
 type LayerConfig
-    -- FIXME: use type variable for that, or just a function!
     = LorenzConfig Lorenz.Config
     | FractalConfig Fractal.Config
     | VoronoiConfig Voronoi.Config
@@ -62,7 +66,6 @@ type LayerConfig
 
 
 type Layer
-    -- FIXME: use type variable for that, or just a function!
     = LorenzLayer WGLBlend.Blend Lorenz.Mesh
     | FractalLayer WGLBlend.Blend Fractal.Mesh
     | VoronoiLayer WGLBlend.Blend Voronoi.Mesh
@@ -79,6 +82,7 @@ type Layer
 type alias LayerDef =
     { layer: Layer
     , changeF: ConfigChange
+    -- , blend: LayerBlend -- FIXME: think on moving blend out of the layer
     , isOn: Bool
     }
 
@@ -234,65 +238,73 @@ update msg ({ fss, vignette } as model) =
 
         Configure index config ->
             ( model |> updateLayer index
-                (\{ layer, changeF } ->
-                    case ( layer, changeF config ) of
-                        -- FIXME: simplify
-                        ( LorenzLayer curBlend _, LorenzConfig lorenzConfig ) ->
-                            LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
-                        ( FractalLayer curBlend _, FractalConfig fractalConfig ) ->
-                            FractalLayer curBlend (fractalConfig |> Fractal.build)
-                        ( VoronoiLayer curBlend _, VoronoiConfig voronoiConfig ) ->
-                            VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
-                        ( FssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
-                            let
-                                newMesh = maybeScene |> FSS.build fssConfig
-                            in
-                                FssLayer curBlend maybeScene newMesh
-                        ( MirroredFssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
-                            let
-                                newMesh = maybeScene |> FSS.build fssConfig
-                            in
-                                MirroredFssLayer curBlend maybeScene newMesh
-                        ( TemplateLayer curBlend _, TemplateConfig templateConfig ) ->
-                            TemplateLayer curBlend (templateConfig |> Template.build)
-                        _ -> Unknown
+                (\({ layer, changeF } as layerDef)  ->
+                    { layerDef
+                    | layer =
+                        case ( layer, changeF config ) of
+                            -- FIXME: simplify
+                            ( LorenzLayer curBlend _, LorenzConfig lorenzConfig ) ->
+                                LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
+                            ( FractalLayer curBlend _, FractalConfig fractalConfig ) ->
+                                FractalLayer curBlend (fractalConfig |> Fractal.build)
+                            ( VoronoiLayer curBlend _, VoronoiConfig voronoiConfig ) ->
+                                VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
+                            ( FssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
+                                let
+                                    newMesh = maybeScene |> FSS.build fssConfig
+                                in
+                                    FssLayer curBlend maybeScene newMesh
+                            ( MirroredFssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
+                                let
+                                    newMesh = maybeScene |> FSS.build fssConfig
+                                in
+                                    MirroredFssLayer curBlend maybeScene newMesh
+                            ( TemplateLayer curBlend _, TemplateConfig templateConfig ) ->
+                                TemplateLayer curBlend (templateConfig |> Template.build)
+                            _ -> Unknown
+                    }
                 )
             , Cmd.none
             )
 
         ChangeWGLBlend index newBlend ->
             ( model |> updateLayer index
-                (\{ layer } ->
-                    case layer of
-                        -- FIXME: simplify
-                        TemplateLayer _ mesh ->
-                            TemplateLayer newBlend mesh
-                        LorenzLayer _ mesh ->
-                            LorenzLayer newBlend mesh
-                        FractalLayer _ mesh ->
-                            FractalLayer newBlend mesh
-                        VoronoiLayer _ mesh ->
-                            VoronoiLayer newBlend mesh
-                        FssLayer _ scene mesh ->
-                            FssLayer newBlend scene mesh
-                        MirroredFssLayer _ scene mesh ->
-                            MirroredFssLayer newBlend scene mesh
-                        VignetteLayer _ ->
-                            VignetteLayer newBlend
-                        _ -> layer
+                (\({ layer } as layerDef) ->
+                    { layerDef
+                    | layer =
+                        case layer of
+                            -- FIXME: simplify
+                            TemplateLayer _ mesh ->
+                                TemplateLayer newBlend mesh
+                            LorenzLayer _ mesh ->
+                                LorenzLayer newBlend mesh
+                            FractalLayer _ mesh ->
+                                FractalLayer newBlend mesh
+                            VoronoiLayer _ mesh ->
+                                VoronoiLayer newBlend mesh
+                            FssLayer _ scene mesh ->
+                                FssLayer newBlend scene mesh
+                            MirroredFssLayer _ scene mesh ->
+                                MirroredFssLayer newBlend scene mesh
+                            VignetteLayer _ ->
+                                VignetteLayer newBlend
+                            _ -> layer
+                    }
                 )
             , Cmd.none
             )
 
         ChangeSVGBlend index newBlend ->
             ( model |> updateLayer index
-                (\{ layer } ->
-                    case layer of
+                (\({ layer } as layerDef) ->
+                  { layerDef
+                  | layer = case layer of
                         TextLayer _ ->
                             TextLayer newBlend
                         SvgImageLayer _ ->
                             SvgImageLayer newBlend
                         _ -> layer
+                  }
                 )
             , Cmd.none
             )
@@ -336,8 +348,9 @@ update msg ({ fss, vignette } as model) =
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
-                (\{ layer, changeF } ->
-                    case layer of
+                (\({ layer, changeF } as layerDef) ->
+                    { layerDef
+                    | layer = case layer of
                         FssLayer blend _ mesh ->
                             let
                                 maybeScene = Just serializedScene
@@ -353,6 +366,7 @@ update msg ({ fss, vignette } as model) =
                             in
                                 MirroredFssLayer blend maybeScene newMesh
                         _ -> layer
+                    }
                 )
             , Cmd.none
             )
@@ -381,7 +395,6 @@ update msg ({ fss, vignette } as model) =
                     , layers =
                         src.layers
                             |> List.map2 extractLayer model.layers
-                            |> List.map (\layer -> (layer, identity, True))
                     , mouse = src.mouse
                     , size = src.size
                     , origin = src.origin
@@ -590,14 +603,19 @@ createLayer kind changeF =
             SvgImageLayer SVGBlend.default
 
 
-extractLayer : Layer -> IE.Layer -> Layer
+extractLayer : LayerDef -> IE.Layer -> LayerDef
 extractLayer curLayer srcLayer =
-    case ( srcLayer.type_, curLayer ) of
-        ( IE.Fss, FssLayer blend scene mesh ) ->
-            FssLayer srcLayer.blend scene mesh
-        ( IE.MirroredFss, MirroredFssLayer blend scene mesh ) ->
-            MirroredFssLayer srcLayer.blend scene mesh
-        _ -> Unknown
+    { layer =
+        case ( srcLayer.type_, curLayer.layer ) of
+            ( IE.Fss, FssLayer blend scene mesh ) ->
+                FssLayer srcLayer.blend scene mesh
+            ( IE.MirroredFss, MirroredFssLayer blend scene mesh ) ->
+                MirroredFssLayer srcLayer.blend scene mesh
+            _ -> Unknown
+    , changeF = curLayer.changeF
+    , isOn = curLayer.isOn
+    }
+
 
 
 prepareLayer : Layer -> IE.Layer
@@ -619,7 +637,7 @@ prepareModel model =
     { theta = model.theta
     , now = model.now
     , layers = model.layers
-        |> List.map Tuple.first
+        |> List.map .layer
         |> List.map prepareLayer
     , mouse = model.mouse
     , size = model.size
@@ -673,15 +691,15 @@ extractTimeShift v =
     (v / timeShiftRange * 100.0) + 50.0 |> toString
 
 
-updateLayer : Int -> (LayerDef -> Layer) -> Model -> Model
+updateLayer : Int -> (LayerDef -> LayerDef) -> Model -> Model
 updateLayer index f model =
     let layersArray = Array.fromList model.layers
     in
         case layersArray |> Array.get index of
-            Just { changeF } as layerDef ->
+            Just ({ changeF } as layerDef) ->
                 { model
                 | layers = layersArray
-                    |> Array.set index (f layerDef, changeF)
+                    |> Array.set index (f layerDef)
                     |> Array.toList
                 }
             Nothing -> model
@@ -786,7 +804,7 @@ findTopAndGet : (Layer -> Int -> Maybe a) -> a -> Model -> a
 findTopAndGet getF default model =
     model.layers
         |> List.indexedMap (,)
-        |> List.foldr (\(index, (layer, _)) result ->
+        |> List.foldr (\(index, { layer }) result ->
                 case result of
                     Just result -> Just result
                     Nothing -> getF layer index
@@ -816,7 +834,7 @@ mergeWebGLLayers model =
     let viewport = getViewportState model |> Viewport.find
     in
         model.layers
-            |> List.filter (Tuple.first >> isWebGLLayer)
+            |> List.filter (.layer >> isWebGLLayer)
             |> List.indexedMap (,)
             -- |> List.concatMap (uncurry >> layerToEntities model viewport)
             |> List.concatMap (\(index, layer) ->
@@ -827,12 +845,12 @@ mergeWebGLLayers model =
 mergeHtmlLayers : Model -> List (Html Msg)
 mergeHtmlLayers model =
     model.layers
-        |> List.filter (Tuple.first >> isHtmlLayer)
+        |> List.filter (.layer >> isHtmlLayer)
         |> List.indexedMap (layerToHtml model)
 
 
 layerToHtml : Model -> Int -> LayerDef -> Html Msg
-layerToHtml model index ( layer, _ ) =
+layerToHtml model index { layer } =
     case layer of
         TextLayer blend ->
             JbText.view model.product model.size model.origin blend
@@ -842,7 +860,7 @@ layerToHtml model index ( layer, _ ) =
 
 
 layerToEntities : Model -> Viewport {} -> Int -> LayerDef -> List WebGL.Entity
-layerToEntities ({ fss } as model) viewport index ( layer, changeF ) =
+layerToEntities ({ fss } as model) viewport index ({ layer, changeF } as layerDef) =
     case layer of
         LorenzLayer blend mesh ->
             [ Lorenz.makeEntity
@@ -925,9 +943,9 @@ layerToEntities ({ fss } as model) viewport index ( layer, changeF ) =
                     }
             in
                 layerToEntities model1 viewport index
-                    ((FssLayer blend serialized mesh), changeF) ++
+                    { layerDef | layer = FssLayer blend serialized mesh } ++
                 layerToEntities model2 viewport index
-                    ((FssLayer blend serialized mesh), changeF)
+                    { layerDef | layer = FssLayer blend serialized mesh }
         VignetteLayer blend ->
             [ Vignette.makeEntity
                   viewport
