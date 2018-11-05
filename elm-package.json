@@ -19,7 +19,8 @@
         "elm-lang/svg": "2.0.0 <= v < 3.0.0",
         "elm-lang/window": "1.0.1 <= v < 2.0.0",
         "mgold/elm-random-pcg": "5.0.2 <= v < 6.0.0",
-        "rnons/elm-svg-loader": "1.0.0 <= v < 2.0.0"
+        "rnons/elm-svg-loader": "1.0.0 <= v < 2.0.0",
+        "toastal/either": "3.4.1 <= v < 4.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"
 }
