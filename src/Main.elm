@@ -39,7 +39,7 @@ type alias LayerIndex = Int
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
-type alias ConfigChange = LayerConfig -> LayerConfig
+type alias ModelChange = LayerModel -> LayerModel
 
 type LayerKind
     = Lorenz
@@ -58,15 +58,16 @@ type LayerKind
 --     | SVGB SVGBlend.Blend
 
 
-type LayerConfig
-    = LorenzConfig Lorenz.Config
-    | FractalConfig Fractal.Config
-    | VoronoiConfig Voronoi.Config
-    | FssConfig FSS.Model
-    | TemplateConfig Template.Config
+type LayerModel
+    = LorenzModel Lorenz.Model
+    | FractalModel Fractal.Model
+    | VoronoiModel Voronoi.Model
+    | FssModel FSS.Model
+    | TemplateModel Template.Model
+    | NoModel
 
 
-type Layer
+type WebGLLayer
     = LorenzLayer Lorenz.Mesh
     | FractalLayer Fractal.Mesh
     | VoronoiLayer Voronoi.Mesh
@@ -74,34 +75,41 @@ type Layer
     | FssLayer (Maybe FSS.SerializedScene) FSS.Mesh
     | MirroredFssLayer (Maybe FSS.SerializedScene) FSS.Mesh
     | VignetteLayer
-    | TextLayer
+
+type SVGLayer
+    = TextLayer
     | SvgImageLayer
-    | Unknown
     -- | CanvasLayer (\_ -> )
 
+type alias Layer =
+    Either
+        ( WebGLLayer, WGLBlend.Blend )
+        ( SVGLayer, SVGBlend.Blend )
 
+-- `change` is needed since we store a sample layer model
+-- to use for any layer in the main model
 type alias LayerDef =
-    { layer: Layer
-    , changeF: ConfigChange
-    -- , blend: LayerBlend -- FIXME: think on moving blend out of the layer
+    { kind: LayerKind
+    , layer: Layer
+    , change: ModelChange
     , on: Bool
-    , blend: Either WGLBlend.Blend SVGBlend.Blend
     }
 
 
-initialLayers : List ( LayerKind, ConfigChange )
+initialLayers : List ( LayerKind, ModelChange )
 initialLayers =
     [ ( MirroredFss, identity )
     , ( MirroredFss, identity )
     , ( MirroredFss
       , changeIfFss
-            (\prevConfig ->
-                { prevConfig
+            (\prevModel ->
+                { prevModel
                 | renderMode = FSS.PartialLines
                 , shareMesh = True
-                })
+                }
+            )
       )
-    -- , ( Vignette, Nothing )
+    -- , ( Vignette, NoModel )
     , ( Text, identity )
     , ( SvgImage, identity )
     ]
@@ -119,9 +127,9 @@ type alias Model =
     , now : Time
     , timeShift : Time
     , product : Product
-    , vignette : Vignette.Config
+    , vignette : Vignette.Model
     , fss : FSS.Model
-    , lorenz : Lorenz.Config
+    , lorenz : Lorenz.Model
     -- voronoi : Voronoi.Config
     -- fractal : Fractal.Config
     -- , lights (taken from product)
@@ -154,7 +162,7 @@ type Msg
     = Bang
     | Animate Time
     | Resize Window.Size
-    | Configure LayerIndex LayerConfig
+    | Configure LayerIndex LayerModel
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
     | ChangeSVGBlend LayerIndex SVGBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
@@ -239,32 +247,32 @@ update msg ({ fss, vignette } as model) =
             , Cmd.none
             )
 
-        Configure index config ->
+        Configure index model ->
             ( model |> updateLayer index
-                (\({ layer, changeF } as layerDef)  ->
+                (\({ layer, change } as layerDef)  ->
                     { layerDef
                     | layer =
-                        case ( layer, changeF config ) of
+                        case ( layer, change model ) of
                             -- FIXME: simplify
-                            ( LorenzLayer _, LorenzConfig lorenzConfig ) ->
-                                LorenzLayer (lorenzConfig |> Lorenz.build)
-                            ( FractalLayer _, FractalConfig fractalConfig ) ->
-                                FractalLayer (fractalConfig |> Fractal.build)
-                            ( VoronoiLayer _, VoronoiConfig voronoiConfig ) ->
-                                VoronoiLayer (voronoiConfig |> Voronoi.build)
-                            ( FssLayer maybeScene _, FssConfig fssConfig ) ->
+                            ( LorenzLayer _, LorenzModel lorenzModel ) ->
+                                LorenzLayer (lorenzModel |> Lorenz.build)
+                            ( FractalLayer _, FractalModel fractalModel ) ->
+                                FractalLayer (fractalModel |> Fractal.build)
+                            ( VoronoiLayer _, VoronoiModel voronoiModel ) ->
+                                VoronoiLayer (voronoiModel |> Voronoi.build)
+                            ( FssLayer maybeScene _, FssModel fssModel ) ->
                                 let
-                                    newMesh = maybeScene |> FSS.build fssConfig
+                                    newMesh = maybeScene |> FSS.build fssModel
                                 in
                                     FssLayer maybeScene newMesh
-                            ( MirroredFssLayer maybeScene _, FssConfig fssConfig ) ->
+                            ( MirroredFssLayer maybeScene _, FssModel fssModel ) ->
                                 let
-                                    newMesh = maybeScene |> FSS.build fssConfig
+                                    newMesh = maybeScene |> FSS.build fssModel
                                 in
                                     MirroredFssLayer maybeScene newMesh
-                            ( TemplateLayer _, TemplateConfig templateConfig ) ->
-                                TemplateLayer (templateConfig |> Template.build)
-                            _ -> Unknown
+                            ( TemplateLayer _, TemplateModel templateModel ) ->
+                                TemplateLayer (templateModel |> Template.build)
+                            _ -> layer
                     }
                 )
             , Cmd.none
@@ -444,19 +452,19 @@ update msg ({ fss, vignette } as model) =
         NoOp -> ( model, Cmd.none )
 
 
-getLayerKind : Layer -> LayerKind
-getLayerKind layer =
-    case layer of
-        FssLayer _ _ -> Fss
-        MirroredFssLayer _ _ -> MirroredFss
-        LorenzLayer _ -> Lorenz
-        FractalLayer _ -> Fractal
-        VoronoiLayer _ -> Voronoi
-        TemplateLayer _ -> Template
-        TextLayer -> Text
-        SvgImageLayer -> SvgImage
-        VignetteLayer -> Vignette
-        _ -> Text -- FIXME: Empty Kind or Nothing
+-- getLayerKind : Layer -> LayerKind
+-- getLayerKind layer =
+--     case layer of
+--         FssLayer _ _ -> Fss
+--         MirroredFssLayer _ _ -> MirroredFss
+--         LorenzLayer _ -> Lorenz
+--         FractalLayer _ -> Fractal
+--         VoronoiLayer _ -> Voronoi
+--         TemplateLayer _ -> Template
+--         TextLayer -> Text
+--         SvgImageLayer -> SvgImage
+--         VignetteLayer -> Vignette
+--         _ -> Text -- FIXME: Empty Kind or Nothing
 
 
 -- getBlendString : Layer -> String
@@ -513,20 +521,20 @@ encodeLayerKind kind =
 --         _ -> Nothing
 
 
-createLayer : LayerKind -> ConfigChange -> Layer
-createLayer kind changeF =
+createLayer : LayerKind -> ModelChange -> Layer
+createLayer kind change =
     case kind of
         Fss ->
             let
                 config =
-                    applyFssChange changeF FSS.init
+                    applyFssChange change FSS.init
             in
                 FSS.build config Nothing
                     |> FssLayer WGLBlend.default Nothing
         MirroredFss ->
             let
                 config =
-                    applyFssChange changeF FSS.init
+                    applyFssChange change FSS.init
             in
                 FSS.build config Nothing
                     |> MirroredFssLayer
@@ -539,32 +547,32 @@ createLayer kind changeF =
         Lorenz ->
             let
                 config =
-                    case LorenzConfig Lorenz.init |> changeF of
-                        LorenzConfig newConfig -> newConfig
+                    case LorenzModel Lorenz.init |> change of
+                        LorenzModel newModel -> newModel
                         _ -> Lorenz.init
             in
                 Lorenz.build config |> LorenzLayer WGLBlend.default
         Template ->
             let
                 config =
-                    case TemplateConfig Template.init |> changeF of
-                        TemplateConfig newConfig -> newConfig
+                    case TemplateModel Template.init |> change of
+                        TemplateModel newModel -> newModel
                         _ -> Template.init
             in
                 Template.build config |> TemplateLayer WGLBlend.default
         Voronoi ->
             let
                 config =
-                    case VoronoiConfig Voronoi.init |> changeF of
-                        VoronoiConfig newConfig -> newConfig
+                    case VoronoiModel Voronoi.init |> change of
+                        VoronoiModel newModel -> newModel
                         _ -> Template.init
             in
                 Voronoi.build config |> VoronoiLayer WGLBlend.default
         Fractal ->
             let
                 config =
-                    case FractalConfig Fractal.init |> changeF of
-                        FractalConfig newConfig -> newConfig
+                    case FractalModel Fractal.init |> change of
+                        FractalModel newModel -> newModel
                         _ -> Fractal.init
             in
                 Fractal.build config |> FractalLayer WGLBlend.default
@@ -589,7 +597,6 @@ extractLayer curLayer srcLayer =
                 curLayer.layer
             ( IE.MirroredFss, MirroredFssLayer _ _ ) ->
                 curLayer.layer
-            _ -> Unknown
     , changeF = curLayer.changeF
     , isOn = curLayer.isOn
     , blend = srcLayer.blend
@@ -720,11 +727,11 @@ subscriptions model =
         , changeSVGBlend (\{ layer, blend } ->
             ChangeSVGBlend layer (SVGBlend.decode blend)
           )
-        , configureLorenz (\(lorenzConfig, layerIndex) ->
-            Configure layerIndex (LorenzConfig lorenzConfig)
+        , configureLorenz (\(lorenzModel, layerIndex) ->
+            Configure layerIndex (LorenzModel lorenzModel)
           )
-        , configureFss (\(fssConfig, layerIndex) ->
-            FSS.fromPortModel fssConfig |> FssConfig |> Configure layerIndex
+        , configureFss (\(fssModel, layerIndex) ->
+            FSS.fromPortModel fssModel |> FssModel |> Configure layerIndex
           )
         , rebuildFss (\(serializedMesh, layerIndex) ->
             RebuildFss layerIndex serializedMesh
@@ -760,35 +767,35 @@ toLocal (width, height) pos =
 mapControls : Model -> Controls.Msg -> Msg
 mapControls model controlsMsg =
     case controlsMsg of
-        Controls.Configure cfg -> Configure 0 (LorenzConfig cfg)
+        Controls.Configure cfg -> Configure 0 (LorenzModel cfg)
         Controls.Rotate th -> Rotate th
 
 
-applyFssChange : ConfigChange -> FSS.Model -> FSS.Model
-applyFssChange changeF fssModel =
-    case changeF <| FssConfig fssModel of
-        FssConfig newModel -> newModel
+applyFssChange : ModelChange -> FSS.Model -> FSS.Model
+applyFssChange change fssModel =
+    case change <| FssModel fssModel of
+        FssModel newModel -> newModel
         _ -> fssModel
 
 
-changeIfFss : (FSS.Model -> FSS.Model) -> ConfigChange
+changeIfFss : (FSS.Model -> FSS.Model) -> ModelChange
 changeIfFss adjustFss =
-    \conf ->
-        case conf of
-            FssConfig prevConfig -> adjustFss prevConfig |> FssConfig
-            _ -> conf
+    \model ->
+        case model of
+            FssModel prevModel -> adjustFss prevModel |> FssModel
+            _ -> model
 
 
-findTopAndGet : (Layer -> Int -> Maybe a) -> a -> Model -> a
-findTopAndGet getF default model =
-    model.layers
-        |> List.indexedMap (,)
-        |> List.foldr (\(index, { layer }) result ->
-                case result of
-                    Just result -> Just result
-                    Nothing -> getF layer index
-            ) Nothing
-        |> Maybe.withDefault default
+-- findTopAndGet : (Layer -> Int -> Maybe a) -> a -> Model -> a
+-- findTopAndGet getF default model =
+--     model.layers
+--         |> List.indexedMap (,)
+--         |> List.foldr (\(index, { layer }) result ->
+--                 case result of
+--                     Just result -> Just result
+--                     Nothing -> getF layer index
+--             ) Nothing
+--         |> Maybe.withDefault default
 
 
 isWebGLLayer : LayerDef -> Bool
@@ -935,7 +942,6 @@ layerToEntities ({ fss } as model) viewport index ({ layer, changeF, blend } as 
             ]
         ( TextLayer, _ ) -> []
         ( SvgImageLayer, _ ) -> []
-        Unknown -> []
 
 
 getViewportState : Model -> Viewport.State
@@ -1018,7 +1024,7 @@ port rotate : (Float -> msg) -> Sub msg
 
 port initLayers : (Array String -> msg) -> Sub msg
 
-port configureLorenz : ((Lorenz.Config, Int) -> msg) -> Sub msg
+port configureLorenz : ((Lorenz.Model, Int) -> msg) -> Sub msg
 
 port configureFss : ((FSS.PortModel, Int) -> msg) -> Sub msg
 
