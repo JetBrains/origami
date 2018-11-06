@@ -11,7 +11,7 @@ const import_ = (app, importedState) => {
     parsedState.layers.forEach((layer, index) => {
         layers[index] = {
             kind: layer.kind,
-            config: layer.config
+            config: layer.config || parsedState
         };
         //scenes[index] = layer.scene;
     });
@@ -26,16 +26,18 @@ const import_ = (app, importedState) => {
         layers: parsedState.layers.map((layer) => (
             { kind : layer.kind,
               blend: layer.blend,
+              isOn: layer.isOn,
               config: ''
             }
         ))
     }));
     parsedState.layers.forEach((layer, index) => {
         if (layer.kind == 'fss' || layer.kind == 'fss-mirror')  {
-            const scene = buildFSS(layer.config, layer.sceneFuzz);
+            const model = layer.config || parsedState;
+            const scene = buildFSS(model, layer.sceneFuzz);
             scenes[index] = scene;
-            console.log('import FSS', scene, layer.config);
-            app.ports.configureFss.send([ layer.config, index ]);
+            console.log('import FSS', scene, model);
+            app.ports.configureFss.send([ model, index ]);
             app.ports.rebuildFss.send([ scene, index ]);
         }
     });
