@@ -185,7 +185,7 @@ setTimeout(function() { // FIXME: change to document.ready
             , changeFacesX : (value) =>
                 { app.ports.changeFacesX.send(Math.round(value)) }
             , changeVignette : (value) =>
-            { app.ports.changeVignette.send(Math.round(value)) }
+                { app.ports.changeVignette.send(Math.round(value)) }
             , changeFacesY : (value) =>
                 { app.ports.changeFacesY.send(Math.round(value)) }
             , changeWGLBlend : (index, blend) =>
@@ -220,6 +220,10 @@ setTimeout(function() { // FIXME: change to document.ready
             , changeAmplitude : (x, y, z) => {
                 app.ports.changeAmplitude.send([ x, y, z ]);
             }
+            , turnOn : index =>
+                { app.ports.turnOn.send(index); }
+            , turnOff : index =>
+                { app.ports.turnOff.send(index); }
             });
 
         model.layers.forEach((layer, index) => {

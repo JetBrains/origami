@@ -149,6 +149,7 @@ const Config = function(layers, defaults, funcs) {
     this.facesX = defaults.facesX;
     this.facesY = defaults.facesY;
     this.product = defaults.product;
+
     const funcKeys = Object.keys(BLEND_FUNCS);
     const factorKeys = Object.keys(BLEND_FACTORS);
     layers.forEach((layer, index) => {
@@ -174,7 +175,9 @@ const Config = function(layers, defaults, funcs) {
       } else {
         this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
+      this['visible' + index] = true;
     });
+
     this.vignette = defaults.vignette;
     this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
     this.amplitudeX = defaults.amplitude[0];
@@ -195,6 +198,11 @@ function start(layers, defaults, funcs) {
       funcs.changeProduct(product.id);
     }
 
+    function switchLayer(index, on) {
+      if (on) funcs.turnOn(index);
+      else funcs.turnOff(index);
+    }
+
     function updateWebGLBlend(index, f) {
       return function(value) {
         const color = config['blendColor'+index];
@@ -210,22 +218,11 @@ function start(layers, defaults, funcs) {
                      ]
           }
         const newBlend = f(curBlend, value);
-        // console.log('new blend', index, newBlend)
-        // console.log('new blend', index, 'color', config['blendColor'+index])
-        // console.log('new blend', index, 'colorEq',
-        //   config['blendColorEqFn'+index],
-        //   config['blendColorEqFactor0'+index],
-        //   config['blendColorEqFactor1'+index]);
-        // console.log('new blend', index, 'alphaEq',
-        //   config['blendAlphaEqFn'+index],
-        //   config['blendAlphaEqFactor0'+index],
-        //   config['blendAlphaEqFactor1'+index]);
         funcs.changeWGLBlend(index, newBlend);
       }
     }
 
-    function addWebGLBlend(gui, config, layer, index) {
-      const folder = gui.addFolder('Layer ' + index + ' Blend' + ' (' + layer.kind + ')');
+    function addWebGLBlend(folder, config, layer, index) {
       const color = folder.addColor(config, 'blendColor' + index);
       const colorEqFn = folder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
       const colorEqFactor0 = folder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
@@ -265,8 +262,7 @@ function start(layers, defaults, funcs) {
       }));
     }
 
-    function addSVGBlend(gui, config, layer, index) {
-      const folder = gui.addFolder('Layer ' + index + ' Blend' + ' (' + layer.kind + ')');
+    function addSVGBlend(folder, config, layer, index) {
       const blendControl = folder.add(config, 'layer' + index + 'Blend', SVG_BLENDS);
       blendControl.onFinishChange((value) => {
         funcs.changeSVGBlend(index, value);
@@ -306,11 +302,14 @@ function start(layers, defaults, funcs) {
     });
 
     layers.forEach((layer, index) => {
+      const folder = gui.addFolder('Layer ' + index + ' (' + layer.kind + ')');
       if (layer.webglOrSvg == 'webgl') {
-        addWebGLBlend(gui, config, layer, index);
+        addWebGLBlend(folder, config, layer, index);
       } else {
-        addSVGBlend(gui, config, layer, index);
+        addSVGBlend(folder, config, layer, index);
       }
+      const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
+      visibitySwitch.onFinishChange(val => switchLayer(index, val));
     });
 
 
