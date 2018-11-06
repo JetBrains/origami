@@ -163,6 +163,8 @@ type Msg
     | Animate Time
     | Resize Window.Size
     | Configure LayerIndex LayerModel
+    | TurnOn LayerIndex
+    | TurnOff LayerIndex
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
     | ChangeSVGBlend LayerIndex SVGBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
@@ -432,6 +434,18 @@ update msg ({ fss, vignette } as model) =
                   }
                 , Cmd.none
                 )
+
+        TurnOn index ->
+            ( model |> updateLayerDef index
+                (\def -> { def | on = True })
+            , Cmd.none
+            )
+
+        TurnOff index ->
+            ( model |> updateLayerDef index
+                (\def -> { def | on = False })
+            , Cmd.none
+            )
 
         NoOp -> ( model, Cmd.none )
 
@@ -786,6 +800,8 @@ subscriptions model =
         , pause (\_ -> Pause)
         , continue (\_ -> Continue)
         , triggerPause (\_ -> TriggerPause)
+        , turnOn TurnOn
+        , turnOff TurnOff
         ]
 
 
@@ -863,6 +879,7 @@ mergeWebGLLayers model =
     in
         model.layers
             |> List.filter (.layer >> isWebGLLayer)
+            |> List.filter .on
             |> List.indexedMap (,)
             -- |> List.concatMap (uncurry >> layerToEntities model viewport)
             |> List.concatMap (\(index, layer) ->
@@ -874,6 +891,7 @@ mergeHtmlLayers : Model -> List (Html Msg)
 mergeHtmlLayers model =
     model.layers
         |> List.filter (.layer >> isSvgLayer)
+        |> List.filter .on
         |> List.indexedMap (layerToHtml model)
 
 
@@ -1057,7 +1075,7 @@ main =
         }
 
 
--- INGOING PORTS
+-- INCOMING PORTS
 
 port bang : (() -> msg) -> Sub msg
 
@@ -1079,9 +1097,11 @@ port configureMirroredFss : ((FSS.PortModel, Int) -> msg) -> Sub msg
 
 port changeProduct : (String -> msg) -> Sub msg
 
--- TODO: port to affect camera
-
 port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
+
+port turnOn : (Int -> msg) -> Sub msg
+
+port turnOff : (Int -> msg) -> Sub msg
 
 port import_ : (String -> msg) -> Sub msg
 
