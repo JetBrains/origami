@@ -618,15 +618,17 @@ extractLayer curLayer srcLayer =
 
 
 prepareLayer : LayerDef -> IE.Layer
-prepareLayer { kind, layer } =
+prepareLayer { kind, layer, on } =
     case ( kind, layer ) of
         ( Fss, Either.Left ( _, blend ) ) ->
-            { type_ = IE.Fss
+            { kind = IE.Fss
             , blend = blend
+            , isOn = on
             }
         ( MirroredFss, Either.Left ( _, blend ) ) ->
-            { type_ = IE.MirroredFss
+            { kind = IE.MirroredFss
             , blend = blend
+            , isOn = on
             }
         _ -> IE.defaultLayer
 
