@@ -28,7 +28,9 @@ const startGui = require('./gui.js');
 
 const buildFSS = require('./fss.js');
 
-const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror'
+const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
+
+const fssScenes = {};
 
 const exportScene = (scene) => {
     //console.log(scene);
@@ -47,13 +49,13 @@ const import_ = (app, importedState) => {
     layers = [];
     parsedState.layers.forEach((layer, index) => {
         layers[index] = {
-            type: layer.type,
+            kind: layer.kind,
             config: layer.config
         };
         //scenes[index] = layer.scene;
     });
     app.ports.pause.send(null);
-    app.ports.initLayers.send(layers.map((l) => l.type));
+    app.ports.initLayers.send(layers.map((l) => l.kind));
     app.ports.import_.send(JSON.stringify({
         theta: parsedState.theta,
         size: parsedState.size,
@@ -61,7 +63,7 @@ const import_ = (app, importedState) => {
         mouse: parsedState.mouse,
         now: parsedState.now,
         layers: parsedState.layers.map((layer) => (
-            { kind : layer.type,
+            { kind: layer.kind,
               blend: layer.blend,
               config: ''
             }
@@ -92,7 +94,7 @@ const export_ = (app, exportedState) => {
             console.log(index, 'no lights');
         }
         layer.sceneFuzz = isFss(layer)
-            ? exportScene(scenes[index]) || exportScene(buildFSS(layer.config))
+            ? exportScene(fssScenes[index]) || exportScene(buildFSS(layer.config))
             : null;
     })
     console.log(stateObj);
@@ -210,7 +212,6 @@ setTimeout(function() { // FIXME: change to document.ready
                 requestAnimationFrame(() => { // without that, image buffer will be empty
                     var blob = canvas.toBlob(function(blob) {
                         var url = URL.createObjectURL(blob);
-
                         hiddenLink.href = url;
                         hiddenLink.click();
                         //URL.revokeObjectURL(url);
@@ -239,6 +240,7 @@ setTimeout(function() { // FIXME: change to document.ready
                 if (isFss(layer)) {
                     console.log('forced to rebuild FSS layer', index);
                     const fssScene = buildFSS(model);
+                    fssScenes[index] = fssScene;
                     app.ports.rebuildFss.send([ fssScene, index ]);
                 }
             });

@@ -10,7 +10,7 @@ module ImportExport exposing
 
 import Time exposing (Time)
 
-import Json.Decode as D exposing (int, string, float, Decoder, Value)
+import Json.Decode as D exposing (bool, int, string, float, Decoder, Value)
 import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
 import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
 
@@ -43,8 +43,9 @@ type LayerType
 
 
 type alias Layer =
-    { type_ : LayerType
+    { kind : LayerType
     , blend : WGLBlend.Blend
+    , isOn : Bool
     --, config : Config
     --, mesh : FSS.Mesh
     }
@@ -69,9 +70,9 @@ encodeIntPair ( v1, v2 ) =
 
 
 encodeLayerType : LayerType -> E.Value
-encodeLayerType type_ =
+encodeLayerType kind =
     E.string
-        (case type_ of
+        (case kind of
             Unknown -> "unknown"
             Fss -> "fss"
             MirroredFss -> "fss-mirror")
@@ -80,13 +81,14 @@ encodeLayerType type_ =
 encodeLayer : Layer -> E.Value
 encodeLayer layer =
     E.object
-        [ ( "type", encodeLayerType layer.type_ )
+        [ ( "kind", encodeLayerType layer.kind )
         , ( "blend", WGLBlend.encodeOne layer.blend |> E.string )
         , ( "blendDesc",
             layer.blend
                 |> WGLBlend.encodeHumanOne { delim = "; ", space = "> " }
                 |> E.string
           )
+        , ( "isOn", layer.isOn |> E.bool )
         , ( "config", E.string "" )
         -- , ( "mesh", E.string "" )
         ]
@@ -120,8 +122,9 @@ determineLayerType layerTypeStr =
 
 defaultLayer : Layer
 defaultLayer =
-    { type_ = Unknown
+    { kind = Unknown
     , blend = WGLBlend.default
+    , isOn = True
     -- , config = None
     --, mesh = FSS.emptyMesh
     }
@@ -130,23 +133,22 @@ defaultLayer =
 layersDecoder : D.Decoder (List Layer)
 layersDecoder =
     let
-        createLayer type_ blend config =
-            { type_ = determineLayerType type_
+        createLayer kind blend isOn =
+            { kind = determineLayerType kind
             , blend = WGLBlend.decodeOne blend
                 |> Debug.log "Blend: "
                 |> Maybe.withDefault WGLBlend.default
+            , isOn = isOn
             --, config = FSS.init
             -- , mesh = FSS.emptyMesh
             }
     in
         D.list
             ( D.decode createLayer
-                |> D.required "type_" D.string
+                |> D.required "kind" D.string
                 |> D.required "blend" D.string
-                |> D.required "config" D.string
-                --|> D.required "mesh" D.string
+                |> D.required "isOn" D.bool
             )
-
 
 intPairDecoder : D.Decoder (Int, Int)
 intPairDecoder =
