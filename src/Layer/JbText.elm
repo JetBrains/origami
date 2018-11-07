@@ -21,7 +21,8 @@ view product ( w, h ) ( x, y ) blend =
         posY = (toFloat h / 2) - toFloat y - shiftY
     in
         div
-            [ HAttrs.style
+            [ HAttrs.class "text-layer"
+            , HAttrs.style
                 [ ("mix-blend-mode", Blend.encode blend)
                 , ("position", "absolute")
                 , ("top", toString posY ++ "px")
@@ -30,5 +31,11 @@ view product ( w, h ) ( x, y ) blend =
                 , ("font-size", toString defaultSize ++ "px")
                 ]
             ]
-            [ span [ HAttrs.class "text-layer text-layer--jetbrains" ] [ text <| getName product ]
+            [ div
+                [ HAttrs.class "text-layer text-layer--jetbrains"
+                ,  HAttrs.style [ ( "max-width", "800px" ) ]
+                , HAttrs.contenteditable True
+                ]
+            [ text <| getName product ]
+            , span [ HAttrs.class "text-layer text-layer--subtitle" ] [ text  "Subtitle" ]
             ]

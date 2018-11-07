@@ -136,6 +136,9 @@ PREDEFINED_SIZES =
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
   , '1680x1050': [ 1680, 1050 ]
+  , '800 x 418': [ 800, 418 ]
+  , '640 x 400': [ 640, 400 ]
+  , '1280 x 800': [ 1280, 800 ]
   , '480x360': [ 480, 360 ]
   };
 
@@ -155,7 +158,7 @@ const Config = function(layers, defaults, funcs) {
       if (layer.webglOrSvg == 'webgl') {
         if (layer.blend[0]) {
           const blend = layer.blend[0];
-          this['blendColor' + index] = blend.color || [ 0, 0, 0, 0 ]; // FIXME: get RGBA components
+          this['blendColor' + index] = blend.color || [ 1, 0, 0, 0 ]; // FIXME: get RGBA components
           this['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[blend.colorEq[0]]];
           this['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[1]]];
           this['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[2]]];
