@@ -109,15 +109,9 @@ initialLayers =
                 }
             )
       )
-<<<<<<< HEAD
-    -- , ( Vignette, Nothing )
---    , ( Text, identity )
---    , ( SvgImage, identity )
-=======
     -- , ( Vignette, NoModel )
     , ( Text, identity )
     , ( SvgImage, identity )
->>>>>>> 6d049615ae6696da49cc45b893a55007b5fb952f
     ]
 
 
