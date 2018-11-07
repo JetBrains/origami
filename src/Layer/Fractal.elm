@@ -1,5 +1,5 @@
 module Layer.Fractal exposing
-    ( Config
+    ( Model
     , Mesh
     , makeEntity
     , build
@@ -16,7 +16,7 @@ import WebGL.Settings exposing (Setting)
 import Viewport exposing (Viewport)
 
 
-type alias Config =
+type alias Model =
     { render : RenderOptions
     --, mesh : Uniforms
     }
@@ -102,8 +102,8 @@ makeEntity viewport settings mesh =
         (defaultUniforms viewport)
 
 
-build : Config -> Mesh
-build config =
+build : Model -> Mesh
+build model =
     [ ( 0, 0 ), ( 90, 0 ), ( 180, 0 ), ( 270, 0 ), ( 0, 90 ), ( 0, 270 ) ]
         |> List.concatMap rotatedFace
         |> WebGL.triangles
@@ -162,7 +162,7 @@ square =
         ]
 
 
-init : Config
+init : Model
 init =
     { render = defaultOptions
     ---, mesh = defaultUniforms
