@@ -1,49 +1,19 @@
 module ImportExport exposing
     ( encodeModel
     , decodeModel
-    , Model
-    , Layer
     , EncodedState
-    , defaultLayer
     )
-
-import Time exposing (Time)
 
 import Json.Decode as D exposing (bool, int, string, float, Decoder, Value)
 import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
 import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
 
 import WebGL.Blend as WGLBlend
-import Svg.Blend as SVGBlend
+-- import Svg.Blend as SVGBlend
 
 import Model as M
 
 type alias EncodedState = String
-
--- type Config
---     = None
---     | FssConfig
---         FSS.Config
---     | MirroredFssConfig FSS.MConfig
-
-
-type alias Layer =
-    { kind : M.LayerKind
-    , blend : WGLBlend.Blend
-    , isOn : Bool
-    --, config : Config
-    --, mesh : FSS.Mesh
-    }
-
-
-type alias Model =
-    { theta : Float
-    , layers : List Layer
-    , size : (Int, Int)
-    , origin : (Int, Int)
-    , mouse : (Int, Int)
-    , now : Time
-    }
 
 
 encodeIntPair : ( Int, Int ) -> E.Value
@@ -69,7 +39,22 @@ encodeLayerType kind =
             M.Vignette -> "vignette")
 
 
-encodeLayer : Layer -> E.Value
+encodeLayerDef : M.LayerDef -> E.Value
+encodeLayerDef layer =
+    E.object
+        [ ( "kind", encodeLayerType layer.kind )
+        , ( "blend", WGLBlend.encodeOne layer.blend |> E.string )
+        , ( "blendDesc",
+            layer.blend
+                |> WGLBlend.encodeHumanOne { delim = "; ", space = "> " }
+                |> E.string
+          )
+        , ( "isOn", layer.isOn |> E.bool )
+        , ( "config", E.string "" )
+        -- , ( "mesh", E.string "" )
+        ]
+
+encodeLayer : M.Layer -> E.Value
 encodeLayer layer =
     E.object
         [ ( "kind", encodeLayerType layer.kind )
@@ -85,11 +70,11 @@ encodeLayer layer =
         ]
 
 
-encodeModel_ : Model -> E.Value
+encodeModel_ : M.Model -> E.Value
 encodeModel_ model =
     E.object
         [ ( "theta", E.float model.theta )
-        , ( "layers", E.list (List.map encodeLayer model.layers) )
+        , ( "layers", E.list (List.map encodeLayerDef model.layers) )
         -- , ( "layers", E.list (List.filterMap
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
         , ( "size", encodeIntPair model.size )
@@ -99,7 +84,7 @@ encodeModel_ model =
         ]
 
 
-encodeModel : Model -> EncodedState
+encodeModel : M.Model -> EncodedState
 encodeModel model = model |> encodeModel_ |> E.encode 2
 
 
@@ -118,20 +103,17 @@ determineLayerType layerTypeStr =
         _ -> M.Template
 
 
-defaultLayer : Layer
-defaultLayer =
-    { kind = M.Template
-    , blend = WGLBlend.default
-    , isOn = True
-    -- , config = None
-    --, mesh = FSS.emptyMesh
-    }
+intPairDecoder : D.Decoder (Int, Int)
+intPairDecoder =
+    D.decode (\i1 i2 -> (i1, i2))
+        |> D.required "v1" D.int
+        |> D.required "v2" D.int
 
 
-layersDecoder : D.Decoder (List Layer)
-layersDecoder =
+layerDefsDecoder : D.Decoder (List M.LayerDef)
+layerDefsDecoder =
     let
-        createLayer kind blend isOn =
+        createLayerDef kind blend isOn =
             { kind = determineLayerType kind
             , blend = WGLBlend.decodeOne blend
                 |> Debug.log "Blend: "
@@ -142,33 +124,65 @@ layersDecoder =
             }
     in
         D.list
-            ( D.decode createLayer
+            ( D.decode createLayerDef
                 |> D.required "kind" D.string
                 |> D.required "blend" D.string
                 |> D.required "isOn" D.bool
             )
 
-intPairDecoder : D.Decoder (Int, Int)
-intPairDecoder =
-    D.decode (\i1 i2 -> (i1, i2))
-        |> D.required "v1" D.int
-        |> D.required "v2" D.int
 
-
-modelDecoder : D.Decoder Model
-modelDecoder =
-    D.decode Model
+layerDefDecoder : D.Decoder M.LayerDef
+layerDefDecoder =
+    D.decode M.LayerDef
         |> D.required "theta" D.float
-        |> D.required "layers" layersDecoder
+        |> D.required "layers" layerDefsDecoder
         |> D.required "size" intPairDecoder
         |> D.required "origin" intPairDecoder
         |> D.required "mouse" intPairDecoder
         |> D.required "now" D.float
 
 
-decodeModel : EncodedState -> (Model -> a) -> Maybe a
-decodeModel modelStr f =
-    D.decodeString modelDecoder modelStr
+layerDecoder : D.Decoder M.Layer
+layerDecoder =
+    let
+        createLayer = {}
+    in
+        D.decode createLayer
+            |> D.required "theta" D.float
+            |> D.required "layers" layerDefsDecoder
+            |> D.required "size" intPairDecoder
+            |> D.required "origin" intPairDecoder
+            |> D.required "mouse" intPairDecoder
+            |> D.required "now" D.float
+
+
+modelDecoder : M.CreateLayer -> D.Decoder M.Model
+modelDecoder createLayer =
+    let
+        createModel theta layers size origin mouse now =
+            let
+                initialModel = M.init [] createLayer
+            in
+                { initialModel
+                | theta = theta
+                , layers = layers
+                , size = size
+                , origin = origin
+                , mouse = mouse
+                , now = now
+                }
+    in
+        D.decode createModel
+            |> D.required "theta" D.float
+            |> D.required "layers" layerDefsDecoder
+            |> D.required "size" intPairDecoder
+            |> D.required "origin" intPairDecoder
+            |> D.required "mouse" intPairDecoder
+            |> D.required "now" D.float
+
+
+decodeModel : M.CreateLayer -> EncodedState -> Maybe M.Model
+decodeModel createLayer modelStr =
+    D.decodeString (modelDecoder createLayer) modelStr
         |> Debug.log "Decode Result: "
         |> Result.toMaybe
-        |> Maybe.map f
