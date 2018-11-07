@@ -11,6 +11,7 @@ module Model exposing
     , GuiConfig
     , Size
     , Pos
+    , PortBlend
     )
 
 import Either exposing (Either)
