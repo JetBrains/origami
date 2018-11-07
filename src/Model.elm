@@ -1,5 +1,6 @@
 module Model exposing
-    ( Model
+    ( init
+    , Model
     , ModelChange
     , Layer
     , LayerIndex
@@ -8,6 +9,7 @@ module Model exposing
     , LayerKind(..)
     , WebGLLayer(..)
     , SVGLayer(..)
+    , CreateLayer
     , GuiConfig
     , Size
     , Pos
@@ -35,6 +37,8 @@ type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
 type alias ModelChange = LayerModel -> LayerModel
+
+type alias CreateLayer = LayerKind -> ModelChange -> Layer
 
 type LayerKind
     = Lorenz
@@ -138,3 +142,32 @@ type alias GuiConfig =
     , amplitude : FSS.AmplitudeChange
     , customSize : Maybe (Int, Int)
     }
+
+
+init
+    :  List ( LayerKind, ModelChange )
+    -> CreateLayer
+    -> Model
+init initialLayers createLayer
+    = { paused = False
+      , autoRotate = False
+      , fps = 0
+      , theta = 0.1
+      , layers = initialLayers |> List.map
+            (\(kind, change) ->
+                { kind = kind
+                , layer = createLayer kind change
+                , change = change
+                , on = True
+                })
+      , size = ( 1200, 1200 )
+      , origin = ( 0, 0 )
+      , mouse = ( 0, 0 )
+      , now = 0.0
+      , timeShift = 0.0
+      --, range = ( 0.8, 1.0 )
+      , product = Product.JetBrains
+      , fss = FSS.init
+      , vignette = Vignette.init
+      , lorenz = Lorenz.init
+      }

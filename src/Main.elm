@@ -76,28 +76,7 @@ sizeCoef = 1.0
 
 init : ( Model, Cmd Msg )
 init =
-    ( { paused = False
-      , autoRotate = False
-      , fps = 0
-      , theta = 0.1
-      , layers = initialLayers |> List.map
-            (\(kind, change) ->
-                { kind = kind
-                , layer = createLayer kind change
-                , change = change
-                , on = True
-                })
-      , size = ( 1200, 1200 )
-      , origin = ( 0, 0 )
-      , mouse = ( 0, 0 )
-      , now = 0.0
-      , timeShift = 0.0
-      --, range = ( 0.8, 1.0 )
-      , product = Product.JetBrains
-      , fss = FSS.init
-      , vignette = Vignette.init
-      , lorenz = Lorenz.init
-      }
+    ( Model.init initialLayers createLayer
     , Cmd.batch
         [ Task.perform Resize Window.size
         ]
@@ -263,21 +242,8 @@ update msg ({ fss, vignette } as model) =
             )
 
         Import encodedModel ->
-            ( IE.decodeModel encodedModel
-                (\src ->
-                    { model
-                    | theta = src.theta
-                    , now = src.now
-                    , layers =
-                        src.layers
-                            |> List.map2 extractLayer model.layers
-                    , mouse = src.mouse
-                    , size = src.size
-                    , origin = src.origin
-                    -- , size = adaptSize src.size
-                    -- , origin = getOrigin src.size
-                    } )
-                -- |> Debug.log "decoded model"
+            ( encodedModel
+                |> IE.decodeModel createLayer
                 |> Maybe.withDefault model
             , Cmd.none )
 
@@ -498,21 +464,21 @@ createLayer kind change =
             |> Either.Right
 
 
-extractLayer : LayerDef -> IE.Layer -> LayerDef
-extractLayer curLayer srcLayer =
-    { kind = curLayer.kind
-    , layer = curLayer.layer
-        -- FIXME: TODO
-        -- case ( srcLayer.type_, curLayer.kind ) of
-        --     ( IE.Fss, Fss ) ->
-        --         curLayer.layer
-        --     ( IE.MirroredFss, MirroredFss ) ->
-        --         curLayer.layer
-        --     _ -> curLayer
-    , change = curLayer.change
-    , on = curLayer.on
-    -- , blend = srcLayer.blend
-    }
+-- extractLayer : LayerDef -> IE.Layer -> LayerDef
+-- extractLayer curLayer srcLayer =
+--     { kind = curLayer.kind
+--     , layer = curLayer.layer
+--         -- FIXME: TODO
+--         -- case ( srcLayer.type_, curLayer.kind ) of
+--         --     ( IE.Fss, Fss ) ->
+--         --         curLayer.layer
+--         --     ( IE.MirroredFss, MirroredFss ) ->
+--         --         curLayer.layer
+--         --     _ -> curLayer
+--     , change = curLayer.change
+--     , on = curLayer.on
+--     -- , blend = srcLayer.blend
+--     }
 
 
 
