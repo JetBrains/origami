@@ -631,7 +631,7 @@ vertexShader =
             // Light geometry and magnitudes
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
             vec3 lightsSpeed = vec3(uLightSpeed, uLightSpeed, 100.0);
-            vec3 brightnessD = vec3(3.5, 2.5, 2.0);
+            vec3 brightnessD = vec3(1.7, 2.5, 2.0);
             vec3 brightnessA = vec3(1.0, 1.0, 0.0);
 
 
