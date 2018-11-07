@@ -1,5 +1,5 @@
 module Layer.Vignette exposing
-    ( Config
+    ( Model
     , Mesh
     , makeEntity
     , init
@@ -13,7 +13,7 @@ import WebGL.Settings exposing (Setting)
 import Viewport exposing (Viewport)
 
 
-type alias Config =
+type alias Model =
     { opacity : Float
     , color : Color
     }
@@ -24,14 +24,14 @@ type alias Color = ( Float, Float, Float )
 
 
 
-init : Config
+init : Model
 init =
     { opacity = 1.0
     , color = ( 0.671875, 0.289, 0.5898 )
     }
 
 
-makeEntity : Viewport {} -> Config -> List Setting -> WebGL.Entity
+makeEntity : Viewport {} -> Model -> List Setting -> WebGL.Entity
 makeEntity viewport config settings =
     WebGL.entityWith
         settings
@@ -79,7 +79,7 @@ type alias Uniforms =
         }
 
 
-uniforms : Viewport {} -> Config -> Uniforms
+uniforms : Viewport {} -> Model -> Uniforms
 uniforms v { opacity, color } =
     let
         ( r, g, b ) = color
