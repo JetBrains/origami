@@ -194,13 +194,14 @@ fromPortModel portModel =
 makeEntity
      : Time
     -> Mouse
+    -> Int
     -> Viewport {}
     -> Model
     -> Maybe SerializedScene
     -> List Setting
     -> Mesh
     -> WebGL.Entity
-makeEntity now mouse viewport model maybeScene settings mesh =
+makeEntity now mouse layerIndex viewport model maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -230,7 +231,9 @@ makeEntity now mouse viewport model maybeScene settings mesh =
                 viewport
                 model
                 meshSize
-                ( lights, speed ))
+                ( lights, speed )
+                layerIndex
+                )
 
 
 -- Mesh
@@ -373,6 +376,7 @@ type alias Uniforms =
         , uLightSpeed : Float
         , uResolution : Vec3
         , uNow : Float
+        , uLayerIndex: Int
         , uMousePosition: Vec2
         , uAmplitude: Vec3
         , uSegment : Vec3
@@ -396,8 +400,9 @@ uniforms
     -> Model
     -> ( Int, Int )
     -> ( List SLight, Speed )
+    -> Int
     -> Uniforms
-uniforms now mouse v model meshSize ( lights, speed ) =
+uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
     let
         adaptedLights = lights |> adaptLights meshSize speed
         (meshWidth, meshHeight) = meshSize
@@ -417,6 +422,7 @@ uniforms now mouse v model meshSize ( lights, speed ) =
         , uLightPosition = adaptedLights.position
         , uLightSpeed = adaptedLights.speed
         , uNow = now
+        , uLayerIndex = layerIndex
         , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
         , uSegment  = vec3 100 100 50
         , uMirror = mirror
@@ -571,6 +577,7 @@ vertexShader =
         uniform vec3 uSegment;
         uniform bool paused;
         uniform float uNow;
+        uniform int uLayerIndex;        
 
         uniform mat4 uLightPosition;
         uniform mat4 uLightAmbient;
@@ -621,7 +628,7 @@ vertexShader =
             vec3 speed = normalize(aV0) * 0.001;
 
             // Create color
-            vColor = vec4(0.0);
+            vColor = vec4(0.9);
 
 
             // Calculate the vertex position
@@ -661,15 +668,16 @@ vertexShader =
 
 
             // Iterate through lights
+
             for (int i = 0; i < 1; i++) {
             // for (int i = 0; i < 2; i++) {
+                         if(uLayerIndex != 0) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * oscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
                 vec4 lightAmbient = brightnessA[i] * uLightAmbient[i];
                 vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
 
                 vec3 ray = normalize(lightPosition - aCentroid  + disturb * 2000.0);
                 float illuminance = dot(aNormal, ray) ;
-                illuminance = max(illuminance, 0.0);
 
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
@@ -677,6 +685,7 @@ vertexShader =
                 // Calculate diffuse light
                 vColor += aDiffuse  * lightDiffuse * illuminance;
 
+            }
             }
 
 
