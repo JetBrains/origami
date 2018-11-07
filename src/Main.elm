@@ -109,7 +109,7 @@ initialLayers =
                 }
             )
       )
-    -- , ( Vignette, NoModel )
+    , ( Vignette, identity )
     , ( Text, identity )
     , ( SvgImage, identity )
     ]
@@ -962,6 +962,7 @@ layerToEntities ({ fss } as model) viewport index ({ layer, change } as layerDef
                         [ FSS.makeEntity
                             model.now
                             model.mouse
+                            index
                             viewport
                             fssModel
                             maybeBorrowedSerialized
