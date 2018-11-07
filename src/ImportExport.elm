@@ -109,51 +109,51 @@ intPairDecoder =
         |> D.required "v1" D.int
         |> D.required "v2" D.int
 
-
-layerDefsDecoder : D.Decoder (List M.LayerDef)
-layerDefsDecoder =
-    let
-        createLayerDef kind blend isOn =
-            { kind = determineLayerType kind
-            , blend = WGLBlend.decodeOne blend
-                |> Debug.log "Blend: "
-                |> Maybe.withDefault WGLBlend.default
-            , isOn = isOn
-            --, config = FSS.init
-            -- , mesh = FSS.emptyMesh
-            }
-    in
-        D.list
-            ( D.decode createLayerDef
-                |> D.required "kind" D.string
-                |> D.required "blend" D.string
-                |> D.required "isOn" D.bool
-            )
+-- layerDefsDecoder =
+--     let
+--         createLayerDef kind blend isOn =
+--             { kind = determineLayerType kind
+--             , blend = WGLBlend.decodeOne blend
+--                 |> Debug.log "Blend: "
+--                 |> Maybe.withDefault WGLBlend.default
+--             , isOn = isOn
+--             --, config = FSS.init
+--             -- , mesh = FSS.emptyMesh
+--             }
+--     in
+--         D.list
+--             ( D.decode createLayerDef
+--                 |> D.required "kind" D.string
+--                 |> D.required "blend" D.string
+--                 |> D.required "isOn" D.bool
+--             )
 
 
 layerDefDecoder : D.Decoder M.LayerDef
 layerDefDecoder =
-    D.decode M.LayerDef
-        |> D.required "theta" D.float
-        |> D.required "layers" layerDefsDecoder
-        |> D.required "size" intPairDecoder
-        |> D.required "origin" intPairDecoder
-        |> D.required "mouse" intPairDecoder
-        |> D.required "now" D.float
+    let
+        createLayerDef kind renderType model isOn =
+            --determineLayerType
+            {}
+    in
+        D.decode createLayerDef
+            |> D.required "kind" D.string
+            |> D.required "render-type" D.string
+            |> D.required "model" D.string
+            |> D.required "isOn" D.bool
+
 
 
 layerDecoder : D.Decoder M.Layer
 layerDecoder =
     let
-        createLayer = {}
+        createLayer renderType model isOn =
+            {}
     in
         D.decode createLayer
-            |> D.required "theta" D.float
-            |> D.required "layers" layerDefsDecoder
-            |> D.required "size" intPairDecoder
-            |> D.required "origin" intPairDecoder
-            |> D.required "mouse" intPairDecoder
-            |> D.required "now" D.float
+            |> D.required "render-type" D.string
+            |> D.required "model" D.string
+            |> D.required "isOn" D.bool
 
 
 modelDecoder : M.CreateLayer -> D.Decoder M.Model
@@ -174,7 +174,7 @@ modelDecoder createLayer =
     in
         D.decode createModel
             |> D.required "theta" D.float
-            |> D.required "layers" layerDefsDecoder
+            |> D.required "layers" (D.list layerDefDecoder)
             |> D.required "size" intPairDecoder
             |> D.required "origin" intPairDecoder
             |> D.required "mouse" intPairDecoder
