@@ -379,7 +379,7 @@ updateAndRebuildFssWith model =
 --         _ -> SVGBlend.encode SVGBlend.default
 
 
-getBlendForPort : Layer -> IE.PortBlend
+getBlendForPort : Layer -> PortBlend
 getBlendForPort layer =
     ( case layer of
         Either.Left ( _, webglBlend ) -> Just webglBlend
@@ -520,15 +520,16 @@ prepareLayer : LayerDef -> IE.Layer
 prepareLayer { kind, layer, on } =
     case ( kind, layer ) of
         ( Fss, Either.Left ( _, blend ) ) ->
-            { kind = IE.Fss
+            { kind = Fss
             , blend = blend
             , isOn = on
             }
         ( MirroredFss, Either.Left ( _, blend ) ) ->
-            { kind = IE.MirroredFss
+            { kind = MirroredFss
             , blend = blend
             , isOn = on
             }
+        -- FIXME: cover others
         _ -> IE.defaultLayer
 
 
