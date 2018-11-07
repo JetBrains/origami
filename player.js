@@ -10,13 +10,13 @@ const import_ = (app, importedState) => {
     layers = [];
     parsedState.layers.forEach((layer, index) => {
         layers[index] = {
-            type: layer.type,
+            kind: layer.kind,
             config: layer.config
         };
         //scenes[index] = layer.scene;
     });
     app.ports.pause.send(null);
-    app.ports.initLayers.send(layers.map((l) => l.type));
+    app.ports.initLayers.send(layers.map((l) => l.kind));
     app.ports.import_.send(JSON.stringify({
         theta: parsedState.theta,
         size: parsedState.size,
@@ -24,14 +24,14 @@ const import_ = (app, importedState) => {
         mouse: parsedState.mouse,
         now: parsedState.now,
         layers: parsedState.layers.map((layer) => (
-            { type_ : layer.type,
+            { kind : layer.kind,
               blend: layer.blend,
               config: ''
             }
         ))
     }));
     parsedState.layers.forEach((layer, index) => {
-        if (layer.type == 'fss' || layer.type == 'fss-mirror')  {
+        if (layer.kind == 'fss' || layer.kind == 'fss-mirror')  {
             const scene = buildFSS(layer.config, layer.sceneFuzz);
             scenes[index] = scene;
             console.log('import FSS', scene, layer.config);

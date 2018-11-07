@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Either exposing (Either)
 import Array exposing (Array)
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H
@@ -38,7 +39,7 @@ type alias LayerIndex = Int
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
-type alias ConfigChange = LayerConfig -> LayerConfig
+type alias ModelChange = LayerModel -> LayerModel
 
 type LayerKind
     = Lorenz
@@ -52,45 +53,71 @@ type LayerKind
     | Vignette
 
 
-type LayerConfig
-    -- FIXME: use type variable for that, or just a function!
-    = LorenzConfig Lorenz.Config
-    | FractalConfig Fractal.Config
-    | VoronoiConfig Voronoi.Config
-    | FssConfig FSS.Model
-    | TemplateConfig Template.Config
+-- type LayerBlend
+--     = WGLB WGLBlend.Blend
+--     | SVGB SVGBlend.Blend
 
 
-type Layer
-    -- FIXME: use type variable for that, or just a function!
-    = LorenzLayer WGLBlend.Blend Lorenz.Mesh
-    | FractalLayer WGLBlend.Blend Fractal.Mesh
-    | VoronoiLayer WGLBlend.Blend Voronoi.Mesh
-    | TemplateLayer WGLBlend.Blend Template.Mesh
-    | FssLayer WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | MirroredFssLayer WGLBlend.Blend (Maybe FSS.SerializedScene) FSS.Mesh
-    | VignetteLayer WGLBlend.Blend
-    | TextLayer SVGBlend.Blend
-    | SvgImageLayer SVGBlend.Blend
-    | Unknown
+type LayerModel
+    = LorenzModel Lorenz.Model
+    | FractalModel Fractal.Model
+    | VoronoiModel Voronoi.Model
+    | FssModel FSS.Model
+    | TemplateModel Template.Model
+    | NoModel
+
+
+type WebGLLayer
+    = LorenzLayer Lorenz.Mesh
+    | FractalLayer Fractal.Mesh
+    | VoronoiLayer Voronoi.Mesh
+    | TemplateLayer Template.Mesh
+    | FssLayer (Maybe FSS.SerializedScene) FSS.Mesh
+    | MirroredFssLayer (Maybe FSS.SerializedScene) FSS.Mesh
+    | VignetteLayer
+
+type SVGLayer
+    = TextLayer
+    | SvgImageLayer
     -- | CanvasLayer (\_ -> )
 
+type alias Layer =
+    Either
+        ( WebGLLayer, WGLBlend.Blend )
+        ( SVGLayer, SVGBlend.Blend )
 
-initialLayers : List ( LayerKind, ConfigChange )
+-- `change` is needed since we store a sample layer model
+-- to use for any layer in the main model
+type alias LayerDef =
+    { kind: LayerKind
+    , layer: Layer
+    , change: ModelChange
+    , on: Bool
+    }
+
+
+initialLayers : List ( LayerKind, ModelChange )
 initialLayers =
     [ ( MirroredFss, identity )
     , ( MirroredFss, identity )
     , ( MirroredFss
       , changeIfFss
-            (\prevConfig ->
-                { prevConfig
+            (\prevModel ->
+                { prevModel
                 | renderMode = FSS.PartialLines
                 , shareMesh = True
-                })
+                }
+            )
       )
+<<<<<<< HEAD
     -- , ( Vignette, Nothing )
 --    , ( Text, identity )
 --    , ( SvgImage, identity )
+=======
+    -- , ( Vignette, NoModel )
+    , ( Text, identity )
+    , ( SvgImage, identity )
+>>>>>>> 6d049615ae6696da49cc45b893a55007b5fb952f
     ]
 
 
@@ -99,16 +126,16 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
-    , layers : List ( Layer, ConfigChange )
+    , layers : List LayerDef
     , size : Size
     , origin : Pos
     , mouse : (Int, Int)
     , now : Time
     , timeShift : Time
     , product : Product
-    , vignette : Vignette.Config
+    , vignette : Vignette.Model
     , fss : FSS.Model
-    , lorenz : Lorenz.Config
+    , lorenz : Lorenz.Model
     -- voronoi : Voronoi.Config
     -- fractal : Fractal.Config
     -- , lights (taken from product)
@@ -125,6 +152,7 @@ type alias GuiConfig =
         { kind: String
         , blend : IE.PortBlend
         , webglOrSvg: String
+        , on: Bool
         }
     , size : ( Int, Int )
     , facesX : Int
@@ -140,7 +168,9 @@ type Msg
     = Bang
     | Animate Time
     | Resize Window.Size
-    | Configure LayerIndex LayerConfig
+    | Configure LayerIndex LayerModel
+    | TurnOn LayerIndex
+    | TurnOff LayerIndex
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
     | ChangeSVGBlend LayerIndex SVGBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
@@ -175,8 +205,12 @@ init =
       , fps = 0
       , theta = 0.1
       , layers = initialLayers |> List.map
-            (\(kind, changeF) ->
-                ( createLayer kind changeF, changeF ))
+            (\(kind, change) ->
+                { kind = kind
+                , layer = createLayer kind change
+                , change = change
+                , on = True
+                })
       , size = ( 1200, 1200 )
       , origin = ( 0, 0 )
       , mouse = ( 0, 0 )
@@ -222,68 +256,44 @@ update msg ({ fss, vignette } as model) =
             , Cmd.none
             )
 
-        Configure index config ->
+        Configure index layerModel ->
             ( model |> updateLayer index
-                (\(layer, changeF) ->
-                    case ( layer, changeF config ) of
-                        -- FIXME: simplify
-                        ( LorenzLayer curBlend _, LorenzConfig lorenzConfig ) ->
-                            LorenzLayer curBlend (lorenzConfig |> Lorenz.build)
-                        ( FractalLayer curBlend _, FractalConfig fractalConfig ) ->
-                            FractalLayer curBlend (fractalConfig |> Fractal.build)
-                        ( VoronoiLayer curBlend _, VoronoiConfig voronoiConfig ) ->
-                            VoronoiLayer curBlend (voronoiConfig |> Voronoi.build)
-                        ( FssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
+                (\webglLayer change ->
+                    case ( webglLayer, change layerModel ) of
+                        ( LorenzLayer _, LorenzModel lorenzModel ) ->
+                            LorenzLayer (lorenzModel |> Lorenz.build)
+                        ( FractalLayer _, FractalModel fractalModel ) ->
+                            FractalLayer (fractalModel |> Fractal.build)
+                        ( VoronoiLayer _, VoronoiModel voronoiModel ) ->
+                            VoronoiLayer (voronoiModel |> Voronoi.build)
+                        ( FssLayer maybeScene _, FssModel fssModel ) ->
                             let
-                                newMesh = maybeScene |> FSS.build fssConfig
+                                newMesh = maybeScene |> FSS.build fssModel
                             in
-                                FssLayer curBlend maybeScene newMesh
-                        ( MirroredFssLayer curBlend maybeScene _, FssConfig fssConfig ) ->
+                                FssLayer maybeScene newMesh
+                        ( MirroredFssLayer maybeScene _, FssModel fssModel ) ->
                             let
-                                newMesh = maybeScene |> FSS.build fssConfig
+                                newMesh = maybeScene |> FSS.build fssModel
                             in
-                                MirroredFssLayer curBlend maybeScene newMesh
-                        ( TemplateLayer curBlend _, TemplateConfig templateConfig ) ->
-                            TemplateLayer curBlend (templateConfig |> Template.build)
-                        _ -> Unknown
-                )
+                                MirroredFssLayer maybeScene newMesh
+                        ( TemplateLayer _, TemplateModel templateModel ) ->
+                            TemplateLayer (templateModel |> Template.build)
+                        _ -> webglLayer)
+                (\svgLayer _ -> svgLayer)
             , Cmd.none
             )
 
         ChangeWGLBlend index newBlend ->
-            ( model |> updateLayer index
-                (\(layer, _) ->
-                    case layer of
-                        -- FIXME: simplify
-                        TemplateLayer _ mesh ->
-                            TemplateLayer newBlend mesh
-                        LorenzLayer _ mesh ->
-                            LorenzLayer newBlend mesh
-                        FractalLayer _ mesh ->
-                            FractalLayer newBlend mesh
-                        VoronoiLayer _ mesh ->
-                            VoronoiLayer newBlend mesh
-                        FssLayer _ scene mesh ->
-                            FssLayer newBlend scene mesh
-                        MirroredFssLayer _ scene mesh ->
-                            MirroredFssLayer newBlend scene mesh
-                        VignetteLayer _ ->
-                            VignetteLayer newBlend
-                        _ -> layer
-                )
+            ( model |> updateLayerBlend index
+                (\_ -> Just newBlend)
+                (\_ -> Nothing)
             , Cmd.none
             )
 
         ChangeSVGBlend index newBlend ->
-            ( model |> updateLayer index
-                (\(layer, _) ->
-                    case layer of
-                        TextLayer _ ->
-                            TextLayer newBlend
-                        SvgImageLayer _ ->
-                            SvgImageLayer newBlend
-                        _ -> layer
-                )
+            ( model |> updateLayerBlend index
+                (\_ -> Nothing)
+                (\_ -> Just newBlend)
             , Cmd.none
             )
 
@@ -326,24 +336,25 @@ update msg ({ fss, vignette } as model) =
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
-                (\(layer, changeF) ->
-                    case layer of
-                        FssLayer blend _ mesh ->
+                (\webglLayer change ->
+                    case webglLayer of
+                        FssLayer _ mesh ->
                             let
                                 maybeScene = Just serializedScene
                                 newMesh = maybeScene
-                                    |> FSS.build (applyFssChange changeF model.fss)
+                                    |> FSS.build (applyFssChange change model.fss)
                             in
-                                FssLayer blend maybeScene newMesh
-                        MirroredFssLayer blend _ mesh ->
+                                FssLayer maybeScene newMesh
+                        MirroredFssLayer _ mesh ->
                             let
                                 maybeScene = Just serializedScene
                                 newMesh = maybeScene
-                                    |> FSS.build (applyFssChange changeF model.fss)
+                                    |> FSS.build (applyFssChange change model.fss)
                             in
-                                MirroredFssLayer blend maybeScene newMesh
-                        _ -> layer
+                                MirroredFssLayer maybeScene newMesh
+                        _ -> webglLayer
                 )
+                (\svgLayer _ -> svgLayer)
             , Cmd.none
             )
 
@@ -369,8 +380,8 @@ update msg ({ fss, vignette } as model) =
                     | theta = src.theta
                     , now = src.now
                     , layers =
-                        List.map2 extractLayer model.layers src.layers
-                            |> List.map (\layer -> (layer, identity))
+                        src.layers
+                            |> List.map2 extractLayer model.layers
                     , mouse = src.mouse
                     , size = src.size
                     , origin = src.origin
@@ -430,22 +441,34 @@ update msg ({ fss, vignette } as model) =
                 , Cmd.none
                 )
 
+        TurnOn index ->
+            ( model |> updateLayerDef index
+                (\def -> { def | on = True })
+            , Cmd.none
+            )
+
+        TurnOff index ->
+            ( model |> updateLayerDef index
+                (\def -> { def | on = False })
+            , Cmd.none
+            )
+
         NoOp -> ( model, Cmd.none )
 
 
-getLayerKind : Layer -> LayerKind
-getLayerKind layer =
-    case layer of
-        FssLayer _ _ _ -> Fss
-        MirroredFssLayer _ _ _ -> MirroredFss
-        LorenzLayer _ _ -> Lorenz
-        FractalLayer _ _ -> Fractal
-        VoronoiLayer _ _ -> Voronoi
-        TemplateLayer _ _ -> Template
-        TextLayer _ -> Text
-        SvgImageLayer _ -> SvgImage
-        VignetteLayer _ -> Vignette
-        _ -> Text -- FIXME: Empty Kind or Nothing
+-- getLayerKind : Layer -> LayerKind
+-- getLayerKind layer =
+--     case layer of
+--         FssLayer _ _ -> Fss
+--         MirroredFssLayer _ _ -> MirroredFss
+--         LorenzLayer _ -> Lorenz
+--         FractalLayer _ -> Fractal
+--         VoronoiLayer _ -> Voronoi
+--         TemplateLayer _ -> Template
+--         TextLayer -> Text
+--         SvgImageLayer -> SvgImage
+--         VignetteLayer -> Vignette
+--         _ -> Text -- FIXME: Empty Kind or Nothing
 
 
 -- getBlendString : Layer -> String
@@ -466,20 +489,12 @@ getLayerKind layer =
 getBlendForPort : Layer -> IE.PortBlend
 getBlendForPort layer =
     ( case layer of
-        FssLayer blend _ _ -> Just blend
-        MirroredFssLayer blend _ _ -> Just blend
-        LorenzLayer blend _ -> Just blend
-        FractalLayer blend _ -> Just blend
-        VoronoiLayer blend _ -> Just blend
-        TemplateLayer blend _ -> Just blend
-        VignetteLayer blend -> Just blend
-        _ -> Nothing
+        Either.Left ( _, webglBlend ) -> Just webglBlend
+        Either.Right _ -> Nothing
     , case layer of
-        TextLayer blend ->
-            SVGBlend.encode blend |> Just
-        SvgImageLayer blend ->
-            SVGBlend.encode blend |> Just
-        _ -> Nothing
+        Either.Right ( _, svgBlend ) ->
+            SVGBlend.encode svgBlend |> Just
+        Either.Left _ -> Nothing
     )
 
 
@@ -511,94 +526,115 @@ encodeLayerKind kind =
 --         _ -> Nothing
 
 
-createLayer : LayerKind -> ConfigChange -> Layer
-createLayer kind changeF =
+createLayer : LayerKind -> ModelChange -> Layer
+createLayer kind change =
     case kind of
         Fss ->
             let
                 config =
-                    applyFssChange changeF FSS.init
+                    applyFssChange change FSS.init
             in
-                FSS.build config Nothing
-                    |> FssLayer WGLBlend.default Nothing
+                ( FSS.build config Nothing |> FssLayer Nothing
+                , WGLBlend.default )
+                |> Either.Left
         MirroredFss ->
             let
                 config =
-                    applyFssChange changeF FSS.init
+                    applyFssChange change FSS.init
             in
-                FSS.build config Nothing
-                    |> MirroredFssLayer
-                        WGLBlend.default
-                        -- (WGLBlend.build
-                        --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
-                        --    (B.customAdd, B.srcColor, B.zero)
-                        -- )
-                        Nothing
+                ( FSS.build config Nothing |> MirroredFssLayer Nothing
+                , WGLBlend.default )
+                -- (WGLBlend.build
+                --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
+                --    (B.customAdd, B.srcColor, B.zero)
+                -- )
+                |> Either.Left
         Lorenz ->
             let
                 config =
-                    case LorenzConfig Lorenz.init |> changeF of
-                        LorenzConfig newConfig -> newConfig
+                    case LorenzModel Lorenz.init |> change of
+                        LorenzModel newModel -> newModel
                         _ -> Lorenz.init
             in
-                Lorenz.build config |> LorenzLayer WGLBlend.default
+                ( Lorenz.build config |> LorenzLayer
+                , WGLBlend.default )
+                |> Either.Left
         Template ->
             let
                 config =
-                    case TemplateConfig Template.init |> changeF of
-                        TemplateConfig newConfig -> newConfig
+                    case TemplateModel Template.init |> change of
+                        TemplateModel newModel -> newModel
                         _ -> Template.init
             in
-                Template.build config |> TemplateLayer WGLBlend.default
+                ( Template.build config |> TemplateLayer
+                , WGLBlend.default )
+                |> Either.Left
         Voronoi ->
             let
                 config =
-                    case VoronoiConfig Voronoi.init |> changeF of
-                        VoronoiConfig newConfig -> newConfig
+                    case VoronoiModel Voronoi.init |> change of
+                        VoronoiModel newModel -> newModel
                         _ -> Template.init
             in
-                Voronoi.build config |> VoronoiLayer WGLBlend.default
+                ( Voronoi.build config |> VoronoiLayer
+                , WGLBlend.default )
+                |> Either.Left
         Fractal ->
             let
                 config =
-                    case FractalConfig Fractal.init |> changeF of
-                        FractalConfig newConfig -> newConfig
+                    case FractalModel Fractal.init |> change of
+                        FractalModel newModel -> newModel
                         _ -> Fractal.init
             in
-                Fractal.build config |> FractalLayer WGLBlend.default
+                ( Fractal.build config |> FractalLayer
+                , WGLBlend.default )
+                |> Either.Left
         Vignette ->
-            WGLBlend.build
+            ( VignetteLayer
+            , WGLBlend.build
                 (B.customAdd, B.srcAlpha, B.oneMinusSrcAlpha)
-                (B.customAdd, B.one, B.oneMinusSrcAlpha)
-                |> VignetteLayer
+                (B.customAdd, B.one, B.oneMinusSrcAlpha) )
+            |> Either.Left
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
         Text ->
-            TextLayer SVGBlend.default
+            ( TextLayer, SVGBlend.default )
+            |> Either.Right
         SvgImage ->
-            SvgImageLayer SVGBlend.default
+            ( SvgImageLayer, SVGBlend.default )
+            |> Either.Right
 
 
-extractLayer : ( Layer, ConfigChange ) -> IE.Layer -> Layer
-extractLayer ( curLayer, changeLayer ) srcLayer =
-    case ( srcLayer.type_, curLayer ) of
-        ( IE.Fss, FssLayer blend scene mesh ) ->
-            FssLayer srcLayer.blend scene mesh
-        ( IE.MirroredFss, MirroredFssLayer blend scene mesh ) ->
-            MirroredFssLayer srcLayer.blend scene mesh
-        _ -> Unknown
+extractLayer : LayerDef -> IE.Layer -> LayerDef
+extractLayer curLayer srcLayer =
+    { kind = curLayer.kind
+    , layer = curLayer.layer
+        -- FIXME: TODO
+        -- case ( srcLayer.type_, curLayer.kind ) of
+        --     ( IE.Fss, Fss ) ->
+        --         curLayer.layer
+        --     ( IE.MirroredFss, MirroredFss ) ->
+        --         curLayer.layer
+        --     _ -> curLayer
+    , change = curLayer.change
+    , on = curLayer.on
+    -- , blend = srcLayer.blend
+    }
 
 
-prepareLayer : Layer -> IE.Layer
-prepareLayer layer =
-    case layer of
-        FssLayer blend maybeScene mesh ->
-            { type_ = IE.Fss
+
+prepareLayer : LayerDef -> IE.Layer
+prepareLayer { kind, layer, on } =
+    case ( kind, layer ) of
+        ( Fss, Either.Left ( _, blend ) ) ->
+            { kind = IE.Fss
             , blend = blend
+            , isOn = on
             }
-        MirroredFssLayer blend maybeScene mesh ->
-            { type_ = IE.MirroredFss
+        ( MirroredFss, Either.Left ( _, blend ) ) ->
+            { kind = IE.MirroredFss
             , blend = blend
+            , isOn = on
             }
         _ -> IE.defaultLayer
 
@@ -608,7 +644,6 @@ prepareModel model =
     { theta = model.theta
     , now = model.now
     , layers = model.layers
-        |> List.map Tuple.first
         |> List.map prepareLayer
     , mouse = model.mouse
     , size = model.size
@@ -628,14 +663,15 @@ prepareGuiConfig ({ fss } as model) =
         { product = Product.encode model.product
         , palette = Product.getPalette model.product
         , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
-                , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
-                )
+                 , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
+                 )
         , layers =
             model.layers |>
-                List.map (\(layer, _) ->
-                    { kind = getLayerKind layer |> encodeLayerKind
+                List.map (\{ kind, layer, on } ->
+                    { kind = encodeLayerKind kind
                     , blend = getBlendForPort layer
                     , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
+                    , on = on
                     })
         , facesX = Tuple.first model.fss.faces
         , facesY = Tuple.second model.fss.faces
@@ -662,18 +698,65 @@ extractTimeShift v =
     (v / timeShiftRange * 100.0) + 50.0 |> toString
 
 
-updateLayer : Int -> ((Layer, ConfigChange) -> Layer) -> Model -> Model
-updateLayer index f model =
-    let layersArray = Array.fromList model.layers
+updateLayerDef
+    :  Int
+    -> (LayerDef -> LayerDef)
+    -> Model
+    -> Model
+updateLayerDef index f model =
+    let
+        layersArray = Array.fromList model.layers
     in
         case layersArray |> Array.get index of
-            Just ( layer, changeF ) ->
+            Just layerDef ->
                 { model
                 | layers = layersArray
-                    |> Array.set index (f (layer, changeF), changeF)
+                    |> Array.set index (f layerDef)
                     |> Array.toList
                 }
             Nothing -> model
+
+
+updateLayer
+    :  Int
+    -> (WebGLLayer -> ModelChange -> WebGLLayer)
+    -> (SVGLayer -> ModelChange -> SVGLayer)
+    -> Model
+    -> Model
+updateLayer index ifWebgl ifSvg model =
+    model |> updateLayerDef index
+        (\layerDef ->
+            { layerDef
+            | layer = case layerDef.layer of
+                Either.Left ( webglLayer, blend ) ->
+                    Either.Left ( ifWebgl webglLayer layerDef.change, blend)
+                Either.Right ( svgLayer, blend ) ->
+                    Either.Right ( ifSvg svgLayer layerDef.change, blend)
+            })
+
+
+updateLayerBlend
+    : Int
+    -> (() -> Maybe WGLBlend.Blend)
+    -> (() -> Maybe SVGBlend.Blend)
+    -> Model
+    -> Model
+updateLayerBlend index ifWebgl ifSvg model =
+    model |> updateLayerDef index
+        (\layerDef ->
+            { layerDef
+            | layer = case layerDef.layer of
+                Either.Left ( webglLayer, webglBlend ) ->
+                    Either.Left
+                        ( webglLayer
+                        , ifWebgl () |> Maybe.withDefault webglBlend
+                        )
+                Either.Right ( svgLayer, svgBlend ) ->
+                    Either.Right
+                        ( svgLayer
+                        , ifSvg () |> Maybe.withDefault svgBlend
+                        )
+            })
 
 
 subscriptions : Model -> Sub Msg
@@ -712,11 +795,11 @@ subscriptions model =
         , changeSVGBlend (\{ layer, blend } ->
             ChangeSVGBlend layer (SVGBlend.decode blend)
           )
-        , configureLorenz (\(lorenzConfig, layerIndex) ->
-            Configure layerIndex (LorenzConfig lorenzConfig)
+        , configureLorenz (\(lorenzModel, layerIndex) ->
+            Configure layerIndex (LorenzModel lorenzModel)
           )
-        , configureFss (\(fssConfig, layerIndex) ->
-            FSS.fromPortModel fssConfig |> FssConfig |> Configure layerIndex
+        , configureFss (\(fssModel, layerIndex) ->
+            FSS.fromPortModel fssModel |> FssModel |> Configure layerIndex
           )
         , rebuildFss (\(serializedMesh, layerIndex) ->
             RebuildFss layerIndex serializedMesh
@@ -725,6 +808,8 @@ subscriptions model =
         , pause (\_ -> Pause)
         , continue (\_ -> Continue)
         , triggerPause (\_ -> TriggerPause)
+        , turnOn TurnOn
+        , turnOff TurnOff
         ]
 
 
@@ -752,52 +837,48 @@ toLocal (width, height) pos =
 mapControls : Model -> Controls.Msg -> Msg
 mapControls model controlsMsg =
     case controlsMsg of
-        Controls.Configure cfg -> Configure 0 (LorenzConfig cfg)
+        Controls.Configure cfg -> Configure 0 (LorenzModel cfg)
         Controls.Rotate th -> Rotate th
 
 
-applyFssChange : ConfigChange -> FSS.Model -> FSS.Model
-applyFssChange changeF fssModel =
-    case changeF <| FssConfig fssModel of
-        FssConfig newModel -> newModel
+applyFssChange : ModelChange -> FSS.Model -> FSS.Model
+applyFssChange change fssModel =
+    case change <| FssModel fssModel of
+        FssModel newModel -> newModel
         _ -> fssModel
 
 
-changeIfFss : (FSS.Model -> FSS.Model) -> ConfigChange
+changeIfFss : (FSS.Model -> FSS.Model) -> ModelChange
 changeIfFss adjustFss =
-    \conf ->
-        case conf of
-            FssConfig prevConfig -> adjustFss prevConfig |> FssConfig
-            _ -> conf
+    \model ->
+        case model of
+            FssModel prevModel -> adjustFss prevModel |> FssModel
+            _ -> model
 
 
-findTopAndGet : (Layer -> Int -> Maybe a) -> a -> Model -> a
-findTopAndGet getF default model =
-    model.layers
-        |> List.indexedMap (,)
-        |> List.foldl (\(index, (layer, _)) result ->
-                -- if (index < maxIndex) && predicate layer
-                -- then getF layer
-                -- else default
-                getF layer index |> Maybe.withDefault default
-            ) default
+-- findTopAndGet : (Layer -> Int -> Maybe a) -> a -> Model -> a
+-- findTopAndGet getF default model =
+--     model.layers
+--         |> List.indexedMap (,)
+--         |> List.foldr (\(index, { layer }) result ->
+--                 case result of
+--                     Just result -> Just result
+--                     Nothing -> getF layer index
+--             ) Nothing
+--         |> Maybe.withDefault default
 
 
 isWebGLLayer : Layer -> Bool
 isWebGLLayer layer =
     case layer of
-        TextLayer _ -> False
-        SvgImageLayer _ -> False
-        Unknown -> False
-        _ -> True
+        Either.Left _ -> True
+        Either.Right _ -> False
 
-isHtmlLayer : Layer -> Bool
-isHtmlLayer layer =
+isSvgLayer : Layer -> Bool
+isSvgLayer layer =
     case layer of
-        TextLayer _ -> True
-        SvgImageLayer _ -> True
-        Unknown -> False
-        _ -> False
+        Either.Left _ -> False
+        Either.Right _ -> True
 
 
 mergeWebGLLayers : Model -> List WebGL.Entity
@@ -805,7 +886,8 @@ mergeWebGLLayers model =
     let viewport = getViewportState model |> Viewport.find
     in
         model.layers
-            |> List.filter (Tuple.first >> isWebGLLayer)
+            |> List.filter (.layer >> isWebGLLayer)
+            |> List.filter .on
             |> List.indexedMap (,)
             -- |> List.concatMap (uncurry >> layerToEntities model viewport)
             |> List.concatMap (\(index, layer) ->
@@ -816,123 +898,123 @@ mergeWebGLLayers model =
 mergeHtmlLayers : Model -> List (Html Msg)
 mergeHtmlLayers model =
     model.layers
-        |> List.filter (Tuple.first >> isHtmlLayer)
+        |> List.filter (.layer >> isSvgLayer)
+        |> List.filter .on
         |> List.indexedMap (layerToHtml model)
 
 
-layerToHtml : Model -> Int -> ( Layer, ConfigChange ) -> Html Msg
-layerToHtml model index ( layer, _ ) =
+layerToHtml : Model -> Int -> LayerDef -> Html Msg
+layerToHtml model index { layer } =
     case layer of
-        TextLayer blend ->
-            JbText.view model.product model.size model.origin blend
-        SvgImageLayer blend ->
-            SVGImage.view model.size model.origin model.product blend
+        Either.Right ( svgLayer, svgBlend ) ->
+            case svgLayer of
+                TextLayer ->
+                    JbText.view model.product model.size model.origin svgBlend
+                SvgImageLayer ->
+                    SVGImage.view model.size model.origin model.product svgBlend
         _ -> div [] []
 
 
-layerToEntities : Model -> Viewport {} -> Int -> ( Layer, ConfigChange ) -> List WebGL.Entity
-layerToEntities ({ fss } as model) viewport index ( layer, changeF ) =
+layerToEntities : Model -> Viewport {} -> Int -> LayerDef -> List WebGL.Entity
+layerToEntities ({ fss } as model) viewport index ({ layer, change } as layerDef) =
     case layer of
-        LorenzLayer blend mesh ->
-            [ Lorenz.makeEntity
-                viewport
-                [ DepthTest.default, WGLBlend.produce blend ]
-                mesh
-            ]
-        FractalLayer blend mesh ->
-            [ Fractal.makeEntity
-                viewport
-                [ DepthTest.default, WGLBlend.produce blend ]
-                mesh
-            ]
-        TemplateLayer blend mesh ->
-            [ Template.makeEntity
-                viewport
-                [ DepthTest.default, WGLBlend.produce blend ]
-                mesh
-            ]
-        VoronoiLayer blend mesh ->
-            [ Voronoi.makeEntity
-                viewport
-                [ DepthTest.default, WGLBlend.produce blend ]
-                mesh
-            ]
-        FssLayer blend serialized mesh ->
-            let
-                fssModel = applyFssChange changeF model.fss
-                maybeBorrowedMesh =
-                    if (fssModel.shareMesh) then
-                        model |>
-                            findTopAndGet
-                                (\layer otherIndex ->
-                                    if otherIndex < index then
-                                        case layer of
-                                            FssLayer _ _ otherMesh -> Just otherMesh
-                                            MirroredFssLayer _ _ otherMesh -> Just otherMesh
-                                            _ -> Nothing
-                                    else Nothing
-                                )
-                                mesh
-                    else mesh
-            in
-                [ FSS.makeEntity
-                    model.now
-                    model.mouse
-                    viewport
-                    fssModel
-                    serialized
-                    [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
-                    maybeBorrowedMesh
-            ]
-        MirroredFssLayer blend serialized mesh ->
-            let
-                -- TODO: store clip position in the layer
-                model1 =
-                    { model
-                    | fss =
-                        model.fss
-                            --|> applyFssChange changeF
-                            |> (\fss ->
-                                { fss
-                                | clip = Just (0.0, FSS.defaultMirror)
-                                , mirror = False
-                                }
-                            )
-                    }
-                model2 =
-                    { model
-                    | fss =
-                        model.fss
-                            -- |> applyFssChange changeF
-                            |> (\fss ->
-                                { fss
-                                | clip = Just ( FSS.defaultMirror, 1.0 )
-                                })
-                    }
-            in
-                layerToEntities model1 viewport index
-                    ((FssLayer blend serialized mesh), changeF) ++
-                layerToEntities model2 viewport index
-                    ((FssLayer blend serialized mesh), changeF)
-        VignetteLayer blend ->
-            [ Vignette.makeEntity
-                  viewport
-                  model.vignette
-                  [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
-            ]
-        TextLayer _ -> []
-            -- [ Template.makeEntity
-            --     viewport
-            --     [ DepthTest.default, WGLBlend.produce blend ]
-            --     (Template.init |> Template.build)
-            -- ]
-        SvgImageLayer _ -> []
-        Unknown -> []
-            -- [ Template.makeEntity
-            --     viewport
-            --     [ DepthTest.default, WGLBlend.produce WGLBlend.default ]
-            --     (Template.init |> Template.build)
-            -- ]
+        Either.Left ( webglLayer, blend ) ->
+            case  webglLayer of
+                LorenzLayer mesh ->
+                    [ Lorenz.makeEntity
+                        viewport
+                        [ DepthTest.default, WGLBlend.produce blend ]
+                        mesh
+                    ]
+                FractalLayer mesh ->
+                    [ Fractal.makeEntity
+                        viewport
+                        [ DepthTest.default, WGLBlend.produce blend ]
+                        mesh
+                    ]
+                TemplateLayer mesh ->
+                    [ Template.makeEntity
+                        viewport
+                        [ DepthTest.default, WGLBlend.produce blend ]
+                        mesh
+                    ]
+                VoronoiLayer mesh  ->
+                    [ Voronoi.makeEntity
+                        viewport
+                        [ DepthTest.default, WGLBlend.produce blend ]
+                        mesh
+                    ]
+                FssLayer serialized mesh ->
+                    let
+                        fssModel = applyFssChange change model.fss
+                        ( maybeBorrowedSerialized, maybeBorrowedMesh ) =
+                            ( serialized, mesh )
+                            -- if (fssModel.shareMesh) then
+                            --     model |>
+                            --         findTopAndGet
+                            --             (\layer otherIndex ->
+                            --                 if otherIndex < index then
+                            --                     case layer of
+                            --                         FssLayer _ otherSerialized otherMesh ->
+                            --                             Just ( otherSerialized, otherMesh )
+                            --                         MirroredFssLayer _ otherSerialized otherMesh ->
+                            --                             Just ( otherSerialized, otherMesh )
+                            --                         _ -> Nothing
+                            --                 else Nothing
+                            --             )
+                            --             ( serialized, mesh )
+                            -- else ( serialized, mesh )
+                    in
+                        [ FSS.makeEntity
+                            model.now
+                            model.mouse
+                            viewport
+                            fssModel
+                            maybeBorrowedSerialized
+                            [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
+                            maybeBorrowedMesh -- seems this mesh is already built with "Triangles", so there's no sense in reusing it
+                    ]
+                MirroredFssLayer serialized mesh ->
+                    let
+                        -- TODO: store clip position in the layer
+                        model1 =
+                            { model
+                            | fss =
+                                model.fss
+                                    --|> applyFssChange changeF
+                                    |> (\fss ->
+                                        { fss
+                                        | clip = Just (0.0, FSS.defaultMirror)
+                                        , mirror = True
+                                        }
+                                    )
+                            }
+                        model2 =
+                            { model
+                            | fss =
+                                model.fss
+                                    -- |> applyFssChange changeF
+                                    |> (\fss ->
+                                        { fss
+                                        | clip = Just ( FSS.defaultMirror, 1.0 )
+                                        })
+                            }
+                    in
+                        layerToEntities model1 viewport index
+                            { layerDef
+                            | layer = Either.Left (FssLayer serialized mesh, blend)
+                            } ++
+                        layerToEntities model2 viewport index
+                            { layerDef
+                            | layer = Either.Left (FssLayer serialized mesh, blend)
+                            }
+                VignetteLayer ->
+                    [ Vignette.makeEntity
+                        viewport
+                        model.vignette
+                        [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
+                    ]
+        _ -> []
 
 
 getViewportState : Model -> Viewport.State
@@ -1001,7 +1083,7 @@ main =
         }
 
 
--- INGOING PORTS
+-- INCOMING PORTS
 
 port bang : (() -> msg) -> Sub msg
 
@@ -1015,7 +1097,7 @@ port rotate : (Float -> msg) -> Sub msg
 
 port initLayers : (Array String -> msg) -> Sub msg
 
-port configureLorenz : ((Lorenz.Config, Int) -> msg) -> Sub msg
+port configureLorenz : ((Lorenz.Model, Int) -> msg) -> Sub msg
 
 port configureFss : ((FSS.PortModel, Int) -> msg) -> Sub msg
 
@@ -1023,9 +1105,11 @@ port configureMirroredFss : ((FSS.PortModel, Int) -> msg) -> Sub msg
 
 port changeProduct : (String -> msg) -> Sub msg
 
--- TODO: port to affect camera
-
 port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
+
+port turnOn : (Int -> msg) -> Sub msg
+
+port turnOff : (Int -> msg) -> Sub msg
 
 port import_ : (String -> msg) -> Sub msg
 
