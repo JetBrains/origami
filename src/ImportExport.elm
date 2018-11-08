@@ -2,9 +2,8 @@ module ImportExport exposing
     ( encodeModel
     , decodeModel
     , Model
-    , Layer, LayerType(..)
+    , Layer
     , EncodedState
-    , PortBlend
     , defaultLayer
     )
 
@@ -17,23 +16,9 @@ import Json.Encode as E exposing (encode, Value, string, int, float, bool, list,
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 
+import Model as M
+
 type alias EncodedState = String
-
-
--- kinda Either, but for ports:
---    ( Just WebGLBlend, Nothing ) --> WebGL Blend
---    ( Nothing, Just String ) --> SVG Blend
---    ( Nothing, Nothing ) --> None
---    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
-type alias PortBlend =
-    ( Maybe WGLBlend.Blend, Maybe SVGBlend.PortBlend )
-
-
-type LayerType
-    = Unknown
-    | Fss
-    | MirroredFss
-
 
 -- type Config
 --     = None
@@ -43,7 +28,7 @@ type LayerType
 
 
 type alias Layer =
-    { kind : LayerType
+    { kind : M.LayerKind
     , blend : WGLBlend.Blend
     , isOn : Bool
     --, config : Config
@@ -69,13 +54,19 @@ encodeIntPair ( v1, v2 ) =
         ]
 
 
-encodeLayerType : LayerType -> E.Value
+encodeLayerType : M.LayerKind -> E.Value
 encodeLayerType kind =
     E.string
         (case kind of
-            Unknown -> "unknown"
-            Fss -> "fss"
-            MirroredFss -> "fss-mirror")
+            M.Fss -> "fss"
+            M.MirroredFss -> "fss-mirror"
+            M.Lorenz -> "lorenz"
+            M.Fractal -> "fractal"
+            M.Template -> "template"
+            M.Voronoi -> "voronoi"
+            M.Text -> "text"
+            M.SvgImage -> "logo"
+            M.Vignette -> "vignette")
 
 
 encodeLayer : Layer -> E.Value
@@ -112,17 +103,24 @@ encodeModel : Model -> EncodedState
 encodeModel model = model |> encodeModel_ |> E.encode 2
 
 
-determineLayerType : String -> LayerType
+determineLayerType : String -> M.LayerKind
 determineLayerType layerTypeStr =
     case layerTypeStr of
-        "fss" -> Fss
-        "fss-mirror" -> MirroredFss
-        _ -> Unknown
+        "fss" -> M.Fss
+        "fss-mirror" -> M.MirroredFss
+        "lorenz" -> M.Lorenz
+        "fractal" -> M.Fractal
+        "template" -> M.Template
+        "voronoi" -> M.Voronoi
+        "text" -> M.Text
+        "logo" -> M.SvgImage
+        "vignette" -> M.Vignette
+        _ -> M.Template
 
 
 defaultLayer : Layer
 defaultLayer =
-    { kind = Unknown
+    { kind = M.Template
     , blend = WGLBlend.default
     , isOn = True
     -- , config = None
