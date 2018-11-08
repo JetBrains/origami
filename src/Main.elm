@@ -82,18 +82,18 @@ init =
         ]
     )
 
-initialLayers : List ( LayerKind, ModelChange )
+initialLayers : List ( LayerKind, Model )
 initialLayers =
-    [ ( MirroredFss, identity )
-    , ( MirroredFss, identity )
+    [ ( MirroredFss, FSS.init )
+    , ( MirroredFss, FSS.init )
     , ( MirroredFss
-      , changeIfFss
-            (\prevModel ->
-                { prevModel
-                | renderMode = FSS.PartialLines
-                , shareMesh = True
-                }
-            )
+      , let
+            fssModel = FSS.init
+        in
+            { fssModel
+            | renderMode = FSS.PartialLines
+            , shareMesh = True
+            }
       )
     -- , ( Vignette, identity )
     , ( Text, identity )
@@ -204,25 +204,32 @@ update msg ({ fss, vignette } as model) =
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
-                (\webglLayer change ->
-                    case webglLayer of
-                        FssLayer _ mesh ->
-                            let
-                                maybeScene = Just serializedScene
-                                newMesh = maybeScene
-                                    |> FSS.build (applyFssChange change model.fss)
-                            in
-                                FssLayer maybeScene newMesh
-                        MirroredFssLayer _ mesh ->
-                            let
-                                maybeScene = Just serializedScene
-                                newMesh = maybeScene
-                                    |> FSS.build (applyFssChange change model.fss)
-                            in
-                                MirroredFssLayer maybeScene newMesh
-                        _ -> webglLayer
+                (\layer layerModel ->
+                    case layer of
+                        WebGLLayer webglLayer webglBlend ->
+                            case ( webglLayer, layerModel ) of
+                                ( FssLayer _ mesh, FssModel fssModel ) ->
+                                    let
+                                        maybeScene = Just serializedScene
+                                        newMesh = maybeScene |> FSS.build fssModel
+                                    in
+                                        WebGLLayer
+                                        (Just serializedScene
+                                            |> FSS.build fssModel
+                                            |> FssLayer maybeScene newMesh)
+                                        webglBlend
+                                ( MirroredFssLayer _ mesh, FssModel fssModel ) ->
+                                    let
+                                        maybeScene = Just serializedScene
+                                        newMesh = maybeScene |> FSS.build fssModel
+                                    in
+                                        WebGLLayer
+                                        (Just serializedScene
+                                            |> FSS.build fssModel
+                                            |> MirroredFssLayer maybeScene newMesh)
+                                        webglBlend
+                        _ -> layer
                 )
-                (\svgLayer _ -> svgLayer)
             , Cmd.none
             )
 
@@ -386,84 +393,54 @@ encodeLayerKind kind =
 --         _ -> Nothing
 
 
-createLayer : LayerKind -> ModelChange -> Layer
-createLayer kind change =
-    case kind of
-        Fss ->
-            let
-                config =
-                    applyFssChange change FSS.init
-            in
-                ( FSS.build config Nothing |> FssLayer Nothing
-                , WGLBlend.default )
-                |> Either.Left
-        MirroredFss ->
-            let
-                config =
-                    applyFssChange change FSS.init
-            in
-                ( FSS.build config Nothing |> MirroredFssLayer Nothing
-                , WGLBlend.default )
-                -- (WGLBlend.build
-                --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
-                --    (B.customAdd, B.srcColor, B.zero)
-                -- )
-                |> Either.Left
-        Lorenz ->
-            let
-                config =
-                    case LorenzModel Lorenz.init |> change of
-                        LorenzModel newModel -> newModel
-                        _ -> Lorenz.init
-            in
-                ( Lorenz.build config |> LorenzLayer
-                , WGLBlend.default )
-                |> Either.Left
-        Template ->
-            let
-                config =
-                    case TemplateModel Template.init |> change of
-                        TemplateModel newModel -> newModel
-                        _ -> Template.init
-            in
-                ( Template.build config |> TemplateLayer
-                , WGLBlend.default )
-                |> Either.Left
-        Voronoi ->
-            let
-                config =
-                    case VoronoiModel Voronoi.init |> change of
-                        VoronoiModel newModel -> newModel
-                        _ -> Template.init
-            in
-                ( Voronoi.build config |> VoronoiLayer
-                , WGLBlend.default )
-                |> Either.Left
-        Fractal ->
-            let
-                config =
-                    case FractalModel Fractal.init |> change of
-                        FractalModel newModel -> newModel
-                        _ -> Fractal.init
-            in
-                ( Fractal.build config |> FractalLayer
-                , WGLBlend.default )
-                |> Either.Left
-        Vignette ->
-            ( VignetteLayer
-            , WGLBlend.build
+createLayer : LayerKind -> LayerModel -> Layer
+createLayer kind layerModel =
+    case ( kind, layerModel ) of
+        ( Fss, FssModel fssModel )  ->
+            WebGLLayer
+            ( FSS.build fssModel Nothing |> FssLayer Nothing )
+            WGLBlend.default
+        ( MirroredFss, FssModel fssModel ) ->
+            WebGLLayer
+            ( FSS.build layerModel Nothing |> FssLayer Nothing )
+            WGLBlend.default
+            -- (WGLBlend.build
+            --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
+            --    (B.customAdd, B.srcColor, B.zero)
+            -- )
+        ( Lorenz, LorenzModel lorenzModel ) ->
+            WebGLLayer
+            (Lorenz.build layerModel |> LorenzLayer)
+            WGLBlend.default
+        ( Template, TemplateModel templateModel ) ->
+            WebGLLayer
+            ( Template.build templateModel |> TemplateLayer )
+            WGLBlend.default
+        ( Voronoi, VoronoiModel voronoiModel ) ->
+            WebGLLayer
+            ( Voronoi.build voronoiModel |> VoronoiLayer )
+            WGLBlend.default
+        ( Fractal, FractalModel fractalModel ) ->
+            WebGLLayer
+            ( Fractal.build fractalModel |> FractalLayer )
+            WGLBlend.default
+        ( Vignette, _ ) ->
+            WebGLLayer
+            VignetteLayer
+            (WGLBlend.build
                 (B.customAdd, B.srcAlpha, B.oneMinusSrcAlpha)
                 (B.customAdd, B.one, B.oneMinusSrcAlpha) )
-            |> Either.Left
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
         Text ->
-            ( TextLayer, SVGBlend.default )
-            |> Either.Right
+            SVGLayer
+            TextLayer
+            SVGBlend.default
         SvgImage ->
-            ( SvgImageLayer, SVGBlend.default )
-            |> Either.Right
-        Empty ->
+            SVGLayer
+            SvgImageLayer
+            SVGBlend.default
+        _ ->
             Model.emptyLayer
 
 
@@ -535,19 +512,14 @@ updateLayerDef index f model =
 
 updateLayer
     :  Int
-    -> (WebGLLayer -> ModelChange -> WebGLLayer)
-    -> (SVGLayer -> ModelChange -> SVGLayer)
+    -> (Layer -> LayerModel -> Layer)
     -> Model
     -> Model
-updateLayer index ifWebgl ifSvg model =
+updateLayer index f model =
     model |> updateLayerDef index
         (\layerDef ->
             { layerDef
-            | layer = case layerDef.layer of
-                Either.Left ( webglLayer, blend ) ->
-                    Either.Left ( ifWebgl webglLayer layerDef.change, blend)
-                Either.Right ( svgLayer, blend ) ->
-                    Either.Right ( ifSvg svgLayer layerDef.change, blend)
+            | layer = f layerDef.layer layerDef.model
             })
 
 
@@ -657,44 +629,17 @@ mapControls model controlsMsg =
         Controls.Rotate th -> Rotate th
 
 
-applyFssChange : ModelChange -> FSS.Model -> FSS.Model
-applyFssChange change fssModel =
-    case change <| FssModel fssModel of
-        FssModel newModel -> newModel
-        _ -> fssModel
-
-
-changeIfFss : (FSS.Model -> FSS.Model) -> ModelChange
-changeIfFss adjustFss =
-    \model ->
-        case model of
-            FssModel prevModel -> adjustFss prevModel |> FssModel
-            _ -> model
-
-
--- findTopAndGet : (Layer -> Int -> Maybe a) -> a -> Model -> a
--- findTopAndGet getF default model =
---     model.layers
---         |> List.indexedMap (,)
---         |> List.foldr (\(index, { layer }) result ->
---                 case result of
---                     Just result -> Just result
---                     Nothing -> getF layer index
---             ) Nothing
---         |> Maybe.withDefault default
-
-
 isWebGLLayer : Layer -> Bool
 isWebGLLayer layer =
     case layer of
-        Either.Left _ -> True
-        Either.Right _ -> False
+        WebGLLayer _ _ -> True
+        SVGLayer _ _ -> False
 
 isSvgLayer : Layer -> Bool
 isSvgLayer layer =
     case layer of
-        Either.Left _ -> False
-        Either.Right _ -> True
+        WebGLLayer _ _ -> False
+        SVGLayer _ _ -> True
 
 
 mergeWebGLLayers : Model -> List WebGL.Entity
@@ -733,37 +678,36 @@ layerToHtml model index { layer } =
 
 
 layerToEntities : Model -> Viewport {} -> Int -> LayerDef -> List WebGL.Entity
-layerToEntities ({ fss } as model) viewport index ({ layer, change } as layerDef) =
-    case layer of
-        Either.Left ( webglLayer, blend ) ->
-            case  webglLayer of
-                LorenzLayer mesh ->
+layerToEntities model viewport index layerDef =
+    case layerDef.layer of
+        WebGLLayer webglLayer blend ->
+            case ( webglLayer, layerDef.model ) of
+                ( LorenzLayer mesh, _ ) ->
                     [ Lorenz.makeEntity
                         viewport
                         [ DepthTest.default, WGLBlend.produce blend ]
                         mesh
                     ]
-                FractalLayer mesh ->
+                ( FractalLayer mesh, _ ) ->
                     [ Fractal.makeEntity
                         viewport
                         [ DepthTest.default, WGLBlend.produce blend ]
                         mesh
                     ]
-                TemplateLayer mesh ->
+                ( TemplateLayer mesh, _ ) ->
                     [ Template.makeEntity
                         viewport
                         [ DepthTest.default, WGLBlend.produce blend ]
                         mesh
                     ]
-                VoronoiLayer mesh  ->
+                ( VoronoiLayer mesh, _ ) ->
                     [ Voronoi.makeEntity
                         viewport
                         [ DepthTest.default, WGLBlend.produce blend ]
                         mesh
                     ]
-                FssLayer serialized mesh ->
+                ( FssLayer serialized mesh, FssModel fssModel ) ->
                     let
-                        fssModel = applyFssChange change model.fss
                         ( maybeBorrowedSerialized, maybeBorrowedMesh ) =
                             ( serialized, mesh )
                             -- if (fssModel.shareMesh) then
@@ -792,39 +736,28 @@ layerToEntities ({ fss } as model) viewport index ({ layer, change } as layerDef
                             [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                             maybeBorrowedMesh -- seems this mesh is already built with "Triangles", so there's no sense in reusing it
                     ]
-                MirroredFssLayer serialized mesh ->
+                ( MirroredFssLayer serialized mesh, FssModel fssModel ) ->
                     let
                         -- TODO: store clip position in the layer
-                        model1 =
-                            { model
-                            | fss =
-                                model.fss
-                                    --|> applyFssChange changeF
-                                    |> (\fss ->
-                                        { fss
-                                        | clip = Just (0.0, FSS.defaultMirror)
-                                        , mirror = True
-                                        }
-                                    )
+                        fssModel1 =
+                            { fssModel
+                            | clip = Just (0.0, FSS.defaultMirror)
+                            , mirror = True
                             }
-                        model2 =
-                            { model
-                            | fss =
-                                model.fss
-                                    -- |> applyFssChange changeF
-                                    |> (\fss ->
-                                        { fss
-                                        | clip = Just ( FSS.defaultMirror, 1.0 )
-                                        })
+                        fssModel2 =
+                            { fssModel
+                            | clip = Just ( FSS.defaultMirror, 1.0 )
                             }
                     in
-                        layerToEntities model1 viewport index
+                        layerToEntities model viewport index
                             { layerDef
-                            | layer = Either.Left (FssLayer serialized mesh, blend)
+                            | layer = WebGLLayer (FssLayer serialized mesh) blend
+                            , model = fssModel1
                             } ++
-                        layerToEntities model2 viewport index
+                        layerToEntities model viewport index
                             { layerDef
-                            | layer = Either.Left (FssLayer serialized mesh, blend)
+                            | layer = WebGLLayer (FssLayer serialized mesh) blend
+                            , model = fssModel2
                             }
                 VignetteLayer ->
                     [ Vignette.makeEntity
