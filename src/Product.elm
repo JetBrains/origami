@@ -64,7 +64,7 @@ getPalette product =
         WebStorm -> [ "#22cdd6", "#2888d4", "#feee56" ]
         CLion -> [ "#32d791", "#1a9edd", "#ea3a8c" ]
         DataGrip -> [ "#32d791", "#9779f5", "#fd5fe4" ]
-        AppCode -> [ "#2b7fe3", "#25daee", "#30de95" ]
+        AppCode -> [ "#2b7fe3", "#30de95", "#25daee" ]
         GogLand -> [ "#078efc", "#bb4efc", "#3bea62" ]
         Resharper -> [ "#c21456", "#e14ce3", "#fdbc2c" ]
         ResharperCpp ->  [ "#fdbc2c", "#e14ce3", "#c21456" ]
