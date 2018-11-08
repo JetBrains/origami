@@ -1,21 +1,24 @@
 port module Main exposing (main)
 
-import Either exposing (Either)
 import Array exposing (Array)
-import Html exposing (Html, text, div, span, input)
-import Html.Attributes as H
-    exposing (class, width, height, style, class, type_, min, max, value, id)
-import Html.Events exposing (on, onInput, onMouseUp, onClick)
+import Either
 import AnimationFrame
 import Time exposing (Time)
 import Window
 import Mouse exposing (clicks, moves, Position)
 import Task exposing (Task)
+
+import Html exposing (Html, text, div, span, input)
+import Html.Attributes as H
+    exposing (class, width, height, style, class, type_, min, max, value, id)
+import Html.Events exposing (on, onInput, onMouseUp, onClick)
+
 import WebGL exposing (Mesh, Option)
 import WebGL.Settings.Blend as B
 import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
+import Model exposing (..)
 import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
@@ -32,130 +35,6 @@ import Layer.Template as Template
 import Layer.JbText as JbText
 import Layer.SVGImage as SVGImage
 import Layer.Vignette as Vignette
-
-
-type alias LayerIndex = Int
-
-type alias Size = (Int, Int)
-type alias Pos = (Int, Int)
-
-type alias ModelChange = LayerModel -> LayerModel
-
-type LayerKind
-    = Lorenz
-    | Fractal
-    | Template
-    | Voronoi
-    | Fss
-    | MirroredFss
-    | Text
-    | SvgImage
-    | Vignette
-
-
--- type LayerBlend
---     = WGLB WGLBlend.Blend
---     | SVGB SVGBlend.Blend
-
-
-type LayerModel
-    = LorenzModel Lorenz.Model
-    | FractalModel Fractal.Model
-    | VoronoiModel Voronoi.Model
-    | FssModel FSS.Model
-    | TemplateModel Template.Model
-    | NoModel
-
-
-type WebGLLayer
-    = LorenzLayer Lorenz.Mesh
-    | FractalLayer Fractal.Mesh
-    | VoronoiLayer Voronoi.Mesh
-    | TemplateLayer Template.Mesh
-    | FssLayer (Maybe FSS.SerializedScene) FSS.Mesh
-    | MirroredFssLayer (Maybe FSS.SerializedScene) FSS.Mesh
-    | VignetteLayer
-
-type SVGLayer
-    = TextLayer
-    | SvgImageLayer
-    -- | CanvasLayer (\_ -> )
-
-type alias Layer =
-    Either
-        ( WebGLLayer, WGLBlend.Blend )
-        ( SVGLayer, SVGBlend.Blend )
-
--- `change` is needed since we store a sample layer model
--- to use for any layer in the main model
-type alias LayerDef =
-    { kind: LayerKind
-    , layer: Layer
-    , change: ModelChange
-    , on: Bool
-    }
-
-
-initialLayers : List ( LayerKind, ModelChange )
-initialLayers =
-    [ ( MirroredFss, identity )
-    , ( MirroredFss, identity )
-    , ( MirroredFss
-      , changeIfFss
-            (\prevModel ->
-                { prevModel
-                | renderMode = FSS.PartialLines
-                , shareMesh = True
-                }
-            )
-      )
-    , ( Vignette, identity )
-    , ( Text, identity )
-    , ( SvgImage, identity )
-    ]
-
-
-type alias Model =
-    { paused : Bool
-    , autoRotate : Bool
-    , fps : Int
-    , theta : Float
-    , layers : List LayerDef
-    , size : Size
-    , origin : Pos
-    , mouse : (Int, Int)
-    , now : Time
-    , timeShift : Time
-    , product : Product
-    , vignette : Vignette.Model
-    , fss : FSS.Model
-    , lorenz : Lorenz.Model
-    -- voronoi : Voronoi.Config
-    -- fractal : Fractal.Config
-    -- , lights (taken from product)
-    -- , material TODO
-    }
-
-
-type alias FssBuildOptions = GuiConfig
-
-type alias GuiConfig =
-    { product : String
-    , palette : List String
-    , layers : List
-        { kind: String
-        , blend : IE.PortBlend
-        , webglOrSvg: String
-        , on: Bool
-        }
-    , size : ( Int, Int )
-    , facesX : Int
-    , facesY : Int
-    , lightSpeed: Int
-    , vignette: Float
-    , amplitude : FSS.AmplitudeChange
-    , customSize : Maybe (Int, Int)
-    }
 
 
 type Msg
@@ -186,6 +65,9 @@ type Msg
     | Continue
     | TriggerPause
     | NoOp
+
+
+type alias FssBuildOptions = GuiConfig
 
 
 sizeCoef : Float
@@ -221,10 +103,23 @@ init =
         ]
     )
 
-
-updateAndRebuildFssWith : Model -> ( Model, Cmd Msg )
-updateAndRebuildFssWith model =
-    ( model, model |> extractFssBuildOptions |> requestFssRebuild )
+initialLayers : List ( LayerKind, ModelChange )
+initialLayers =
+    [ ( MirroredFss, identity )
+    , ( MirroredFss, identity )
+    , ( MirroredFss
+      , changeIfFss
+            (\prevModel ->
+                { prevModel
+                | renderMode = FSS.PartialLines
+                , shareMesh = True
+                }
+            )
+      )
+    , ( Vignette, identity )
+    , ( Text, identity )
+    , ( SvgImage, identity )
+    ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -449,6 +344,10 @@ update msg ({ fss, vignette } as model) =
 
         NoOp -> ( model, Cmd.none )
 
+updateAndRebuildFssWith : Model -> ( Model, Cmd Msg )
+updateAndRebuildFssWith model =
+    ( model, model |> extractFssBuildOptions |> requestFssRebuild )
+
 
 -- getLayerKind : Layer -> LayerKind
 -- getLayerKind layer =
@@ -480,7 +379,7 @@ update msg ({ fss, vignette } as model) =
 --         _ -> SVGBlend.encode SVGBlend.default
 
 
-getBlendForPort : Layer -> IE.PortBlend
+getBlendForPort : Layer -> PortBlend
 getBlendForPort layer =
     ( case layer of
         Either.Left ( _, webglBlend ) -> Just webglBlend
@@ -621,15 +520,16 @@ prepareLayer : LayerDef -> IE.Layer
 prepareLayer { kind, layer, on } =
     case ( kind, layer ) of
         ( Fss, Either.Left ( _, blend ) ) ->
-            { kind = IE.Fss
+            { kind = Fss
             , blend = blend
             , isOn = on
             }
         ( MirroredFss, Either.Left ( _, blend ) ) ->
-            { kind = IE.MirroredFss
+            { kind = MirroredFss
             , blend = blend
             , isOn = on
             }
+        -- FIXME: cover others
         _ -> IE.defaultLayer
 
 
