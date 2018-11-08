@@ -116,7 +116,7 @@ initialLayers =
                 }
             )
       )
-    , ( Vignette, identity )
+    -- , ( Vignette, identity )
     , ( Text, identity )
     , ( SvgImage, identity )
     ]
