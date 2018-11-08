@@ -14,6 +14,7 @@ module Model exposing
     , Size
     , Pos
     , PortBlend
+    , emptyLayer
     )
 
 import Either exposing (Either)
@@ -50,6 +51,7 @@ type LayerKind
     | Text
     | SvgImage
     | Vignette
+    | Empty
 
 
 -- type LayerBlend
@@ -75,15 +77,18 @@ type WebGLLayer
     | MirroredFssLayer (Maybe FSS.SerializedScene) FSS.Mesh
     | VignetteLayer
 
+
 type SVGLayer
     = TextLayer
     | SvgImageLayer
-    -- | CanvasLayer (\_ -> )
+    | NoContent
+
 
 type alias Layer =
     Either
         ( WebGLLayer, WGLBlend.Blend )
         ( SVGLayer, SVGBlend.Blend )
+
 
 -- `change` is needed since we store a sample layer model
 -- to use for any layer in the main model
@@ -93,6 +98,7 @@ type alias LayerDef =
     , change: ModelChange
     , on: Bool
     }
+
 
 -- kinda Either, but for ports:
 --    ( Just WebGLBlend, Nothing ) --> WebGL Blend
@@ -171,3 +177,8 @@ init initialLayers createLayer
       , vignette = Vignette.init
       , lorenz = Lorenz.init
       }
+
+
+emptyLayer : Layer
+emptyLayer =
+    Either.Right ( NoContent, SVGBlend.default )
