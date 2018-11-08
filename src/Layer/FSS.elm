@@ -628,7 +628,7 @@ vertexShader =
             vec3 speed = normalize(aV0) * 0.001;
 
             // Create color
-            vColor = vec4(0.9);
+            vColor = vec4(0.0);
 
 
             // Calculate the vertex position
@@ -677,7 +677,8 @@ vertexShader =
                 vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
 
                 vec3 ray = normalize(lightPosition - aCentroid  + disturb * 2000.0);
-                float illuminance = dot(aNormal, ray) ;
+                float illuminance = dot(aNormal, ray);
+                illuminance = max(illuminance, 0.0);
 
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
