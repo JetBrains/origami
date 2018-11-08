@@ -678,6 +678,7 @@ vertexShader =
 
                 vec3 ray = normalize(lightPosition - aCentroid  + disturb * 2000.0);
                 float illuminance = dot(aNormal, ray);
+                illuminance = max(illuminance, 0.0);
 
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
