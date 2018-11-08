@@ -95,7 +95,7 @@ initialLayers =
                 }
             )
       )
-    , ( Vignette, identity )
+    -- , ( Vignette, identity )
     , ( Text, identity )
     , ( SvgImage, identity )
     ]
@@ -249,12 +249,12 @@ update msg ({ fss, vignette } as model) =
 
         Export ->
             ( model
-            , model |> prepareModel |> IE.encodeModel |> export_
+            , model |> IE.encodeModel |> export_
             )
 
         ExportZip ->
             ( model
-            , model |> prepareModel |> IE.encodeModel |> exportZip_
+            , model |> IE.encodeModel |> exportZip_
             )
 
         TimeTravel timeShift ->
@@ -369,6 +369,7 @@ encodeLayerKind kind =
         Text -> "text"
         SvgImage -> "svg"
         Vignette -> "vignette"
+        Empty -> "empty"
 
 
 -- decodeLayerKind : String -> Maybe LayerKind
@@ -462,53 +463,8 @@ createLayer kind change =
         SvgImage ->
             ( SvgImageLayer, SVGBlend.default )
             |> Either.Right
-
-
--- extractLayer : LayerDef -> IE.Layer -> LayerDef
--- extractLayer curLayer srcLayer =
---     { kind = curLayer.kind
---     , layer = curLayer.layer
---         -- FIXME: TODO
---         -- case ( srcLayer.type_, curLayer.kind ) of
---         --     ( IE.Fss, Fss ) ->
---         --         curLayer.layer
---         --     ( IE.MirroredFss, MirroredFss ) ->
---         --         curLayer.layer
---         --     _ -> curLayer
---     , change = curLayer.change
---     , on = curLayer.on
---     -- , blend = srcLayer.blend
---     }
-
-
-
-prepareLayer : LayerDef -> IE.Layer
-prepareLayer { kind, layer, on } =
-    case ( kind, layer ) of
-        ( Fss, Either.Left ( _, blend ) ) ->
-            { kind = Fss
-            , blend = blend
-            , isOn = on
-            }
-        ( MirroredFss, Either.Left ( _, blend ) ) ->
-            { kind = MirroredFss
-            , blend = blend
-            , isOn = on
-            }
-        -- FIXME: cover others
-        _ -> IE.defaultLayer
-
-
-prepareModel : Model -> IE.Model
-prepareModel model =
-    { theta = model.theta
-    , now = model.now
-    , layers = model.layers
-        |> List.map prepareLayer
-    , mouse = model.mouse
-    , size = model.size
-    , origin = model.origin
-    }
+        Empty ->
+            Model.emptyLayer
 
 
 extractFssBuildOptions : Model -> FssBuildOptions
@@ -772,6 +728,7 @@ layerToHtml model index { layer } =
                     JbText.view model.product model.size model.origin svgBlend
                 SvgImageLayer ->
                     SVGImage.view model.size model.origin model.product svgBlend
+                NoContent -> div [] []
         _ -> div [] []
 
 
