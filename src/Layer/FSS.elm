@@ -628,7 +628,7 @@ vertexShader =
             vec3 speed = normalize(aV0) * 0.001;
 
             // Create color
-            vColor = vec4(0.9);
+            vColor = vec4(1.0);
 
 
             // Calculate the vertex position
@@ -639,7 +639,7 @@ vertexShader =
             vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
             vec3 lightsSpeed = vec3(uLightSpeed, uLightSpeed, 100.0);
             vec3 brightnessD = vec3(1.7, 2.5, 2.0);
-            vec3 brightnessA = vec3(1.0, 1.0, 0.0);
+            vec3 brightnessA = vec3(1.0, 2.0, 0.0);
 
 
             position = aPosition;
@@ -671,13 +671,13 @@ vertexShader =
 
             for (int i = 0; i < 1; i++) {
             // for (int i = 0; i < 2; i++) {
-                         if(uLayerIndex != 0) {
+          //  if(uLayerIndex != 0) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * oscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
                 vec4 lightAmbient = brightnessA[i] * uLightAmbient[i];
                 vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
 
                 vec3 ray = normalize(lightPosition - aCentroid  + disturb * 2000.0);
-                float illuminance = dot(aNormal, ray) ;
+                float illuminance = dot(aNormal, ray);
 
                 // Calculate ambient light
                 vColor += aAmbient * lightAmbient;
@@ -685,12 +685,13 @@ vertexShader =
                 // Calculate diffuse light
                 vColor += aDiffuse  * lightDiffuse * illuminance;
 
-            }
+         //   }
             }
 
 
            // Multiplied by gradients
               vColor *= mix(aColor, vColor, abs(position.z) );
+
 
             // Set gl_Position
           gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
@@ -722,6 +723,7 @@ fragmentShader =
         uniform float uNow;
         uniform vec2 uClip;
         uniform vec2 uScale;
+       // uniform int uLayerIndex;
 
 
 
@@ -756,13 +758,22 @@ fragmentShader =
             }
 
             // Set gl_FragColor
-            //   gl_FragColor = vColor;
+              gl_FragColor.rgb = vColor.rgb;
+             
+               gl_FragColor.a = 1.0;
 
             // noise by brightness
-               gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor), 0.5));
-
+               gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor), 1.0));
+          //  if(uLayerIndex != 0) {
             // vignette
-               gl_FragColor =  mix(gl_FragColor, bgColor, pow(smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))), 2.0));
+              gl_FragColor =  mix(gl_FragColor, bgColor, smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))));
+           // }
+            //opacity
+           //  if(uLayerIndex != 1) {
+            //   gl_FragColor.a = 1.0;
+         // }  
+
+        // gl_FragColor = vColor;
 
 
 

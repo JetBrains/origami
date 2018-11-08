@@ -109,9 +109,9 @@ initialLayers =
                 }
             )
       )
-    , ( Vignette, identity )
-    , ( Text, identity )
-    , ( SvgImage, identity )
+--    , ( Vignette, identity )
+--    , ( Text, identity )
+--    , ( SvgImage, identity )
     ]
 
 
@@ -980,7 +980,7 @@ layerToEntities ({ fss } as model) viewport index ({ layer, change } as layerDef
                                     |> (\fss ->
                                         { fss
                                         | clip = Just (0.0, FSS.defaultMirror)
-                                        , mirror = True
+                                        , mirror = False
                                         }
                                     )
                             }
