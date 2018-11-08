@@ -8,8 +8,6 @@ import Json.Decode as D exposing (bool, int, string, float, Decoder, Value)
 import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
 import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
 
-import Either exposing (Either)
-
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 
@@ -48,18 +46,18 @@ encodeLayerDef layerDef =
         [ ( "kind", encodeKind layerDef.kind )
         , ( "blend",
             case layerDef.layer of
-                Either.Left (_, webglBlend) ->
+                M.WebGLLayer _ webglBlend ->
                     WGLBlend.encodeOne webglBlend |> E.string
-                Either.Right (_, svgBlend) ->
+                M.SVGLayer _ svgBlend ->
                     SVGBlend.encode svgBlend |> E.string
           )
         , ( "blendDesc",
             case layerDef.layer of
-                Either.Left (_, webglBlend) ->
+                M.WebGLLayer _ webglBlend ->
                     webglBlend
                     |> WGLBlend.encodeHumanOne { delim = "; ", space = "> " }
                     |> E.string
-                Either.Right (_, svgBlend) ->
+                M.SVGLayer _ svgBlend ->
                     SVGBlend.encode svgBlend |> E.string
           )
         , ( "isOn", layerDef.on |> E.bool )
@@ -136,7 +134,7 @@ intPairDecoder =
 layerDefDecoder : D.Decoder M.LayerDef
 layerDefDecoder =
     let
-        createLayerDef kindStr renderType layerStr isOn =
+        createLayerDef kindStr renderType layerStr layerModelStr isOn =
             let kind = decodeKind kindStr
             in
                 { kind = kind
@@ -146,12 +144,17 @@ layerDefDecoder =
                         |> D.decodeString (layerDecoder kind renderType)
                         |> Result.toMaybe
                         |> Maybe.withDefault M.emptyLayer
-                , change = identity
+                , model =
+                    layerModelStr
+                        |> D.decodeString (layerModelDecoder kind)
+                        |> Result.toMaybe
+                        |> Maybe.withDefault M.NoModel
                 }
     in
         D.decode createLayerDef
             |> D.required "kind" D.string
             |> D.required "render-type" D.string
+            |> D.required "layer" D.string
             |> D.required "model" D.string
             |> D.required "isOn" D.bool
 
@@ -164,7 +167,7 @@ layerDecoder kind renderType =
             let
                 createLayer renderType model isOn =
                      -- TODO
-                    Either.Right ( M.NoContent, SVGBlend.default )
+                    M.SVGLayer M.NoContent SVGBlend.default
             in
                 D.decode createLayer
                     |> D.required "render-type" D.string
@@ -172,8 +175,26 @@ layerDecoder kind renderType =
                     |> D.required "isOn" D.bool
          -- TODO
         _ ->
-            Either.Right ( M.NoContent, SVGBlend.default )
+            M.SVGLayer M.NoContent SVGBlend.default
                 |> D.decode
+
+
+layerModelDecoder : M.LayerKind -> D.Decoder M.LayerModel
+layerModelDecoder kind =
+    case kind of
+        M.Fss ->
+            let
+                createLayer renderType model isOn =
+                     -- TODO
+                    M.NoModel
+            in
+                D.decode createLayer
+                    |> D.required "render-type" D.string
+                    |> D.required "model" D.string
+                    |> D.required "isOn" D.bool
+         -- TODO
+        _ ->
+            M.NoModel |> D.decode
 
 
 

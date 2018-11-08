@@ -1,14 +1,14 @@
 module Model exposing
     ( init
     , Model
-    , ModelChange
     , Layer
     , LayerIndex
     , LayerDef
     , LayerModel(..)
     , LayerKind(..)
-    , WebGLLayer(..)
-    , SVGLayer(..)
+    , Layer(..)
+    , WebGLLayer_(..)
+    , SVGLayer_(..)
     , CreateLayer
     , GuiConfig
     , Size
@@ -17,7 +17,6 @@ module Model exposing
     , emptyLayer
     )
 
-import Either exposing (Either)
 import Time exposing (Time)
 
 import WebGL.Blend as WGLBlend
@@ -25,7 +24,6 @@ import Svg.Blend as SVGBlend
 
 import Product exposing (Product)
 import Product
-import Layer.Vignette as Vignette
 import Layer.FSS as FSS
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
@@ -37,9 +35,7 @@ type alias LayerIndex = Int
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
-type alias ModelChange = LayerModel -> LayerModel
-
-type alias CreateLayer = LayerKind -> ModelChange -> Layer
+type alias CreateLayer = LayerKind -> Layer
 
 type LayerKind
     = Lorenz
@@ -68,7 +64,7 @@ type LayerModel
     | NoModel
 
 
-type WebGLLayer
+type WebGLLayer_
     = LorenzLayer Lorenz.Mesh
     | FractalLayer Fractal.Mesh
     | VoronoiLayer Voronoi.Mesh
@@ -78,16 +74,15 @@ type WebGLLayer
     | VignetteLayer
 
 
-type SVGLayer
+type SVGLayer_
     = TextLayer
     | SvgImageLayer
     | NoContent
 
 
-type alias Layer =
-    Either
-        ( WebGLLayer, WGLBlend.Blend )
-        ( SVGLayer, SVGBlend.Blend )
+type Layer
+    = WebGLLayer WebGLLayer_ WGLBlend.Blend
+    | SVGLayer SVGLayer_ SVGBlend.Blend
 
 
 -- `change` is needed since we store a sample layer model
@@ -95,7 +90,7 @@ type alias Layer =
 type alias LayerDef =
     { kind: LayerKind
     , layer: Layer
-    , change: ModelChange
+    , model: LayerModel
     , on: Bool
     }
 
@@ -121,9 +116,6 @@ type alias Model =
     , now : Time
     , timeShift : Time
     , product : Product
-    , vignette : Vignette.Model
-    , fss : FSS.Model
-    , lorenz : Lorenz.Model
     -- voronoi : Voronoi.Config
     -- fractal : Fractal.Config
     -- , lights (taken from product)
@@ -151,7 +143,7 @@ type alias GuiConfig =
 
 
 init
-    :  List ( LayerKind, ModelChange )
+    :  List ( LayerKind, LayerModel )
     -> CreateLayer
     -> Model
 init initialLayers createLayer
@@ -160,10 +152,10 @@ init initialLayers createLayer
       , fps = 0
       , theta = 0.1
       , layers = initialLayers |> List.map
-            (\(kind, change) ->
+            (\(kind, layerModel) ->
                 { kind = kind
-                , layer = createLayer kind change
-                , change = change
+                , layer = createLayer kind
+                , model = layerModel
                 , on = True
                 })
       , size = ( 1200, 1200 )
@@ -173,12 +165,9 @@ init initialLayers createLayer
       , timeShift = 0.0
       --, range = ( 0.8, 1.0 )
       , product = Product.JetBrains
-      , fss = FSS.init
-      , vignette = Vignette.init
-      , lorenz = Lorenz.init
       }
 
 
 emptyLayer : Layer
 emptyLayer =
-    Either.Right ( NoContent, SVGBlend.default )
+    SVGLayer NoContent SVGBlend.default
