@@ -29,6 +29,7 @@ import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
 import Layer.Voronoi as Voronoi
 import Layer.Template as Template
+import Layer.Vignette as Vignette
 
 type alias LayerIndex = Int
 
@@ -61,6 +62,7 @@ type LayerModel
     | VoronoiModel Voronoi.Model
     | FssModel FSS.Model
     | TemplateModel Template.Model
+    | VignetteModel Vignette.Model
     | NoModel
 
 
