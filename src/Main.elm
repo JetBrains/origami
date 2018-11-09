@@ -202,28 +202,30 @@ update msg model =
 
         Configure index layerModel ->
             ( model |> updateLayer index
-                (\webglLayer change ->
-                    case ( webglLayer, change layerModel ) of
-                        ( LorenzLayer _, LorenzModel lorenzModel ) ->
-                            LorenzLayer (lorenzModel |> Lorenz.build)
-                        ( FractalLayer _, FractalModel fractalModel ) ->
-                            FractalLayer (fractalModel |> Fractal.build)
-                        ( VoronoiLayer _, VoronoiModel voronoiModel ) ->
-                            VoronoiLayer (voronoiModel |> Voronoi.build)
-                        ( FssLayer maybeScene _, FssModel fssModel ) ->
-                            let
-                                newMesh = maybeScene |> FSS.build fssModel
-                            in
-                                FssLayer maybeScene newMesh
-                        ( MirroredFssLayer maybeScene _, FssModel fssModel ) ->
-                            let
-                                newMesh = maybeScene |> FSS.build fssModel
-                            in
-                                MirroredFssLayer maybeScene newMesh
-                        ( TemplateLayer _, TemplateModel templateModel ) ->
-                            TemplateLayer (templateModel |> Template.build)
-                        _ -> webglLayer)
-                (\svgLayer _ -> svgLayer)
+                (\layer layerModel ->
+                    case layer of
+                        WebGLLayer webglLayer _ ->
+                            case ( webglLayer, layerModel ) of
+                                ( LorenzLayer _, LorenzModel lorenzModel ) ->
+                                    LorenzLayer (lorenzModel |> Lorenz.build)
+                                ( FractalLayer _, FractalModel fractalModel ) ->
+                                    FractalLayer (fractalModel |> Fractal.build)
+                                ( VoronoiLayer _, VoronoiModel voronoiModel ) ->
+                                    VoronoiLayer (voronoiModel |> Voronoi.build)
+                                ( FssLayer maybeScene _, FssModel fssModel ) ->
+                                    let
+                                        newMesh = maybeScene |> FSS.build fssModel
+                                    in
+                                        FssLayer maybeScene newMesh
+                                ( MirroredFssLayer maybeScene _, FssModel fssModel ) ->
+                                    let
+                                        newMesh = maybeScene |> FSS.build fssModel
+                                    in
+                                        MirroredFssLayer maybeScene newMesh
+                                ( TemplateLayer _, TemplateModel templateModel ) ->
+                                    TemplateLayer (templateModel |> Template.build)
+                                _ -> layer
+                        _ -> layer)
             , Cmd.none
             )
 
@@ -283,9 +285,7 @@ update msg model =
                                         newMesh = maybeScene |> FSS.build fssModel
                                     in
                                         WebGLLayer
-                                        (Just serializedScene
-                                            |> FSS.build fssModel
-                                            |> FssLayer maybeScene newMesh)
+                                        (FssLayer maybeScene newMesh)
                                         webglBlend
                                 ( MirroredFssLayer _ mesh, FssModel fssModel ) ->
                                     let
@@ -293,9 +293,7 @@ update msg model =
                                         newMesh = maybeScene |> FSS.build fssModel
                                     in
                                         WebGLLayer
-                                        (Just serializedScene
-                                            |> FSS.build fssModel
-                                            |> MirroredFssLayer maybeScene newMesh)
+                                        (FssLayer maybeScene newMesh)
                                         webglBlend
                         _ -> layer
                 )
@@ -474,11 +472,11 @@ createLayer kind layerModel =
                 (B.customAdd, B.one, B.oneMinusSrcAlpha) )
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
-        Text ->
+        ( Text, _ ) ->
             SVGLayer
             TextLayer
             SVGBlend.default
-        SvgImage ->
+        ( SvgImage, _ ) ->
             SVGLayer
             SvgImageLayer
             SVGBlend.default
@@ -592,16 +590,14 @@ updateLayerBlend index ifWebgl ifSvg model =
         (\layerDef ->
             { layerDef
             | layer = case layerDef.layer of
-                Either.Left ( webglLayer, webglBlend ) ->
-                    Either.Left
-                        ( webglLayer
-                        , ifWebgl () |> Maybe.withDefault webglBlend
-                        )
-                Either.Right ( svgLayer, svgBlend ) ->
-                    Either.Right
-                        ( svgLayer
-                        , ifSvg () |> Maybe.withDefault svgBlend
-                        )
+                WebGLLayer webglLayer webglBlend ->
+                    ifWebgl ()
+                        |> Maybe.withDefault webglBlend
+                        |> WebGLLayer webglLayer
+                SVGLayer svgLayer svgBlend ->
+                    ifSvg ()
+                        |> Maybe.withDefault svgBlend
+                        |> SVGLayer svgLayer
             })
 
 
@@ -724,7 +720,7 @@ mergeHtmlLayers model =
 layerToHtml : Model -> Int -> LayerDef -> Html Msg
 layerToHtml model index { layer } =
     case layer of
-        Either.Right ( svgLayer, svgBlend ) ->
+        SVGLayer svgLayer svgBlend ->
             case svgLayer of
                 TextLayer ->
                     JbText.view model.product model.size model.origin svgBlend
