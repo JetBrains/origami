@@ -101,7 +101,7 @@ initialLayers =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ fss, vignette } as model) =
+update msg model =
     case msg of
 
         Bang ->
@@ -197,8 +197,8 @@ update msg ({ fss, vignette } as model) =
             )
 
         ChangeProduct product ->
-            updateAndRebuildFssWith
-                { model | product = product }
+            { model | product = product }
+            |> updateAndRebuildFssWith 0 -- FIXME: do that for every FSS layer
 
         Configure index layerModel ->
             ( model |> updateLayer index
@@ -349,12 +349,19 @@ update msg ({ fss, vignette } as model) =
 
 getLayerModel : LayerIndex -> Model -> Maybe LayerModel
 getLayerModel index model =
+    -- TODO:
     Nothing
 
 -- TODO remove
 updateAndRebuildFssWith : LayerIndex -> Model -> ( Model, Cmd Msg )
 updateAndRebuildFssWith index model =
-    ( model, model |> extractFssBuildOptions |> requestFssRebuild )
+    ( model
+    , case model |> getLayerModel index of
+        Just (FssModel fssModel) ->
+            -- TODO: include product/palette into build
+            requestFssRebuild ( index, fssModel )
+        _ -> Cmd.none
+    )
 
 
 -- getLayerKind : Layer -> LayerKind
