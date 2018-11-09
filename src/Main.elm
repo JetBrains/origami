@@ -41,21 +41,8 @@ type Msg
     = Bang
     | Animate Time
     | Resize Window.Size
-    | Configure LayerIndex LayerModel
-    | TurnOn LayerIndex
-    | TurnOff LayerIndex
-    | ChangeWGLBlend LayerIndex WGLBlend.Blend
-    | ChangeSVGBlend LayerIndex SVGBlend.Blend
-    | RebuildFss LayerIndex FSS.SerializedScene
-    --| RebuildOnClient LayerIndex FSS.SerializedScene
-    | Rotate Float
-    | ChangeFacesX Int
-    | ChangeFacesY Int
-    | ChangeLightSpeed Int
-    | ChangeVignette Float
-    | ChangeAmplitude FSS.AmplitudeChange
-    | ChangeProduct Product
     | Locate Position
+    | Rotate Float
     | Import EncodedState
     | Export
     | ExportZip
@@ -64,6 +51,18 @@ type Msg
     | Pause
     | Continue
     | TriggerPause
+    | ChangeProduct Product
+    | TurnOn LayerIndex
+    | TurnOff LayerIndex
+    | Configure LayerIndex LayerModel
+    | ChangeWGLBlend LayerIndex WGLBlend.Blend
+    | ChangeSVGBlend LayerIndex SVGBlend.Blend
+    | RebuildFss LayerIndex FSS.SerializedScene
+    --| RebuildOnClient LayerIndex FSS.SerializedScene
+    | ChangeFaces LayerIndex ( Int, Int )
+    | ChangeLightSpeed LayerIndex Int
+    | ChangeVignette LayerIndex Float
+    | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | NoOp
 
 
@@ -82,10 +81,10 @@ init =
         ]
     )
 
-initialLayers : List ( LayerKind, Model )
+initialLayers : List ( LayerKind, LayerModel )
 initialLayers =
-    [ ( MirroredFss, FSS.init )
-    , ( MirroredFss, FSS.init )
+    [ ( MirroredFss, FssModel FSS.init )
+    , ( MirroredFss, FssModel FSS.init )
     , ( MirroredFss
       , let
             fssModel = FSS.init
@@ -93,11 +92,11 @@ initialLayers =
             { fssModel
             | renderMode = FSS.PartialLines
             , shareMesh = True
-            }
+            } |> FssModel
       )
     -- , ( Vignette, identity )
-    , ( Text, identity )
-    , ( SvgImage, identity )
+    , ( Text, NoModel )
+    , ( SvgImage, NoModel )
     ]
 
 
@@ -121,115 +120,6 @@ update msg ({ fss, vignette } as model) =
                             then model.now + dt + model.timeShift
                             else model.now
                  }
-            , Cmd.none
-            )
-
-        Configure index layerModel ->
-            ( model |> updateLayer index
-                (\webglLayer change ->
-                    case ( webglLayer, change layerModel ) of
-                        ( LorenzLayer _, LorenzModel lorenzModel ) ->
-                            LorenzLayer (lorenzModel |> Lorenz.build)
-                        ( FractalLayer _, FractalModel fractalModel ) ->
-                            FractalLayer (fractalModel |> Fractal.build)
-                        ( VoronoiLayer _, VoronoiModel voronoiModel ) ->
-                            VoronoiLayer (voronoiModel |> Voronoi.build)
-                        ( FssLayer maybeScene _, FssModel fssModel ) ->
-                            let
-                                newMesh = maybeScene |> FSS.build fssModel
-                            in
-                                FssLayer maybeScene newMesh
-                        ( MirroredFssLayer maybeScene _, FssModel fssModel ) ->
-                            let
-                                newMesh = maybeScene |> FSS.build fssModel
-                            in
-                                MirroredFssLayer maybeScene newMesh
-                        ( TemplateLayer _, TemplateModel templateModel ) ->
-                            TemplateLayer (templateModel |> Template.build)
-                        _ -> webglLayer)
-                (\svgLayer _ -> svgLayer)
-            , Cmd.none
-            )
-
-        ChangeWGLBlend index newBlend ->
-            ( model |> updateLayerBlend index
-                (\_ -> Just newBlend)
-                (\_ -> Nothing)
-            , Cmd.none
-            )
-
-        ChangeSVGBlend index newBlend ->
-            ( model |> updateLayerBlend index
-                (\_ -> Nothing)
-                (\_ -> Just newBlend)
-            , Cmd.none
-            )
-
-        ChangeFacesX facesX ->
-            updateAndRebuildFssWith
-                { model | fss =
-                    { fss | faces = fss.faces |> Tuple.mapFirst (\_ -> facesX) }
-                }
-
-        ChangeFacesY facesY ->
-            updateAndRebuildFssWith
-                { model | fss =
-                    { fss | faces = fss.faces |> Tuple.mapSecond (\_ -> facesY) }
-                }
-
-        ChangeLightSpeed lightSpeed ->
-            updateAndRebuildFssWith
-                { model | fss =
-                    { fss | lightSpeed = lightSpeed }
-                }
-
-        Rotate theta ->
-            ( { model | theta = theta  }
-            , Cmd.none
-            )
-
-        Resize { width, height } ->
-            ( { model
-              | size = adaptSize ( width, height )
-              , origin = getOrigin ( width, height )
-              }
-            -- , model |> extractFssBuildOptions |> requestFssRebuild
-            , Cmd.none
-            )
-
-        Locate pos ->
-            ( { model | mouse = (pos.x, pos.y) }
-            , Cmd.none
-            )
-
-        RebuildFss index serializedScene ->
-            ( model |> updateLayer index
-                (\layer layerModel ->
-                    case layer of
-                        WebGLLayer webglLayer webglBlend ->
-                            case ( webglLayer, layerModel ) of
-                                ( FssLayer _ mesh, FssModel fssModel ) ->
-                                    let
-                                        maybeScene = Just serializedScene
-                                        newMesh = maybeScene |> FSS.build fssModel
-                                    in
-                                        WebGLLayer
-                                        (Just serializedScene
-                                            |> FSS.build fssModel
-                                            |> FssLayer maybeScene newMesh)
-                                        webglBlend
-                                ( MirroredFssLayer _ mesh, FssModel fssModel ) ->
-                                    let
-                                        maybeScene = Just serializedScene
-                                        newMesh = maybeScene |> FSS.build fssModel
-                                    in
-                                        WebGLLayer
-                                        (Just serializedScene
-                                            |> FSS.build fssModel
-                                            |> MirroredFssLayer maybeScene newMesh)
-                                        webglBlend
-                        _ -> layer
-                )
             , Cmd.none
             )
 
@@ -276,32 +166,23 @@ update msg ({ fss, vignette } as model) =
             , Cmd.none
             )
 
-        ChangeProduct product ->
-            updateAndRebuildFssWith
-                { model | product = product }
-
-        ChangeVignette opacity ->
-            ( { model | vignette =
-                { vignette | opacity = opacity }
-            }
+        Rotate theta ->
+            ( { model | theta = theta  }
             , Cmd.none
             )
 
-        ChangeAmplitude ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
-            let
-                ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ )
-                    = fss.amplitude
-            in
-                ( { model | fss =
-                    { fss | amplitude =
-                        ( Maybe.withDefault currentAmplitudeX newAmplitudeX
-                        , Maybe.withDefault currentAmplitudeY newAmplitudeY
-                        , Maybe.withDefault currentAmplitudeZ newAmplitudeZ
-                        )
-                    }
-                  }
-                , Cmd.none
-                )
+        Resize { width, height } ->
+            ( { model
+              | size = adaptSize ( width, height )
+              , origin = getOrigin ( width, height )
+              }
+            , Cmd.none -- updateAndRebuildFssWith
+            )
+
+        Locate pos ->
+            ( { model | mouse = (pos.x, pos.y) }
+            , Cmd.none
+            )
 
         TurnOn index ->
             ( model |> updateLayerDef index
@@ -315,10 +196,164 @@ update msg ({ fss, vignette } as model) =
             , Cmd.none
             )
 
+        ChangeProduct product ->
+            updateAndRebuildFssWith
+                { model | product = product }
+
+        Configure index layerModel ->
+            ( model |> updateLayer index
+                (\webglLayer change ->
+                    case ( webglLayer, change layerModel ) of
+                        ( LorenzLayer _, LorenzModel lorenzModel ) ->
+                            LorenzLayer (lorenzModel |> Lorenz.build)
+                        ( FractalLayer _, FractalModel fractalModel ) ->
+                            FractalLayer (fractalModel |> Fractal.build)
+                        ( VoronoiLayer _, VoronoiModel voronoiModel ) ->
+                            VoronoiLayer (voronoiModel |> Voronoi.build)
+                        ( FssLayer maybeScene _, FssModel fssModel ) ->
+                            let
+                                newMesh = maybeScene |> FSS.build fssModel
+                            in
+                                FssLayer maybeScene newMesh
+                        ( MirroredFssLayer maybeScene _, FssModel fssModel ) ->
+                            let
+                                newMesh = maybeScene |> FSS.build fssModel
+                            in
+                                MirroredFssLayer maybeScene newMesh
+                        ( TemplateLayer _, TemplateModel templateModel ) ->
+                            TemplateLayer (templateModel |> Template.build)
+                        _ -> webglLayer)
+                (\svgLayer _ -> svgLayer)
+            , Cmd.none
+            )
+
+        ChangeWGLBlend index newBlend ->
+            ( model |> updateLayerBlend index
+                (\_ -> Just newBlend)
+                (\_ -> Nothing)
+            , Cmd.none
+            )
+
+        ChangeSVGBlend index newBlend ->
+            ( model |> updateLayerBlend index
+                (\_ -> Nothing)
+                (\_ -> Just newBlend)
+            , Cmd.none
+            )
+
+        ChangeFaces index ( facesX, facesY ) ->
+            model
+                |> updateLayerWithItsModel
+                    index
+                    (\(layer, model) ->
+                        -- TODO:
+                        (layer, model)
+                    )
+                |> updateAndRebuildFssWith index
+
+            -- updateAndRebuildFssWith
+            --     { model | fss =
+            --         { fss | faces = fss.faces |> Tuple.mapFirst (\_ -> facesX) }
+            --     }
+
+        ChangeLightSpeed index lightSpeed ->
+            model
+                |> updateLayerWithItsModel
+                    index
+                    (\(layer, model) ->
+                        -- TODO:
+                        (layer, model)
+                    )
+                |> updateAndRebuildFssWith index
+
+            -- updateAndRebuildFssWith
+            --     { model | fss =
+            --         { fss | lightSpeed = lightSpeed }
+            --     }
+
+        RebuildFss index serializedScene ->
+            ( model |> updateLayer index
+                (\layer layerModel ->
+                    case layer of
+                        WebGLLayer webglLayer webglBlend ->
+                            case ( webglLayer, layerModel ) of
+                                ( FssLayer _ mesh, FssModel fssModel ) ->
+                                    let
+                                        maybeScene = Just serializedScene
+                                        newMesh = maybeScene |> FSS.build fssModel
+                                    in
+                                        WebGLLayer
+                                        (Just serializedScene
+                                            |> FSS.build fssModel
+                                            |> FssLayer maybeScene newMesh)
+                                        webglBlend
+                                ( MirroredFssLayer _ mesh, FssModel fssModel ) ->
+                                    let
+                                        maybeScene = Just serializedScene
+                                        newMesh = maybeScene |> FSS.build fssModel
+                                    in
+                                        WebGLLayer
+                                        (Just serializedScene
+                                            |> FSS.build fssModel
+                                            |> MirroredFssLayer maybeScene newMesh)
+                                        webglBlend
+                        _ -> layer
+                )
+            , Cmd.none
+            )
+
+        ChangeVignette index opacity ->
+            ( model
+                |> updateLayerWithItsModel
+                    index
+                    (\(layer, model) ->
+                        -- TODO:
+                        (layer, model)
+                    )
+            , Cmd.none
+            )
+
+
+            -- ( { model | vignette =
+            --     { vignette | opacity = opacity }
+            -- }
+            -- , Cmd.none
+            -- )
+
+        ChangeAmplitude index ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
+            model |> updateLayerWithItsModel
+                index
+                (\(layer, model) ->
+                    -- TODO:
+                    (layer, model)
+                )
+                |> updateAndRebuildFssWith index
+
+            -- let
+            --     ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ )
+            --         = fss.amplitude
+            -- in
+            --     ( { model | fss =
+            --         { fss | amplitude =
+            --             ( Maybe.withDefault currentAmplitudeX newAmplitudeX
+            --             , Maybe.withDefault currentAmplitudeY newAmplitudeY
+            --             , Maybe.withDefault currentAmplitudeZ newAmplitudeZ
+            --             )
+            --         }
+            --       }
+            --     , Cmd.none
+            --     )
+
         NoOp -> ( model, Cmd.none )
 
-updateAndRebuildFssWith : Model -> ( Model, Cmd Msg )
-updateAndRebuildFssWith model =
+
+getLayerModel : LayerIndex -> Model -> Maybe LayerModel
+getLayerModel index model =
+    Nothing
+
+-- TODO remove
+updateAndRebuildFssWith : LayerIndex -> Model -> ( Model, Cmd Msg )
+updateAndRebuildFssWith index model =
     ( model, model |> extractFssBuildOptions |> requestFssRebuild )
 
 
@@ -402,7 +437,7 @@ createLayer kind layerModel =
             WGLBlend.default
         ( MirroredFss, FssModel fssModel ) ->
             WebGLLayer
-            ( FSS.build layerModel Nothing |> FssLayer Nothing )
+            ( FSS.build fssModel Nothing |> FssLayer Nothing )
             WGLBlend.default
             -- (WGLBlend.build
             --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
@@ -410,7 +445,7 @@ createLayer kind layerModel =
             -- )
         ( Lorenz, LorenzModel lorenzModel ) ->
             WebGLLayer
-            (Lorenz.build layerModel |> LorenzLayer)
+            (Lorenz.build lorenzModel |> LorenzLayer)
             WGLBlend.default
         ( Template, TemplateModel templateModel ) ->
             WebGLLayer
@@ -444,8 +479,8 @@ createLayer kind layerModel =
             Model.emptyLayer
 
 
-extractFssBuildOptions : Model -> FssBuildOptions
-extractFssBuildOptions = prepareGuiConfig
+-- extractFssBuildOptions : Model -> FssBuildOptions
+-- extractFssBuildOptions = prepareGuiConfig
 
 
 prepareGuiConfig : Model -> GuiConfig
@@ -523,6 +558,22 @@ updateLayer index f model =
             })
 
 
+updateLayerWithItsModel
+    :  Int
+    -> (( Layer, LayerModel ) -> ( Layer, LayerModel ))
+    -> Model
+    -> Model
+updateLayerWithItsModel index f model =
+    model |> updateLayerDef index
+        (\layerDef ->
+            case f (layerDef.layer, layerDef.model) of
+                ( newLayer, newModel ) ->
+                    { layerDef
+                    | layer = newLayer
+                    , model = newModel
+                    })
+
+
 updateLayerBlend
     : Int
     -> (() -> Maybe WGLBlend.Blend)
@@ -565,8 +616,7 @@ subscriptions model =
           )
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
-        , changeFacesX ChangeFacesX
-        , changeFacesY ChangeFacesY
+        , changeFaces ChangeFaces
         , changeLightSpeed ChangeLightSpeed
         , changeAmplitude ChangeAmplitude
         , setCustomSize
@@ -752,17 +802,17 @@ layerToEntities model viewport index layerDef =
                         layerToEntities model viewport index
                             { layerDef
                             | layer = WebGLLayer (FssLayer serialized mesh) blend
-                            , model = fssModel1
+                            , model = FssModel fssModel1
                             } ++
                         layerToEntities model viewport index
                             { layerDef
                             | layer = WebGLLayer (FssLayer serialized mesh) blend
-                            , model = fssModel2
+                            , model = FssModel fssModel2
                             }
-                VignetteLayer ->
+                ( VignetteLayer, _ ) ->
                     [ Vignette.makeEntity
                         viewport
-                        model.vignette
+                        Vignette.init
                         [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                     ]
         _ -> []
@@ -848,31 +898,29 @@ port rotate : (Float -> msg) -> Sub msg
 
 port initLayers : (Array String -> msg) -> Sub msg
 
-port configureLorenz : ((Lorenz.Model, Int) -> msg) -> Sub msg
+port configureLorenz : ((Lorenz.Model, LayerIndex) -> msg) -> Sub msg
 
-port configureFss : ((FSS.PortModel, Int) -> msg) -> Sub msg
+port configureFss : ((FSS.PortModel, LayerIndex) -> msg) -> Sub msg
 
-port configureMirroredFss : ((FSS.PortModel, Int) -> msg) -> Sub msg
+port configureMirroredFss : ((FSS.PortModel, LayerIndex) -> msg) -> Sub msg
 
 port changeProduct : (String -> msg) -> Sub msg
 
-port rebuildFss : ((FSS.SerializedScene, Int) -> msg) -> Sub msg
+port rebuildFss : ((FSS.SerializedScene, LayerIndex) -> msg) -> Sub msg
 
-port turnOn : (Int -> msg) -> Sub msg
+port turnOn : (LayerIndex -> msg) -> Sub msg
 
-port turnOff : (Int -> msg) -> Sub msg
+port turnOff : (LayerIndex -> msg) -> Sub msg
 
 port import_ : (String -> msg) -> Sub msg
 
-port changeFacesX : (Int -> msg) -> Sub msg
+port changeFaces : ((( Int, Int ), LayerIndex) -> msg) -> Sub msg
 
-port changeFacesY : (Int -> msg) -> Sub msg
+port changeLightSpeed : ((Int, LayerIndex) -> msg) -> Sub msg
 
-port changeLightSpeed : (Int -> msg) -> Sub msg
+port changeVignette : ((Float, LayerIndex) -> msg) -> Sub msg
 
-port changeVignette : (Float -> msg) -> Sub msg
-
-port changeAmplitude : (FSS.AmplitudeChange -> msg) -> Sub msg
+port changeAmplitude : ((FSS.AmplitudeChange, LayerIndex) -> msg) -> Sub msg
 
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
@@ -893,7 +941,7 @@ port changeSVGBlend :
 
 port startGui : GuiConfig -> Cmd msg
 
-port requestFssRebuild : FssBuildOptions -> Cmd msg
+port requestFssRebuild : ( LayerIndex, FssBuildOptions ) -> Cmd msg
 
 port export_ : String -> Cmd msg
 
