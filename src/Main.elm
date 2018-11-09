@@ -66,9 +66,6 @@ type Msg
     | NoOp
 
 
-type alias FssBuildOptions = GuiConfig
-
-
 sizeCoef : Float
 sizeCoef = 1.0
 
@@ -204,8 +201,9 @@ update msg model =
             ( model |> updateLayer index
                 (\layer layerModel ->
                     case layer of
-                        WebGLLayer webglLayer _ ->
-                            case ( webglLayer, layerModel ) of
+                        WebGLLayer webglLayer webglBlend ->
+                            WebGLLayer
+                            (case ( webglLayer, layerModel ) of
                                 ( LorenzLayer _, LorenzModel lorenzModel ) ->
                                     LorenzLayer (lorenzModel |> Lorenz.build)
                                 ( FractalLayer _, FractalModel fractalModel ) ->
@@ -224,7 +222,8 @@ update msg model =
                                         MirroredFssLayer maybeScene newMesh
                                 ( TemplateLayer _, TemplateModel templateModel ) ->
                                     TemplateLayer (templateModel |> Template.build)
-                                _ -> layer
+                                _ -> webglLayer)
+                            webglBlend
                         _ -> layer)
             , Cmd.none
             )
@@ -395,12 +394,12 @@ updateAndRebuildFssWith index model =
 getBlendForPort : Layer -> PortBlend
 getBlendForPort layer =
     ( case layer of
-        Either.Left ( _, webglBlend ) -> Just webglBlend
-        Either.Right _ -> Nothing
+        WebGLLayer _ webglBlend -> Just webglBlend
+        _ -> Nothing
     , case layer of
-        Either.Right ( _, svgBlend ) ->
+        SVGLayer _ svgBlend ->
             SVGBlend.encode svgBlend |> Just
-        Either.Left _ -> Nothing
+        _ -> Nothing
     )
 
 
@@ -489,30 +488,27 @@ createLayer kind layerModel =
 
 
 prepareGuiConfig : Model -> GuiConfig
-prepareGuiConfig ({ fss } as model) =
-    let
-        ( amplitudeX, amplitudeY, amplitudeZ ) = fss.amplitude
-    in
-        { product = Product.encode model.product
-        , palette = Product.getPalette model.product
-        , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
-                 , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
-                 )
-        , layers =
-            model.layers |>
-                List.map (\{ kind, layer, on } ->
-                    { kind = encodeLayerKind kind
-                    , blend = getBlendForPort layer
-                    , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
-                    , on = on
-                    })
-        , facesX = Tuple.first model.fss.faces
-        , facesY = Tuple.second model.fss.faces
-        , amplitude = ( Just amplitudeX, Just amplitudeY, Just amplitudeZ )
-        , lightSpeed = model.fss.lightSpeed
-        , vignette = model.vignette.opacity
-        , customSize = Nothing
-        }
+prepareGuiConfig model =
+    { product = Product.encode model.product
+    , palette = Product.getPalette model.product
+    , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
+                , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
+                )
+    , layers =
+        model.layers |>
+            List.map (\{ kind, layer, on } ->
+                { kind = encodeLayerKind kind
+                , blend = getBlendForPort layer
+                , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
+                , on = on
+                })
+    -- , facesX = Tuple.first model.fss.faces
+    -- , facesY = Tuple.second model.fss.faces
+    -- , amplitude = ( Just amplitudeX, Just amplitudeY, Just amplitudeZ )
+    -- , lightSpeed = model.fss.lightSpeed
+    -- , vignette = model.vignette.opacity
+    , customSize = Nothing
+    }
 
 
 timeShiftRange : Float
@@ -944,7 +940,7 @@ port changeSVGBlend :
 
 port startGui : GuiConfig -> Cmd msg
 
-port requestFssRebuild : ( LayerIndex, FssBuildOptions ) -> Cmd msg
+port requestFssRebuild : ( LayerIndex, PortFSS ) -> Cmd msg
 
 port export_ : String -> Cmd msg
 

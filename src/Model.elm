@@ -2,6 +2,7 @@ module Model exposing
     ( init
     , Model
     , Layer
+    , emptyLayer
     , LayerIndex
     , LayerDef
     , LayerModel(..)
@@ -14,7 +15,8 @@ module Model exposing
     , Size
     , Pos
     , PortBlend
-    , emptyLayer
+    , PortFSS
+    , PortVignette
     )
 
 import Time exposing (Time)
@@ -135,11 +137,11 @@ type alias GuiConfig =
         , on: Bool
         }
     , size : ( Int, Int )
-    , facesX : Int
-    , facesY : Int
-    , lightSpeed: Int
-    , vignette: Float
-    , amplitude : FSS.AmplitudeChange
+    -- , facesX : Int
+    -- , facesY : Int
+    -- , lightSpeed: Int
+    -- , vignette: Float
+    -- , amplitude : FSS.AmplitudeChange
     , customSize : Maybe (Int, Int)
     }
 
@@ -173,3 +175,14 @@ init initialLayers createLayer
 emptyLayer : Layer
 emptyLayer =
     SVGLayer NoContent SVGBlend.default
+
+
+type alias PortFSS =
+    { faces : ( Int, Int )
+    , lightSpeed: Int
+    , amplitude : FSS.AmplitudeChange
+    , palette : ( String, String, String )
+    }
+
+
+type alias PortVignette = Float
