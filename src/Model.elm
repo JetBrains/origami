@@ -38,7 +38,7 @@ type alias LayerIndex = Int
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
-type alias CreateLayer = LayerKind -> Layer
+type alias CreateLayer = LayerKind -> LayerModel -> Layer
 
 type LayerKind
     = Lorenz
@@ -158,7 +158,7 @@ init initialLayers createLayer
       , layers = initialLayers |> List.map
             (\(kind, layerModel) ->
                 { kind = kind
-                , layer = createLayer kind
+                , layer = layerModel |> createLayer kind
                 , model = layerModel
                 , on = True
                 })
@@ -180,8 +180,8 @@ emptyLayer =
 type alias PortFSS =
     { faces : ( Int, Int )
     , lightSpeed: Int
-    , amplitude : FSS.AmplitudeChange
-    , palette : ( String, String, String )
+    , amplitude : FSS.Amplitude
+    , palette : Product.Palette
     }
 
 
