@@ -294,6 +294,7 @@ update msg model =
                                         WebGLLayer
                                         (FssLayer maybeScene newMesh)
                                         webglBlend
+                                _ -> layer
                         _ -> layer
                 )
             , Cmd.none
@@ -349,14 +350,14 @@ getLayerModel index model =
     -- TODO:
     Nothing
 
+
 -- TODO remove
 updateAndRebuildFssWith : LayerIndex -> Model -> ( Model, Cmd Msg )
 updateAndRebuildFssWith index model =
     ( model
     , case model |> getLayerModel index of
         Just (FssModel fssModel) ->
-            -- TODO: include product/palette into build
-            requestFssRebuild ( index, fssModel )
+            requestFssRebuild ( index, IE.encodeFss fssModel model.product )
         _ -> Cmd.none
     )
 
@@ -615,9 +616,9 @@ subscriptions model =
           )
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
-        , changeFaces ChangeFaces
-        , changeLightSpeed ChangeLightSpeed
-        , changeAmplitude ChangeAmplitude
+        , changeFaces (\(vals, index) -> ChangeFaces index vals)
+        , changeLightSpeed (\(value, index) -> ChangeLightSpeed index value)
+        , changeAmplitude (\(change, index) -> ChangeAmplitude index change)
         , setCustomSize
             (\(w, h) ->
                 let
@@ -814,6 +815,7 @@ layerToEntities model viewport index layerDef =
                         Vignette.init
                         [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                     ]
+                _ -> []
         _ -> []
 
 

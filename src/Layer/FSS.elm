@@ -577,7 +577,7 @@ vertexShader =
         uniform vec3 uSegment;
         uniform bool paused;
         uniform float uNow;
-        uniform int uLayerIndex;        
+        uniform int uLayerIndex;
 
         uniform mat4 uLightPosition;
         uniform mat4 uLightAmbient;
