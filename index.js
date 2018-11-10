@@ -182,13 +182,13 @@ setTimeout(function() { // FIXME: change to document.ready
         const gui = startGui(
             model.layers,
             model,
-            { changeLightSpeed : (value) =>
+            { changeLightSpeed : index => value =>
                 { app.ports.changeLightSpeed.send(Math.round(value)) }
-            , changeFacesX : (value) =>
-                { app.ports.changeFacesX.send(Math.round(value)) }
-            , changeVignette : (value) =>
+            , changeVignette : index => value =>
                 { app.ports.changeVignette.send(Math.round(value)) }
-            , changeFacesY : (value) =>
+            , changeFacesX : index => value =>
+                { app.ports.changeFacesX.send(Math.round(value)) }
+            , changeFacesY : index => value =>
                 { app.ports.changeFacesY.send(Math.round(value)) }
             , changeWGLBlend : (index, blend) =>
                 { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
@@ -218,7 +218,7 @@ setTimeout(function() { // FIXME: change to document.ready
                     });
                 });
             }
-            , changeAmplitude : (x, y, z) => {
+            , changeAmplitude : index => (x, y, z) => {
                 app.ports.changeAmplitude.send([ x, y, z ]);
             }
             , turnOn : index =>
