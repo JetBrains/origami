@@ -142,15 +142,13 @@ PREDEFINED_SIZES =
   , '480x360': [ 480, 360 ]
   };
 
+const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
 const Config = function(layers, defaults, funcs) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
 
-    this.lightSpeed = defaults.fss.lightSpeed;
-    this.facesX = defaults.fss.faces[0];
-    this.facesY = defaults.fss.faces[1];
     this.product = defaults.product;
 
     const funcKeys = Object.keys(BLEND_FUNCS);
@@ -179,13 +177,20 @@ const Config = function(layers, defaults, funcs) {
         this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
       this['visible' + index] = true;
+
+      if (isFss(layer)) {
+        this['lightSpeed' + index] = defaults.fss.lightSpeed;
+        this['facesX' + index] = defaults.fss.faces[0];
+        this['facesY' + index] = defaults.fss.faces[1];
+        this['vignette' + index] = defaults.vignette.opacity;
+        this['amplitudeX' + index] = defaults.fss.amplitude[0];
+        this['amplitudeY' + index] = defaults.fss.amplitude[1];
+        this['amplitudeZ' + index] = defaults.fss.amplitude[2];
+      }
     });
 
-    this.vignette = defaults.vignette.opacity;
     this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
-    this.amplitudeX = defaults.fss.amplitude[0];
-    this.amplitudeY = defaults.fss.amplitude[1];
-    this.amplitudeZ = defaults.fss.amplitude[2];
+
     this.savePng = funcs.savePng;
     // -------
     //this.timeShift = 0;
@@ -226,13 +231,14 @@ function start(layers, defaults, funcs) {
     }
 
     function addWebGLBlend(folder, config, layer, index) {
-      const color = folder.addColor(config, 'blendColor' + index);
-      const colorEqFn = folder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
-      const colorEqFactor0 = folder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
-      const colorEqFactor1 = folder.add(config, 'blendColorEqFactor1' + index, BLEND_FACTORS);
-      const alphaEqFn = folder.add(config, 'blendAlphaEqFn' + index, BLEND_FUNCS);
-      const alphaEqFactor0 = folder.add(config, 'blendAlphaEqFactor0' + index, BLEND_FACTORS);
-      const alphaEqFactor1 = folder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
+      const blendFolder = folder.addFolder('blend');
+      const color = blendFolder.addColor(config, 'blendColor' + index);
+      const colorEqFn = blendFolder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
+      const colorEqFactor0 = blendFolder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
+      const colorEqFactor1 = blendFolder.add(config, 'blendColorEqFactor1' + index, BLEND_FACTORS);
+      const alphaEqFn = blendFolder.add(config, 'blendAlphaEqFn' + index, BLEND_FUNCS);
+      const alphaEqFactor0 = blendFolder.add(config, 'blendAlphaEqFactor0' + index, BLEND_FACTORS);
+      const alphaEqFactor1 = blendFolder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
       //folder.open();
 
       color.onFinishChange(updateWebGLBlend(index, (blend, value) => {
@@ -266,53 +272,61 @@ function start(layers, defaults, funcs) {
     }
 
     function addSVGBlend(folder, config, layer, index) {
-      const blendControl = folder.add(config, 'layer' + index + 'Blend', SVG_BLENDS);
+      const blendControl = folder.add(config, 'layer' + index + 'Blend', SVG_BLENDS).name('blend');
       blendControl.onFinishChange((value) => {
         funcs.changeSVGBlend(index, value);
       });
     }
 
+    function addLayerProps(folder, config, layer, index) {
+      if (isFss(layer)) {
+        const lightSpeed = folder.add(config, 'lightSpeed' + index).name('agile')
+                                 .min(100).max(1140);
+        const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
+        const facesY = folder.add(config, 'facesY' + index).name('row').min(1).max(100).step(1);
+        const vignette = folder.add(config, 'vignette' + index).name('vignette').min(0.0).max(1.0);
+        const amplitudeFolder = folder.addFolder('amplitude');
+        const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).min(0.0).max(1.0);
+        const amplitudeY = amplitudeFolder.add(config, 'amplitudeY' + index).min(0.0).max(1.0);
+        const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).min(0.0).max(1.0);
+
+        lightSpeed.onFinishChange(funcs.changeLightSpeed(index));
+        facesX.onFinishChange(funcs.changeFacesX(index));
+        facesY.onFinishChange(funcs.changeFacesY(index));
+        vignette.onFinishChange(funcs.changeVignette(index));
+        amplitudeX.onFinishChange(value => {
+          funcs.changeAmplitude(index)(value, null, null);
+        });
+        amplitudeY.onFinishChange(value => {
+          funcs.changeAmplitude(index)(null, value, null);
+        });
+        amplitudeZ.onFinishChange(value => {
+          funcs.changeAmplitude(index)(null, null, value);
+        });
+      }
+    }
 
     const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
     gui.remember(config);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
-    const lightSpeed = gui.add(config, 'lightSpeed').name('agile').min(100).max(1140);
-    const facesX = gui.add(config, 'facesX').name('col').min(1).max(100).step(1);
-    const facesY = gui.add(config, 'facesY').name('row').min(1).max(100).step(1);
-    const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     const savePng = gui.add(config, 'savePng').name('save png');
-    const amplitudeFolder = gui.addFolder('amplitude');
-    const amplitudeX = amplitudeFolder.add(config, 'amplitudeX').min(0.0).max(1.0);
-    const amplitudeY = amplitudeFolder.add(config, 'amplitudeY').min(0.0).max(1.0);
-    const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ').min(0.0).max(1.0);
-
-    lightSpeed.onFinishChange(funcs.changeLightSpeed);
-    facesX.onFinishChange(funcs.changeFacesX);
-    facesY.onFinishChange(funcs.changeFacesY);
     product.onFinishChange(funcs.changeProduct);
-    vignette.onFinishChange(funcs.changeVignette);
     customSize.onFinishChange(funcs.setCustomSize);
-    amplitudeX.onFinishChange(value => {
-      funcs.changeAmplitude(value, null, null);
-    });
-    amplitudeY.onFinishChange(value => {
-      funcs.changeAmplitude(null, value, null);
-    });
-    amplitudeZ.onFinishChange(value => {
-      funcs.changeAmplitude(null, null, value);
-    });
 
     layers.forEach((layer, index) => {
       const folder = gui.addFolder('Layer ' + index + ' (' + layer.kind + ')');
+
+      const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
+      visibitySwitch.onFinishChange(val => switchLayer(index, val));
+
       if (layer.webglOrSvg == 'webgl') {
         addWebGLBlend(folder, config, layer, index);
       } else {
         addSVGBlend(folder, config, layer, index);
       }
-      const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
-      visibitySwitch.onFinishChange(val => switchLayer(index, val));
+      addLayerProps(folder, config, layer, index);
     });
 
 
