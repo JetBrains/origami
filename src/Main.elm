@@ -1,7 +1,6 @@
 port module Main exposing (main)
 
 import Array exposing (Array)
-import Either
 import AnimationFrame
 import Time exposing (Time)
 import Window
@@ -91,7 +90,7 @@ initialLayers =
             , shareMesh = True
             } |> FssModel
       )
-    -- , ( Vignette, identity )
+    -- , ( Vignette, Vignette.init )
     , ( Text, NoModel )
     , ( SvgImage, NoModel )
     ]
@@ -195,7 +194,7 @@ update msg model =
 
         ChangeProduct product ->
             { model | product = product }
-            |> updateAndRebuildFssWith 0 -- FIXME: do that for every FSS layer
+            |> rebuildAllFssLayersWith -- FIXME: do that for every FSS layer
 
         Configure index layerModel ->
             ( model |> updateLayer index
@@ -222,6 +221,8 @@ update msg model =
                                         MirroredFssLayer maybeScene newMesh
                                 ( TemplateLayer _, TemplateModel templateModel ) ->
                                     TemplateLayer (templateModel |> Template.build)
+                                ( VignetteLayer, VignetteModel vignetteModel ) ->
+                                    VignetteLayer
                                 _ -> webglLayer)
                             webglBlend
                         _ -> layer)
@@ -242,35 +243,15 @@ update msg model =
             , Cmd.none
             )
 
-        ChangeFaces index ( facesX, facesY ) ->
+        ChangeFaces index faces ->
             model
-                |> updateLayerWithItsModel
-                    index
-                    (\(layer, model) ->
-                        -- TODO:
-                        (layer, model)
-                    )
                 |> updateAndRebuildFssWith index
-
-            -- updateAndRebuildFssWith
-            --     { model | fss =
-            --         { fss | faces = fss.faces |> Tuple.mapFirst (\_ -> facesX) }
-            --     }
+                    (\fssModel -> { fssModel | faces = faces })
 
         ChangeLightSpeed index lightSpeed ->
             model
-                |> updateLayerWithItsModel
-                    index
-                    (\(layer, model) ->
-                        -- TODO:
-                        (layer, model)
-                    )
                 |> updateAndRebuildFssWith index
-
-            -- updateAndRebuildFssWith
-            --     { model | fss =
-            --         { fss | lightSpeed = lightSpeed }
-            --     }
+                    (\fssModel -> { fssModel | lightSpeed = lightSpeed })
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
@@ -301,46 +282,36 @@ update msg model =
             )
 
         ChangeVignette index opacity ->
+            -- model
+            --     |> updateAndRebuildFssWith index
+            --         (\fssModel -> { fssModel | vignette = vignette })
             ( model
                 |> updateLayerWithItsModel
                     index
                     (\(layer, model) ->
-                        -- TODO:
-                        (layer, model)
+                        case ( layer, model ) of
+                            ( WebGLLayer VignetteLayer _, VignetteModel vignetteModel ) ->
+                                (layer, { vignetteModel | opacity = opacity } |> VignetteModel)
+                            _ -> (layer, model)
                     )
             , Cmd.none
             )
 
-
-            -- ( { model | vignette =
-            --     { vignette | opacity = opacity }
-            -- }
-            -- , Cmd.none
-            -- )
-
         ChangeAmplitude index ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
-            model |> updateLayerWithItsModel
-                index
-                (\(layer, model) ->
-                    -- TODO:
-                    (layer, model)
-                )
+            model
                 |> updateAndRebuildFssWith index
-
-            -- let
-            --     ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ )
-            --         = fss.amplitude
-            -- in
-            --     ( { model | fss =
-            --         { fss | amplitude =
-            --             ( Maybe.withDefault currentAmplitudeX newAmplitudeX
-            --             , Maybe.withDefault currentAmplitudeY newAmplitudeY
-            --             , Maybe.withDefault currentAmplitudeZ newAmplitudeZ
-            --             )
-            --         }
-            --       }
-            --     , Cmd.none
-            --     )
+                    (\fss ->
+                        let
+                            ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ )
+                                = fss.amplitude
+                        in
+                            { fss | amplitude =
+                                ( Maybe.withDefault currentAmplitudeX newAmplitudeX
+                                , Maybe.withDefault currentAmplitudeY newAmplitudeY
+                                , Maybe.withDefault currentAmplitudeZ newAmplitudeZ
+                                )
+                            }
+                    )
 
         NoOp -> ( model, Cmd.none )
 
@@ -352,14 +323,45 @@ getLayerModel index model =
 
 
 -- TODO remove
-updateAndRebuildFssWith : LayerIndex -> Model -> ( Model, Cmd Msg )
-updateAndRebuildFssWith index model =
-    ( model
-    , case model |> getLayerModel index of
-        Just (FssModel fssModel) ->
+updateAndRebuildFssWith : LayerIndex -> (FSS.Model -> FSS.Model) -> Model -> ( Model, Cmd Msg )
+updateAndRebuildFssWith index f curModel =
+    let
+        newModel =
+            curModel |> updateLayerWithItsModel
+                index
+                (\(layer, model) ->
+                    ( layer
+                    , case model of
+                        FssModel fssModel ->
+                            f fssModel |> FssModel
+                        _ -> model
+                    )
+                )
+    in
+        ( newModel
+        , case newModel |> getLayerModel index of
+            Just (FssModel fssModel) ->
+                requestFssRebuild ( index, IE.encodeFss fssModel newModel.product )
+            _ -> Cmd.none
+        )
+
+
+rebuildAllFssLayersWith : Model -> ( Model, Cmd Msg )
+rebuildAllFssLayersWith model =
+    let
+        isLayerFss layerDef =
+            case layerDef.model of
+                FssModel fssModel -> Just fssModel
+                _ -> Nothing
+        rebuildPotentialFss index fssModel =
             requestFssRebuild ( index, IE.encodeFss fssModel model.product )
-        _ -> Cmd.none
-    )
+
+    in
+        ( model
+        , List.filterMap isLayerFss model.layers
+          |> List.indexedMap rebuildPotentialFss
+          |> Cmd.batch
+        )
 
 
 -- getLayerKind : Layer -> LayerKind
