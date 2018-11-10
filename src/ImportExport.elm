@@ -2,6 +2,7 @@ module ImportExport exposing
     ( encodeModel
     , decodeModel
     , EncodedState
+    , encodeFss
     )
 
 import Json.Decode as D exposing (bool, int, string, float, Decoder, Value)
@@ -10,6 +11,9 @@ import Json.Encode as E exposing (encode, Value, string, int, float, bool, list,
 
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
+
+import Layer.FSS as FSS
+import Product exposing (..)
 
 import Model as M
 
@@ -228,3 +232,12 @@ decodeModel createLayer modelStr =
     D.decodeString (modelDecoder createLayer) modelStr
         |> Debug.log "Decode Result: "
         |> Result.toMaybe
+
+
+encodeFss : FSS.Model -> Product -> M.PortFSS
+encodeFss m product =
+    { amplitude = m.amplitude
+    , faces = m.faces
+    , lightSpeed = m.lightSpeed
+    , palette = product |> getPalette
+    }
