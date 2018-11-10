@@ -318,8 +318,10 @@ update msg model =
 
 getLayerModel : LayerIndex -> Model -> Maybe LayerModel
 getLayerModel index model =
-    -- TODO:
-    Nothing
+    model.layers
+        |> Array.fromList
+        |> Array.get index
+        |> Maybe.map .model
 
 
 -- TODO remove
@@ -362,36 +364,6 @@ rebuildAllFssLayersWith model =
           |> List.indexedMap rebuildPotentialFss
           |> Cmd.batch
         )
-
-
--- getLayerKind : Layer -> LayerKind
--- getLayerKind layer =
---     case layer of
---         FssLayer _ _ -> Fss
---         MirroredFssLayer _ _ -> MirroredFss
---         LorenzLayer _ -> Lorenz
---         FractalLayer _ -> Fractal
---         VoronoiLayer _ -> Voronoi
---         TemplateLayer _ -> Template
---         TextLayer -> Text
---         SvgImageLayer -> SvgImage
---         VignetteLayer -> Vignette
---         _ -> Text -- FIXME: Empty Kind or Nothing
-
-
--- getBlendString : Layer -> String
--- getBlendString layer =
---     case layer of
---         FssLayer blend _ _ -> WGLBlend.encodeOne blend
---         MirroredFssLayer blend _ _ -> WGLBlend.encodeOne blend
---         LorenzLayer blend _ -> WGLBlend.encodeOne blend
---         FractalLayer blend _ -> WGLBlend.encodeOne blend
---         VoronoiLayer blend _ -> WGLBlend.encodeOne blend
---         TemplateLayer blend _ -> WGLBlend.encodeOne blend
---         VignetteLayer blend -> WGLBlend.encodeOne blend
---         TextLayer blend -> SVGBlend.encode blend
---         SvgImageLayer blend -> SVGBlend.encode blend
---         _ -> SVGBlend.encode SVGBlend.default
 
 
 getBlendForPort : Layer -> PortBlend
@@ -490,13 +462,13 @@ createLayer kind layerModel =
 -- extractFssBuildOptions = prepareGuiConfig
 
 
-prepareGuiConfig : Model -> GuiConfig
+prepareGuiConfig : Model -> GuiDefaults
 prepareGuiConfig model =
     { product = Product.encode model.product
     , palette = Product.getPalette model.product
     , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
-                , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
-                )
+             , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
+             )
     , layers =
         model.layers |>
             List.map (\{ kind, layer, on } ->
@@ -505,11 +477,8 @@ prepareGuiConfig model =
                 , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
                 , on = on
                 })
-    -- , facesX = Tuple.first model.fss.faces
-    -- , facesY = Tuple.second model.fss.faces
-    -- , amplitude = ( Just amplitudeX, Just amplitudeY, Just amplitudeZ )
-    -- , lightSpeed = model.fss.lightSpeed
-    -- , vignette = model.vignette.opacity
+    , fss = IE.encodeFss FSS.init model.product
+    , vignette = Vignette.init
     , customSize = Nothing
     }
 
@@ -942,7 +911,7 @@ port changeSVGBlend :
 
 -- OUTGOING PORTS
 
-port startGui : GuiConfig -> Cmd msg
+port startGui : GuiDefaults -> Cmd msg
 
 port requestFssRebuild : ( LayerIndex, PortFSS ) -> Cmd msg
 

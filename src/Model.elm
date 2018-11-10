@@ -11,7 +11,7 @@ module Model exposing
     , WebGLLayer_(..)
     , SVGLayer_(..)
     , CreateLayer
-    , GuiConfig
+    , GuiDefaults
     , Size
     , Pos
     , PortBlend
@@ -127,7 +127,7 @@ type alias Model =
     }
 
 
-type alias GuiConfig =
+type alias GuiDefaults =
     { product : String
     , palette : List String
     , layers : List
@@ -143,6 +143,8 @@ type alias GuiConfig =
     -- , vignette: Float
     -- , amplitude : FSS.AmplitudeChange
     , customSize : Maybe (Int, Int)
+    , fss : PortFSS
+    , vignette : PortVignette
     }
 
 
@@ -185,4 +187,4 @@ type alias PortFSS =
     }
 
 
-type alias PortVignette = Float
+type alias PortVignette = Vignette.Model
