@@ -148,9 +148,9 @@ const Config = function(layers, defaults, funcs) {
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
 
-    this.lightSpeed = defaults.lightSpeed;
-    this.facesX = defaults.facesX;
-    this.facesY = defaults.facesY;
+    this.lightSpeed = defaults.fss.lightSpeed;
+    this.facesX = defaults.fss.faces[0];
+    this.facesY = defaults.fss.faces[1];
     this.product = defaults.product;
 
     const funcKeys = Object.keys(BLEND_FUNCS);
@@ -181,11 +181,11 @@ const Config = function(layers, defaults, funcs) {
       this['visible' + index] = true;
     });
 
-    this.vignette = defaults.vignette;
+    this.vignette = defaults.vignette.opacity;
     this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
-    this.amplitudeX = defaults.amplitude[0];
-    this.amplitudeY = defaults.amplitude[1];
-    this.amplitudeZ = defaults.amplitude[2];
+    this.amplitudeX = defaults.fss.amplitude[0];
+    this.amplitudeY = defaults.fss.amplitude[1];
+    this.amplitudeZ = defaults.fss.amplitude[2];
     this.savePng = funcs.savePng;
     // -------
     //this.timeShift = 0;
