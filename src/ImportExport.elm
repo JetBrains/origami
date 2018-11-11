@@ -2,6 +2,7 @@ module ImportExport exposing
     ( encodeModel
     , decodeModel
     , EncodedState
+    , encodePortModel
     , encodeFss
     )
 
@@ -92,6 +93,36 @@ encodeModel_ model =
 
 encodeModel : M.Model -> EncodedState
 encodeModel model = model |> encodeModel_ |> E.encode 2
+
+
+encodePortModel : M.Model -> M.PortModel
+encodePortModel model =
+    { now = model.now
+    , theta = model.theta
+    , layers = List.map encodePortLayer model.layers
+    , size = model.size
+    , origin = model.origin
+    , mouse = model.mouse
+    , palette = model.product |> getPalette
+    , product = model.product |> Product.encode
+    }
+
+
+encodePortLayer : M.LayerDef -> M.PortLayerDef
+encodePortLayer layerDef =
+    { kind = encodeKind layerDef.kind |> E.encode 0
+    , on = layerDef.on
+    , webglOrSvg =
+        case layerDef.layer of
+            M.WebGLLayer _ _ -> "webgl"
+            M.SVGLayer _ _ -> "svg"
+    , blend =
+        case layerDef.layer of
+            M.WebGLLayer _ webglBlend ->
+                ( Just webglBlend, Nothing )
+            M.SVGLayer _ svgBlend ->
+                ( Nothing, SVGBlend.encode svgBlend |> Just )
+    }
 
 
 decodeKind : String -> M.LayerKind
@@ -239,5 +270,5 @@ encodeFss m product =
     { amplitude = m.amplitude
     , faces = m.faces
     , lightSpeed = m.lightSpeed
-    , palette = product |> getPalette
+    --, palette = product |> getPalette
     }

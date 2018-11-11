@@ -14,6 +14,8 @@ module Model exposing
     , GuiDefaults
     , Size
     , Pos
+    , PortModel
+    , PortLayerDef
     , PortBlend
     , PortFSS
     , PortVignette
@@ -127,15 +129,30 @@ type alias Model =
     }
 
 
+type alias PortModel =
+    { layers : List PortLayerDef
+    , mouse : ( Int, Int )
+    , now : Time.Time
+    , origin : Pos
+    , size : Size
+    , theta : Float
+    , product : String
+    , palette : Product.Palette
+    }
+
+
+type alias PortLayerDef =
+    { kind: String
+    , blend : PortBlend
+    , webglOrSvg: String
+    , on: Bool
+    }
+
+
 type alias GuiDefaults =
     { product : String
     , palette : List String
-    , layers : List
-        { kind: String
-        , blend : PortBlend
-        , webglOrSvg: String
-        , on: Bool
-        }
+    , layers : List PortLayerDef
     , size : ( Int, Int )
     -- , facesX : Int
     -- , facesY : Int
@@ -183,7 +200,6 @@ type alias PortFSS =
     { faces : ( Int, Int )
     , lightSpeed: Int
     , amplitude : FSS.Amplitude
-    , palette : Product.Palette
     }
 
 

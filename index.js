@@ -71,7 +71,7 @@ const import_ = (app, importedState) => {
     }));
     parsedState.layers.forEach((layer, index) => {
         if (isFss(layer)) {
-            const scene = buildFSS(layer.config, layer.sceneFuzz);
+            const scene = buildFSS(model, layer.config, layer.sceneFuzz);
             scenes[index] = scene;
             app.ports.configureFss.send([ layer.config, index ]);
             app.ports.rebuildFss.send([ scene, index ]);
@@ -94,7 +94,7 @@ const export_ = (app, exportedState) => {
             console.log(index, 'no lights');
         }
         layer.sceneFuzz = isFss(layer)
-            ? exportScene(fssScenes[index]) || exportScene(buildFSS(layer.config))
+            ? exportScene(fssScenes[index]) || exportScene(buildFSS(model, layer.config))
             : null;
     })
     console.log(stateObj);
@@ -230,20 +230,20 @@ setTimeout(function() { // FIXME: change to document.ready
         model.layers.forEach((layer, index) => {
             if (isFss(layer)) {
                 console.log('rebuild FSS layer', index);
-                const fssScene = buildFSS(model);
+                const fssScene = buildFSS(model, model.fss);
                 app.ports.rebuildFss.send([ fssScene, index ]);
             }
         });
 
-        app.ports.requestFssRebuild.subscribe((model) => {
-            model.layers.map((layer, index) => {
-                if (isFss(layer)) {
-                    console.log('forced to rebuild FSS layer', index);
-                    const fssScene = buildFSS(model);
-                    fssScenes[index] = fssScene;
-                    app.ports.rebuildFss.send([ fssScene, index ]);
-                }
-            });
+        app.ports.requestFssRebuild.subscribe(([index, model, fssModel]) => {
+            const layer = model.layers[index];
+            if (isFss(layer)) {
+                console.log('forced to rebuild FSS layer', index);
+                const fssScene = buildFSS(model, fssModel);
+                fssScenes[index] = fssScene;
+                app.ports.rebuildFss.send([ fssScene, index ]);
+                layer.scene = fssScene;
+            }
         });
     });
 

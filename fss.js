@@ -17,22 +17,22 @@ require('flat-surface-shader/source/Scene');
 require('flat-surface-shader/source/Math');
 //}
 
-function buildFSS(model, source) {
+function buildFSS(model, fss, source) {
     var palette = model.palette;
 
     var scene = new FSS.Scene();
 
     var geometry = new FSS.Plane(model.size[0], model.size[1],
-                                 model.facesX, model.facesY);
+                                 fss.facesX, fss.facesY);
     //var material = new FSS.Material('#00ffff', '#ffff00');
     var material = new FSS.Material(palette[0], palette[1]);
     var mesh = new FSS.Mesh(geometry, material);
 
     var light1 = new FSS.Light(palette[0], palette[1]);
     var light2 = new FSS.Light(palette[1], palette[2]);
-    
-    light1.speed = model.lightSpeed;
-    light2.speed = model.lightSpeed;
+
+    light1.speed = fss.lightSpeed;
+    light2.speed = fss.lightSpeed;
 
     function initialise() {
         scene.add(mesh);
