@@ -343,7 +343,11 @@ updateAndRebuildFssWith index f curModel =
         ( newModel
         , case newModel |> getLayerModel index of
             Just (FssModel fssModel) ->
-                requestFssRebuild ( index, IE.encodeFss fssModel newModel.product )
+                requestFssRebuild
+                    ( index
+                    , IE.encodePortModel newModel
+                    , IE.encodeFss fssModel newModel.product
+                    )
             _ -> Cmd.none
         )
 
@@ -355,8 +359,13 @@ rebuildAllFssLayersWith model =
             case layerDef.model of
                 FssModel fssModel -> Just fssModel
                 _ -> Nothing
+        encodedModel = IE.encodePortModel model
         rebuildPotentialFss index fssModel =
-            requestFssRebuild ( index, IE.encodeFss fssModel model.product )
+            requestFssRebuild
+                ( index
+                , encodedModel
+                , IE.encodeFss fssModel model.product
+                )
 
     in
         ( model
@@ -913,7 +922,7 @@ port changeSVGBlend :
 
 port startGui : GuiDefaults -> Cmd msg
 
-port requestFssRebuild : ( LayerIndex, PortFSS ) -> Cmd msg
+port requestFssRebuild : ( LayerIndex, PortModel, PortFSS ) -> Cmd msg
 
 port export_ : String -> Cmd msg
 
