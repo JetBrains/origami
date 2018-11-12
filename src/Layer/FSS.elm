@@ -9,6 +9,7 @@ module Layer.FSS exposing
     , build
     , emptyMesh
     , defaultMirror
+    , noClip
     -- , defaultAmplitude
     -- , defaultFaces
     -- , defaultLightSpeed
@@ -161,6 +162,10 @@ defaultFaces = ( 17, 17 )
 defaultLightSpeed : Int
 -- defaultLightSpeed = 600
 defaultLightSpeed = 1000
+
+
+noClip : Clip
+noClip = ( -1, -1 )
 
 
 init : Model
@@ -396,7 +401,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         -- height = Tuple.second size |> toFloat
         depth = 100.0
         mirror = if model.mirror then 1.0 else 0.0
-        clip =  model.clip |> Maybe.withDefault ( -1, -1 )
+        clip =  model.clip |> Maybe.withDefault noClip
         ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
