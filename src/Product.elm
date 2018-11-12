@@ -115,7 +115,7 @@ decode : String -> Product
 decode id =
     case id of
         "jetbrains" -> JetBrains
-        "Mono" -> Mono
+        "mono" -> Mono
         "intellij-idea" -> IntelliJ
         "phpstorm" -> PhpStorm
         "pycharm" -> PyCharm
