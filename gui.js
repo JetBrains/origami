@@ -326,8 +326,10 @@ function start(document, layers, defaults, funcs) {
     product.onFinishChange(funcs.changeProduct);
     customSize.onFinishChange(funcs.setCustomSize);
 
-    layers.forEach((layer, index) => {
-      const folder = gui.addFolder('Layer ' + index + ' (' + layer.kind + ')');
+    layers.reverse().forEach((layer, revIndex) => {
+      const index = layers.length - 1 - revIndex;
+      //const folder = gui.addFolder('Layer ' + index + ' (' + layer.kind + ')');
+      const folder = gui.addFolder(layer.name.toLowerCase());
 
       const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
       visibitySwitch.onFinishChange(val => switchLayer(index, val));
