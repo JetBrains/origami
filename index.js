@@ -183,17 +183,17 @@ setTimeout(function() { // FIXME: change to document.ready
             model.layers,
             model,
             { changeLightSpeed : index => value =>
-                { app.ports.changeLightSpeed.send(Math.round(value)) }
+                { app.ports.changeLightSpeed.send({ layer: index, value: Math.round(value) }) }
             , changeVignette : index => value =>
-                { app.ports.changeVignette.send(Math.round(value)) }
+                { app.ports.changeVignette.send({ layer: index, value: Math.round(value) }) }
             , changeFacesX : index => value =>
-                { app.ports.changeFacesX.send(Math.round(value)) }
+                { app.ports.changeFacesX.send({ layer: index, value: Math.round(value) }) }
             , changeFacesY : index => value =>
-                { app.ports.changeFacesY.send(Math.round(value)) }
+                { app.ports.changeFacesY.send({ layer: index, value: Math.round(value) }) }
             , changeWGLBlend : (index, blend) =>
-                { app.ports.changeWGLBlend.send({ layer: index, blend: blend }) }
+                { app.ports.changeWGLBlend.send({ layer: index, value: blend }) }
             , changeSVGBlend : (index, blend) =>
-                { app.ports.changeSVGBlend.send({ layer: index, blend: blend }) }
+                { app.ports.changeSVGBlend.send({ layer: index, value: blend }) }
             , changeProduct : (id) =>
                 { app.ports.changeProduct.send(id) }
             , setCustomSize : (value) => {
@@ -219,7 +219,7 @@ setTimeout(function() { // FIXME: change to document.ready
                 });
             }
             , changeAmplitude : index => (x, y, z) => {
-                app.ports.changeAmplitude.send([ x, y, z ]);
+                app.ports.changeAmplitude.send({ layer: index, value: [ x, y, z ]});
             }
             , turnOn : index =>
                 { app.ports.turnOn.send(index); }
@@ -231,11 +231,11 @@ setTimeout(function() { // FIXME: change to document.ready
             if (isFss(layer)) {
                 console.log('rebuild FSS layer', index);
                 const fssScene = buildFSS(model, model.fss);
-                app.ports.rebuildFss.send([ fssScene, index ]);
+                app.ports.rebuildFss.send({ value: fssScene, layer: index });
             }
         });
 
-        app.ports.requestFssRebuild.subscribe(([index, model, fssModel]) => {
+        app.ports.requestFssRebuild.subscribe(({ layer : index, model, value : fssModel }) => {
             const layer = model.layers[index];
             if (isFss(layer)) {
                 console.log('forced to rebuild FSS layer', index);
