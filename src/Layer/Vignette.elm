@@ -1,5 +1,5 @@
 module Layer.Vignette exposing
-    ( Model
+    ( Model, PortModel
     , Mesh
     , makeEntity
     , init
@@ -11,6 +11,9 @@ import WebGL
 import WebGL.Settings exposing (Setting)
 
 import Viewport exposing (Viewport)
+
+
+type alias PortModel = Model
 
 
 type alias Model =

@@ -17,8 +17,6 @@ module Model exposing
     , PortModel
     , PortLayerDef
     , PortBlend
-    , PortFSS
-    , PortVignette
     )
 
 import Time exposing (Time)
@@ -156,8 +154,8 @@ type alias GuiDefaults =
     , layers : List PortLayerDef
     , size : ( Int, Int )
     , customSize : Maybe (Int, Int)
-    , fss : PortFSS
-    , vignette : PortVignette
+    , fss : FSS.PortModel
+    , vignette : Vignette.PortModel
     }
 
 
@@ -191,14 +189,3 @@ init initialLayers createLayer
 emptyLayer : Layer
 emptyLayer =
     SVGLayer NoContent SVGBlend.default
-
-
-type alias PortFSS =
-    { faces : ( Int, Int )
-    , lightSpeed: Int
-    , amplitude : FSS.Amplitude
-    , renderMode : String
-    }
-
-
-type alias PortVignette = Vignette.Model

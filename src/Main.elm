@@ -299,20 +299,26 @@ update msg model =
             )
 
         ChangeVignette index opacity ->
+            ( model
+                |> updateFss index
+                    (\fssModel -> { fssModel | vignette = opacity })
+            , Cmd.none
+            )
+
             -- model
             --     |> updateAndRebuildFssWith index
             --         (\fssModel -> { fssModel | vignette = vignette })
-            ( model
-                |> updateLayerWithItsModel
-                    index
-                    (\(layer, model) ->
-                        case ( layer, model ) of
-                            ( WebGLLayer VignetteLayer _, VignetteModel vignetteModel ) ->
-                                (layer, { vignetteModel | opacity = opacity } |> VignetteModel)
-                            _ -> (layer, model)
-                    )
-            , Cmd.none
-            )
+
+            -- ( model
+            --     |> updateLayerWithItsModel
+            --         index
+            --         (\(layer, model) ->
+            --             case ( layer, model ) of
+            --                 ( WebGLLayer VignetteLayer _, VignetteModel vignetteModel ) ->
+            --                     (layer, { vignetteModel | opacity = opacity } |> VignetteModel)
+            --                 _ -> (layer, model)
+            --         )
+            -- , Cmd.none
 
         ChangeAmplitude index ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
             model
@@ -633,6 +639,7 @@ subscriptions model =
           )
         , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
         , changeAmplitude (\{value, layer} -> ChangeAmplitude layer value)
+        , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , setCustomSize
             (\(w, h) ->
                 let
@@ -965,7 +972,7 @@ port changeSVGBlend :
 
 port startGui : GuiDefaults -> Cmd msg
 
-port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: PortFSS } -> Cmd msg
+port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: FSS.PortModel } -> Cmd msg
 
 port export_ : String -> Cmd msg
 

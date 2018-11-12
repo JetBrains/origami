@@ -110,6 +110,7 @@ encodeLayerModel layerModel =
                         |> encodePairAsArray E.float
                   )
                 , ( "shareMesh", E.bool fssModel.shareMesh )
+                , ( "vignette", E.float fssModel.vignette )
                 ]
             _ -> []
 
@@ -310,12 +311,16 @@ decodeModel createLayer modelStr =
         |> Result.toMaybe
 
 
-encodeFss : FSS.Model -> Product -> M.PortFSS
+encodeFss : FSS.Model -> Product -> FSS.PortModel
 encodeFss m product =
     { amplitude = m.amplitude
     , faces = m.faces
     , lightSpeed = m.lightSpeed
     , renderMode = encodeFssRenderMode m.renderMode
+    , clip = m.clip
+    , shareMesh = m.shareMesh
+    , vignette = m.vignette
+    , mirror = m.mirror
     --, palette = product |> getPalette
     }
 
