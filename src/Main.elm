@@ -123,7 +123,7 @@ update msg model =
             (
                 { model
                  | fps = floor (1000 / dt)
-                 , theta = if not model.autoRotate
+                 , theta = if not (model.autoRotate || model.paused)
                               then model.theta + (dt * model.omega) / 1000
                               else model.theta
                  , now = if not model.paused
