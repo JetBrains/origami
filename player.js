@@ -8,23 +8,21 @@ const import_ = (app, importedState) => {
     //debugger;
 
     const parsedState = importedState;
-    scenes = {};
-    layers = [];
+    // scenes = {};
+    // layers = [];
 
     app.ports.requestFssRebuild.subscribe(({ layer : index, model, value : fssModel }) => {
         const layer = model.layers[index];
         if (isFss(layer)) {
             console.log('forced to rebuild FSS layer', index);
-            const fssScene = buildFSS(model, fssModel);
+            const fssScene = buildFSS(model, fssModel, parsedState.layers[index].sceneFuzz);
             // scenes[index] = fssScene;
             app.ports.rebuildFss.send({ value: fssScene, layer: index });
             // layer.scene = fssScene;
         }
     });
 
-    app.ports.hideControls.send(null);
-    app.ports.pause.send(null);
-    // app.ports.initLayers.send(layers.map((l) => l.kind));
+    console.log('sending for the import', parsedState);
     app.ports.import_.send(JSON.stringify({
         theta: parsedState.theta,
         omega: parsedState.omega,
@@ -36,10 +34,15 @@ const import_ = (app, importedState) => {
             { kind : layer.kind,
               blend: layer.blend,
               isOn: layer.isOn,
-              model: layer.model
+              model: JSON.stringify(layer.model),
+              name: layer.name
             }
         ))
     }));
+
+    app.ports.hideControls.send(null);
+    app.ports.pause.send(null);
+    // app.ports.initLayers.send(layers.map((l) => l.kind));
 
     // model.layers.forEach((layer, index) => {
     //     if (isFss(layer)) {
@@ -51,16 +54,17 @@ const import_ = (app, importedState) => {
 
 
     // parsedState.layers.forEach((layer, index) => {
-    //     if (layer.kind == 'fss' || layer.kind == 'fss-mirror')  {
+    //     if (isFss(layer)) {
     //         const scene = buildFSS(parsedState, layer.model, layer.sceneFuzz);
     //         scenes[index] = scene;
     //         console.log('import FSS', scene, parsedState);
     //         //app.ports.configureFss.send({ value: layer.model, layer: index });
-    //         //app.ports.rebuildFss.send({ value: scene, layer: index });
+    //         app.ports.rebuildFss.send({ value: scene, layer: index });
     //     }
     // });
-    const mergedBlends = parsedState.layers.map(layer => layer.blend).join(':');
-    window.location.hash = '#blends=' + mergedBlends;
+
+    // const mergedBlends = parsedState.layers.map(layer => layer.blend).join(':');
+    // window.location.hash = '#blends=' + mergedBlends;
 
     //app.ports.continue.send(null);
     //if (layersNode) layersNode.inlets['code'].receive(mergedBlends);
