@@ -50,6 +50,7 @@ type Msg
     | Pause
     | Continue
     | TriggerPause
+    | HideControls
     | ChangeProduct Product
     | TurnOn LayerIndex
     | TurnOff LayerIndex
@@ -135,6 +136,11 @@ update msg model =
             , Cmd.none
             )
 
+        HideControls ->
+            ( { model | controlsVisible = False }
+            , Cmd.none
+            )
+
         Import encodedModel ->
             ( encodedModel
                 |> IE.decodeModel createLayer
@@ -195,7 +201,7 @@ update msg model =
 
         ChangeProduct product ->
             { model | product = product }
-            |> rebuildAllFssLayersWith -- FIXME: do that for every FSS layer
+            |> rebuildAllFssLayersWith
 
         Configure index layerModel ->
             ( model |> updateLayer index
@@ -654,6 +660,7 @@ subscriptions model =
         , pause (\_ -> Pause)
         , continue (\_ -> Continue)
         , triggerPause (\_ -> TriggerPause)
+        , hideControls (\_ -> HideControls)
         , turnOn TurnOn
         , turnOff TurnOff
         ]
@@ -840,23 +847,25 @@ view model =
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-        [ div
-            [ H.class "overlay-panel import-export-panel hide-on-space" ]
-            [ input
-                [ type_ "range"
-                , H.min "0"
-                , H.max "100"
-                , extractTimeShift model.timeShift |> H.value
-                , onInput (\v -> adaptTimeShift v |> TimeTravel)
-                , onMouseUp BackToNow
+        [ if model.controlsVisible
+            then ( div
+                [ H.class "overlay-panel import-export-panel hide-on-space" ]
+                [ input
+                    [ type_ "range"
+                    , H.min "0"
+                    , H.max "100"
+                    , extractTimeShift model.timeShift |> H.value
+                    , onInput (\v -> adaptTimeShift v |> TimeTravel)
+                    , onMouseUp BackToNow
+                    ]
+                    []
+                , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
+                , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
+                , input
+                    [ type_ "button", onClick ExportZip, value "Export .zip" ]
+                    [ text "Export .zip" ]
                 ]
-                []
-            , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
-            , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
-            , input
-                [ type_ "button", onClick ExportZip, value "Export .zip" ]
-                [ text "Export .zip" ]
-            ]
+            ) else div [] []
         , mergeWebGLLayers model |>
             WebGL.toHtmlWith
                 [ WebGL.antialias
@@ -902,6 +911,8 @@ port pause : (() -> msg) -> Sub msg
 port continue : (() -> msg) -> Sub msg
 
 port triggerPause : (() -> msg) -> Sub msg
+
+port hideControls : (() -> msg) -> Sub msg
 
 port rotate : (Float -> msg) -> Sub msg
 
