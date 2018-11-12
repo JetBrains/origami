@@ -4,6 +4,7 @@ module Layer.FSS exposing
     , Mesh
     , SerializedScene
     , Amplitude, AmplitudeChange
+    , Vignette, VignetteChange
     , Clip
     , makeEntity
     , fromPortModel
@@ -37,6 +38,8 @@ type alias Mirror = Float
 type alias Amplitude = ( Float, Float, Float )
 type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
+type alias Vignette = Float
+type alias VignetteChange = Maybe Float
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -51,7 +54,8 @@ type RenderMode
 
 type alias PortModel =
     { renderMode : String
-    , amplitude : ( Float, Float, Float )
+    , amplitude : Amplitude
+    , vignette : Vignette
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
@@ -63,6 +67,7 @@ type alias PortModel =
 type alias Model =
     { renderMode : RenderMode
     , amplitude : ( Float, Float, Float )
+    , vignette : Vignette 
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
@@ -147,7 +152,10 @@ type alias SerializedScene =
 -- Base logic
 
 defaultAmplitude : ( Float, Float, Float )
-defaultAmplitude = ( 0.5, 0.5, 0.2 )
+defaultAmplitude = ( 0.3, 0.3, 0.3 )
+
+defaultVignette : Float
+defaultVignette = 0.8
 
 
 defaultMirror : Float
@@ -159,7 +167,7 @@ defaultFaces = ( 17, 17 )
 
 
 defaultLightSpeed : Int
-defaultLightSpeed = 600
+defaultLightSpeed = 1600
 
 
 init : Model
@@ -167,6 +175,7 @@ init =
     { faces = defaultFaces
     , renderMode = Triangles
     , amplitude = defaultAmplitude
+    , vignette = defaultVignette
     , mirror = False
     , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
     , lightSpeed = defaultLightSpeed
@@ -240,13 +249,13 @@ makeEntity now mouse layerIndex viewport model maybeScene settings mesh =
 
 
 type alias Vertex =
-    { aAmbient : Vec4
-    , aDiffuse : Vec4
+    { materialAmbient : Vec4
+    , materialDiffuse : Vec4
     , aCentroid : Vec3
     , aNormal : Vec3
     , aPosition : Vec3
     , aSide : Float
-    , aColor : Vec4
+    , aGradient : Vec4
     , aV0 : Vec3
     , aPhi : Float
     }
@@ -254,13 +263,13 @@ type alias Vertex =
 
 defaultVertex : Vertex
 defaultVertex =
-    { aAmbient = vec4 0 0 0 0
+    { materialAmbient = vec4 0 0 0 0
     , aCentroid = vec3 0 0 0
-    , aDiffuse = vec4 0 0 0 0
+    , materialDiffuse = vec4 0 0 0 0
     , aNormal = vec3 0 0 0
     , aPosition = vec3 0 0 0
     , aSide = 0
-    , aColor = vec4 0 0 0 0
+    , aGradient = vec4 0 0 0 0
     , aV0 = vec3 0 0 0
     , aPhi = 0
     }
@@ -333,14 +342,14 @@ convertTriangles material side src =
 
 
 convertVertex : Vec4 -> SMaterial -> STriangle -> SSide -> SVertex -> Vertex
-convertVertex color material triangle side v =
+convertVertex gradient material triangle side v =
     { aSide = side
-    , aAmbient = v4fromList material.ambient.rgba
-    , aDiffuse = v4fromList material.diffuse.rgba
+    , materialAmbient = v4fromList material.ambient.rgba
+    , materialDiffuse = v4fromList material.diffuse.rgba
     , aPosition = v3fromList v.position
     , aCentroid = v3fromList triangle.centroid
     , aNormal = v3fromList triangle.normal
-    , aColor = color
+    , aGradient = gradient
     , aV0 = v3fromList v.v0
     , aPhi = v.time
     }
@@ -376,9 +385,10 @@ type alias Uniforms =
         , uLightSpeed : Float
         , uResolution : Vec3
         , uNow : Float
-        , uLayerIndex: Int
-        , uMousePosition: Vec2
-        , uAmplitude: Vec3
+        , uLayerIndex : Int
+        , uMousePosition : Vec2
+        , uAmplitude : Vec3
+        , uVignette : Float
         , uSegment : Vec3
         , uMirror : Float
         , uClip : Vec2
@@ -389,6 +399,8 @@ type alias Uniforms =
 type alias Varyings =
     { vColor : Vec4
     , vPosition : Vec3
+    , vColorI: Vec4
+    , vColorII: Vec4
     --, vMirror : Vec3
     }
 
@@ -429,7 +441,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , uClip = vec2 (Tuple.first clip) (Tuple.second clip)
         , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
-
+        , uVignette = model.vignette
         , paused = v.paused
         , rotation = v.rotation
         , perspective = v.perspective
@@ -547,17 +559,19 @@ vertexShader : WebGL.Shader Vertex Uniforms Varyings
 vertexShader =
      [glsl|
 
+
         // Precision
         precision mediump float;
+        
 
         // Attributes
         attribute float aSide;
         attribute vec3 aPosition;
         attribute vec3 aCentroid;
         attribute vec3 aNormal;
-        attribute vec4 aAmbient;
-        attribute vec4 aDiffuse;
-        attribute vec4 aColor;
+        attribute vec4 materialAmbient;
+        attribute vec4 materialDiffuse;
+        attribute vec4 aGradient;
         attribute vec3 aV0;
 
         attribute float aPhi;
@@ -592,110 +606,120 @@ vertexShader =
 
         // Varyings
         varying vec4 vColor;
+        varying vec4 vColorI;
+        varying vec4 vColorII;
         varying vec3 vPosition;
         //varying vec3 vMirror;
 
 
-
-
-       // Don't ask
-       vec2 _m = uMousePosition * vec2(1.0, -1.0) + vec2( -150.0,  (200.0 + uResolution.y / 2.0));
-       vec2 mousePosition =  vec2(_m.x - uResolution.x / 2.0, _m.y - uResolution.y / 10.0 ) / uResolution.xy * 2.0;
-
        float time = uNow;
-       float duration = 5000.0;
        vec3 position = vec3(0.0);
-       vec3 disturb = vec3(0.0);
+
+       //       vec3 vertexOscillators(vec3 arg) {
+       //     return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
+       // }
 
 
-       float attenuator(float curTime, float len) {
-          if (curTime < len) {
-             return curTime / len;
-          } else {
-             return 1.0;
-          }
-       }
-
-        vec3 oscillators(vec3 arg) {
+       vec3 vertexOscillators(vec3 arg) {
             return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
         }
+
+        vec3 lightOscillators(vec3 arg) {
+            return vec3( 2.0 * sin( 5.0 * arg[0]), sin( 6.0 * arg[1]), sin(arg[2]));
+        }
+
+        vec3 rgb2hsv(vec3 c){
+                vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+                vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+                vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+                float d = q.x - min(q.w, q.y);
+                float e = 1.0e-10;
+                return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+            }
+
+        vec3 hsv2rgb(vec3 c)
+            {
+                vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+                vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+                return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+            }    
 
 
         // Main
         void main() {
 
             float phase = aPhi;
-            vec3 speed = normalize(aV0) * 0.001;
+            vec3 speed = normalize(aV0) * 0.0008;
 
             // Create color
-            vColor = vec4(1.0);
-
+             vec4 vColorI = materialAmbient;
+             vec4 vColorII = materialDiffuse;
+             vColor = vec4(1.0);
 
             // Calculate the vertex position
             //vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment;
             vec3 amplitudes = uAmplitude * uSegment;
 
             // Light geometry and magnitudes
-            vec3 orbitFactor = vec3(1.0, 1.0, 2.0);
-            vec3 lightsSpeed = vec3(uLightSpeed, uLightSpeed, 100.0);
-            vec3 brightnessD = vec3(1.7, 2.5, 2.0);
-            vec3 brightnessA = vec3(1.0, 2.0, 0.0);
+            vec3 orbitFactor = vec3(2.5, .5, 2.0);
+            vec3 lightsSpeed = vec3(uLightSpeed * 10.0, uLightSpeed  * 10.0, 100.0);
+
 
 
             position = aPosition;
-            //position = position;
-            //position = vec3(1.0 - position.x, position.y, position.z);
-
-            if (!paused) {
-                vec2 dist = mousePosition - position.xy;
-                vec2 dir = normalize(dist);
-                float r = length(dist);
-                r = clamp (r, 1.0, 2.0);
-                disturb = vec3( 0.005 * dir / (r * r) , 0.0);
-                // disturb /= uResolution * vec3(uScale, 1.0);
-            }
-
-            position += disturb;
-
-
-            position += attenuator (time, duration) * amplitudes * oscillators(speed * time + phase);
-
+            position += amplitudes * vertexOscillators(speed * time + phase);
             position /= uResolution * vec3(uScale, 1.0);
-
             position *= 4.0;
-            ;
 
+            vec4 lightAmbient = vec4(0.0);
+            vec4 lightDiffuse = vec4(0.0);
 
-
+       
             // Iterate through lights
 
-            for (int i = 0; i < 1; i++) {
-            // for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 2; i++) {
+
           //  if(uLayerIndex != 0) {
-                vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * oscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
-                vec4 lightAmbient = brightnessA[i] * uLightAmbient[i];
-                vec4 lightDiffuse = brightnessD[i] * uLightDiffuse[i];
+                vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * lightOscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
+                
+                if (uLayerIndex == 0 ) {
+                    lightAmbient =  uLightDiffuse[i];
+                    lightDiffuse =  uLightAmbient[i];
+               
+                } else {
+                    lightAmbient = uLightAmbient[i];
+                    lightDiffuse = uLightDiffuse[i];
+                }
 
-                vec3 ray = normalize(lightPosition - aCentroid  + disturb * 2000.0);
+                vec3 ray = normalize(lightPosition - aCentroid);
                 float illuminance = dot(aNormal, ray);
-                illuminance = max(illuminance, 0.0);
-
+               // float illuminance = pow(dot(aNormal, ray), 1.2);
+                illuminance = 1.1 * max(illuminance, 0.0);
+      
                 // Calculate ambient light
-                vColor += aAmbient * lightAmbient;
+                  vColor *=  lightAmbient;            
 
                 // Calculate diffuse light
-                vColor += aDiffuse  * lightDiffuse * illuminance;
+                  vColor +=  lightDiffuse * illuminance;
 
-         //   }
             }
+               
+            vColor = clamp(vColor, 0.0, 1.0);
+
+            vec3 gradientColor = rgb2hsv(vColor.xyz);
+            gradientColor[2] /= 3.0;
+            gradientColor[1] -= 0.6; // hue shift
+            gradientColor = hsv2rgb(gradientColor);
 
 
-           // Multiplied by gradients
-              vColor *= mix(aColor, vColor, abs(position.z) );
 
+           // Gradients      
+             vColor *=  mix(vec4(gradientColor , 1.0), vColor, abs(position.z));
 
-            // Set gl_Position
-          gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
+          // Set gl_Position
+             gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
+      
 
           if (uMirror > 0.0) {
               gl_Position.x = -1.0 * gl_Position.x;
@@ -717,6 +741,8 @@ fragmentShader =
 
         // Varyings
         varying vec4 vColor;
+        varying vec4 vColorI;
+        varying vec4 vColorII;
         varying vec3 vPosition;
         //varying vec3 vMirror;
 
@@ -724,20 +750,20 @@ fragmentShader =
         uniform float uNow;
         uniform vec2 uClip;
         uniform vec2 uScale;
+        uniform float uVignette;
        // uniform int uLayerIndex;
 
 
 
-        vec4 bgColor = vec4(0.0, 0.0, 0.0, 1.0);
+       // vec4 bgColor = vec4(0.0, 0.0, 0.0, 1.0);
 
-        float vignette = 1.0;
 
         float noise(vec2 seed, float time) {
             float x = (seed.x / 3.14159 + 4.0) * (seed.y / 13.0 + 4.0) * ((fract(time) + 1.0) * 10.0);
             return mod((mod(x, 13.0) + 1.0) * (mod(x, 123.0) + 1.0), 0.01) - 0.005;
         }
 
-        float brightness(vec4 color) {
+        float brightness(vec3 color) {
                 return (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b);
         }
 
@@ -757,24 +783,23 @@ fragmentShader =
                     discard;
                 }
             }
-
-            // Set gl_FragColor
-              gl_FragColor.rgb = vColor.rgb;
-             
-               gl_FragColor.a = 1.0;
+             gl_FragColor = vColor;
 
             // noise by brightness
-               gl_FragColor = mix(vColor, vec4(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor), 1.0));
+               gl_FragColor.rgb = mix(vColor.rgb, vec3(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor.rgb), 0.3));
+        
           //  if(uLayerIndex != 0) {
+              
             // vignette
-              gl_FragColor =  mix(gl_FragColor, bgColor, smoothstep(1.0 - vignette, 0.8, distance(actPos,vec2(0.5))));
+              gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, 1.0, distance(actPos,vec2(0.5))));
            // }
+
             //opacity
            //  if(uLayerIndex != 1) {
             //   gl_FragColor.a = 1.0;
          // }  
 
-        // gl_FragColor = vColor;
+        
 
 
 

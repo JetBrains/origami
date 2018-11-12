@@ -125,16 +125,16 @@ type alias GuiConfig =
     { product : String
     , palette : List String
     , layers : List
-        { kind: String
+        { kind : String
         , blend : PortBlend
-        , webglOrSvg: String
-        , on: Bool
+        , webglOrSvg : String
+        , on : Bool
         }
     , size : ( Int, Int )
     , facesX : Int
     , facesY : Int
-    , lightSpeed: Int
-    , vignette: Float
+    , lightSpeed : Int
+    , vignette : Float
     , amplitude : FSS.AmplitudeChange
     , customSize : Maybe (Int, Int)
     }
