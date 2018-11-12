@@ -120,6 +120,7 @@ type alias Model =
     , autoRotate : Bool
     , fps : Int
     , theta : Float
+    , omega : Float
     , layers : List LayerDef
     , size : Size
     , origin : Pos
@@ -143,6 +144,7 @@ type alias PortModel =
     , origin : Pos
     , size : Size
     , theta : Float
+    , omega : Float
     , product : String
     , palette : Product.Palette
     }
@@ -164,6 +166,7 @@ type alias GuiDefaults =
     , layers : List PortLayerDef
     , size : ( Int, Int )
     , customSize : Maybe (Int, Int)
+    , omega : Float
     , fss : FSS.PortModel
     , vignette : Vignette.PortModel
     }
@@ -180,6 +183,7 @@ init mode initialLayers createLayer
       , autoRotate = False
       , fps = 0
       , theta = 0.1
+      , omega = 0.0
       , layers = initialLayers |> List.map
             (\(kind, name, layerModel) ->
                 { kind = kind

@@ -27,6 +27,7 @@ const import_ = (app, importedState) => {
     // app.ports.initLayers.send(layers.map((l) => l.kind));
     app.ports.import_.send(JSON.stringify({
         theta: parsedState.theta,
+        omega: parsedState.omega,
         size: parsedState.size,
         origin: parsedState.origin,
         mouse: parsedState.mouse,

@@ -152,6 +152,7 @@ const Config = function(layers, defaults, funcs) {
     const zero = BLEND_FACTORS['0'];
 
     this.product = defaults.product;
+    this.omega = defaults.omega;
 
     const funcKeys = Object.keys(BLEND_FUNCS);
     const factorKeys = Object.keys(BLEND_FACTORS);
@@ -204,7 +205,10 @@ const Config = function(layers, defaults, funcs) {
 };
 
 
-function start(document, mode, layers, defaults, funcs) {
+function start(document, model, funcs) {
+    const defaults = model;
+    const { mode, layers } = model;
+
     function updateProduct(id) {
       const product = PRODUCTS_BY_ID[id];
       funcs.changeProduct(product.id);
@@ -321,9 +325,11 @@ function start(document, mode, layers, defaults, funcs) {
     const gui = new dat.GUI(/*{ load: JSON }*/);
     gui.remember(config);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
+    const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     const savePng = gui.add(config, 'savePng').name('save png');
     product.onFinishChange(funcs.changeProduct);
+    omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
 
     layers.reverse().forEach((layer, revIndex) => {
