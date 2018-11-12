@@ -111,6 +111,7 @@ encodeLayerModel layerModel =
                   )
                 , ( "shareMesh", E.bool fssModel.shareMesh )
                 , ( "vignette", E.float fssModel.vignette )
+                , ( "iris", E.float fssModel.iris )
                 ]
             _ -> []
 
@@ -320,6 +321,7 @@ encodeFss m product =
     , clip = m.clip
     , shareMesh = m.shareMesh
     , vignette = m.vignette
+    , iris = m.iris
     , mirror = m.mirror
     --, palette = product |> getPalette
     }

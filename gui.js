@@ -185,7 +185,8 @@ const Config = function(layers, defaults, funcs) {
         this['lightSpeed' + index] = defaults.fss.lightSpeed;
         this['facesX' + index] = defaults.fss.faces[0];
         this['facesY' + index] = defaults.fss.faces[1];
-        this['vignette' + index] = defaults.vignette.opacity;
+        this['vignette' + index] = defaults.fss.vignette;
+        this['iris' + index] = defaults.fss.iris;
         this['amplitudeX' + index] = defaults.fss.amplitude[0];
         this['amplitudeY' + index] = defaults.fss.amplitude[1];
         this['amplitudeZ' + index] = defaults.fss.amplitude[2];
@@ -288,6 +289,7 @@ function start(layers, defaults, funcs) {
         const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
         const facesY = folder.add(config, 'facesY' + index).name('row').min(1).max(100).step(1);
         const vignette = folder.add(config, 'vignette' + index).name('vignette').min(0.0).max(1.0);
+        const iris = folder.add(config, 'iris' + index).name('iris').min(0.0).max(1.0);
         const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
         const amplitudeFolder = folder.addFolder('amplitude');
         const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('amplitudeX')
@@ -301,6 +303,7 @@ function start(layers, defaults, funcs) {
         facesX.onFinishChange(funcs.changeFacesX(index));
         facesY.onFinishChange(funcs.changeFacesY(index));
         vignette.onFinishChange(funcs.changeVignette(index));
+        iris.onFinishChange(funcs.changeIris(index));
         renderMode.onFinishChange(funcs.changeRenderMode(index));
         amplitudeX.onFinishChange(value => {
           funcs.changeAmplitude(index)(value, null, null);
