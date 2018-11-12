@@ -37,5 +37,5 @@ view product ( w, h ) ( x, y ) blend =
                 , HAttrs.contenteditable True
                 ]
             [ text <| getName product ]
-            , span [ HAttrs.class "text-layer text-layer--subtitle" ] [ text  "Subtitle" ]
+            -- , span [ HAttrs.class "text-layer text-layer--subtitle" ] [ text  "Subtitle" ]
             ]

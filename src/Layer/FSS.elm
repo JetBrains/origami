@@ -147,7 +147,8 @@ type alias SerializedScene =
 -- Base logic
 
 defaultAmplitude : ( Float, Float, Float )
-defaultAmplitude = ( 0.5, 0.5, 0.2 )
+--defaultAmplitude = ( 0.5, 0.5, 0.2 )
+defaultAmplitude = ( 0.2, 0.2, 0.2 )
 
 
 defaultMirror : Float
@@ -159,7 +160,8 @@ defaultFaces = ( 17, 17 )
 
 
 defaultLightSpeed : Int
-defaultLightSpeed = 600
+-- defaultLightSpeed = 600
+defaultLightSpeed = 1000
 
 
 init : Model
