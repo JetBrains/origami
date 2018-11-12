@@ -80,11 +80,12 @@ init =
         ]
     )
 
-initialLayers : List ( LayerKind, LayerModel )
+
+initialLayers : List ( LayerKind, String, LayerModel )
 initialLayers =
-    [ ( MirroredFss, FssModel FSS.init )
-    , ( MirroredFss, FssModel FSS.init )
-    , ( MirroredFss
+    [ ( MirroredFss, "Background", FssModel FSS.init )
+    , ( MirroredFss, "Low-Poly", FssModel FSS.init )
+    , ( MirroredFss, "Net"
       , let
             fssModel = FSS.init
         in
@@ -94,8 +95,8 @@ initialLayers =
             } |> FssModel
       )
     -- , ( Vignette, Vignette.init )
-    , ( Text, NoModel )
-    , ( SvgImage, NoModel )
+    , ( Text, "Title", NoModel )
+    , ( SvgImage, "Logo", NoModel )
     ]
 
 
@@ -143,10 +144,11 @@ update msg model =
             )
 
         Import encodedModel ->
-            ( encodedModel
+            encodedModel
                 |> IE.decodeModel createLayer
                 |> Maybe.withDefault model
-            , Cmd.none )
+                |> Debug.log "import model"
+                |> rebuildAllFssLayersWith
 
         Export ->
             ( model
@@ -307,8 +309,8 @@ update msg model =
             )
 
         ChangeIris index iris ->
-            ( model |> updateFss index 
-                (\fssModel -> { fssModel | iris = iris }) 
+            ( model |> updateFss index
+                (\fssModel -> { fssModel | iris = iris })
             , Cmd.none
             )
 
@@ -513,11 +515,12 @@ prepareGuiConfig model =
              )
     , layers =
         model.layers |>
-            List.map (\{ kind, layer, on } ->
+            List.map (\{ kind, layer, on, name } ->
                 { kind = encodeLayerKind kind
                 , blend = getBlendForPort layer
                 , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
                 , on = on
+                , name = name
                 })
     , fss = IE.encodeFss FSS.init model.product
     , vignette = Vignette.init

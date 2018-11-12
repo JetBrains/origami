@@ -92,10 +92,11 @@ type Layer
 -- `change` is needed since we store a sample layer model
 -- to use for any layer in the main model
 type alias LayerDef =
-    { kind: LayerKind
-    , layer: Layer
-    , model: LayerModel
-    , on: Bool
+    { kind : LayerKind
+    , name : String
+    , layer : Layer
+    , model : LayerModel
+    , on : Bool
     }
 
 
@@ -141,10 +142,11 @@ type alias PortModel =
 
 
 type alias PortLayerDef =
-    { kind: String
+    { kind : String
     , blend : PortBlend
-    , webglOrSvg: String
-    , on: Bool
+    , webglOrSvg : String
+    , on : Bool
+    , name : String
     }
 
 
@@ -160,7 +162,7 @@ type alias GuiDefaults =
 
 
 init
-    :  List ( LayerKind, LayerModel )
+    :  List ( LayerKind, String, LayerModel )
     -> CreateLayer
     -> Model
 init initialLayers createLayer
@@ -169,9 +171,10 @@ init initialLayers createLayer
       , fps = 0
       , theta = 0.1
       , layers = initialLayers |> List.map
-            (\(kind, layerModel) ->
+            (\(kind, name, layerModel) ->
                 { kind = kind
                 , layer = layerModel |> createLayer kind
+                , name = name
                 , model = layerModel
                 , on = True
                 })

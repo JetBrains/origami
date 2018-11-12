@@ -91,6 +91,7 @@ encodeLayerDef layerDef =
           )
         , ( "isOn", layerDef.on |> E.bool )
         , ( "model", encodeLayerModel layerDef.model )
+        , ( "name", layerDef.name |> E.string )
         -- , ( "mesh", E.string "" )
         ]
 
@@ -169,6 +170,7 @@ encodePortLayer layerDef =
                 ( Just webglBlend, Nothing )
             M.SVGLayer _ svgBlend ->
                 ( Nothing, SVGBlend.encode svgBlend |> Just )
+    , name = layerDef.name            
     }
 
 
@@ -213,52 +215,50 @@ intPairDecoder =
 --             )
 
 
-layerDefDecoder : D.Decoder M.LayerDef
-layerDefDecoder =
+layerDefDecoder : M.CreateLayer -> D.Decoder M.LayerDef
+layerDefDecoder createLayer =
     let
-        createLayerDef kindStr renderType layerStr layerModelStr isOn =
-            let kind = decodeKind kindStr
-            in
-                { kind = kind
-                , on = isOn
-                , layer =
-                    layerStr
-                        |> D.decodeString (layerDecoder kind renderType)
-                        |> Result.toMaybe
-                        |> Maybe.withDefault M.emptyLayer
-                , model =
-                    layerModelStr
+        createLayerDef kindStr layerStr layerModelStr name isOn =
+            let
+                kind = decodeKind kindStr
+                layerModel = layerModelStr
                         |> D.decodeString (layerModelDecoder kind)
                         |> Result.toMaybe
                         |> Maybe.withDefault M.NoModel
+            in
+                { kind = kind
+                , on = isOn
+                , layer = createLayer kind layerModel
+                , model = layerModel
+                , name = name
                 }
     in
         D.decode createLayerDef
             |> D.required "kind" D.string
-            |> D.required "render-type" D.string
             |> D.required "layer" D.string
             |> D.required "model" D.string
+            |> D.required "name" D.string
             |> D.required "isOn" D.bool
 
 
 
-layerDecoder : M.LayerKind -> String -> D.Decoder M.Layer
-layerDecoder kind renderType =
-    case kind of
-        M.Fss ->
-            let
-                createLayer renderType model isOn =
-                     -- TODO
-                    M.SVGLayer M.NoContent SVGBlend.default
-            in
-                D.decode createLayer
-                    |> D.required "render-type" D.string
-                    |> D.required "model" D.string
-                    |> D.required "isOn" D.bool
-         -- TODO
-        _ ->
-            M.SVGLayer M.NoContent SVGBlend.default
-                |> D.decode
+-- layerDecoder : M.LayerKind -> D.Decoder M.Layer
+-- layerDecoder kind =
+--     case kind of
+--         M.Fss ->
+--             let
+--                 createLayer renderType model isOn =
+--                      -- TODO
+--                     M.SVGLayer M.NoContent SVGBlend.default
+--             in
+--                 D.decode createLayer
+--                     |> D.required "renderMode" D.string
+--                     |> D.required "model" D.string
+--                     |> D.required "isOn" D.bool
+--          -- TODO
+--         _ ->
+--             M.SVGLayer M.NoContent SVGBlend.default
+--                 |> D.decode
 
 
 layerModelDecoder : M.LayerKind -> D.Decoder M.LayerModel
@@ -266,15 +266,47 @@ layerModelDecoder kind =
     case kind of
         M.Fss ->
             let
-                createLayer renderType model isOn =
-                     -- TODO
-                    M.NoModel
+                createFssModel
+                    renderModeStr
+                    faces
+                    amplitude
+                    mirror
+                    clip
+                    lightSpeed
+                    shareMesh
+                    vignette
+                    iris =
+                case ( faces, amplitude, clip ) of
+                    ( [facesX, facesY, _]
+                    , [amplitudeX, amplitudeY, amplitudeZ]
+                    , [clipX, clipY, _]
+                    ) ->
+                        M.FssModel
+                            { renderMode = decodeFssRenderMode renderModeStr
+                            , faces = ( facesX, facesY )
+                            , amplitude = ( amplitudeX, amplitudeY, amplitudeZ )
+                            , mirror = mirror
+                            , clip = Just ( clipX, clipY )
+                            , lightSpeed = lightSpeed
+                            , shareMesh = shareMesh
+                            , vignette = vignette
+                            , iris = iris
+                            }
+                    _ -> M.NoModel
             in
-                D.decode createLayer
-                    |> D.required "render-type" D.string
-                    |> D.required "model" D.string
-                    |> D.required "isOn" D.bool
-         -- TODO
+                D.decode createFssModel
+                    |> D.required "renderMode" D.string
+                    |> D.required "faces" (D.list D.int)
+                    |> D.required "amplitude" (D.list D.float)
+                    |> D.required "mirror" D.bool
+                    |> D.required "clip" (D.list D.float)
+                    |> D.required "lightSpeed" D.int
+                    |> D.required "shareMesh" D.bool
+                    |> D.required "vignette" D.float
+                    |> D.required "iris" D.float
+        M.MirroredFss ->
+            layerModelDecoder M.Fss
+        -- TODO
         _ ->
             M.NoModel |> D.decode
 
@@ -298,7 +330,7 @@ modelDecoder createLayer =
     in
         D.decode createModel
             |> D.required "theta" D.float
-            |> D.required "layers" (D.list layerDefDecoder)
+            |> D.required "layers" (layerDefDecoder createLayer |> D.list)
             |> D.required "size" intPairDecoder
             |> D.required "origin" intPairDecoder
             |> D.required "mouse" intPairDecoder
