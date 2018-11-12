@@ -8,13 +8,6 @@ const import_ = (app, importedState) => {
     const parsedState = importedState;
     scenes = {};
     layers = [];
-    parsedState.layers.forEach((layer, index) => {
-        layers[index] = {
-            kind: layer.kind,
-            config: layer.config || parsedState
-        };
-        //scenes[index] = layer.scene;
-    });
     app.ports.pause.send(null);
     app.ports.initLayers.send(layers.map((l) => l.kind));
     app.ports.import_.send(JSON.stringify({
@@ -27,18 +20,17 @@ const import_ = (app, importedState) => {
             { kind : layer.kind,
               blend: layer.blend,
               isOn: layer.isOn,
-              config: ''
+              model: layer.model
             }
         ))
     }));
     parsedState.layers.forEach((layer, index) => {
         if (layer.kind == 'fss' || layer.kind == 'fss-mirror')  {
-            const model = layer.config || parsedState;
-            const scene = buildFSS(model, layer.config, layer.sceneFuzz);
+            const scene = buildFSS(parsedState, layer.model, layer.sceneFuzz);
             scenes[index] = scene;
-            console.log('import FSS', scene, model);
-            app.ports.configureFss.send([ model, index ]);
-            app.ports.rebuildFss.send([ scene, index ]);
+            console.log('import FSS', scene, parsedState);
+            app.ports.configureFss.send({ value: layer.model, layer: index });
+            app.ports.rebuildFss.send({ value: scene, layer: index });
         }
     });
     const mergedBlends = parsedState.layers.map(layer => layer.blend).join(':');
