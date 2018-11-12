@@ -72,9 +72,13 @@ sizeCoef : Float
 sizeCoef = 1.0
 
 
+initialMode : UiMode
+initialMode = Production
+
+
 init : ( Model, Cmd Msg )
 init =
-    ( Model.init initialLayers createLayer
+    ( Model.init initialMode initialLayers createLayer
     , Cmd.batch
         [ Task.perform Resize Window.size
         ]
@@ -94,10 +98,16 @@ initialLayers =
             , shareMesh = True
             } |> FssModel
       )
-    -- , ( Vignette, Vignette.init )
     , ( Text, "Title", NoModel )
+    -- , ( Vignette, Vignette.init )
     , ( SvgImage, "Logo", NoModel )
-    ]
+    ] 
+    |> List.filter (\(kind, _, _) -> 
+        case ( kind, initialMode ) of 
+            ( Text, Development ) -> True
+            ( Text, Production ) -> False
+            _ -> True
+    ) 
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -145,7 +155,7 @@ update msg model =
 
         Import encodedModel ->
             encodedModel
-                |> IE.decodeModel createLayer
+                |> IE.decodeModel initialMode createLayer
                 |> Maybe.withDefault model
                 |> Debug.log "import model"
                 |> rebuildAllFssLayersWith
@@ -508,7 +518,8 @@ createLayer kind layerModel =
 
 prepareGuiConfig : Model -> GuiDefaults
 prepareGuiConfig model =
-    { product = Product.encode model.product
+    { mode = IE.encodeMode model.mode
+    , product = Product.encode model.product
     , palette = Product.getPalette model.product
     , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
              , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
