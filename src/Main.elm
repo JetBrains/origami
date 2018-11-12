@@ -73,7 +73,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Production
+initialMode = Development
 
 
 init : ( Model, Cmd Msg )
@@ -124,7 +124,7 @@ update msg model =
                 { model
                  | fps = floor (1000 / dt)
                  , theta = if not model.autoRotate
-                              then model.theta + dt / 4000
+                              then model.theta + (dt * model.omega) / 1000
                               else model.theta
                  , now = if not model.paused
                             then model.now + dt + model.timeShift
@@ -182,8 +182,8 @@ update msg model =
             , Cmd.none
             )
 
-        Rotate theta ->
-            ( { model | theta = theta  }
+        Rotate omega ->
+            ( { model | omega = omega  }
             , Cmd.none
             )
 
@@ -536,6 +536,7 @@ prepareGuiConfig model =
     , fss = IE.encodeFss FSS.init model.product
     , vignette = Vignette.init
     , customSize = Nothing
+    , omega = model.omega
     }
 
 
