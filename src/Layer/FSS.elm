@@ -4,7 +4,7 @@ module Layer.FSS exposing
     , Mesh
     , SerializedScene
     , Amplitude, AmplitudeChange
-    , Vignette, VignetteChange
+    , Vignette
     , Clip
     , makeEntity
     , build
@@ -39,7 +39,6 @@ type alias Amplitude = ( Float, Float, Float )
 type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
 type alias Vignette = Float
-type alias VignetteChange = Maybe Float
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -66,8 +65,8 @@ type alias PortModel =
 
 type alias Model =
     { renderMode : RenderMode
-    , amplitude : ( Float, Float, Float )
-    , vignette : Vignette
+    , amplitude : Amplitude
+    , vignette : Vignette 
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
