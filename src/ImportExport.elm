@@ -9,6 +9,8 @@ module ImportExport exposing
     , decodeFssRenderMode
     )
 
+import Array
+
 import Json.Decode as D exposing (bool, int, string, float, Decoder, Value)
 import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
 import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
@@ -30,6 +32,22 @@ encodeIntPair ( v1, v2 ) =
         [ ( "v1", E.int v1 )
         , ( "v2", E.int v2 )
         ]
+
+
+encodePairAsArray : (a -> E.Value) -> ( a, a ) -> E.Value
+encodePairAsArray f ( v1, v2 ) =
+   [ v1, v2 ]
+        |> List.map f
+        |> Array.fromList
+        |> E.array
+
+
+encodeTripleAsArray : (a -> E.Value) -> ( a, a, a ) -> E.Value
+encodeTripleAsArray f ( v1, v2, v3 ) =
+   [ v1, v2, v2 ]
+        |> List.map f
+        |> Array.fromList
+        |> E.array
 
 
 encodeKind_ : M.LayerKind -> String
@@ -72,15 +90,28 @@ encodeLayerDef layerDef =
                     SVGBlend.encode svgBlend |> E.string
           )
         , ( "isOn", layerDef.on |> E.bool )
-        , ( "model", encodeLayer layerDef.layer )
+        , ( "model", encodeLayerModel layerDef.model )
         -- , ( "mesh", E.string "" )
         ]
 
-encodeLayer : M.Layer -> E.Value
-encodeLayer layer =
-    E.object
-        [ -- TODO
-        ]
+
+encodeLayerModel : M.LayerModel -> E.Value
+encodeLayerModel layerModel =
+    E.object <|
+        case layerModel of
+            M.FssModel fssModel ->
+                [ ( "renderMode", encodeFssRenderMode fssModel.renderMode |> E.string )
+                , ( "faces", encodePairAsArray E.int fssModel.faces )
+                , ( "lightSpeed", E.int fssModel.lightSpeed )
+                , ( "amplitude", encodeTripleAsArray E.float fssModel.amplitude )
+                , ( "mirror", E.bool fssModel.mirror )
+                , ( "clip",
+                        Maybe.withDefault FSS.noClip fssModel.clip
+                        |> encodePairAsArray E.float
+                  )
+                ]
+            _ -> []
+
 
 
 encodeModel_ : M.Model -> E.Value
