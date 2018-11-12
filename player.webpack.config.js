@@ -2,6 +2,7 @@ const path = require('path');
 
 const config = {
 
+    // mode: 'development',
     mode: 'production',
 
     entry: path.join(__dirname, 'player.js'),

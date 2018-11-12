@@ -109,6 +109,7 @@ encodeLayerModel layerModel =
                         Maybe.withDefault FSS.noClip fssModel.clip
                         |> encodePairAsArray E.float
                   )
+                , ( "shareMesh", E.bool fssModel.shareMesh )
                 ]
             _ -> []
 
@@ -125,6 +126,13 @@ encodeModel_ model =
         , ( "origin", encodeIntPair model.size )
         , ( "mouse", encodeIntPair model.mouse )
         , ( "now", E.float model.now )
+        , ( "palette",
+            model.product
+                |> getPalette
+                |> List.map E.string
+                |> Array.fromList
+                |> E.array )
+        , ( "product", model.product |> Product.encode |> E.string )
         ]
 
 
