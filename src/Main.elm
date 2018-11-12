@@ -344,10 +344,10 @@ updateAndRebuildFssWith index f curModel =
         , case newModel |> getLayerModel index of
             Just (FssModel fssModel) ->
                 requestFssRebuild
-                    ( index
-                    , IE.encodePortModel newModel
-                    , IE.encodeFss fssModel newModel.product
-                    )
+                    { layer = index
+                    , model = IE.encodePortModel newModel
+                    , value = IE.encodeFss fssModel newModel.product
+                    }
             _ -> Cmd.none
         )
 
@@ -362,10 +362,10 @@ rebuildAllFssLayersWith model =
         encodedModel = IE.encodePortModel model
         rebuildPotentialFss index fssModel =
             requestFssRebuild
-                ( index
-                , encodedModel
-                , IE.encodeFss fssModel model.product
-                )
+                { layer = index
+                , model = encodedModel
+                , value = IE.encodeFss fssModel model.product
+                }
 
     in
         ( model
@@ -596,9 +596,22 @@ subscriptions model =
           )
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
-        , changeFaces (\(vals, index) -> ChangeFaces index vals)
-        , changeLightSpeed (\(value, index) -> ChangeLightSpeed index value)
-        , changeAmplitude (\(change, index) -> ChangeAmplitude index change)
+        , changeFacesX (\{value, layer} ->
+            case model |> getLayerModel layer of
+                Just (FssModel { faces }) ->
+                    case faces of
+                        ( _, facesY ) -> ChangeFaces layer ( value, facesY )
+                _ -> NoOp
+          )
+        , changeFacesY (\{value, layer} ->
+            case model |> getLayerModel layer of
+                Just (FssModel { faces }) ->
+                    case faces of
+                        ( facesX, _ ) -> ChangeFaces layer ( facesX, value )
+                _ -> NoOp
+          )
+        , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
+        , changeAmplitude (\{value, layer} -> ChangeAmplitude layer value)
         , setCustomSize
             (\(w, h) ->
                 let
@@ -607,20 +620,20 @@ subscriptions model =
                         else model.size
                 in
                     Window.Size newW newH |> Resize)
-        , changeWGLBlend (\{ layer, blend } ->
-            ChangeWGLBlend layer blend
+        , changeWGLBlend (\{ layer, value } ->
+            ChangeWGLBlend layer value
           )
-        , changeSVGBlend (\{ layer, blend } ->
-            ChangeSVGBlend layer (SVGBlend.decode blend)
+        , changeSVGBlend (\{ layer, value } ->
+            ChangeSVGBlend layer (SVGBlend.decode value)
           )
-        , configureLorenz (\(lorenzModel, layerIndex) ->
-            Configure layerIndex (LorenzModel lorenzModel)
+        , configureLorenz (\{ layer, value } ->
+            Configure layer (LorenzModel value)
           )
-        , configureFss (\(fssModel, layerIndex) ->
-            FSS.fromPortModel fssModel |> FssModel |> Configure layerIndex
+        , configureFss (\{ layer, value } ->
+            FSS.fromPortModel value |> FssModel |> Configure layer
           )
-        , rebuildFss (\(serializedMesh, layerIndex) ->
-            RebuildFss layerIndex serializedMesh
+        , rebuildFss (\{ layer, value } ->
+            RebuildFss layer value
           )
         , import_ Import
         , pause (\_ -> Pause)
@@ -879,15 +892,15 @@ port rotate : (Float -> msg) -> Sub msg
 
 port initLayers : (Array String -> msg) -> Sub msg
 
-port configureLorenz : ((Lorenz.Model, LayerIndex) -> msg) -> Sub msg
+port configureLorenz : ({ value: Lorenz.Model, layer: LayerIndex } -> msg) -> Sub msg
 
-port configureFss : ((FSS.PortModel, LayerIndex) -> msg) -> Sub msg
+port configureFss : ({ value: FSS.PortModel, layer: LayerIndex } -> msg) -> Sub msg
 
-port configureMirroredFss : ((FSS.PortModel, LayerIndex) -> msg) -> Sub msg
+port configureMirroredFss : ({ value: FSS.PortModel, layer: LayerIndex } -> msg) -> Sub msg
 
 port changeProduct : (String -> msg) -> Sub msg
 
-port rebuildFss : ((FSS.SerializedScene, LayerIndex) -> msg) -> Sub msg
+port rebuildFss : ({ value: FSS.SerializedScene, layer: LayerIndex } -> msg) -> Sub msg
 
 port turnOn : (LayerIndex -> msg) -> Sub msg
 
@@ -895,25 +908,27 @@ port turnOff : (LayerIndex -> msg) -> Sub msg
 
 port import_ : (String -> msg) -> Sub msg
 
-port changeFaces : ((( Int, Int ), LayerIndex) -> msg) -> Sub msg
+port changeFacesX : ({ value: Int, layer: LayerIndex } -> msg) -> Sub msg
 
-port changeLightSpeed : ((Int, LayerIndex) -> msg) -> Sub msg
+port changeFacesY : ({ value: Int, layer: LayerIndex } -> msg) -> Sub msg
 
-port changeVignette : ((Float, LayerIndex) -> msg) -> Sub msg
+port changeLightSpeed : ({ value: Int, layer: LayerIndex } -> msg) -> Sub msg
 
-port changeAmplitude : ((FSS.AmplitudeChange, LayerIndex) -> msg) -> Sub msg
+port changeVignette : ({ value: Float, layer: LayerIndex } -> msg) -> Sub msg
+
+port changeAmplitude : ({ value: FSS.AmplitudeChange, layer: LayerIndex } -> msg) -> Sub msg
 
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
 port changeWGLBlend :
     ( { layer : Int
-      , blend : WGLBlend.Blend
+      , value : WGLBlend.Blend
       }
     -> msg) -> Sub msg
 
 port changeSVGBlend :
     ( { layer : Int
-      , blend : SVGBlend.PortBlend
+      , value : SVGBlend.PortBlend
       }
     -> msg) -> Sub msg
 
@@ -922,7 +937,7 @@ port changeSVGBlend :
 
 port startGui : GuiDefaults -> Cmd msg
 
-port requestFssRebuild : ( LayerIndex, PortModel, PortFSS ) -> Cmd msg
+port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: PortFSS } -> Cmd msg
 
 port export_ : String -> Cmd msg
 
