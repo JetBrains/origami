@@ -95,7 +95,18 @@ const export_ = (app, exportedState) => {
     return JSON.stringify(stateObj, null, 2);
 }
 
+const waitForContent = filePath => {
+    return new Promise((resolve, reject) => {
+        JSZipUtils.getBinaryContent(filePath, (err, fileContent) => {
+            if (err) { reject(err); return; }
+            console.log('packing ' + filePath);
+            resolve(fileContent)
+        });
+    });
+};
+
 const exportZip_ = (app, exportedState) => {
+    // waitForContent
     JSZipUtils.getBinaryContent(
         './player.bundle.js', (err, playerBundle) => {
         if (err) { throw err; }
@@ -114,10 +125,26 @@ const exportZip_ = (app, exportedState) => {
             zip.file('player.bundle.js', playerBundle, { binary: true });
             zip.file('scene.js', 'window.jsGenScene = ' + sceneJson + ';');
             zip.file('index.html', playerHtml, { binary: true });
-            zip.generateAsync({type:"blob"})
-                .then(function(content) {
-                    new FileSaver(content, "export.zip");
-                });
+            const assets = zip.folder('assets');
+            const assetPromises =
+                [ 'appcode', 'clion', 'datagrip', 'dotcover', 'dotmemory', 'dotpeek'
+                , 'dottrace', 'gogland', 'hub', 'intellij-idea-ce', 'intellij-idea'
+                , 'jetbrains-simple', 'jetbrains', 'kotlin', 'mps', 'phpstorm'
+                , 'pycharm-ce', 'pycharm-edu', 'pycharm', 'resharper', 'resharper-cpp'
+                , 'resharper', 'rider', 'rubymine', 'teamcity', 'test', 'toolbox', 'upsource'
+                , 'webstorm', 'youtrack' ]
+                    .map(productId => './assets/' + productId + '.svg')
+                    .map(waitForContent);
+            Promise.all(assetPromises)
+                   .then(files =>
+                        files.map(content => assets.file('rr', content, { binary: true }))
+                    )
+                   .then(() => zip.generateAsync({type:"blob"}))
+                   .then(content => new FileSaver(content, "export.zip"));
+            // zip.generateAsync({type:"blob"})
+            //     .then(function(content) {
+            //         new FileSaver(content, "export.zip");
+            //     });
         });
     });
 }
