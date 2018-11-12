@@ -7,6 +7,7 @@ module ImportExport exposing
     , fromFssPortModel
     , encodeFssRenderMode
     , decodeFssRenderMode
+    , encodeMode
     )
 
 import Array
@@ -145,7 +146,8 @@ encodeModel model = model |> encodeModel_ |> E.encode 2
 
 encodePortModel : M.Model -> M.PortModel
 encodePortModel model =
-    { now = model.now
+    { mode = encodeMode model.mode
+    , now = model.now
     , theta = model.theta
     , layers = List.map encodePortLayer model.layers
     , size = model.size
@@ -312,12 +314,12 @@ layerModelDecoder kind =
 
 
 
-modelDecoder : M.CreateLayer -> D.Decoder M.Model
-modelDecoder createLayer =
+modelDecoder : M.UiMode -> M.CreateLayer -> D.Decoder M.Model
+modelDecoder mode createLayer =
     let
         createModel theta layers size origin mouse now =
             let
-                initialModel = M.init [] createLayer
+                initialModel = M.init mode [] createLayer
             in
                 { initialModel
                 | theta = theta
@@ -337,9 +339,9 @@ modelDecoder createLayer =
             |> D.required "now" D.float
 
 
-decodeModel : M.CreateLayer -> EncodedState -> Maybe M.Model
-decodeModel createLayer modelStr =
-    D.decodeString (modelDecoder createLayer) modelStr
+decodeModel : M.UiMode -> M.CreateLayer -> EncodedState -> Maybe M.Model
+decodeModel mode createLayer modelStr =
+    D.decodeString (modelDecoder mode createLayer) modelStr
         -- |> Debug.log "Decode Result: "
         |> Result.toMaybe
 
@@ -383,3 +385,10 @@ fromFssPortModel portModel =
     { portModel
     | renderMode = decodeFssRenderMode portModel.renderMode
     }
+
+
+encodeMode : M.UiMode -> String
+encodeMode mode =
+    case mode of 
+        M.Development -> "dev"
+        M.Production -> "prod"

@@ -1,6 +1,7 @@
 module Model exposing
     ( init
     , Model
+    , UiMode(..)
     , Layer
     , emptyLayer
     , LayerIndex
@@ -39,6 +40,10 @@ type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
 type alias CreateLayer = LayerKind -> LayerModel -> Layer
+
+type UiMode 
+    = Development 
+    | Production
 
 type LayerKind
     = Lorenz
@@ -110,7 +115,8 @@ type alias PortBlend =
 
 
 type alias Model =
-    { paused : Bool
+    { mode : UiMode
+    , paused : Bool
     , autoRotate : Bool
     , fps : Int
     , theta : Float
@@ -131,6 +137,7 @@ type alias Model =
 
 type alias PortModel =
     { layers : List PortLayerDef
+    , mode : String
     , mouse : ( Int, Int )
     , now : Time.Time
     , origin : Pos
@@ -151,7 +158,8 @@ type alias PortLayerDef =
 
 
 type alias GuiDefaults =
-    { product : String
+    { mode : String
+    , product : String
     , palette : List String
     , layers : List PortLayerDef
     , size : ( Int, Int )
@@ -162,11 +170,13 @@ type alias GuiDefaults =
 
 
 init
-    :  List ( LayerKind, String, LayerModel )
+    :  UiMode
+    -> List ( LayerKind, String, LayerModel )
     -> CreateLayer
     -> Model
-init initialLayers createLayer
-    = { paused = False
+init mode initialLayers createLayer
+    = { mode = mode
+      , paused = False
       , autoRotate = False
       , fps = 0
       , theta = 0.1
