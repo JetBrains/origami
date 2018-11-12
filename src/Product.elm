@@ -16,8 +16,7 @@ type alias Palette = List Color
 
 type Product
     = JetBrains
-    | Default1
-    | Default2
+    | Mono
     | IntelliJ
     | PhpStorm
     | PyCharm
@@ -54,17 +53,16 @@ type Product
 getPalette : Product -> Palette
 getPalette product =
     case product of
-        JetBrains -> [ "#ff4d6b",  "#8158a7", "#feed00" ]
-        Default1 -> [ "#f45b69",  "#e4fde1", "#rgba(0,0,0,0)" ]
-        Default2 -> [ "#4b4e76",  "#fb4e76", "#rgba(0,0,0,0)" ]
-        IntelliJ -> [ "#087cfa",  "#fe315d", "#f97a12" ]
-        PhpStorm ->  [ "#b24eee", "#7660f4", "#fc378c" ]
-        PyCharm -> [ "#21d789", "#fcf84a", "#07c3f2" ]
+        JetBrains -> [ "#ad3259",  "#aa489a", "#ffdb2e" ]
+        Mono -> [ "#ffffff",  "#aaaaaa", "#000000" ]
+        IntelliJ -> [ "#003976",  "#fc31fe", "#ffd08d" ]
+        PhpStorm ->  [ "#bb43e6", "#9034b1", "#f93394" ]
+        PyCharm -> [ "#006137", "#fcf84a", "#f9ff93" ]
         RubyMine -> [ "#fc2555", "#fd8638", "#8f41cd" ]
         WebStorm -> [ "#22cdd6", "#2888d4", "#feee56" ]
         CLion -> [ "#32d791", "#1a9edd", "#ea3a8c" ]
         DataGrip -> [ "#32d791", "#9779f5", "#fd5fe4" ]
-        AppCode -> [ "#2b7fe3", "#25daee", "#30de95" ]
+        AppCode -> [ "#2b7fe3", "#30de95", "#25daee" ]
         GogLand -> [ "#078efc", "#bb4efc", "#3bea62" ]
         Resharper -> [ "#c21456", "#e14ce3", "#fdbc2c" ]
         ResharperCpp ->  [ "#fdbc2c", "#e14ce3", "#c21456" ]
@@ -109,8 +107,7 @@ getName product =
         Hub -> "Hub"
         Kotlin -> "Kotlin"
         MPS -> "MPS"
-        Default1 -> "Default 1"
-        Default2 -> "Default 2"
+        Mono -> "Mono"
         Unknown -> "Unknown"
 
 
@@ -118,8 +115,7 @@ decode : String -> Product
 decode id =
     case id of
         "jetbrains" -> JetBrains
-        "default1" -> Default1
-        "default2" -> Default2
+        "Mono" -> Mono
         "intellij-idea" -> IntelliJ
         "phpstorm" -> PhpStorm
         "pycharm" -> PyCharm
@@ -171,8 +167,7 @@ encode product =
         Hub -> "hub"
         Kotlin -> "kotlin"
         MPS -> "mps"
-        Default1 -> "default1"
-        Default2 -> "default2"
+        Mono -> "mono"
         Unknown -> "unknown"
 
 
@@ -180,7 +175,6 @@ getLogoPath : Product -> Maybe String
 getLogoPath product =
     (case product of
         Unknown -> Nothing
-        Default1 -> Nothing
-        Default2 -> Nothing
+        Mono -> Nothing
         product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ ".svg")

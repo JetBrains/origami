@@ -26,7 +26,7 @@ var PRODUCTS = [
     { label: 'JB', id: 'jetbrains',
       palette: [ '#9151e1',  '#ec4476', '#fde74a']
     },  // jetbrains-1
-    { label: 'D1', id: 'default1',
+    { label: 'D1', id: 'mono',
       palette: [ '#f45b69',  '#e4fde1', 'rgba(0,0,0,0)']
     },  // default-1
     { label: 'D2', id: 'default2',
