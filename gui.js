@@ -5,10 +5,6 @@ const dat = require('dat.gui');
 const PRODUCTS = [
     { label: 'JB', id: 'jetbrains'
     },  // jetbrains-1
-    { label: 'D1', id: 'default1'
-    },  // default-1
-    { label: 'D2', id: 'default2'
-    },  // default-2
     { label: ' ',  id: 'empty0'
     },  // separator
     { label: 'IJ', id: 'intellij-idea'
@@ -61,7 +57,9 @@ const PRODUCTS = [
     { label: 'KT', id: 'kotlin'
     },   // kotlin // KT_
     { label: 'MPS', id: 'mps'
-    }  // mps // MPS_
+    },  // mps // MPS_
+    { label: 'Mono', id: 'mono'
+  }  // mono
 ];
 const PRODUCT_TO_ID = {};
 PRODUCTS.forEach((product) => {
@@ -277,7 +275,7 @@ function start(layers, defaults, funcs) {
     const gui = new dat.GUI(/*{ load: JSON }*/);
     gui.remember(config);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
-    const lightSpeed = gui.add(config, 'lightSpeed').name('agile').min(100).max(1140);
+    const lightSpeed = gui.add(config, 'lightSpeed').name('agile').min(100).max(3000);
     const facesX = gui.add(config, 'facesX').name('col').min(1).max(100).step(1);
     const facesY = gui.add(config, 'facesY').name('row').min(1).max(100).step(1);
     const vignette = gui.add(config, 'vignette').min(0.0).max(1.0);

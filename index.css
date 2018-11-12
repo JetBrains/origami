@@ -98,9 +98,9 @@ svg.text-layer {
     z-index: 20;
 }
 
-.text-layer--jetbrains {
+.text-layer--jetbrains, .text-layer--subtitle {
     font-family: 'Gotham', Helvetica, sans-serif;
-    font-weight: 770;
+    font-weight: 170;
     text-transform: uppercase;
     color: white;
 }

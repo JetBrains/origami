@@ -107,17 +107,17 @@ initialLayers : List ( LayerKind, ModelChange )
 initialLayers =
     [ ( MirroredFss, identity )
     , ( MirroredFss, identity )
-    , ( MirroredFss
-      , changeIfFss
-            (\prevModel ->
-                { prevModel
-                | renderMode = FSS.PartialLines
-                , shareMesh = True
-                }
-            )
-      )
+   , ( MirroredFss
+     , changeIfFss
+           (\prevModel ->
+               { prevModel
+               | renderMode = FSS.PartialLines
+               , shareMesh = True
+               }
+           )
+     )
     -- , ( Vignette, identity )
-    , ( Text, identity )
+    -- , ( Text, identity )
     , ( SvgImage, identity )
     ]
 
@@ -880,7 +880,7 @@ layerToEntities ({ fss } as model) viewport index ({ layer, change } as layerDef
                                     |> (\fss ->
                                         { fss
                                         | clip = Just (0.0, FSS.defaultMirror)
-                                        , mirror = False
+                                        , mirror = True
                                         }
                                     )
                             }
@@ -1044,4 +1044,3 @@ port export_ : String -> Cmd msg
 port exportZip_ : String -> Cmd msg
 
 -- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg
-
