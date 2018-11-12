@@ -273,7 +273,7 @@ update msg model =
                                         newMesh = maybeScene |> FSS.build fssModel
                                     in
                                         WebGLLayer
-                                        (FssLayer maybeScene newMesh)
+                                        (MirroredFssLayer maybeScene newMesh)
                                         webglBlend
                                 _ -> layer
                         _ -> layer
@@ -424,7 +424,7 @@ createLayer kind layerModel =
             WGLBlend.default
         ( MirroredFss, FssModel fssModel ) ->
             WebGLLayer
-            ( FSS.build fssModel Nothing |> FssLayer Nothing )
+            ( FSS.build fssModel Nothing |> MirroredFssLayer Nothing )
             WGLBlend.default
             -- (WGLBlend.build
             --    (B.customAdd, B.oneMinusSrcColor, B.oneMinusSrcColor)
