@@ -58,8 +58,8 @@ function buildFSS(model, fss, source) {
                 : Math.randomInRange(0.2, 0.7);
         }
 
-        light1.setPosition(120, 120, 100);
-        light2.setPosition(-100, -100, 35);
+        light1.setPosition(120, 120, 50);
+        light2.setPosition(10, -100, 25);
 
         //container.appendChild(renderer.element);
         // window.addEventListener('resize', resize);
