@@ -172,8 +172,9 @@ setTimeout(function() { // FIXME: change to document.ready
 
     app.ports.startGui.subscribe((model) => {
         console.log('startGui', model);
-        const gui = startGui(
+        startGui(
             document,
+            model.mode,
             model.layers,
             model,
             { changeLightSpeed : index => value =>

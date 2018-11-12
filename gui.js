@@ -204,7 +204,7 @@ const Config = function(layers, defaults, funcs) {
 };
 
 
-function start(document, layers, defaults, funcs) {
+function start(document, mode, layers, defaults, funcs) {
     function updateProduct(id) {
       const product = PRODUCTS_BY_ID[id];
       funcs.changeProduct(product.id);
@@ -327,6 +327,8 @@ function start(document, layers, defaults, funcs) {
     customSize.onFinishChange(funcs.setCustomSize);
 
     layers.reverse().forEach((layer, revIndex) => {
+      if ((mode == 'prod') && (layer.name == 'Logo')) return;
+
       const index = layers.length - 1 - revIndex;
       //const folder = gui.addFolder('Layer ' + index + ' (' + layer.kind + ')');
       const folder = gui.addFolder(layer.name.toLowerCase());
