@@ -326,7 +326,8 @@ function start(document, layers, defaults, funcs) {
     product.onFinishChange(funcs.changeProduct);
     customSize.onFinishChange(funcs.setCustomSize);
 
-    layers.forEach((layer, index) => {
+    layers.reverse().forEach((layer, revIndex) => {
+      const index = layers.length - 1 - revIndex;
       const folder = gui.addFolder('Layer ' + index + ' (' + layer.kind + ')');
 
       const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
@@ -347,7 +348,7 @@ function start(document, layers, defaults, funcs) {
             if (guiHidden) {
               document.querySelectorAll('.dg')[0].style.display = 'block';
               gui.open();
-            } else { 
+            } else {
               document.querySelectorAll('.dg')[0].style.display = 'none';
               gui.close();
             }
