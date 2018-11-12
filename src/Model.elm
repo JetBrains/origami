@@ -155,11 +155,6 @@ type alias GuiDefaults =
     , palette : List String
     , layers : List PortLayerDef
     , size : ( Int, Int )
-    -- , facesX : Int
-    -- , facesY : Int
-    -- , lightSpeed: Int
-    -- , vignette: Float
-    -- , amplitude : FSS.AmplitudeChange
     , customSize : Maybe (Int, Int)
     , fss : PortFSS
     , vignette : PortVignette

@@ -136,8 +136,9 @@ fragmentShader =
 
 
         float vignette() {
-            vec2 st = gl_FragCoord.xy/uResolution.xy;
-            return distance(st,vec2(0.5));
+            float st = gl_FragCoord.x/uResolution.x;
+           // return distance(st,vec2(0.5));
+           return st;
         }
 
 
@@ -149,5 +150,6 @@ fragmentShader =
           // gl_FragColor = vec4(uColor, vignette());
              gl_FragColor.a = mix(gl_FragColor.a , uOpacity, pow(smoothstep(0.0, 0.7, vignette()), 2.0));
 
+ 
         }
     |]

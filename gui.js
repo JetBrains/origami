@@ -5,10 +5,6 @@ const dat = require('dat.gui');
 const PRODUCTS = [
     { label: 'JB', id: 'jetbrains'
     },  // jetbrains-1
-    { label: 'D1', id: 'default1'
-    },  // default-1
-    { label: 'D2', id: 'default2'
-    },  // default-2
     { label: ' ',  id: 'empty0'
     },  // separator
     { label: 'IJ', id: 'intellij-idea'
@@ -61,7 +57,9 @@ const PRODUCTS = [
     { label: 'KT', id: 'kotlin'
     },   // kotlin // KT_
     { label: 'MPS', id: 'mps'
-    }  // mps // MPS_
+    },  // mps // MPS_
+    { label: 'Mono', id: 'mono'
+  }  // mono
 ];
 const PRODUCT_TO_ID = {};
 PRODUCTS.forEach((product) => {
