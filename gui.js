@@ -129,6 +129,10 @@ SVG_BLENDS =
   [ 'normal', 'overlay' ];
 
 
+RENDER_MODES =
+  [ 'triangles', 'lines', 'partial-lines', 'points' ]
+
+
 PREDEFINED_SIZES =
   { 'window': [0, 0]
   , '1920x1980': [ 1920, 1980 ]
@@ -177,6 +181,7 @@ const Config = function(layers, defaults, funcs) {
         this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
       this['visible' + index] = true;
+      this['renderMode' + index] = 'triangles';
 
       if (isFss(layer)) {
         this['lightSpeed' + index] = defaults.fss.lightSpeed;
@@ -285,15 +290,20 @@ function start(layers, defaults, funcs) {
         const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
         const facesY = folder.add(config, 'facesY' + index).name('row').min(1).max(100).step(1);
         const vignette = folder.add(config, 'vignette' + index).name('vignette').min(0.0).max(1.0);
+        const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
         const amplitudeFolder = folder.addFolder('amplitude');
-        const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).min(0.0).max(1.0);
-        const amplitudeY = amplitudeFolder.add(config, 'amplitudeY' + index).min(0.0).max(1.0);
-        const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).min(0.0).max(1.0);
+        const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('amplitudeX')
+          .min(0.0).max(1.0);
+        const amplitudeY = amplitudeFolder.add(config, 'amplitudeY' + index).name('amplitudeY')
+          .min(0.0).max(1.0);
+        const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('amplitudeZ')
+          .min(0.0).max(1.0);
 
         lightSpeed.onFinishChange(funcs.changeLightSpeed(index));
         facesX.onFinishChange(funcs.changeFacesX(index));
         facesY.onFinishChange(funcs.changeFacesY(index));
         vignette.onFinishChange(funcs.changeVignette(index));
+        renderMode.onFinishChange(funcs.changeRenderMode(index));
         amplitudeX.onFinishChange(value => {
           funcs.changeAmplitude(index)(value, null, null);
         });

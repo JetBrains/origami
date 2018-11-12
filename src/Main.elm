@@ -58,6 +58,7 @@ type Msg
     | ChangeSVGBlend LayerIndex SVGBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
     --| RebuildOnClient LayerIndex FSS.SerializedScene
+    | ChangeFssRenderMode LayerIndex FSS.RenderMode
     | ChangeFaces LayerIndex ( Int, Int )
     | ChangeLightSpeed LayerIndex Int
     | ChangeVignette LayerIndex Float
@@ -243,6 +244,16 @@ update msg model =
             , Cmd.none
             )
 
+        ChangeFssRenderMode index renderMode ->
+            -- ( model
+            --     |> updateFss index
+            --         (\fssModel -> { fssModel | renderMode = renderMode })
+            -- , Cmd.none
+            -- )
+            model
+                |> updateAndRebuildFssWith index
+                    (\fssModel -> { fssModel | renderMode = renderMode })
+
         ChangeFaces index faces ->
             model
                 |> updateAndRebuildFssWith index
@@ -324,20 +335,23 @@ getLayerModel index model =
         |> Maybe.map .model
 
 
+updateFss : LayerIndex -> (FSS.Model -> FSS.Model) -> Model -> Model
+updateFss index f model =
+    model |> updateLayerWithItsModel
+        index
+        (\(layer, layerModel) ->
+            ( layer
+            , case layerModel of
+                FssModel fssModel ->
+                    f fssModel |> FssModel
+                _ -> layerModel
+            )
+        )
+
 updateAndRebuildFssWith : LayerIndex -> (FSS.Model -> FSS.Model) -> Model -> ( Model, Cmd Msg )
 updateAndRebuildFssWith index f curModel =
     let
-        newModel =
-            curModel |> updateLayerWithItsModel
-                index
-                (\(layer, model) ->
-                    ( layer
-                    , case model of
-                        FssModel fssModel ->
-                            f fssModel |> FssModel
-                        _ -> model
-                    )
-                )
+        newModel = updateFss index f curModel
     in
         ( newModel
         , case (newModel |> getLayerModel index) of
@@ -595,6 +609,8 @@ subscriptions model =
           )
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
+        , changeFssRenderMode (\{value, layer} ->
+            IE.decodeFssRenderMode value |> ChangeFssRenderMode layer)
         , changeFacesX (\{value, layer} ->
             case model |> getLayerModel layer of
                 Just (FssModel { faces }) ->
@@ -629,7 +645,7 @@ subscriptions model =
             Configure layer (LorenzModel value)
           )
         , configureFss (\{ layer, value } ->
-            FSS.fromPortModel value |> FssModel |> Configure layer
+            IE.fromFssPortModel value |> FssModel |> Configure layer
           )
         , rebuildFss (\{ layer, value } ->
             RebuildFss layer value
@@ -906,6 +922,8 @@ port turnOn : (LayerIndex -> msg) -> Sub msg
 port turnOff : (LayerIndex -> msg) -> Sub msg
 
 port import_ : (String -> msg) -> Sub msg
+
+port changeFssRenderMode : ({ value: String, layer: LayerIndex } -> msg) -> Sub msg
 
 port changeFacesX : ({ value: Int, layer: LayerIndex } -> msg) -> Sub msg
 

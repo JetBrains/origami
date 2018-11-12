@@ -200,6 +200,7 @@ type alias PortFSS =
     { faces : ( Int, Int )
     , lightSpeed: Int
     , amplitude : FSS.Amplitude
+    , renderMode : String
     }
 
 
