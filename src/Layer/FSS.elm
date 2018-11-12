@@ -4,7 +4,7 @@ module Layer.FSS exposing
     , Mesh
     , SerializedScene
     , Amplitude, AmplitudeChange
-    , Vignette
+    , Vignette, Iris
     , Clip
     , makeEntity
     , build
@@ -39,6 +39,7 @@ type alias Amplitude = ( Float, Float, Float )
 type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
 type alias Vignette = Float
+type alias Iris = Float
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -55,6 +56,7 @@ type alias PortModel =
     { renderMode : String
     , amplitude : Amplitude
     , vignette : Vignette
+    , iris : Iris 
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
@@ -66,7 +68,8 @@ type alias PortModel =
 type alias Model =
     { renderMode : RenderMode
     , amplitude : Amplitude
-    , vignette : Vignette 
+    , vignette : Vignette
+    , iris : Iris 
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
@@ -153,8 +156,13 @@ type alias SerializedScene =
 defaultAmplitude : ( Float, Float, Float )
 defaultAmplitude = ( 0.3, 0.3, 0.3 )
 
-defaultVignette : Float
+
+defaultVignette : Vignette
 defaultVignette = 0.8
+
+
+defaultIris : Iris
+defaultIris = 1.0
 
 
 defaultMirror : Float
@@ -179,6 +187,7 @@ init =
     , renderMode = Triangles
     , amplitude = defaultAmplitude
     , vignette = defaultVignette
+    , iris = defaultIris
     , mirror = False
     , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
     , lightSpeed = defaultLightSpeed
@@ -375,6 +384,7 @@ type alias Uniforms =
         , uMousePosition : Vec2
         , uAmplitude : Vec3
         , uVignette : Float
+        , uIris : Float
         , uSegment : Vec3
         , uMirror : Float
         , uClip : Vec2
@@ -385,8 +395,8 @@ type alias Uniforms =
 type alias Varyings =
     { vColor : Vec4
     , vPosition : Vec3
-    , vColorI: Vec4
-    , vColorII: Vec4
+    , vColorI : Vec4
+    , vColorII : Vec4
     --, vMirror : Vec3
     }
 
@@ -428,6 +438,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
         , uVignette = model.vignette
+        , uIris = model.iris
         , paused = v.paused
         , rotation = v.rotation
         , perspective = v.perspective
@@ -737,6 +748,7 @@ fragmentShader =
         uniform vec2 uClip;
         uniform vec2 uScale;
         uniform float uVignette;
+        uniform float uIris;
        // uniform int uLayerIndex;
 
 
@@ -777,7 +789,7 @@ fragmentShader =
           //  if(uLayerIndex != 0) {
 
             // vignette
-              gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, 1.0, distance(actPos,vec2(0.5))));
+              gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, uIris, distance(actPos,vec2(0.5))));
            // }
 
             //opacity

@@ -179,6 +179,8 @@ setTimeout(function() { // FIXME: change to document.ready
                 { app.ports.changeLightSpeed.send({ layer: index, value: Math.round(value) }) }
             , changeVignette : index => value =>
                 { app.ports.changeVignette.send({ layer: index, value: Math.round(value) }) }
+            , changeIris : index => value =>
+                { app.ports.changeIris.send({ layer: index, value: Math.round(value) }) }
             , changeFacesX : index => value =>
                 { app.ports.changeFacesX.send({ layer: index, value: Math.round(value) }) }
             , changeFacesY : index => value =>

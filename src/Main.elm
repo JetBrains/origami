@@ -62,7 +62,8 @@ type Msg
     | ChangeFssRenderMode LayerIndex FSS.RenderMode
     | ChangeFaces LayerIndex ( Int, Int )
     | ChangeLightSpeed LayerIndex Int
-    | ChangeVignette LayerIndex Float
+    | ChangeVignette LayerIndex FSS.Vignette
+    | ChangeIris LayerIndex FSS.Iris
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | NoOp
 
@@ -305,6 +306,12 @@ update msg model =
             , Cmd.none
             )
 
+        ChangeIris index iris ->
+            ( model |> updateFss index 
+                (\fssModel -> { fssModel | iris = iris }) 
+            , Cmd.none
+            )
+
             -- model
             --     |> updateAndRebuildFssWith index
             --         (\fssModel -> { fssModel | vignette = vignette })
@@ -359,6 +366,7 @@ updateFss index f model =
                 _ -> layerModel
             )
         )
+
 
 updateAndRebuildFssWith : LayerIndex -> (FSS.Model -> FSS.Model) -> Model -> ( Model, Cmd Msg )
 updateAndRebuildFssWith index f curModel =
@@ -640,6 +648,7 @@ subscriptions model =
         , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
         , changeAmplitude (\{value, layer} -> ChangeAmplitude layer value)
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
+        , changeIris (\{value, layer} -> ChangeIris layer value)
         , setCustomSize
             (\(w, h) ->
                 let
@@ -949,7 +958,9 @@ port changeFacesY : ({ value: Int, layer: LayerIndex } -> msg) -> Sub msg
 
 port changeLightSpeed : ({ value: Int, layer: LayerIndex } -> msg) -> Sub msg
 
-port changeVignette : ({ value: Float, layer: LayerIndex } -> msg) -> Sub msg
+port changeVignette : ({ value: FSS.Vignette, layer: LayerIndex } -> msg) -> Sub msg
+
+port changeIris : ({ value: FSS.Iris, layer: LayerIndex } -> msg) -> Sub msg
 
 port changeAmplitude : ({ value: FSS.AmplitudeChange, layer: LayerIndex } -> msg) -> Sub msg
 
