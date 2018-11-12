@@ -681,8 +681,8 @@ vertexShader =
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * lightOscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
 
                 if (uLayerIndex == 0 ) {
-                    lightAmbient =  uLightDiffuse[i];
-                    lightDiffuse =  uLightAmbient[i];
+                    lightAmbient =  vec4(vec3(0.5), 1.0);
+                    lightDiffuse =  vec4(vec3(0.8), 1.0);
 
                 } else {
                     lightAmbient = uLightAmbient[i];
@@ -789,7 +789,7 @@ fragmentShader =
           //  if(uLayerIndex != 0) {
 
             // vignette
-              gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, uIris, distance(actPos,vec2(0.5))));
+              gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, 1.0, distance(actPos,vec2(0.5))));
            // }
 
             //opacity

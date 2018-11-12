@@ -204,7 +204,7 @@ const Config = function(layers, defaults, funcs) {
 };
 
 
-function start(layers, defaults, funcs) {
+function start(document, layers, defaults, funcs) {
     function updateProduct(id) {
       const product = PRODUCTS_BY_ID[id];
       funcs.changeProduct(product.id);
@@ -284,7 +284,7 @@ function start(layers, defaults, funcs) {
 
     function addLayerProps(folder, config, layer, index) {
       if (isFss(layer)) {
-        const lightSpeed = folder.add(config, 'lightSpeed' + index).name('agile')
+        const lightSpeed = folder.add(config, 'lightSpeed' + index).name('lights agile')
                                  .min(100).max(1140);
         const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
         const facesY = folder.add(config, 'facesY' + index).name('row').min(1).max(100).step(1);
@@ -339,6 +339,21 @@ function start(layers, defaults, funcs) {
       }
       addLayerProps(folder, config, layer, index);
     });
+
+    let guiHidden = false;
+
+    document.addEventListener('keydown', (event) => {
+        if (event.keyCode == 32) {
+            if (guiHidden) {
+              document.querySelectorAll('.dg')[0].style.display = 'block';
+              gui.open();
+            } else { 
+              document.querySelectorAll('.dg')[0].style.display = 'none';
+              gui.close();
+            }
+            guiHidden = !guiHidden;
+        }
+      });
 
 
     // const textBlend = gui.add(config, 'textBlend', SVG_BLENDS);
