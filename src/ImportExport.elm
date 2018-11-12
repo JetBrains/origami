@@ -123,6 +123,7 @@ encodeModel_ : M.Model -> E.Value
 encodeModel_ model =
     E.object
         [ ( "theta", E.float model.theta )
+        , ( "omega", E.float model.omega )
         , ( "layers", E.list (List.map encodeLayerDef model.layers) )
         -- , ( "layers", E.list (List.filterMap
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
@@ -149,6 +150,7 @@ encodePortModel model =
     { mode = encodeMode model.mode
     , now = model.now
     , theta = model.theta
+    , omega = model.omega
     , layers = List.map encodePortLayer model.layers
     , size = model.size
     , origin = model.origin
@@ -317,12 +319,13 @@ layerModelDecoder kind =
 modelDecoder : M.UiMode -> M.CreateLayer -> D.Decoder M.Model
 modelDecoder mode createLayer =
     let
-        createModel theta layers size origin mouse now =
+        createModel theta omega layers size origin mouse now =
             let
                 initialModel = M.init mode [] createLayer
             in
                 { initialModel
                 | theta = theta
+                , omega = omega
                 , layers = layers
                 , size = size
                 , origin = origin
@@ -332,6 +335,7 @@ modelDecoder mode createLayer =
     in
         D.decode createModel
             |> D.required "theta" D.float
+            |> D.required "omega" D.float            
             |> D.required "layers" (layerDefDecoder createLayer |> D.list)
             |> D.required "size" intPairDecoder
             |> D.required "origin" intPairDecoder
