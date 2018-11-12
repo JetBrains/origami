@@ -8,6 +8,7 @@ const import_ = (app, importedState) => {
     const parsedState = importedState;
     scenes = {};
     layers = [];
+    app.ports.hideControls.send(null);
     app.ports.pause.send(null);
     app.ports.initLayers.send(layers.map((l) => l.kind));
     app.ports.import_.send(JSON.stringify({

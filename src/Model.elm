@@ -122,6 +122,7 @@ type alias Model =
     , now : Time
     , timeShift : Time
     , product : Product
+    , controlsVisible : Bool
     -- voronoi : Voronoi.Config
     -- fractal : Fractal.Config
     -- , lights (taken from product)
@@ -188,6 +189,7 @@ init initialLayers createLayer
       , timeShift = 0.0
       --, range = ( 0.8, 1.0 )
       , product = Product.JetBrains
+      , controlsVisible = True
       }
 
 
