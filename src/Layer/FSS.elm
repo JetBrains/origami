@@ -681,8 +681,8 @@ vertexShader =
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * lightOscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
 
                 if (uLayerIndex == 0 ) {
-                    lightAmbient =  uLightDiffuse[i];
-                    lightDiffuse =  uLightAmbient[i];
+                    lightAmbient =  vec4(vec3(0.5), 1.0);
+                    lightDiffuse =  vec4(vec3(0.8), 1.0);
 
                 } else {
                     lightAmbient = uLightAmbient[i];
