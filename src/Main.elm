@@ -101,13 +101,13 @@ initialLayers =
     , ( Text, "Title", NoModel )
     -- , ( Vignette, Vignette.init )
     , ( SvgImage, "Logo", NoModel )
-    ] 
-    |> List.filter (\(kind, _, _) -> 
-        case ( kind, initialMode ) of 
+    ]
+    |> List.filter (\(kind, _, _) ->
+        case ( kind, initialMode ) of
             ( Text, Development ) -> True
             ( Text, Production ) -> False
             _ -> True
-    ) 
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -159,6 +159,14 @@ update msg model =
                 |> Maybe.withDefault model
                 |> Debug.log "import model"
                 |> rebuildAllFssLayersWith
+
+            -- ( encodedModel
+            --     |> IE.decodeModel initialMode createLayer
+            --     |> Maybe.withDefault model
+            --     |> Debug.log "import model"
+            --     -- |> rebuildAllFssLayersWith
+            -- , Cmd.none
+            -- )
 
         Export ->
             ( model
