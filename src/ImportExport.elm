@@ -174,7 +174,7 @@ encodePortLayer layerDef =
                 ( Just webglBlend, Nothing )
             M.SVGLayer _ svgBlend ->
                 ( Nothing, SVGBlend.encode svgBlend |> Just )
-    , name = layerDef.name            
+    , name = layerDef.name
     }
 
 
@@ -222,11 +222,12 @@ intPairDecoder =
 layerDefDecoder : M.CreateLayer -> D.Decoder M.LayerDef
 layerDefDecoder createLayer =
     let
-        createLayerDef kindStr layerStr layerModelStr name isOn =
+        createLayerDef kindStr layerModelStr name isOn =
             let
                 kind = decodeKind kindStr
                 layerModel = layerModelStr
                         |> D.decodeString (layerModelDecoder kind)
+                        |> Debug.log "Layer Model Decode Result: "
                         |> Result.toMaybe
                         |> Maybe.withDefault M.NoModel
             in
@@ -239,7 +240,6 @@ layerDefDecoder createLayer =
     in
         D.decode createLayerDef
             |> D.required "kind" D.string
-            |> D.required "layer" D.string
             |> D.required "model" D.string
             |> D.required "name" D.string
             |> D.required "isOn" D.bool
@@ -281,9 +281,9 @@ layerModelDecoder kind =
                     vignette
                     iris =
                 case ( faces, amplitude, clip ) of
-                    ( [facesX, facesY, _]
+                    ( [facesX, facesY]
                     , [amplitudeX, amplitudeY, amplitudeZ]
-                    , [clipX, clipY, _]
+                    , [clipX, clipY]
                     ) ->
                         M.FssModel
                             { renderMode = decodeFssRenderMode renderModeStr
@@ -296,7 +296,7 @@ layerModelDecoder kind =
                             , vignette = vignette
                             , iris = iris
                             }
-                    _ -> M.NoModel
+                    _ -> Debug.log "failed to parse model" M.NoModel
             in
                 D.decode createFssModel
                     |> D.required "renderMode" D.string
@@ -335,7 +335,7 @@ modelDecoder mode createLayer =
     in
         D.decode createModel
             |> D.required "theta" D.float
-            |> D.required "omega" D.float            
+            |> D.required "omega" D.float
             |> D.required "layers" (layerDefDecoder createLayer |> D.list)
             |> D.required "size" intPairDecoder
             |> D.required "origin" intPairDecoder
@@ -346,7 +346,7 @@ modelDecoder mode createLayer =
 decodeModel : M.UiMode -> M.CreateLayer -> EncodedState -> Maybe M.Model
 decodeModel mode createLayer modelStr =
     D.decodeString (modelDecoder mode createLayer) modelStr
-        -- |> Debug.log "Decode Result: "
+        |> Debug.log "Decode Result: "
         |> Result.toMaybe
 
 
@@ -393,6 +393,6 @@ fromFssPortModel portModel =
 
 encodeMode : M.UiMode -> String
 encodeMode mode =
-    case mode of 
+    case mode of
         M.Development -> "dev"
         M.Production -> "prod"
