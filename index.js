@@ -241,7 +241,7 @@ setTimeout(function() { // FIXME: change to document.ready
                 console.log('forced to rebuild FSS layer', index);
                 const fssScene = buildFSS(model, fssModel);
                 fssScenes[index] = fssScene;
-                app.ports.rebuildFss.send([ fssScene, index ]);
+                app.ports.rebuildFss.send({ value: fssScene, layer: index });
                 layer.scene = fssScene;
             }
         });
