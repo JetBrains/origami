@@ -143,10 +143,11 @@ update msg model =
             )
 
         Import encodedModel ->
-            ( encodedModel
+            encodedModel
                 |> IE.decodeModel createLayer
                 |> Maybe.withDefault model
-            , Cmd.none )
+                |> Debug.log "import model"
+                |> rebuildAllFssLayersWith
 
         Export ->
             ( model
@@ -307,8 +308,8 @@ update msg model =
             )
 
         ChangeIris index iris ->
-            ( model |> updateFss index 
-                (\fssModel -> { fssModel | iris = iris }) 
+            ( model |> updateFss index
+                (\fssModel -> { fssModel | iris = iris })
             , Cmd.none
             )
 
