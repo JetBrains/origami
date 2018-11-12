@@ -6,7 +6,6 @@ module Layer.FSS exposing
     , Amplitude, AmplitudeChange
     , Clip
     , makeEntity
-    , fromPortModel
     , build
     , emptyMesh
     , defaultMirror
@@ -173,23 +172,6 @@ init =
     , clip = Nothing -- (-1, -1) -- max and min values of X for clipping
     , lightSpeed = defaultLightSpeed
     , shareMesh = False
-    }
-
-
-parseRenderMode : String -> RenderMode
-parseRenderMode str =
-    case str of
-        "triangles" -> Triangles
-        "lines" -> Lines
-        "partial-lines" -> PartialLines
-        "points" -> Points
-        _ -> Triangles
-
-
-fromPortModel : PortModel -> Model
-fromPortModel portModel =
-    { portModel
-    | renderMode = parseRenderMode portModel.renderMode
     }
 
 

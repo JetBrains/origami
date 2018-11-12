@@ -4,6 +4,9 @@ module ImportExport exposing
     , EncodedState
     , encodePortModel
     , encodeFss
+    , fromFssPortModel
+    , encodeFssRenderMode
+    , decodeFssRenderMode
     )
 
 import Json.Decode as D exposing (bool, int, string, float, Decoder, Value)
@@ -264,7 +267,7 @@ modelDecoder createLayer =
 decodeModel : M.CreateLayer -> EncodedState -> Maybe M.Model
 decodeModel createLayer modelStr =
     D.decodeString (modelDecoder createLayer) modelStr
-        |> Debug.log "Decode Result: "
+        -- |> Debug.log "Decode Result: "
         |> Result.toMaybe
 
 
@@ -273,5 +276,32 @@ encodeFss m product =
     { amplitude = m.amplitude
     , faces = m.faces
     , lightSpeed = m.lightSpeed
+    , renderMode = encodeFssRenderMode m.renderMode
     --, palette = product |> getPalette
+    }
+
+
+encodeFssRenderMode : FSS.RenderMode -> String
+encodeFssRenderMode mode =
+    case mode of
+        FSS.Triangles -> "triangles"
+        FSS.Lines -> "lines"
+        FSS.PartialLines -> "partial-lines"
+        FSS.Points -> "points"
+
+
+decodeFssRenderMode : String -> FSS.RenderMode
+decodeFssRenderMode str =
+    case str of
+        "triangles" -> FSS.Triangles
+        "lines" -> FSS.Lines
+        "partial-lines" -> FSS.PartialLines
+        "points" -> FSS.Points
+        _ -> FSS.Triangles
+
+
+fromFssPortModel : FSS.PortModel -> FSS.Model
+fromFssPortModel portModel =
+    { portModel
+    | renderMode = decodeFssRenderMode portModel.renderMode
     }
