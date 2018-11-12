@@ -166,7 +166,7 @@ defaultIris = 1.0
 
 
 defaultMirror : Float
-defaultMirror = 0.5
+defaultMirror = 0.50001
 
 
 defaultFaces : ( Int, Int )
@@ -659,7 +659,7 @@ vertexShader =
             vec3 amplitudes = uAmplitude * uSegment;
 
             // Light geometry and magnitudes
-            vec3 orbitFactor = vec3(2.5, .5, 2.0);
+            vec3 orbitFactor = vec3(2.5, 2.5, 2.0);
             vec3 lightsSpeed = vec3(uLightSpeed * 10.0, uLightSpeed  * 10.0, 100.0);
 
 
@@ -706,7 +706,7 @@ vertexShader =
 
             vec3 gradientColor = rgb2hsv(vColor.xyz);
             gradientColor[2] /= 3.0;
-            gradientColor[1] -= 0.6; // hue shift
+           // gradientColor[1] -= 0.6; // hue shift
             gradientColor = hsv2rgb(gradientColor);
 
 
