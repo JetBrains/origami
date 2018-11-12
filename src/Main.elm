@@ -324,7 +324,6 @@ getLayerModel index model =
         |> Maybe.map .model
 
 
--- TODO remove
 updateAndRebuildFssWith : LayerIndex -> (FSS.Model -> FSS.Model) -> Model -> ( Model, Cmd Msg )
 updateAndRebuildFssWith index f curModel =
     let
@@ -341,7 +340,7 @@ updateAndRebuildFssWith index f curModel =
                 )
     in
         ( newModel
-        , case newModel |> getLayerModel index of
+        , case (newModel |> getLayerModel index) of
             Just (FssModel fssModel) ->
                 requestFssRebuild
                     { layer = index

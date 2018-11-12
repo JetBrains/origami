@@ -29,20 +29,23 @@ encodeIntPair ( v1, v2 ) =
         ]
 
 
+encodeKind_ : M.LayerKind -> String
+encodeKind_ kind =
+    case kind of
+        M.Fss -> "fss"
+        M.MirroredFss -> "fss-mirror"
+        M.Lorenz -> "lorenz"
+        M.Fractal -> "fractal"
+        M.Template -> "template"
+        M.Voronoi -> "voronoi"
+        M.Text -> "text"
+        M.SvgImage -> "logo"
+        M.Vignette -> "vignette"
+        M.Empty -> "empty"
+
+
 encodeKind : M.LayerKind -> E.Value
-encodeKind kind =
-    E.string
-        (case kind of
-            M.Fss -> "fss"
-            M.MirroredFss -> "fss-mirror"
-            M.Lorenz -> "lorenz"
-            M.Fractal -> "fractal"
-            M.Template -> "template"
-            M.Voronoi -> "voronoi"
-            M.Text -> "text"
-            M.SvgImage -> "logo"
-            M.Vignette -> "vignette"
-            M.Empty -> "empty")
+encodeKind = E.string << encodeKind_
 
 
 encodeLayerDef : M.LayerDef -> E.Value
@@ -110,7 +113,7 @@ encodePortModel model =
 
 encodePortLayer : M.LayerDef -> M.PortLayerDef
 encodePortLayer layerDef =
-    { kind = encodeKind layerDef.kind |> E.encode 0
+    { kind = encodeKind_ layerDef.kind
     , on = layerDef.on
     , webglOrSvg =
         case layerDef.layer of
