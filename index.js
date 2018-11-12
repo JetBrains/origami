@@ -190,6 +190,8 @@ setTimeout(function() { // FIXME: change to document.ready
                 { app.ports.changeFacesX.send({ layer: index, value: Math.round(value) }) }
             , changeFacesY : index => value =>
                 { app.ports.changeFacesY.send({ layer: index, value: Math.round(value) }) }
+            , changeRenderMode : index => renderMode =>
+                { app.ports.changeFssRenderMode.send({ layer: index, value: renderMode }) }
             , changeWGLBlend : (index, blend) =>
                 { app.ports.changeWGLBlend.send({ layer: index, value: blend }) }
             , changeSVGBlend : (index, blend) =>
