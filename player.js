@@ -20,6 +20,9 @@ const import_ = (app, importedState) => {
             app.ports.rebuildFss.send({ value: fssScene, layer: index });
             // layer.scene = fssScene;
         }
+
+        app.ports.hideControls.send(null);
+        app.ports.pause.send(null);
     });
 
     console.log('sending for the import', parsedState);
@@ -30,6 +33,7 @@ const import_ = (app, importedState) => {
         origin: parsedState.origin,
         mouse: parsedState.mouse,
         now: parsedState.now,
+        product: parsedState.product,
         layers: parsedState.layers.map((layer) => (
             { kind : layer.kind,
               blend: layer.blend,
@@ -40,8 +44,9 @@ const import_ = (app, importedState) => {
         ))
     }));
 
-    app.ports.hideControls.send(null);
-    app.ports.pause.send(null);
+    // app.ports.hideControls.send(null);
+    // app.ports.pause.send(null);
+
     // app.ports.initLayers.send(layers.map((l) => l.kind));
 
     // model.layers.forEach((layer, index) => {
@@ -51,7 +56,6 @@ const import_ = (app, importedState) => {
     //         app.ports.rebuildFss.send({ value: fssScene, layer: index });
     //     }
     // });
-
 
     // parsedState.layers.forEach((layer, index) => {
     //     if (isFss(layer)) {
