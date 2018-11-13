@@ -197,6 +197,7 @@ const Config = function(layers, defaults, funcs) {
     this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
 
     this.savePng = funcs.savePng;
+    this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -327,7 +328,8 @@ function start(document, model, funcs) {
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
-    const savePng = gui.add(config, 'savePng').name('save png');
+    gui.add(config, 'savePng').name('save png');
+    if (mode == 'dev') gui.add(config, 'saveBatch').name('save batch');
     product.onFinishChange(funcs.changeProduct);
     omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
