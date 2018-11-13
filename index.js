@@ -5,6 +5,7 @@
 require('./index.css');
 
 const deepClone = require('./deep-clone.js');
+const htmlToCanvas = require('./html-to-canvas.js');
 const JSZip = require('jszip');
 const JSZipUtils = require('jszip-utils');
 const FileSaver = require('jszip/vendor/FileSaver');
@@ -16,16 +17,7 @@ const mountNode = document.getElementById('js-animation');
 // The third value on embed are the initial values for incomming ports into Elm
 const app = App.Main.embed(mountNode);
 
-// mountNode.addEventListener('click', function() {
-//     app.ports.pause.send(null);
-// });
-
-//const registerToolkit = require('./toolkit.js');
-// const startPatching = require('./patch.js');
 const startGui = require('./gui.js');
-
-//const LayersNode = require('./src/LayersNode.elm').LayersNode;
-
 const buildFSS = require('./fss.js');
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
@@ -195,15 +187,24 @@ const prepareImportExport = () => {
 
 }
 
-const savePng = (hiddenLink, size) => {
-    var canvas = document.querySelector('.webgl-layers');
-    if (!canvas) return;
+const savePng = (hiddenLink) => {
+    const srcCanvas = document.querySelector('.webgl-layers');
+    const trgCanvas = document.querySelector('#js-save-buffer');
+    const [ width, height ] = [ srcCanvas.width, srcCanvas.height ];
+    trgCanvas.width = width;
+    trgCanvas.height = height;
+    if (!srcCanvas || !trgCanvas) return;
     requestAnimationFrame(() => { // without that, image buffer will be empty
-        var blob = canvas.toBlob(function(blob) {
-            var url = URL.createObjectURL(blob);
-            hiddenLink.href = url;
-            hiddenLink.click();
-            //URL.revokeObjectURL(url);
+        const trgContext = trgCanvas.getContext('2d');
+        trgContext.drawImage(srcCanvas, 0, 0);
+        // .text-layer
+        htmlToCanvas(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
+            trgCanvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                hiddenLink.href = url;
+                hiddenLink.click();
+                URL.revokeObjectURL(url);
+            });
         });
     });
 }
