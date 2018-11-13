@@ -40,6 +40,7 @@ type Msg
     = Bang
     | Animate Time
     | Resize Window.Size
+    | ResizeFromPreset Window.Size
     | Locate Position
     | Rotate Float
     | Import EncodedState
@@ -73,7 +74,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Production
+initialMode = Development
 
 
 init : ( Model, Cmd Msg )
@@ -202,6 +203,14 @@ update msg model =
               }
             , Cmd.none -- updateAndRebuildFssWith
             )
+
+        ResizeFromPreset { width, height } ->
+            ( { model
+              | size = adaptSize ( width, height )
+              , origin = getOrigin ( width, height )
+              }
+            , presetSizeChanged ( width, height )
+            )            
 
         Locate pos ->
             ( { model | mouse = (pos.x, pos.y) }
@@ -679,7 +688,7 @@ subscriptions model =
                         if (w > 0 && h > 0) then (w, h)
                         else model.size
                 in
-                    Window.Size newW newH |> Resize)
+                    Window.Size newW newH |> ResizeFromPreset)
         , changeWGLBlend (\{ layer, value } ->
             ChangeWGLBlend layer value
           )
@@ -1007,6 +1016,8 @@ port changeSVGBlend :
 port startGui : GuiDefaults -> Cmd msg
 
 port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: FSS.PortModel } -> Cmd msg
+
+port presetSizeChanged : Size -> Cmd msg
 
 port export_ : String -> Cmd msg
 
