@@ -611,11 +611,13 @@ vertexShader =
 
        float time = uNow;
        vec3 position = vec3(0.0);
+       bool background = false;
 
        //       vec3 vertexOscillators(vec3 arg) {
        //     return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
        // }
 
+ 
 
        vec3 vertexOscillators(vec3 arg) {
             return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
@@ -642,9 +644,26 @@ vertexShader =
                 return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
             }
 
+         vec4 adjustLight(vec4 origColor, float deltaHue, float deltaSaturation, float deltaBrightness) {
+
+                vec3 light  = rgb2hsv(origColor.rgb);
+                    light[0] -= deltaHue; // hue shift
+                    light[1] -= deltaSaturation;
+                    light[2] += deltaBrightness;
+
+                    return vec4(vec3(hsv2rgb(light)), 1.0);
+         }   
+
 
         // Main
         void main() {
+
+           if ( uLayerIndex == 0 ) {
+
+               background = true;
+  
+           }
+
 
             float phase = aPhi;
             vec3 speed = normalize(aV0) * 0.0008;
@@ -680,9 +699,10 @@ vertexShader =
           //  if(uLayerIndex != 0) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * lightOscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
 
-                if (uLayerIndex == 0 ) {
-                    lightAmbient =  vec4(vec3(0.5), 1.0);
-                    lightDiffuse =  vec4(vec3(0.8), 1.0);
+                if ( background ) {
+
+                    lightAmbient =  adjustLight(uLightAmbient[i], 0.0, 0.3, 0.0);
+                    lightDiffuse =  adjustLight(uLightDiffuse[i], 0.0, 0.7, 0.0);
 
                 } else {
                     lightAmbient = uLightAmbient[i];
@@ -694,8 +714,13 @@ vertexShader =
                // float illuminance = pow(dot(aNormal, ray), 1.2);
                 illuminance = 1.1 * max(illuminance, 0.0);
 
+                vec3 col1 = rgb2hsv(lightAmbient.rgb);
+                // col1[2] = 0.7;
+                         // col1[0] -= 0.1; // hue shift
+                     col1 = hsv2rgb(col1);
+
                 // Calculate ambient light
-                  vColor *=  lightAmbient;
+                  vColor *=  vec4(col1, 1.0);
 
                 // Calculate diffuse light
                   vColor +=  lightDiffuse * illuminance;
