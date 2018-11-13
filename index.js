@@ -32,6 +32,8 @@ const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
 const fssScenes = {};
 
+const batchPause = 1000;
+
 const exportScene = (scene) => {
     //console.log(scene);
     return scene.meshes[0].geometry.vertices.map((vertex) => (
@@ -63,6 +65,7 @@ const import_ = (app, importedState) => {
         origin: parsedState.origin,
         mouse: parsedState.mouse,
         now: parsedState.now,
+        now: parsedState.product,
         layers: parsedState.layers.map((layer) => (
             { kind: layer.kind,
               blend: layer.blend,
@@ -191,8 +194,8 @@ const prepareImportExport = () => {
 
 }
 
-const savePng = (hiddenLink) => {
-    var canvas = document.querySelector('.webgl-layers');  
+const savePng = (hiddenLink, size) => {
+    var canvas = document.querySelector('.webgl-layers');
     if (!canvas) return;
     requestAnimationFrame(() => { // without that, image buffer will be empty
         var blob = canvas.toBlob(function(blob) {
@@ -211,7 +214,7 @@ setTimeout(function() { // FIXME: change to document.ready
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
-    // app.ports.presetSizeChanged.subscribe(size => setTimeout(() => savePng(hiddenLink), 0));
+    app.ports.presetSizeChanged.subscribe(size => setTimeout(() => savePng(hiddenLink, size), 0));
 
     app.ports.startGui.subscribe((model) => {
         console.log('startGui', model);
@@ -247,13 +250,17 @@ setTimeout(function() { // FIXME: change to document.ready
                 }
             }
             , savePng : () => savePng(hiddenLink)
-            , saveBatch : (sizes) => {
-                sizes.forEach(([width, height]) => {
-                    if (width > 0 && height > 0) {
-                        app.ports.setCustomSize.send([ width, height ]);
-                    }
-                    // setTimeout(() => savePng(hiddenLink), 0);
-                });
+            , saveBatch : sizes_ => {
+                let sizes = sizes_.concat([]);
+
+                function nextPng() {
+                    const [ width, height ] = sizes.shift();
+                    if (sizes.length == 0) return;
+                    app.ports.setCustomSize.send([ width, height ]);
+                    setTimeout(nextPng, batchPause);
+                };
+
+                nextPng();
             }
             , changeAmplitude : index => (x, y, z) => {
                 app.ports.changeAmplitude.send({ layer: index, value: [ x, y, z ]});
@@ -265,8 +272,8 @@ setTimeout(function() { // FIXME: change to document.ready
             , mirrorOn : index =>
                 { app.ports.mirrorOn.send(index); }
             , mirrorOff : index =>
-                { app.ports.mirrorOff.send(index); }    
-            , rotate : value => 
+                { app.ports.mirrorOff.send(index); }
+            , rotate : value =>
                 { app.ports.rotate.send(value); }
             });
 
