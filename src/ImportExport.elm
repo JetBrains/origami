@@ -319,9 +319,10 @@ layerModelDecoder kind =
 modelDecoder : M.UiMode -> M.CreateLayer -> D.Decoder M.Model
 modelDecoder mode createLayer =
     let
-        createModel theta omega layers size origin mouse now =
+        createModel theta omega layers size origin mouse now productStr =
             let
                 initialModel = M.init mode [] createLayer
+                product = Product.decode productStr
             in
                 { initialModel
                 | theta = theta
@@ -331,6 +332,8 @@ modelDecoder mode createLayer =
                 , origin = origin
                 , mouse = mouse
                 , now = now
+                , product = product
+                --, palette = Product.getPalette product
                 }
     in
         D.decode createModel
@@ -341,6 +344,7 @@ modelDecoder mode createLayer =
             |> D.required "origin" intPairDecoder
             |> D.required "mouse" intPairDecoder
             |> D.required "now" D.float
+            |> D.required "product" D.string
 
 
 decodeModel : M.UiMode -> M.CreateLayer -> EncodedState -> Maybe M.Model
