@@ -295,6 +295,7 @@ function start(document, model, funcs) {
 
     function addLayerProps(folder, config, layer, index) {
       if (isFss(layer)) {
+        const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');        
         const lightSpeed = folder.add(config, 'lightSpeed' + index).name('lights agile')
                                  .min(100).max(1140);
         const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
@@ -309,7 +310,8 @@ function start(document, model, funcs) {
           .min(0.0).max(1.0);
         const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('amplitudeZ')
           .min(0.0).max(1.0);
-
+        
+        mirrorSwitch.onFinishChange(val => switchMirror(index, val));   
         lightSpeed.onFinishChange(funcs.changeLightSpeed(index));
         facesX.onFinishChange(funcs.changeFacesX(index));
         facesY.onFinishChange(funcs.changeFacesY(index));
@@ -335,7 +337,7 @@ function start(document, model, funcs) {
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     gui.add(config, 'savePng').name('save png');
-    if (mode == 'dev') gui.add(config, 'saveBatch').name('save batch');
+    if (mode !== 'prod' ) gui.add(config, 'saveBatch').name('save batch');
     product.onFinishChange(funcs.changeProduct);
     omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
@@ -348,17 +350,14 @@ function start(document, model, funcs) {
       const folder = gui.addFolder(layer.name.toLowerCase());
 
       const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
-      visibitySwitch.onFinishChange(val => switchLayer(index, val));
+      visibitySwitch.onFinishChange(val => switchLayer(index, val));    
 
-      const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
-      mirrorSwitch.onFinishChange(val => switchMirror(index, val));     
-
+      addLayerProps(folder, config, layer, index);
       if (layer.webglOrSvg == 'webgl') {
         addWebGLBlend(folder, config, layer, index);
       } else {
         addSVGBlend(folder, config, layer, index);
-      }
-      addLayerProps(folder, config, layer, index);
+      }      
     });
 
     let guiHidden = false;
