@@ -33,6 +33,7 @@ const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 const fssScenes = {};
 
 const batchPause = 1000;
+let savingBatch = false;
 
 const exportScene = (scene) => {
     //console.log(scene);
@@ -214,7 +215,9 @@ setTimeout(function() { // FIXME: change to document.ready
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
-    app.ports.presetSizeChanged.subscribe(size => setTimeout(() => savePng(hiddenLink, size), 0));
+    app.ports.presetSizeChanged.subscribe(size => {
+        if (savingBatch) setTimeout(() => savePng(hiddenLink, size), 0);
+    });
 
     app.ports.startGui.subscribe((model) => {
         console.log('startGui', model);
@@ -252,10 +255,14 @@ setTimeout(function() { // FIXME: change to document.ready
             , savePng : () => savePng(hiddenLink)
             , saveBatch : sizes_ => {
                 let sizes = sizes_.concat([]);
+                savingBatch = true;
 
                 function nextPng() {
                     const [ width, height ] = sizes.shift();
-                    if (sizes.length == 0) return;
+                    if (sizes.length == 0) {
+                        savingBatch = false;
+                        return;
+                    }
                     app.ports.setCustomSize.send([ width, height ]);
                     setTimeout(nextPng, batchPause);
                 };
