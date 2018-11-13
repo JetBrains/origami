@@ -55,6 +55,8 @@ type Msg
     | ChangeProduct Product
     | TurnOn LayerIndex
     | TurnOff LayerIndex
+    | MirrorOn LayerIndex
+    | MirrorOff LayerIndex
     | Configure LayerIndex LayerModel
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
     | ChangeSVGBlend LayerIndex SVGBlend.Blend
@@ -74,7 +76,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Development
+initialMode = Production
 
 
 init : ( Model, Cmd Msg )
@@ -228,6 +230,19 @@ update msg model =
                 (\def -> { def | on = False })
             , Cmd.none
             )
+
+        MirrorOn index ->
+            ( model |> updateLayerDef index
+                (\def -> { def | mirror = True })
+            , Cmd.none
+            )
+
+        MirrorOff index ->
+            ( model |> updateLayerDef index
+                (\def -> { def | mirror = False })
+            , Cmd.none
+            )
+    
 
         ChangeProduct product ->
             { model | product = product }
@@ -543,11 +558,12 @@ prepareGuiConfig model =
              )
     , layers =
         model.layers |>
-            List.map (\{ kind, layer, on, name } ->
+            List.map (\{ kind, layer, on, mirror, name } ->
                 { kind = encodeLayerKind kind
                 , blend = getBlendForPort layer
                 , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
                 , on = on
+                , mirror = mirror
                 , name = name
                 })
     , fss = IE.encodeFss FSS.init model.product
@@ -979,6 +995,10 @@ port rebuildFss : ({ value: FSS.SerializedScene, layer: LayerIndex } -> msg) -> 
 port turnOn : (LayerIndex -> msg) -> Sub msg
 
 port turnOff : (LayerIndex -> msg) -> Sub msg
+
+port mirrorOn : (LayerIndex -> msg) -> Sub msg
+
+port mirrorOff : (LayerIndex -> msg) -> Sub msg
 
 port import_ : (String -> msg) -> Sub msg
 
