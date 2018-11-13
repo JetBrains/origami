@@ -789,7 +789,7 @@ fragmentShader =
           //  if(uLayerIndex != 0) {
 
             // vignette
-              gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, 1.0, distance(actPos,vec2(0.5))));
+           //   gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, 1.0, distance(actPos,vec2(0.5))));
            // }
 
             //opacity
