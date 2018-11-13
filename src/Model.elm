@@ -44,7 +44,8 @@ type alias CreateLayer = LayerKind -> LayerModel -> Layer
 type UiMode 
     = Development 
     | Production
-    | Build
+    | Release
+    | Ads
 
 type LayerKind
     = Lorenz

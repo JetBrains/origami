@@ -399,4 +399,5 @@ encodeMode mode =
     case mode of
         M.Development -> "dev"
         M.Production -> "prod"
-        M.Build -> "build"
+        M.Release -> "release"
+        M.Ads -> "ads"
