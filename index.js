@@ -262,6 +262,10 @@ setTimeout(function() { // FIXME: change to document.ready
                 { app.ports.turnOn.send(index); }
             , turnOff : index =>
                 { app.ports.turnOff.send(index); }
+            , mirrorOn : index =>
+                { app.ports.mirrorOn.send(index); }
+            , mirrorOff : index =>
+                { app.ports.mirrorOn.send(index); }    
             , rotate : value => 
                 { app.ports.rotate.send(value); }
             });

@@ -180,6 +180,7 @@ const Config = function(layers, defaults, funcs) {
         this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
       this['visible' + index] = true;
+      this['mirror' + index] = true;
       this['renderMode' + index] = 'triangles';
 
       if (isFss(layer)) {
@@ -218,6 +219,11 @@ function start(document, model, funcs) {
     function switchLayer(index, on) {
       if (on) funcs.turnOn(index);
       else funcs.turnOff(index);
+    }
+
+    function switchMirror(index, on) {
+      if (on) funcs.mirrorOn(index);
+      else funcs.mirrorOff(index);
     }
 
     function updateWebGLBlend(index, f) {
@@ -343,6 +349,9 @@ function start(document, model, funcs) {
 
       const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
       visibitySwitch.onFinishChange(val => switchLayer(index, val));
+
+      const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
+      mirrorSwitch.onFinishChange(val => switchLayer(index, val));     
 
       if (layer.webglOrSvg == 'webgl') {
         addWebGLBlend(folder, config, layer, index);
