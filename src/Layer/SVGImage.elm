@@ -8,12 +8,15 @@ import Svg.Blend as Blend
 import Svg.Attributes as SAttrs
 -- import InlineSvg exposing (inline)
 
+import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
+
 import Product exposing (Product)
 
 -- defaultSize = 110
 imageWidth = 120
 imageHeight = 120
 scaleFactor = 0.1
+
 
 view : (Int, Int) -> (Int, Int) -> Product -> Blend.Blend -> Html a
 view ( w, h ) ( x, y ) product blend =
@@ -27,13 +30,22 @@ view ( w, h ) ( x, y ) product blend =
     in
         div
             [ HAttrs.class ("logo-layer logo-layer--" ++ Product.encode product)
+            , { blend = Blend.encode blend
+              , posX = posX
+              , posY = posY
+              , width = imageWidth
+              , height = imageHeight
+              , logoPath = logoPath
+              , scale = scale
+              }
+              |> encodeStoredData
+              |> E.encode 0
+              |> HAttrs.attribute "data-stored"
             , HAttrs.style
                 [ ("mix-blend-mode", Blend.encode blend)
                 , ("position", "absolute")
-                -- , ("top", toString posY ++ "px")
-                -- , ("left", toString posX ++ "px")
-                , ("top", "0")
-                , ("left", "0")
+                , ("top", toString posY ++ "px")
+                , ("left", toString posX ++ "px")
                 , ("width", toString imageWidth ++ "px")
                 , ("height", toString imageHeight ++ "px")
                 --, ("transform", "scale(" ++ toString scale ++ ")")
@@ -47,3 +59,27 @@ view ( w, h ) ( x, y ) product blend =
             ]
             [ --img [ HAttrs.src logoPath, HAttrs.attribute "crossorigin" "anonymous" ] []
             ]
+
+
+type alias StoredData =
+    { scale : Float
+    , posX : Float
+    , posY : Float
+    , blend : String
+    , logoPath : String
+    , width : Int
+    , height : Int
+    }
+
+
+encodeStoredData : StoredData -> E.Value
+encodeStoredData s =
+    E.object
+        [ ( "scale", E.float s.scale )
+        , ( "posX", E.float s.posX )
+        , ( "posY", E.float s.posY )
+        , ( "blend", E.string s.blend )
+        , ( "logoPath", E.string s.logoPath )
+        , ( "width", E.int s.width )
+        , ( "height", E.int s.height )
+        ]
