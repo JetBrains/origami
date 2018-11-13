@@ -5,7 +5,7 @@
 require('./index.css');
 
 const deepClone = require('./deep-clone.js');
-const htmlToCanvas = require('./html-to-canvas.js');
+const drawToCanvas = require('./draw-to-canvas.js');
 const JSZip = require('jszip');
 const JSZipUtils = require('jszip-utils');
 const FileSaver = require('jszip/vendor/FileSaver');
@@ -197,13 +197,15 @@ const savePng = (hiddenLink) => {
     requestAnimationFrame(() => { // without that, image buffer will be empty
         const trgContext = trgCanvas.getContext('2d');
         trgContext.drawImage(srcCanvas, 0, 0);
-        // .text-layer
-        htmlToCanvas(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
-            trgCanvas.toBlob(blob => {
-                const url = URL.createObjectURL(blob);
-                hiddenLink.href = url;
-                hiddenLink.click();
-                URL.revokeObjectURL(url);
+        drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
+            // FIXME: a temporary hack to draw a logo on the canvas, use product image instead
+            drawToCanvas.image('./assets/jetbrains.svg', trgCanvas, 0, 0, 120, 120, () => {
+                trgCanvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    hiddenLink.href = url;
+                    hiddenLink.click();
+                    URL.revokeObjectURL(url);
+                });
             });
         });
     });
