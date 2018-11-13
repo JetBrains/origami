@@ -133,18 +133,18 @@ RENDER_MODES =
 
 RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 { 'window': [0, 0]
-, '640 x 400 spl' : [ 640, 400 ] // product splash background   
-, '1280 x 800 spl@2x' : [ 1280, 800 ] // @2x splash background
-, '650 x 170 nwlt' : [ 650, 170 ] // newsletter
-, '1300 x 340 nwlt@2x' : [ 1300, 340 ] // @2x newsletter
-, '800 x 418 tw' : [ 800, 418 ] // Twitter
-, '1200 x 628 fb' : [ 1200, 628 ] // Facebook
-, '1280 x 800 wprev' : [ 1280, 800 ] // Webpage Preview
-, '800 x 400 blog' : [ 800, 400 ] // Blog
-, '1600 x 800 blog@2x' : [ 1600, 800 ] // @2x Blog
-, '800 x 155 bfoot' : [ 800, 155 ] // Blog footer
-, '1600 x 310 bfoot' : [ 1600, 310 ] // @2x Blog footer
-, '2850 x 1200 landg' : [ 2850, 1200] // Landing page
+, '640x400 spl' : [ 640, 400 ] // product splash background   
+, '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
+, '650x170 nwlt' : [ 650, 170 ] // newsletter
+, '1300x340 nwlt@2x' : [ 1300, 340 ] // @2x newsletter
+, '800x418 tw' : [ 800, 418 ] // Twitter
+, '1200x628 fb' : [ 1200, 628 ] // Facebook
+, '1280x800 wprev' : [ 1280, 800 ] // Webpage Preview
+, '800x400 blog' : [ 800, 400 ] // Blog
+, '1600x800 blog@2x' : [ 1600, 800 ] // @2x Blog
+, '800x155 bfoot' : [ 800, 155 ] // Blog footer
+, '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
+, '2850x1200 landg' : [ 2850, 1200] // Landing page
 };
 
 ALL_SIZES =
@@ -154,13 +154,13 @@ ALL_SIZES =
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
   , '1680x1050': [ 1680, 1050 ]
-  , '800 x 418': [ 800, 418 ]
-  , '640 x 400': [ 640, 400 ] // product splash background
-  , '1280 x 800': [ 1280, 800 ] // @2x splash background
+  , '800x418': [ 800, 418 ]
+  , '640x400': [ 640, 400 ] // product splash background
+  , '1280x800': [ 1280, 800 ] // @2x splash background
   , '480x360': [ 480, 360 ]
   };
 
-PREDEFINED_SIZES = RELEASE_SIZES;
+PREDEFINED_SIZES = RELEASE_SIZES; // TODO: Switcher by mode needed
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
@@ -223,7 +223,6 @@ const Config = function(layers, defaults, funcs) {
     // this.loadSceneJson = funcs.loadSceneJson;
     //this.exportZip = funcs.exportZip;
 };
-
 
 function start(document, model, funcs) {
     const defaults = model;
@@ -350,7 +349,6 @@ function start(document, model, funcs) {
 
     const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
-    gui.remember(config);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
@@ -368,7 +366,10 @@ function start(document, model, funcs) {
       const folder = gui.addFolder(layer.name.toLowerCase());
 
       const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
-      visibitySwitch.onFinishChange(val => switchLayer(index, val));    
+      visibitySwitch.onFinishChange(val => switchLayer(index, val));
+
+      const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
+      mirrorSwitch.onFinishChange(val => switchMirror(index, val));
 
       addLayerProps(folder, config, layer, index);
       if (layer.webglOrSvg == 'webgl') {
@@ -385,7 +386,7 @@ function start(document, model, funcs) {
             if (guiHidden) {
               document.querySelectorAll('.dg')[0].style.display = 'block';
               gui.open();
-            } else { 
+            } else {
               document.querySelectorAll('.dg')[0].style.display = 'none';
               gui.close();
             }
