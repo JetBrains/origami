@@ -45,5 +45,5 @@ view ( w, h ) ( x, y ) product blend =
                 , ("transform", "scale(" ++ toString scale ++ ")")
                 ]
             ]
-            [
+            [ --img [ HAttrs.src logoPath, HAttrs.attribute "crossorigin" "anonymous" ] []
             ]

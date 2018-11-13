@@ -9,8 +9,11 @@ function htmlToCanvas(node, canvas, width, height, whenDone) {
               '</foreignObject>' +
           '</svg>';
     const image = new Image();
-    image.crossOrigin = 'Anonymous';
-    //image.setAttribute('crossOrigin', 'anonymous');
+    // image.crossOrigin = 'Anonymous';
+    image.addEventListener('error', (err) => {
+        throw err;
+    });
+    image.setAttribute('crossOrigin', 'anonymous');
     //const svg = new Blob([data], {type: 'image/svg+xml;charset=utf-8'});
     const url = 'data:image/svg+xml;base64,' + btoa(data);
     //const url = URL.createObjectURL(svg);
@@ -25,4 +28,21 @@ function htmlToCanvas(node, canvas, width, height, whenDone) {
     // context.canvas.height = height;
 }
 
-module.exports = htmlToCanvas;
+function imageToCanvas(src, canvas, x, y, width, height, whenDone) {
+    const context = canvas.getContext("2d");
+    const image = new Image();
+    image.setAttribute('crossOrigin', 'anonymous');
+    image.addEventListener('error', (err) => {
+        throw err;
+    });
+    image.addEventListener('load', () => {
+        context.drawImage(image, 0, 0, width, height);
+        if (whenDone) whenDone(canvas);
+    }, false);
+    image.src = src;
+}
+
+module.exports = {
+    html: htmlToCanvas,
+    image: imageToCanvas
+};
