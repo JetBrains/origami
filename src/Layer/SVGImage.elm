@@ -21,7 +21,7 @@ view ( w, h ) ( x, y ) product blend =
         scale = toFloat w * scaleFactor / imageWidth
         posX = (toFloat w) - toFloat x - (toFloat imageWidth * scale) - (30 * scale)
         posY = (toFloat h) - toFloat y - (toFloat imageHeight * scale) - (30 * scale)
-        logoPath = case Product.getLogoPath product of
+        logoPath = case Product.getLogoPath Product.JetBrains of
             Just fileName -> "./assets/" ++ fileName
             Nothing -> ""
     in
