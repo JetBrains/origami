@@ -198,6 +198,7 @@ const savePng = (hiddenLink, size) => {
     var canvas = document.querySelector('.webgl-layers');
     if (!canvas) return;
     requestAnimationFrame(() => { // without that, image buffer will be empty
+        hiddenLink.download = size[0] + 'x' + size[1] + '_gen.png'; 
         var blob = canvas.toBlob(function(blob) {
             var url = URL.createObjectURL(blob);
             hiddenLink.href = url;

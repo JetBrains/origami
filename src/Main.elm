@@ -76,7 +76,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Build
+initialMode = Release
 
 
 init : ( Model, Cmd Msg )
@@ -108,10 +108,17 @@ initialLayers =
     |> List.filter (\(kind, _, _) ->
         case ( kind, initialMode ) of
             ( Text, Development ) -> True
-            ( Text, Production ) -> False
-            ( Text, Build ) -> False
             ( SvgImage, Development ) -> True
-            ( SvgImage, Build ) -> False
+            
+            ( SvgImage, Production ) -> True
+            ( Text, Production ) -> False
+
+            ( Text, Release ) -> False
+            ( SvgImage, Release ) -> False
+
+            ( Text, Ads ) -> False
+            ( SvgImage, Ads ) -> False
+
             _ -> True
     )
 

@@ -131,7 +131,23 @@ RENDER_MODES =
   [ 'triangles', 'lines', 'partial-lines', 'points' ]
 
 
-PREDEFINED_SIZES =
+RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
+{ 'window': [0, 0]
+, '640 x 400 spl' : [ 640, 400 ] // product splash background   
+, '1280 x 800 spl@2x' : [ 1280, 800 ] // @2x splash background
+, '650 x 170 nwlt' : [ 650, 170 ] // newsletter
+, '1300 x 340 nwlt@2x' : [ 1300, 340 ] // @2x newsletter
+, '800 x 418 tw' : [ 800, 418 ] // Twitter
+, '1200 x 628 fb' : [ 1200, 628 ] // Facebook
+, '1280 x 800 wprev' : [ 1280, 800 ] // Webpage Preview
+, '800 x 400 blog' : [ 800, 400 ] // Blog
+, '1600 x 800 blog@2x' : [ 1600, 800 ] // @2x Blog
+, '800 x 155 bfoot' : [ 800, 155 ] // Blog footer
+, '1600 x 310 bfoot' : [ 1600, 310 ] // @2x Blog footer
+, '2850 x 1200 landg' : [ 2850, 1200] // Landing page
+};
+
+ALL_SIZES =
   { 'window': [0, 0]
   , '1920x1980': [ 1920, 1980 ]
   , '1366x768': [ 1366, 768 ]
@@ -139,10 +155,12 @@ PREDEFINED_SIZES =
   , '1536x864': [ 1536, 864 ]
   , '1680x1050': [ 1680, 1050 ]
   , '800 x 418': [ 800, 418 ]
-  , '640 x 400': [ 640, 400 ]
-  , '1280 x 800': [ 1280, 800 ]
+  , '640 x 400': [ 640, 400 ] // product splash background
+  , '1280 x 800': [ 1280, 800 ] // @2x splash background
   , '480x360': [ 480, 360 ]
   };
+
+PREDEFINED_SIZES = RELEASE_SIZES;
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
