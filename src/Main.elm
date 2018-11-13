@@ -232,17 +232,36 @@ update msg model =
             )
 
         MirrorOn index ->
-            ( model |> updateLayerDef index
-                (\def -> { def | mirror = True })
+            ( model |> updateLayer index
+                (\layer layerModel -> 
+                    case layer of 
+                        WebGLLayer webglLayer blend ->
+                            case webglLayer of 
+                                FssLayer maybeScene mesh -> 
+                                    WebGLLayer 
+                                    (MirroredFssLayer maybeScene mesh)
+                                    blend
+                                _ -> layer    
+                        _ -> layer
+                )
             , Cmd.none
             )
 
         MirrorOff index ->
-            ( model |> updateLayerDef index
-                (\def -> { def | mirror = False })
+            ( model |> updateLayer index
+                (\layer layerModel -> 
+                    case layer of 
+                        WebGLLayer webglLayer blend ->
+                            case webglLayer of 
+                                MirroredFssLayer maybeScene mesh -> 
+                                    WebGLLayer 
+                                    (FssLayer maybeScene mesh)
+                                    blend
+                                _ -> layer    
+                        _ -> layer
+                )
             , Cmd.none
             )
-    
 
         ChangeProduct product ->
             { model | product = product }
@@ -558,12 +577,11 @@ prepareGuiConfig model =
              )
     , layers =
         model.layers |>
-            List.map (\{ kind, layer, on, mirror, name } ->
+            List.map (\{ kind, layer, on, name } ->
                 { kind = encodeLayerKind kind
                 , blend = getBlendForPort layer
                 , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
                 , on = on
-                , mirror = mirror
                 , name = name
                 })
     , fss = IE.encodeFss FSS.init model.product
@@ -727,6 +745,8 @@ subscriptions model =
         , hideControls (\_ -> HideControls)
         , turnOn TurnOn
         , turnOff TurnOff
+        , mirrorOn MirrorOn
+        , mirrorOff MirrorOff
         ]
 
 

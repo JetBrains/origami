@@ -91,7 +91,6 @@ encodeLayerDef layerDef =
                     SVGBlend.encode svgBlend |> E.string
           )
         , ( "isOn", layerDef.on |> E.bool )
-        , ("isMirror", layerDef.mirror |> E.bool)
         , ( "model", encodeLayerModel layerDef.model )
         , ( "name", layerDef.name |> E.string )
         -- , ( "mesh", E.string "" )
@@ -165,7 +164,6 @@ encodePortLayer : M.LayerDef -> M.PortLayerDef
 encodePortLayer layerDef =
     { kind = encodeKind_ layerDef.kind
     , on = layerDef.on
-    , mirror = layerDef.mirror
     , webglOrSvg =
         case layerDef.layer of
             M.WebGLLayer _ _ -> "webgl"
@@ -224,7 +222,7 @@ intPairDecoder =
 layerDefDecoder : M.CreateLayer -> D.Decoder M.LayerDef
 layerDefDecoder createLayer =
     let
-        createLayerDef kindStr layerModelStr name isOn isMirror =
+        createLayerDef kindStr layerModelStr name isOn =
             let
                 kind = decodeKind kindStr
                 layerModel = layerModelStr
@@ -235,7 +233,6 @@ layerDefDecoder createLayer =
             in
                 { kind = kind
                 , on = isOn
-                , mirror = isMirror
                 , layer = createLayer kind layerModel
                 , model = layerModel
                 , name = name
@@ -246,7 +243,7 @@ layerDefDecoder createLayer =
             |> D.required "model" D.string
             |> D.required "name" D.string
             |> D.required "isOn" D.bool
-            |> D.required "isMirror" D.bool
+
 
 -- layerDecoder : M.LayerKind -> D.Decoder M.Layer
 -- layerDecoder kind =
