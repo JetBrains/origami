@@ -222,7 +222,7 @@ intPairDecoder =
 layerDefDecoder : M.CreateLayer -> D.Decoder M.LayerDef
 layerDefDecoder createLayer =
     let
-        createLayerDef kindStr layerModelStr name isOn =
+        createLayerDef kindStr layerModelStr name isOn blendStr =
             let
                 kind = decodeKind kindStr
                 layerModel = layerModelStr
@@ -230,10 +230,19 @@ layerDefDecoder createLayer =
                         |> Debug.log "Layer Model Decode Result: "
                         |> Result.toMaybe
                         |> Maybe.withDefault M.NoModel
+                layerNoBlend = createLayer kind layerModel
+                layer = case layerNoBlend of
+                    M.WebGLLayer webglLayer _ ->
+                        WGLBlend.decodeOne blendStr
+                            |> Maybe.withDefault WGLBlend.default
+                            |> M.WebGLLayer webglLayer
+                    M.SVGLayer svgLayer _ ->
+                        SVGBlend.decode blendStr |>
+                            M.SVGLayer svgLayer
             in
                 { kind = kind
                 , on = isOn
-                , layer = createLayer kind layerModel
+                , layer = layer
                 , model = layerModel
                 , name = name
                 }
@@ -243,6 +252,7 @@ layerDefDecoder createLayer =
             |> D.required "model" D.string
             |> D.required "name" D.string
             |> D.required "isOn" D.bool
+            |> D.required "blend" D.string
 
 
 -- layerDecoder : M.LayerKind -> D.Decoder M.Layer
