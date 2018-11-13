@@ -98,7 +98,7 @@ svg.text-layer {
     z-index: 20;
 }
 
-.text-layer--jetbrains, .text-layer--subtitle {
+.text-layer--title, .text-layer--subtitle {
     font-family: 'Gotham', Helvetica, sans-serif;
     font-weight: 170;
     text-transform: uppercase;
@@ -109,4 +109,12 @@ svg.text-layer {
     position: absolute;
     top: 0;
     left: 0;
+}
+
+#js-save-buffer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+    /* border: 1px solid red; */
 }

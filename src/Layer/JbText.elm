@@ -29,13 +29,19 @@ view product ( w, h ) ( x, y ) blend =
                 , ("left", toString posX ++ "px")
                 , ("transform", "scale(" ++ toString scale ++ ")")
                 , ("font-size", toString defaultSize ++ "px")
+                , ("font-family", "'Gotham', Helvetica, sans-serif")
+                , ("font-weight", "170")
+                , ("text-transform", "uppercase")
+                , ("color", "white")
                 ]
             ]
             [ div
-                [ HAttrs.class "text-layer text-layer--jetbrains"
-                ,  HAttrs.style [ ( "max-width", "800px" ) ]
+                [ HAttrs.class
+                    ("text-layer--title text-layer--" ++ Product.encode product)
+                ,  HAttrs.style
+                    [ ("max-width", "800px") ]
                 , HAttrs.contenteditable True
                 ]
-            [ text <| getName product ]
+                [ text <| getName product ]
             -- , span [ HAttrs.class "text-layer text-layer--subtitle" ] [ text  "Subtitle" ]
             ]

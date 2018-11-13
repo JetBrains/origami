@@ -5,6 +5,7 @@
 require('./index.css');
 
 const deepClone = require('./deep-clone.js');
+const drawToCanvas = require('./draw-to-canvas.js');
 const JSZip = require('jszip');
 const JSZipUtils = require('jszip-utils');
 const FileSaver = require('jszip/vendor/FileSaver');
@@ -16,16 +17,7 @@ const mountNode = document.getElementById('js-animation');
 // The third value on embed are the initial values for incomming ports into Elm
 const app = App.Main.embed(mountNode);
 
-// mountNode.addEventListener('click', function() {
-//     app.ports.pause.send(null);
-// });
-
-//const registerToolkit = require('./toolkit.js');
-// const startPatching = require('./patch.js');
 const startGui = require('./gui.js');
-
-//const LayersNode = require('./src/LayersNode.elm').LayersNode;
-
 const buildFSS = require('./fss.js');
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
@@ -33,6 +25,7 @@ const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 const fssScenes = {};
 
 const batchPause = 1000;
+let savingBatch = false;
 
 const exportScene = (scene) => {
     //console.log(scene);
@@ -194,16 +187,52 @@ const prepareImportExport = () => {
 
 }
 
-const savePng = (hiddenLink, size) => {
-    var canvas = document.querySelector('.webgl-layers');
-    if (!canvas) return;
+const savePng = (hiddenLink) => {
+    const srcCanvas = document.querySelector('.webgl-layers');
+    const trgCanvas = document.querySelector('#js-save-buffer');
+    const [ width, height ] = [ srcCanvas.width, srcCanvas.height ];
+    trgCanvas.width = width;
+    trgCanvas.height = height;
+    if (!srcCanvas || !trgCanvas) return;
+    trgCanvas.style.display = 'block';
     requestAnimationFrame(() => { // without that, image buffer will be empty
-        hiddenLink.download = size[0] + 'x' + size[1] + '_gen.png'; 
-        var blob = canvas.toBlob(function(blob) {
-            var url = URL.createObjectURL(blob);
-            hiddenLink.href = url;
-            hiddenLink.click();
-            //URL.revokeObjectURL(url);
+        const trgContext = trgCanvas.getContext('2d');
+        trgContext.drawImage(srcCanvas, 0, 0);
+        drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
+            // FIXME: a temporary hack to draw a logo on the canvas,
+            // use product image itself instead
+            if (document.querySelector('.logo-layer')) {
+                const logoSrc = document.querySelector('.logo-layer');
+                const state = JSON.parse(logoSrc.getAttribute('data-stored'));
+                drawToCanvas.image(state.logoPath,
+                    function(image, context) {
+
+                        context.translate(state.posX, state.posY);
+                        context.scale(state.scale, state.scale);
+                        context.globalCompositeOperation = state.blend;
+                        image.width = state.width;
+                        image.height = state.height;
+                    },
+                    trgCanvas, 0, 0, 120, 120,
+                    () => {
+                        trgCanvas.toBlob(blob => {
+                            const url = URL.createObjectURL(blob);
+                            hiddenLink.href = url;
+                            hiddenLink.click();
+                            URL.revokeObjectURL(url);
+                            trgCanvas.style.display = 'none';
+                        });
+                    }
+                );
+            } else {
+                trgCanvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    hiddenLink.href = url;
+                    hiddenLink.click();
+                    URL.revokeObjectURL(url);
+                    trgCanvas.style.display = 'none';
+                });
+            }
         });
     });
 }
@@ -215,7 +244,9 @@ setTimeout(function() { // FIXME: change to document.ready
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
-    app.ports.presetSizeChanged.subscribe(size => setTimeout(() => savePng(hiddenLink, size), 0));
+    app.ports.presetSizeChanged.subscribe(size => {
+        if (savingBatch) setTimeout(() => savePng(hiddenLink, size), 0);
+    });
 
     app.ports.startGui.subscribe((model) => {
         console.log('startGui', model);
@@ -253,10 +284,14 @@ setTimeout(function() { // FIXME: change to document.ready
             , savePng : () => savePng(hiddenLink)
             , saveBatch : sizes_ => {
                 let sizes = sizes_.concat([]);
+                savingBatch = true;
 
                 function nextPng() {
                     const [ width, height ] = sizes.shift();
-                    if (sizes.length == 0) return;
+                    if (sizes.length == 0) {
+                        savingBatch = false;
+                        return;
+                    }
                     app.ports.setCustomSize.send([ width, height ]);
                     setTimeout(nextPng, batchPause);
                 };
