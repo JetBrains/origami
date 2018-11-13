@@ -351,7 +351,7 @@ function start(document, model, funcs) {
       visibitySwitch.onFinishChange(val => switchLayer(index, val));
 
       const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
-      mirrorSwitch.onFinishChange(val => switchLayer(index, val));     
+      mirrorSwitch.onFinishChange(val => switchMirror(index, val));     
 
       if (layer.webglOrSvg == 'webgl') {
         addWebGLBlend(folder, config, layer, index);
