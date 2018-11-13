@@ -202,10 +202,11 @@ const savePng = (hiddenLink) => {
             // FIXME: a temporary hack to draw a logo on the canvas,
             // use product image itself instead
             if (document.querySelector('.logo-layer')) {
-                drawToCanvas.image('./assets/jetbrains.svg',
+                const logoSrc = document.querySelector('.logo-layer');
+                const state = JSON.parse(logoSrc.getAttribute('data-stored'));
+                drawToCanvas.image(state.logoPath,
                     function(image, context) {
-                        const logoSrc = document.querySelector('.logo-layer');
-                        const state = JSON.parse(logoSrc.getAttribute('data-stored'));
+
                         context.translate(state.posX, state.posY);
                         context.scale(state.scale, state.scale);
                         context.globalCompositeOperation = state.blend;
