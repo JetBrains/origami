@@ -132,15 +132,15 @@ RENDER_MODES =
 
 
 PREDEFINED_SIZES =
-  { 'window': [0, 0]
+  { 'window': [ 0, 0 ]
   , '1920x1980': [ 1920, 1980 ]
   , '1366x768': [ 1366, 768 ]
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
   , '1680x1050': [ 1680, 1050 ]
-  , '800 x 418': [ 800, 418 ]
-  , '640 x 400': [ 640, 400 ]
-  , '1280 x 800': [ 1280, 800 ]
+  , '800x418': [ 800, 418 ]
+  , '640x400': [ 640, 400 ]
+  , '1280x800': [ 1280, 800 ]
   , '480x360': [ 480, 360 ]
   };
 
@@ -205,7 +205,6 @@ const Config = function(layers, defaults, funcs) {
     // this.loadSceneJson = funcs.loadSceneJson;
     //this.exportZip = funcs.exportZip;
 };
-
 
 function start(document, model, funcs) {
     const defaults = model;
@@ -330,7 +329,6 @@ function start(document, model, funcs) {
 
     const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
-    gui.remember(config);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
@@ -351,7 +349,7 @@ function start(document, model, funcs) {
       visibitySwitch.onFinishChange(val => switchLayer(index, val));
 
       const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
-      mirrorSwitch.onFinishChange(val => switchMirror(index, val));     
+      mirrorSwitch.onFinishChange(val => switchMirror(index, val));
 
       if (layer.webglOrSvg == 'webgl') {
         addWebGLBlend(folder, config, layer, index);
@@ -368,7 +366,7 @@ function start(document, model, funcs) {
             if (guiHidden) {
               document.querySelectorAll('.dg')[0].style.display = 'block';
               gui.open();
-            } else { 
+            } else {
               document.querySelectorAll('.dg')[0].style.display = 'none';
               gui.close();
             }
