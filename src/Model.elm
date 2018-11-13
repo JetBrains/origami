@@ -102,7 +102,6 @@ type alias LayerDef =
     , layer : Layer
     , model : LayerModel
     , on : Bool
-    , mirror : Bool
     }
 
 
@@ -157,7 +156,6 @@ type alias PortLayerDef =
     , webglOrSvg : String
     , on : Bool
     , name : String
-    , mirror : Bool
     }
 
 
@@ -193,7 +191,6 @@ init mode initialLayers createLayer
                 , name = name
                 , model = layerModel
                 , on = True
-                , mirror = True
                 })
       , size = ( 1200, 1200 )
       , origin = ( 0, 0 )
