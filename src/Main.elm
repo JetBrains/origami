@@ -76,7 +76,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Production
+initialMode = Build
 
 
 init : ( Model, Cmd Msg )
@@ -109,6 +109,9 @@ initialLayers =
         case ( kind, initialMode ) of
             ( Text, Development ) -> True
             ( Text, Production ) -> False
+            ( Text, Build ) -> False
+            ( SvgImage, Development ) -> True
+            ( SvgImage, Build ) -> False
             _ -> True
     )
 
