@@ -28,18 +28,21 @@ function htmlToCanvas(node, canvas, width, height, whenDone) {
     // context.canvas.height = height;
 }
 
-function imageToCanvas(src, canvas, x, y, width, height, whenDone) {
-    const context = canvas.getContext("2d");
+function imageToCanvas(src, transform, canvas, x, y, width, height, whenDone) {
+    const context = canvas.getContext('2d');
     const image = new Image();
+    //image.style.cssText = document.defaultView.getComputedStyle(cloneFrom, '').cssText;
     image.setAttribute('crossOrigin', 'anonymous');
     image.addEventListener('error', (err) => {
         throw err;
     });
     image.addEventListener('load', () => {
+        transform(image, context);
         context.drawImage(image, 0, 0, width, height);
         if (whenDone) whenDone(canvas);
     }, false);
     image.src = src;
+    //document.body.appendChild(image);
 }
 
 module.exports = {

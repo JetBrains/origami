@@ -115,5 +115,6 @@ svg.text-layer {
     position: absolute;
     top: 0;
     left: 0;
-    border: 1px solid red;
+    display: none;
+    /* border: 1px solid red; */
 }
