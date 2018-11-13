@@ -91,12 +91,12 @@ const export_ = (app, exportedState) => {
     return JSON.stringify(stateObj, null, 2);
 }
 
-const waitForContent = filePath => {
+const waitForContent = ({ path, id, name }) => {
     return new Promise((resolve, reject) => {
-        JSZipUtils.getBinaryContent(filePath, (err, fileContent) => {
+        JSZipUtils.getBinaryContent(path, (err, content) => {
             if (err) { reject(err); return; }
-            console.log('packing ' + filePath);
-            resolve(fileContent)
+            console.log('packing ' + path);
+            resolve({ path, id, name, content });
         });
     });
 };
@@ -129,11 +129,19 @@ const exportZip_ = (app, exportedState) => {
                 , 'pycharm-ce', 'pycharm-edu', 'pycharm', 'resharper', 'resharper-cpp'
                 , 'resharper', 'rider', 'rubymine', 'teamcity', 'test', 'toolbox', 'upsource'
                 , 'webstorm', 'youtrack' ]
-                    .map(productId => './assets/' + productId + '.svg')
+                    .map(productId => {
+                        return { id : productId
+                               , name: productId + '.svg'
+                               , path : './assets/' + productId + '.svg'
+                               };
+                    })
                     .map(waitForContent);
             Promise.all(assetPromises)
                    .then(files =>
-                        files.map(content => assets.file('rr', content, { binary: true }))
+                        files.map(
+                            ({ content, name }) =>
+                                assets.file(name, content, { binary: true })
+                        )
                     )
                    .then(() => zip.generateAsync({type:"blob"}))
                    .then(content => new FileSaver(content, "export.zip"));
