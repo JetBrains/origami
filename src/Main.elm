@@ -109,7 +109,7 @@ initialLayers =
         case ( kind, initialMode ) of
             ( Text, Development ) -> True
             ( SvgImage, Development ) -> True
-            
+
             ( SvgImage, Production ) -> True
             ( Text, Production ) -> False
 
@@ -187,7 +187,7 @@ update msg model =
             )
 
         ExportZip ->
-            ( model
+            ( Debug.log "model" model
             , model |> IE.encodeModel |> exportZip_
             )
 
@@ -242,33 +242,41 @@ update msg model =
             )
 
         MirrorOn index ->
-            ( model |> updateLayer index
-                (\layer layerModel ->
-                    case layer of
+            ( model |> updateLayerDef index
+                (\layerDef ->
+                    case layerDef.layer of
                         WebGLLayer webglLayer blend ->
                             case webglLayer of
                                 FssLayer maybeScene mesh ->
-                                    WebGLLayer
-                                    (MirroredFssLayer maybeScene mesh)
-                                    blend
-                                _ -> layer
-                        _ -> layer
+                                    { layerDef
+                                    | layer =
+                                        WebGLLayer
+                                        (MirroredFssLayer maybeScene mesh)
+                                        blend
+                                    , kind = MirroredFss
+                                    }
+                                _ -> layerDef
+                        _ -> layerDef
                 )
             , Cmd.none
             )
 
         MirrorOff index ->
-            ( model |> updateLayer index
-                (\layer layerModel ->
-                    case layer of
+            ( model |> updateLayerDef index
+                (\layerDef ->
+                    case layerDef.layer of
                         WebGLLayer webglLayer blend ->
                             case webglLayer of
                                 MirroredFssLayer maybeScene mesh ->
-                                    WebGLLayer
-                                    (FssLayer maybeScene mesh)
-                                    blend
-                                _ -> layer
-                        _ -> layer
+                                    { layerDef
+                                    | layer =
+                                        WebGLLayer
+                                        (FssLayer maybeScene mesh)
+                                        blend
+                                    , kind = Fss
+                                    }
+                                _ -> layerDef
+                        _ -> layerDef
                 )
             , Cmd.none
             )
