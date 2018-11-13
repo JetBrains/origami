@@ -194,19 +194,44 @@ const savePng = (hiddenLink) => {
     trgCanvas.width = width;
     trgCanvas.height = height;
     if (!srcCanvas || !trgCanvas) return;
+    trgCanvas.style.display = 'block';
     requestAnimationFrame(() => { // without that, image buffer will be empty
         const trgContext = trgCanvas.getContext('2d');
         trgContext.drawImage(srcCanvas, 0, 0);
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
-            // FIXME: a temporary hack to draw a logo on the canvas, use product image instead
-            drawToCanvas.image('./assets/jetbrains.svg', trgCanvas, 0, 0, 120, 120, () => {
+            // FIXME: a temporary hack to draw a logo on the canvas,
+            // use product image itself instead
+            if (document.querySelector('.logo-layer')) {
+                drawToCanvas.image('./assets/jetbrains.svg',
+                    function(image, context) {
+                        const logoSrc = document.querySelector('.logo-layer');
+                        const state = JSON.parse(logoSrc.getAttribute('data-stored'));
+                        context.translate(state.posX, state.posY);
+                        context.scale(state.scale, state.scale);
+                        context.globalCompositeOperation = state.blend;
+                        image.width = state.width;
+                        image.height = state.height;
+                    },
+                    trgCanvas, 0, 0, 120, 120,
+                    () => {
+                        trgCanvas.toBlob(blob => {
+                            const url = URL.createObjectURL(blob);
+                            hiddenLink.href = url;
+                            hiddenLink.click();
+                            URL.revokeObjectURL(url);
+                            trgCanvas.style.display = 'none';
+                        });
+                    }
+                );
+            } else {
                 trgCanvas.toBlob(blob => {
                     const url = URL.createObjectURL(blob);
                     hiddenLink.href = url;
                     hiddenLink.click();
                     URL.revokeObjectURL(url);
+                    trgCanvas.style.display = 'none';
                 });
-            });
+            }
         });
     });
 }
