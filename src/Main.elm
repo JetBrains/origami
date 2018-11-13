@@ -76,7 +76,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Release
+initialMode = Development
 
 
 init : ( Model, Cmd Msg )
@@ -222,7 +222,7 @@ update msg model =
               , origin = getOrigin ( width, height )
               }
             , presetSizeChanged ( width, height )
-            )            
+            )
 
         Locate pos ->
             ( { model | mouse = (pos.x, pos.y) }
@@ -243,15 +243,15 @@ update msg model =
 
         MirrorOn index ->
             ( model |> updateLayer index
-                (\layer layerModel -> 
-                    case layer of 
+                (\layer layerModel ->
+                    case layer of
                         WebGLLayer webglLayer blend ->
-                            case webglLayer of 
-                                FssLayer maybeScene mesh -> 
-                                    WebGLLayer 
+                            case webglLayer of
+                                FssLayer maybeScene mesh ->
+                                    WebGLLayer
                                     (MirroredFssLayer maybeScene mesh)
                                     blend
-                                _ -> layer    
+                                _ -> layer
                         _ -> layer
                 )
             , Cmd.none
@@ -259,15 +259,15 @@ update msg model =
 
         MirrorOff index ->
             ( model |> updateLayer index
-                (\layer layerModel -> 
-                    case layer of 
+                (\layer layerModel ->
+                    case layer of
                         WebGLLayer webglLayer blend ->
-                            case webglLayer of 
-                                MirroredFssLayer maybeScene mesh -> 
-                                    WebGLLayer 
+                            case webglLayer of
+                                MirroredFssLayer maybeScene mesh ->
+                                    WebGLLayer
                                     (FssLayer maybeScene mesh)
                                     blend
-                                _ -> layer    
+                                _ -> layer
                         _ -> layer
                 )
             , Cmd.none
