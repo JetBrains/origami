@@ -26,11 +26,14 @@ view ( w, h ) ( x, y ) product blend =
             Nothing -> ""
     in
         div
-            [ HAttrs.style
+            [ HAttrs.class ("logo-layer logo-layer--" ++ Product.encode product)
+            , HAttrs.style
                 [ ("mix-blend-mode", Blend.encode blend)
                 , ("position", "absolute")
-                , ("top", toString posY ++ "px")
-                , ("left", toString posX ++ "px")
+                -- , ("top", toString posY ++ "px")
+                -- , ("left", toString posX ++ "px")
+                , ("top", "0")
+                , ("left", "0")
                 , ("width", toString imageWidth ++ "px")
                 , ("height", toString imageHeight ++ "px")
                 --, ("transform", "scale(" ++ toString scale ++ ")")
@@ -42,7 +45,5 @@ view ( w, h ) ( x, y ) product blend =
                 , ("transform", "scale(" ++ toString scale ++ ")")
                 ]
             ]
-            [ span
-                [ HAttrs.class "text-layer text-layer--jetbrains" ]
-                [ {- text <| Product.getName product -} ]
+            [
             ]
