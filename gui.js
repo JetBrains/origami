@@ -133,7 +133,7 @@ RENDER_MODES =
 
 RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 { 'window': [0, 0]
-, '640x400 spl' : [ 640, 400 ] // product splash background   
+, '640x400 spl' : [ 640, 400 ] // product splash background
 , '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
 , '650x170 nwlt' : [ 650, 170 ] // newsletter
 , '1300x340 nwlt@2x' : [ 1300, 340 ] // @2x newsletter
@@ -312,7 +312,7 @@ function start(document, model, funcs) {
 
     function addLayerProps(folder, config, layer, index) {
       if (isFss(layer)) {
-        const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');        
+        const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
         const lightSpeed = folder.add(config, 'lightSpeed' + index).name('lights agile')
                                  .min(100).max(1140);
         const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
@@ -327,8 +327,8 @@ function start(document, model, funcs) {
           .min(0.0).max(1.0);
         const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('amplitudeZ')
           .min(0.0).max(1.0);
-        
-        mirrorSwitch.onFinishChange(val => switchMirror(index, val));   
+
+        mirrorSwitch.onFinishChange(val => switchMirror(index, val));
         lightSpeed.onFinishChange(funcs.changeLightSpeed(index));
         facesX.onFinishChange(funcs.changeFacesX(index));
         facesY.onFinishChange(funcs.changeFacesY(index));
@@ -368,15 +368,12 @@ function start(document, model, funcs) {
       const visibitySwitch = folder.add(config, 'visible' + index).name('visible');
       visibitySwitch.onFinishChange(val => switchLayer(index, val));
 
-      const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
-      mirrorSwitch.onFinishChange(val => switchMirror(index, val));
-
       addLayerProps(folder, config, layer, index);
       if (layer.webglOrSvg == 'webgl') {
         addWebGLBlend(folder, config, layer, index);
       } else {
         addSVGBlend(folder, config, layer, index);
-      }      
+      }
     });
 
     let guiHidden = false;
