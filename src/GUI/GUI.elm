@@ -217,7 +217,7 @@ viewCell_ (( row, col ) as pos) cell =
                 [ text <| showPos pos ++ " button: " ++ label ]
         Nested label state _ ->
             span [ ]
-                [ text <| showPos pos ++ " toggle: " ++ label ++ " "
+                [ text <| showPos pos ++ " nested: " ++ label ++ " "
                     ++ (if state == Expanded then "expanded" else "collapsed")
                 ]
         Choice label (x, y) _ ->
@@ -308,6 +308,16 @@ getCellSafe ( row, col ) rows =
     rows
         |> Array.get row
         |> Maybe.andThen (Array.get col)
+
+
+getGridSize : Grid -> ( Int, Int )
+getGridSize (Grid rows) =
+    ( Array.length rows
+    , Array.foldl
+        (max << Array.length)
+        0
+        rows
+    )
 
 
 ensureToExpand : CellPos -> Cell -> Grid -> Grid
