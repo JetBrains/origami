@@ -40,8 +40,6 @@ const exportScene = (scene) => {
 
 const import_ = (app, parsedState) => {
 
-    app.ports.pause.send(null);
-
     app.ports.import_.send(JSON.stringify({
         theta: parsedState.theta,
         omega: parsedState.omega,
@@ -67,7 +65,7 @@ const import_ = (app, parsedState) => {
         }
     });
 
-    app.ports.continue.send(null);
+    app.ports.pause.send(null);
 }
 
 const export_ = (app, exportedState) => {

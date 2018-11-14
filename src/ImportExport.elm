@@ -128,7 +128,7 @@ encodeModel_ model =
         -- , ( "layers", E.list (List.filterMap
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
         , ( "size", encodeIntPair model.size )
-        , ( "origin", encodeIntPair model.size )
+        , ( "origin", encodeIntPair model.origin )
         , ( "mouse", encodeIntPair model.mouse )
         , ( "now", E.float model.now )
         , ( "palette",
