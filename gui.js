@@ -209,7 +209,10 @@ const Config = function(layers, defaults, funcs) {
         this['iris' + index] = defaults.fss.iris;
         this['amplitudeX' + index] = defaults.fss.amplitude[0];
         this['amplitudeY' + index] = defaults.fss.amplitude[1];
-        this['amplitudeZ' + index] = defaults.fss.amplitude[2];
+        this['amplitudeZ' + index] = defaults.fss.amplitude[2];        
+        this['hue' + index] = defaults.fss.colorShift[0];
+        this['saturation' + index] = defaults.fss.colorShift[1];
+        this['brightness' + index] = defaults.fss.colorShift[2];
       }
     });
 
@@ -320,6 +323,7 @@ function start(document, model, funcs) {
         const vignette = folder.add(config, 'vignette' + index).name('vignette').min(0.0).max(1.0);
         const iris = folder.add(config, 'iris' + index).name('iris').min(0.0).max(1.0);
         const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
+        
         const amplitudeFolder = folder.addFolder('amplitude');
         const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('amplitudeX')
           .min(0.0).max(1.0);
@@ -327,6 +331,14 @@ function start(document, model, funcs) {
           .min(0.0).max(1.0);
         const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('amplitudeZ')
           .min(0.0).max(1.0);
+          
+        const colorShiftFolder = folder.addFolder('hsb');
+        const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
+          .min(-1.0).max(1.0).step(0.01);
+        const saturation = colorShiftFolder.add(config, 'saturation' + index).name('saturation')
+          .min(-1.0).max(1.0).step(0.01);
+        const brightness = colorShiftFolder.add(config, 'brightness' + index).name('brightness')
+          .min(-1.0).max(1.0).step(0.01);  
 
         mirrorSwitch.onFinishChange(val => switchMirror(index, val));
         lightSpeed.onFinishChange(funcs.changeLightSpeed(index));
@@ -335,6 +347,7 @@ function start(document, model, funcs) {
         vignette.onFinishChange(funcs.changeVignette(index));
         iris.onFinishChange(funcs.changeIris(index));
         renderMode.onFinishChange(funcs.changeRenderMode(index));
+
         amplitudeX.onFinishChange(value => {
           funcs.changeAmplitude(index)(value, null, null);
         });
@@ -343,6 +356,16 @@ function start(document, model, funcs) {
         });
         amplitudeZ.onFinishChange(value => {
           funcs.changeAmplitude(index)(null, null, value);
+        });
+
+        hue.onFinishChange(value => {
+          funcs.shiftColor(index)(value, null, null);
+        });
+        saturation.onFinishChange(value => {
+          funcs.shiftColor(index)(null, value, null);
+        });
+        brightness.onFinishChange(value => {
+          funcs.shiftColor(index)(null, null, value);
         });
       }
     }
