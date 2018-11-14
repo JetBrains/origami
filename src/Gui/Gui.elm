@@ -13,7 +13,8 @@ import Html.Attributes as H
 import Html.Events as H
 
 
-type alias CellPos = ( Int, Int )
+type alias GridPos = ( Int, Int )
+type alias ModelPos = ( Int, Int )
 type alias Shape = ( Int, Int )
 
 type alias Cells = List Cell
@@ -58,13 +59,13 @@ type Cell
 
 
 type Msg
-    = Tune CellPos Float
-    | On CellPos
-    | Off CellPos
-    | Expand CellPos
-    | Collapse CellPos
-    | Choose CellPos CellPos
-    | Move CellPos Int
+    = Tune ModelPos Float
+    | On ModelPos
+    | Off ModelPos
+    | Expand ModelPos
+    | Collapse ModelPos
+    | Choose ModelPos ModelPos
+    | Move ModelPos Int
 
 
 -- TODO:
@@ -156,7 +157,7 @@ oneLine cells =
     ( ( List.length cells, 1 ), cells )
 
 
-bottomLeft : CellPos
+bottomLeft : GridPos
 bottomLeft = (0, 0)
 
 
@@ -198,12 +199,12 @@ init =
                 ]
 
 
-showPos : CellPos -> String
+showPos : GridPos -> String
 showPos (row, col) =
     "(" ++ toString row ++ "," ++ toString col ++ ")"
 
 
-findHoverMessage : CellPos -> Cell -> Maybe Msg
+findHoverMessage : GridPos -> Cell -> Maybe Msg
 findHoverMessage (( row, col ) as pos) cell =
     case cell of
         Knob label value ->
@@ -211,7 +212,7 @@ findHoverMessage (( row, col ) as pos) cell =
         _ -> Nothing
 
 
-findClickMessage : CellPos -> Cell -> Maybe Msg
+findClickMessage : GridPos -> Cell -> Maybe Msg
 findClickMessage (( row, col ) as pos) cell =
     case cell of
         Toggle _ val ->
@@ -221,7 +222,7 @@ findClickMessage (( row, col ) as pos) cell =
         _ -> Nothing
 
 
-viewCell_ : CellPos -> Cell -> Html Msg
+viewCell_ : GridPos -> Cell -> Html Msg
 viewCell_ (( row, col ) as pos) cell =
     case cell of
         Root _ ->
@@ -261,7 +262,7 @@ viewCell_ (( row, col ) as pos) cell =
 
 
 
-viewCell : CellPos -> Maybe Cell -> Html Msg
+viewCell : GridPos -> Maybe Cell -> Html Msg
 viewCell pos maybeCell =
     let
         className =
@@ -290,7 +291,7 @@ viewCell pos maybeCell =
         div attributes children
 
 
-viewRow : CellPos -> Row -> Html Msg
+viewRow : GridPos -> Row -> Html Msg
 viewRow (row, col) cols =
     Array.indexedMap
         (\subCol -> viewCell ( row, col + subCol ))
@@ -320,9 +321,15 @@ viewGrid (Grid grid) =
         [ viewRows grid ]
 
 
+put : GridPos -> Model -> Grid -> Grid
+put ( x, y ) cell grid =
+    grid
+
+
 layout : Model -> Grid
 layout model =
-    emptyGrid (0, 0)
+    emptyGrid (10, 10)
+        |> put ( 0, 0 ) model
 
 
 view : Model -> Html Msg
@@ -368,7 +375,7 @@ view model =
 --         _ -> grid
 
 
-updateCell : CellPos -> (Cell -> Cell) -> Model -> Model
+updateCell : ModelPos -> (Cell -> Cell) -> Model -> Model
 updateCell ( row, col ) f root =
     root
     -- case getCellSafe ( row, col ) rows of
