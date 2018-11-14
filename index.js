@@ -306,6 +306,9 @@ setTimeout(function() { // FIXME: change to document.ready
             , changeAmplitude : index => (x, y, z) => {
                 app.ports.changeAmplitude.send({ layer: index, value: [ x, y, z ]});
             }
+            , shiftColor : index => (h, s, b) => {
+                app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]});
+            }            
             , turnOn : index =>
                 { app.ports.turnOn.send(index); }
             , turnOff : index =>

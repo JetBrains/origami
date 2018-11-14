@@ -4,6 +4,7 @@ module Layer.FSS exposing
     , Mesh
     , SerializedScene
     , Amplitude, AmplitudeChange
+    , ColorShift, ColorShiftPatch
     , Vignette, Iris
     , Clip
     , makeEntity
@@ -36,7 +37,9 @@ type alias Faces = ( Int, Int )
 type alias Clip = ( Float, Float )
 type alias Mirror = Float
 type alias Amplitude = ( Float, Float, Float )
+type alias ColorShift = ( Float, Float, Float )
 type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
+type alias ColorShiftPatch = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
 type alias Vignette = Float
 type alias Iris = Float
@@ -55,6 +58,7 @@ type RenderMode
 type alias PortModel =
     { renderMode : String
     , amplitude : Amplitude
+    , colorShift : ColorShift
     , vignette : Vignette
     , iris : Iris 
     , faces : Faces
@@ -68,6 +72,7 @@ type alias PortModel =
 type alias Model =
     { renderMode : RenderMode
     , amplitude : Amplitude
+    , colorShift : ColorShift
     , vignette : Vignette
     , iris : Iris 
     , faces : Faces
@@ -157,6 +162,10 @@ defaultAmplitude : ( Float, Float, Float )
 defaultAmplitude = ( 0.3, 0.3, 0.3 )
 
 
+defaultColorShift : ( Float, Float, Float )
+defaultColorShift = ( 0.0, 0.0, 0.0 )
+
+
 defaultVignette : Vignette
 defaultVignette = 0.8
 
@@ -186,6 +195,7 @@ init =
     { faces = defaultFaces
     , renderMode = Triangles
     , amplitude = defaultAmplitude
+    , colorShift = defaultColorShift
     , vignette = defaultVignette
     , iris = defaultIris
     , mirror = False
@@ -383,6 +393,7 @@ type alias Uniforms =
         , uLayerIndex : Int
         , uMousePosition : Vec2
         , uAmplitude : Vec3
+        , uColorShift : Vec3
         , uVignette : Float
         , uIris : Float
         , uSegment : Vec3
@@ -422,6 +433,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         mirror = if model.mirror then 1.0 else 0.0
         clip =  model.clip |> Maybe.withDefault noClip
         ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
+        ( hue, saturation, brightness ) = model.colorShift
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -437,6 +449,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , uClip = vec2 (Tuple.first clip) (Tuple.second clip)
         , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
+        , uColorShift = vec3 hue saturation brightness
         , uVignette = model.vignette
         , uIris = model.iris
         , paused = v.paused
@@ -596,6 +609,7 @@ vertexShader =
         uniform float uLightSpeed;
 
         uniform vec3 uAmplitude;
+        uniform vec3 uColorShift;
 
         uniform vec2 uMousePosition;
         uniform float uMirror;
