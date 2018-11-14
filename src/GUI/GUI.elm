@@ -102,12 +102,23 @@ grid cells =
 
 
 put : CellPos -> Grid -> Grid -> Grid
-put at (Grid srcRows) (Grid dstRows) =
+put ( rowId, colId) (Grid srcRows) (Grid dstRows) =
     let
-        checkRow index row = row
+        updateCell dstRowId dstColId cell =
+            if (dstRowId >= rowId) && (dstColId >= colId) then
+                srcRows
+                    |> Array.get (dstRowId - rowId)
+                    |> Maybe.andThen (Array.get (dstColId - colId))
+                    |> Maybe.withDefault cell
+            else cell
+        updateRow dstRowId row =
+            row |> Array.indexedMap (updateCell dstRowId)
+        checkExpandables row grid =
+            grid
     in
         dstRows
-            |> Array.indexedMap checkRow
+            |> Array.indexedMap updateRow
+            |> (\cells -> Array.foldl checkExpandables cells cells)
             |> Grid
 
 
