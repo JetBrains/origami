@@ -20,6 +20,7 @@ module Model exposing
     , PortBlend
     )
 
+
 import Time exposing (Time)
 
 import WebGL.Blend as WGLBlend
@@ -27,6 +28,7 @@ import Svg.Blend as SVGBlend
 
 import Product exposing (Product)
 import Product
+import Gui.Gui as Gui
 import Layer.FSS as FSS
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
@@ -41,8 +43,8 @@ type alias Pos = (Int, Int)
 
 type alias CreateLayer = LayerKind -> LayerModel -> Layer
 
-type UiMode 
-    = Development 
+type UiMode
+    = Development
     | Production
     | Release
     | Ads
@@ -118,6 +120,7 @@ type alias PortBlend =
 
 type alias Model =
     { mode : UiMode
+    , gui : Gui.UI
     , paused : Bool
     , autoRotate : Bool
     , fps : Int
@@ -181,6 +184,7 @@ init
     -> Model
 init mode initialLayers createLayer
     = { mode = mode
+      , gui = Gui.init
       , paused = False
       , autoRotate = False
       , fps = 0

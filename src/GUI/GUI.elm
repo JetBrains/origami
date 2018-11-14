@@ -1,4 +1,10 @@
-module GUI exposing (..)
+module Gui.Gui exposing
+    ( Msg
+    , UI
+    , view
+    , update
+    , init
+    )
 
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H
@@ -38,12 +44,15 @@ type alias Coord = ( Int, Int )
 type alias Handler = (() -> ())
 
 
+type alias Label = String
+
+
 type Cell
-    = Knob Float
-    | Toggle ToggleState
-    | Button Handler
-    | Nested ExpandState Grid
-    | Choice Coord Grid
+    = Knob Label Float
+    | Toggle Label ToggleState
+    | Button Label Handler
+    | Nested Label ExpandState Grid
+    | Choice Label Coord Grid
     -- | Color
 
 
@@ -58,15 +67,15 @@ type Msg
     | Move Int Int
 
 
+-- TODO:
+-- initialMode : UiMode
+-- initialMode = Development
+
+
 type alias UI = Grid
 
 
 type alias Path = Array Coord
-
-
-grid : Shift -> List (List Cell) -> Grid
-grid shift cells =
-    Grid shift <| Array.fromList (List.map Array.fromList cells)
 
 
 emptyGrid : Shift -> Grid
@@ -74,27 +83,71 @@ emptyGrid shift
     = grid shift []
 
 
-init : ( UI, Cmd Msg )
-init = ( emptyGrid 0, Cmd.none )
+grid : Shift -> List (List Cell) -> Grid
+grid shift cells =
+    Grid shift <| Array.fromList (List.map Array.fromList cells)
+
+
+oneLine : Shift -> List Cell -> Grid
+oneLine shift cells =
+    grid shift [cells]
+
+
+init : UI -- ( UI, Cmd Msg )
+init =
+    let
+        webglBlendGrid = emptyGrid 0
+        svgBlendGrid = emptyGrid 0
+        amplitudeGrid = emptyGrid 0
+        fssControls shift =
+            oneLine shift
+                [ Toggle "visible" TurnedOn
+                , Toggle "mirror" TurnedOn
+                , Knob "lights" 0
+                , Knob "col" 0
+                , Knob "vignette" 0
+                , Knob "iris" 0
+                , Choice "mesh" (0, 0) <| emptyGrid 0
+                , Nested "amplitude" Collapsed amplitudeGrid
+                , Nested "blend" Collapsed webglBlendGrid
+                ]
+        svgControls shift =
+            oneLine shift
+                [ Toggle "visible" TurnedOn
+                , Nested "blend" Collapsed svgBlendGrid
+                ]
+    in
+        oneLine 0
+            [ Choice "product" (0, 0) <| emptyGrid 0
+            , Knob "rotation" 0
+            , Choice "size" (0, 0) <| emptyGrid 0
+            , Button "save png" (\_ -> ())
+            , Button "save batch" (\_ -> ())
+            , Nested "logo" Collapsed <| svgControls 0
+            , Nested "title" Collapsed <| svgControls 0
+            , Nested "net" Collapsed <| fssControls 0
+            , Nested "low-poly" Collapsed <| fssControls 0
+            ]
 
 
 view : UI -> Html Msg
-view ui = div [] []
+view (Grid shift cells) =
+    div [ H.class "gui" ] []
 
 
 subscriptions : UI -> Sub Msg
 subscriptions ui = Sub.batch []
 
 
-update : Msg -> UI -> ( UI, Cmd Msg )
-update msg ui = ( ui, Cmd.none )
+update : Msg -> UI -> UI -- ( UI, Cmd Msg )
+update msg ui = ui -- ( ui, Cmd.none )
 
 
-main : Program Never UI Msg
-main =
-    Html.program
-        { init = init
-        , view = view
-        , subscriptions = subscriptions
-        , update = update
-        }
+-- main : Program Never UI Msg
+-- main =
+--     Html.program
+--         { init = init
+--         , view = view
+--         , subscriptions = subscriptions
+--         , update = update
+--         }

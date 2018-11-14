@@ -1,8 +1,9 @@
 // index.js
 'use strict';
 
-// include main style
+// include styles
 require('./index.css');
+require('./src/Gui/Gui.css');
 
 const deepClone = require('./deep-clone.js');
 const drawToCanvas = require('./draw-to-canvas.js');
