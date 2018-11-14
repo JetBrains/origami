@@ -6,24 +6,24 @@ module Gui.Gui exposing
     , init
     )
 
-import Html exposing (Html, text, div, span, input)
-import Html.Attributes as H
-    exposing (class, width, height, style, class, type_, min, max, value, id)
-import Html.Events as H
 
 import Array exposing (..)
+import Html exposing (Html, text, div, span, input)
+import Html.Attributes as H
+import Html.Events as H
 
 
 type alias CellPos = ( Int, Int )
 
 
-type Origin = Origin CellPos
+type alias Bounds = ( Int, Int )
 
 
 type Cells = Cells (Array (Array Cell))
 
 
-type Grid = Grid Origin Cells
+--type Grid = Grid Origin Cells
+type Grid = Grid Cells
 
 
 type ExpandState
@@ -53,7 +53,8 @@ type alias Label = String
 
 
 type Cell
-    = Knob Label Float
+    = Empty
+    | Knob Label Float
     | Toggle Label ToggleState
     | Button Label Handler
     | Nested Label ExpandState Grid
@@ -84,67 +85,73 @@ type alias UI = Grid
 type alias Path = CellPos
 
 
-emptyGrid : Origin -> Grid
-emptyGrid origin
-    = grid origin []
+emptyGrid : Bounds -> Grid
+emptyGrid ( width, height )
+    = grid
+        <| List.repeat height (List.repeat width Empty)
 
 
-grid : Origin -> List (List Cell) -> Grid
-grid origin cells =
-    Grid origin
+grid : List (List Cell) -> Grid
+grid cells =
+    Grid
         <| Cells
         <| Array.fromList
         <| List.map Array.fromList cells
 
 
-oneLine : Origin -> List Cell -> Grid
-oneLine origin cells =
-    grid origin [cells]
+put : CellPos -> Grid -> Grid -> Grid
+put at what where_ =
+    where_
+
+
+oneLine : List Cell -> Grid
+oneLine cells =
+    grid [cells]
+
+
+bottomLeft : CellPos
+bottomLeft = (0, 0)
 
 
 init : UI -- ( UI, Cmd Msg )
 init =
     let
-        webglBlendGrid y = emptyGrid <| Origin ( 0, y )
-        svgBlendGrid y = emptyGrid <| Origin ( 0, y )
-        amplitudeGrid y = emptyGrid <| Origin ( 0, y )
-        fssControls (Origin (x, y) as origin) =
-            oneLine origin
+        webglBlendGrid = emptyGrid ( 0, 0 )
+        svgBlendGrid = emptyGrid ( 0, 0 )
+        amplitudeGrid = emptyGrid ( 0, 0 )
+        fssControls =
+            oneLine
                 [ Toggle "visible" TurnedOn
                 , Toggle "mirror" TurnedOn
                 , Knob "lights" 0
                 , Knob "col" 0
                 , Knob "vignette" 0
                 , Knob "iris" 0
-                , Choice "mesh" (0, 0) <| emptyGrid <| Origin ( x, y + 1 )
-                , Nested "amplitude" Collapsed <| amplitudeGrid (y + 1)
-                , Nested "blend" Collapsed <| webglBlendGrid (y + 1)
+                , Choice "mesh" (0, 0) <| emptyGrid ( 0, 0 )
+                , Nested "amplitude" Collapsed amplitudeGrid
+                , Nested "blend" Collapsed webglBlendGrid
                 ]
-        svgControls (Origin (x, y) as origin) =
-            oneLine origin
+        svgControls =
+            oneLine
                 [ Toggle "visible" TurnedOn
-                , Nested "blend" Collapsed <| svgBlendGrid y
+                , Nested "blend" Collapsed svgBlendGrid
+                ]
+        bottomLine =
+            oneLine
+                [ Choice "product" (0, 0)
+                    <| emptyGrid ( 0, 0 )
+                , Knob "rotation" 0
+                , Choice "size" (0, 0)
+                    <| emptyGrid ( 0, 0 )
+                , Button "save png" (\_ -> ())
+                , Button "save batch" (\_ -> ())
+                , Nested "logo" Collapsed svgControls
+                , Nested "title" Collapsed svgControls
+                , Nested "net" Collapsed fssControls
+                , Nested "low-poly" Collapsed fssControls
                 ]
     in
-        oneLine (Origin (0, 0))
-            [ Choice "product" (0, 0) <| emptyGrid <| Origin (0, 1)
-            , Knob "rotation" 0
-            , Choice "size" (0, 0) <| emptyGrid <| Origin (2, 1)
-            , Button "save png" (\_ -> ())
-            , Button "save batch" (\_ -> ())
-            , Nested "logo" Collapsed
-                <| svgControls <| Origin (0, 1)
-            , Nested "title" Collapsed
-                <| svgControls <| Origin (0, 1)
-            , Nested "net" Collapsed
-                <| fssControls <| Origin (0, 1)
-            , Nested "low-poly" Collapsed
-                <| fssControls <| Origin (0, 1)
-            ]
-
-viewHole : Html Msg
-viewHole =
-    div [ H.class "cell hole" ] []
+        put bottomLeft bottomLine <| emptyGrid (10, 10)
 
 
 showPos : CellPos -> String
@@ -163,6 +170,7 @@ handleClick (( row, col ) as pos) cell =
 viewCell_ : CellPos -> Cell -> Html Msg
 viewCell_ (( row, col ) as pos) cell =
     case cell of
+        Empty -> span [] []
         Knob label val ->
             span [ ] [ text <| showPos pos ++ " knob: " ++ label ++ " " ++ toString val ]
         Toggle label val ->
@@ -193,33 +201,41 @@ viewCell_ (( row, col ) as pos) cell =
 
 viewCell : CellPos -> Cell -> Html Msg
 viewCell pos cell =
-    div
-        ([ H.class "cell" ]
-        ++ (handleClick pos cell
-            |> Maybe.map (\msg -> [ H.onClick msg ])
-            |> Maybe.withDefault []))
-        [ viewCell_ pos cell
-        ]
-
-
-viewRow : Origin -> Array Cell -> Html Msg
-viewRow (Origin (row, col)) cols =
-    div [ H.class "row" ]
-        <| List.repeat row viewHole ++
-            ( Array.indexedMap
-                (\subCol -> viewCell ( row, col + subCol ))
-                cols
-                |> Array.toList
-            )
-
-
-viewRows : Origin -> Cells -> Html Msg
-viewRows (Origin (row, col) as origin) (Cells rows) =
     let
+        className =
+            case cell of
+                Empty -> "cell hole"
+                _ -> "cell"
+        handlers =
+            handleClick pos cell
+            |> Maybe.map (\msg -> [ H.onClick msg ])
+            |> Maybe.withDefault []
+    in
+        div
+            ([ H.class className ]
+            ++ handlers)
+            [ viewCell_ pos cell
+            ]
+
+
+viewRow : CellPos -> Array Cell -> Html Msg
+viewRow (row, col) cols =
+    Array.indexedMap
+        (\subCol -> viewCell ( row, col + subCol ))
+        cols
+        |> Array.toList
+        |> div [ H.class "row" ]
+
+
+viewRows : Cells -> Html Msg
+viewRows (Cells rows) =
+    let
+        origin  = bottomLeft
+        ( row, col ) = origin
         topRows =
             rows
                 |> Array.indexedMap
-                    (\subRow -> viewRow <| Origin (row + subRow, col))
+                    (\subRow -> viewRow (row + subRow, col))
                 |> Array.toList
         nestedRows =
             rows
@@ -237,9 +253,9 @@ viewRows (Origin (row, col) as origin) (Cells rows) =
 
 
 viewGrid : Grid -> Html Msg
-viewGrid (Grid shift grid) =
+viewGrid (Grid grid) =
     div [ H.class "grid" ]
-        [ viewRows shift grid ]
+        [ viewRows grid ]
 
 
 view : UI -> Html Msg
