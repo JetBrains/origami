@@ -701,7 +701,7 @@ vertexShader =
 
                 if ( background ) {
 
-                    lightAmbient =  adjustLight(uLightAmbient[i], 0.0, 0.3, 0.0);
+                    lightAmbient =  adjustLight(uLightAmbient[i], 0.1, 0.0, 0.0);
                     lightDiffuse =  adjustLight(uLightDiffuse[i], 0.0, 0.7, 0.0);
 
                 } else {

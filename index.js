@@ -24,7 +24,7 @@ const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
 const fssScenes = {};
 
-const batchPause = 1000;
+const batchPause = 500;
 let savingBatch = false;
 
 const exportScene = (scene) => {
@@ -209,6 +209,7 @@ const savePng = (hiddenLink) => {
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
             // FIXME: a temporary hack to draw a logo on the canvas,
             // use product image itself instead
+        hiddenLink.download = width + 'x'+ height + '-jetbrains.png';
             if (document.querySelector('.logo-layer')) {
                 const logoSrc = document.querySelector('.logo-layer');
                 const state = JSON.parse(logoSrc.getAttribute('data-stored'));
@@ -251,6 +252,7 @@ setTimeout(function() { // FIXME: change to document.ready
 
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
+ 
 
     app.ports.presetSizeChanged.subscribe(size => {
         if (savingBatch) setTimeout(() => savePng(hiddenLink, size), 0);
