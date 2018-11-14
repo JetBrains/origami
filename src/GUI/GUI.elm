@@ -14,13 +14,16 @@ import Html.Events exposing (on, onInput, onMouseUp, onClick)
 import Array exposing (..)
 
 
-type Shift = Shift Int
+type alias CellPos = ( Int, Int )
+
+
+type Origin = Origin CellPos
 
 
 type Cells = Cells (Array (Array Cell))
 
 
-type Grid = Grid Shift Cells
+type Grid = Grid Origin Cells
 
 
 type ExpandState
@@ -38,9 +41,6 @@ type ToggleState
     | TurnedOff
 
 
-type alias Coord = ( Int, Int )
-
-
 type alias Handler = (() -> ())
 
 
@@ -52,7 +52,7 @@ type Cell
     | Toggle Label ToggleState
     | Button Label Handler
     | Nested Label ExpandState Grid
-    | Choice Label Coord Grid
+    | Choice Label CellPos Grid
     -- | Color
 
 
@@ -75,69 +75,66 @@ type Msg
 type alias UI = Grid
 
 
-type alias Path = Array Coord
+type alias Path = Array CellPos
 
 
-emptyGrid : Shift -> Grid
-emptyGrid shift
-    = grid shift []
+emptyGrid : Origin -> Grid
+emptyGrid origin
+    = grid origin []
 
 
-grid : Shift -> List (List Cell) -> Grid
-grid shift cells =
-    Grid shift
+grid : Origin -> List (List Cell) -> Grid
+grid origin cells =
+    Grid origin
         <| Cells
         <| Array.fromList
         <| List.map Array.fromList cells
 
 
-oneLine : Shift -> List Cell -> Grid
-oneLine shift cells =
-    grid shift [cells]
+oneLine : Origin -> List Cell -> Grid
+oneLine origin cells =
+    grid origin [cells]
 
 
 init : UI -- ( UI, Cmd Msg )
 init =
     let
-        webglBlendGrid = emptyGrid (Shift 0)
-        svgBlendGrid = emptyGrid (Shift 0)
-        amplitudeGrid = emptyGrid (Shift 0)
-        fssControls shift =
-            oneLine shift
+        webglBlendGrid y = emptyGrid <| Origin ( 0, y )
+        svgBlendGrid y = emptyGrid <| Origin ( 0, y )
+        amplitudeGrid y = emptyGrid <| Origin ( 0, y )
+        fssControls (Origin (x, y) as origin) =
+            oneLine origin
                 [ Toggle "visible" TurnedOn
                 , Toggle "mirror" TurnedOn
                 , Knob "lights" 0
                 , Knob "col" 0
                 , Knob "vignette" 0
                 , Knob "iris" 0
-                , Choice "mesh" (0, 0) <| emptyGrid (Shift 0)
-                , Nested "amplitude" Collapsed amplitudeGrid
-                , Nested "blend" Collapsed webglBlendGrid
+                , Choice "mesh" (0, 0) <| emptyGrid <| Origin ( x, y + 1 )
+                , Nested "amplitude" Collapsed <| amplitudeGrid (y + 1)
+                , Nested "blend" Collapsed <| webglBlendGrid (y + 1)
                 ]
-        svgControls shift =
-            oneLine shift
+        svgControls (Origin (x, y) as origin) =
+            oneLine origin
                 [ Toggle "visible" TurnedOn
-                , Nested "blend" Collapsed svgBlendGrid
+                , Nested "blend" Collapsed <| svgBlendGrid y
                 ]
     in
-        oneLine (Shift 0)
-            [ Choice "product" (0, 0)
-                <| emptyGrid (Shift 0)
+        oneLine (Origin (0, 0))
+            [ Choice "product" (0, 0) <| emptyGrid <| Origin (0, 1)
             , Knob "rotation" 0
-            , Choice "size" (0, 0)
-                <| emptyGrid (Shift 0)
+            , Choice "size" (0, 0) <| emptyGrid <| Origin (2, 1)
             , Button "save png" (\_ -> ())
             , Button "save batch" (\_ -> ())
             , Nested "logo" Collapsed
-                <| svgControls (Shift 0)
+                <| svgControls <| Origin (0, 1)
             , Nested "title" Collapsed
-                <| svgControls (Shift 0)
+                <| svgControls <| Origin (0, 1)
             , Nested "net" Collapsed
-                <| fssControls (Shift 0)
+                <| fssControls <| Origin (0, 1)
             , Nested "low-poly" Collapsed
-                <| fssControls (Shift 0)
+                <| fssControls <| Origin (0, 1)
             ]
-
 
 viewHole : Html Msg
 viewHole =
@@ -146,23 +143,47 @@ viewHole =
 
 viewCell : Int -> Int -> Cell -> Html Msg
 viewCell rowIndex cellIndex cell =
-    div [ H.class "cell" ] []
+    div
+        [ H.class "cell" ]
+        [ case cell of
+            Knob label val ->
+                span [ ] [ text <| "knob: " ++ label ++ " " ++ toString val ]
+            Toggle label val ->
+                span [ ]
+                    [ text <| "toggle: " ++ label ++ " "
+                      ++ (if val == TurnedOn then "on" else "off")
+                    ]
+            Button label _ ->
+                span [ ]
+                    [ text <| "button: " ++ label ]
+            Nested label state _ ->
+                span [ ]
+                    [ text <| "toggle: " ++ label ++ " "
+                      ++ (if state == Expanded then "expanded" else "collapsed")
+                    ]
+            Choice label (x, y) _ ->
+                span [ ]
+                    [ text <| "choice: " ++ label ++ " "
+                      ++ toString x ++ " " ++ toString y
+                    ]
+        ]
 
 
-viewCellRow : Shift -> Int -> Array Cell -> Html Msg
-viewCellRow (Shift shift) rowIndex cells =
+viewCellRow : Origin -> Int -> Array Cell -> Html Msg
+viewCellRow (Origin (x, y)) rowIndex cells =
     div [ H.class "row" ]
-        <| List.repeat shift viewHole ++
+        <| List.repeat x viewHole ++
             ( Array.indexedMap (viewCell rowIndex) cells
                 |> Array.toList
             )
 
 
-viewCells : Shift -> Cells -> Html Msg
-viewCells shift (Cells cells) =
+viewCells : Origin -> Cells -> Html Msg
+viewCells origin (Cells cells) =
     div [ H.class "cells" ]
         <| Array.toList
-        <| Array.indexedMap (viewCellRow shift) cells
+        <| Array.indexedMap (viewCellRow origin) cells
+
 
 
 viewGrid : Grid -> Html Msg
