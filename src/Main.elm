@@ -76,7 +76,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Development
+initialMode = Release
 
 
 init : ( Model, Cmd Msg )
