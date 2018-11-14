@@ -141,48 +141,57 @@ viewHole =
     div [ H.class "cell hole" ] []
 
 
-viewCell : Int -> Int -> Cell -> Html Msg
-viewCell rowIndex cellIndex cell =
+showPos : CellPos -> String
+showPos (row, col) =
+    "(" ++ toString row ++ "," ++ toString col ++ ")"
+
+
+viewCell : CellPos -> Cell -> Html Msg
+viewCell (( row, col ) as pos) cell =
     div
         [ H.class "cell" ]
         [ case cell of
             Knob label val ->
-                span [ ] [ text <| "knob: " ++ label ++ " " ++ toString val ]
+                span [ ] [ text <| showPos pos ++ " knob: " ++ label ++ " " ++ toString val ]
             Toggle label val ->
                 span [ ]
-                    [ text <| "toggle: " ++ label ++ " "
+                    [ text <| showPos pos ++ " toggle: " ++ label ++ " "
                       ++ (if val == TurnedOn then "on" else "off")
                     ]
             Button label _ ->
                 span [ ]
-                    [ text <| "button: " ++ label ]
+                    [ text <| showPos pos ++ " button: " ++ label ]
             Nested label state _ ->
                 span [ ]
-                    [ text <| "toggle: " ++ label ++ " "
+                    [ text <| showPos pos ++ " toggle: " ++ label ++ " "
                       ++ (if state == Expanded then "expanded" else "collapsed")
                     ]
             Choice label (x, y) _ ->
                 span [ ]
-                    [ text <| "choice: " ++ label ++ " "
+                    [ text <| showPos pos ++ " choice: " ++ label ++ " "
                       ++ toString x ++ " " ++ toString y
                     ]
         ]
 
 
-viewCellRow : Origin -> Int -> Array Cell -> Html Msg
-viewCellRow (Origin (x, y)) rowIndex cells =
+viewCellRow : Origin -> Array Cell -> Html Msg
+viewCellRow (Origin (row, col)) cells =
     div [ H.class "row" ]
-        <| List.repeat x viewHole ++
-            ( Array.indexedMap (viewCell rowIndex) cells
+        <| List.repeat row viewHole ++
+            ( Array.indexedMap
+                (\subCol -> viewCell ( row, col + subCol ))
+                cells
                 |> Array.toList
             )
 
 
 viewCells : Origin -> Cells -> Html Msg
-viewCells origin (Cells cells) =
-    div [ H.class "cells" ]
-        <| Array.toList
-        <| Array.indexedMap (viewCellRow origin) cells
+viewCells (Origin (row, col) as origin) (Cells cells) =
+    cells
+        |> Array.indexedMap
+            (\subRow -> viewCellRow <| Origin (row + subRow, col))
+        |> Array.toList
+        |> div [ H.class "cells" ]
 
 
 
