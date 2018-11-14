@@ -2,7 +2,31 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 100px;
-    height: 100px;
+    width: 700px;
+    height: 700px;
     background-color: rgba(0, 0, 0, 0.5);
+}
+
+.cells {
+    display: flex;
+    flex-direction: column;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.cell {
+    display: block;
+    width: 70px;
+    height: 70px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid #fff;
+    border-radius: 8px;
+}
+
+.hole {
+    border-color: #333;
+    background-color: rgba(0, 0, 0, 0.3);
 }
