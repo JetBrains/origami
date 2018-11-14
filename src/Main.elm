@@ -17,6 +17,8 @@ import WebGL.Settings.Blend as B
 import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
+import Gui.Gui as Gui
+
 import Model exposing (..)
 import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
@@ -39,6 +41,7 @@ import Layer.Vignette as Vignette
 type Msg
     = Bang
     | Animate Time
+    | GuiMessage Gui.Msg
     | Resize Window.Size
     | ResizeFromPreset Window.Size
     | Locate Position
@@ -130,6 +133,14 @@ update msg model =
         Bang ->
             ( model
             , model |> prepareGuiConfig |> startGui
+            )
+
+        GuiMessage guiMsg ->
+            (
+                { model
+                | gui = model.gui |> Gui.update guiMsg
+                }
+            , Cmd.none
             )
 
         Animate dt ->
@@ -991,6 +1002,7 @@ view model =
                 , onClick TriggerPause
                 ]
         , mergeHtmlLayers model |> div [ H.class "svg-layers"]
+        , Html.map GuiMessage <| Gui.view model.gui
         ]
 
 
