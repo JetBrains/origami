@@ -102,7 +102,7 @@ grid cells =
 
 
 put : CellPos -> Grid -> Grid -> Grid
-put ( rowId, colId) (Grid srcRows) (Grid dstRows) =
+put (rowId, colId) (Grid srcRows) (Grid dstRows) =
     let
         updateCell dstRowId dstColId cell =
             if (dstRowId >= rowId) && (dstColId >= colId) then
@@ -113,13 +113,26 @@ put ( rowId, colId) (Grid srcRows) (Grid dstRows) =
             else cell
         updateRow dstRowId row =
             row |> Array.indexedMap (updateCell dstRowId)
-        checkExpandables row grid =
-            grid
+        applyIfExpands srcRowId cell ( srcColId, grid ) =
+            ( srcColId + 1
+            , case cell of
+                Nested _ _ nestedGrid ->
+                    put ( rowId + srcRowId + 1, colId + srcColId ) nestedGrid grid
+                _ -> grid
+            )
+        checkExpandables row ( srcRowId, grid ) =
+            ( srcRowId + 1
+            , Array.foldl (applyIfExpands srcRowId) (0, grid) row
+                |> Tuple.second
+            )
     in
         dstRows
             |> Array.indexedMap updateRow
-            |> (\cells -> Array.foldl checkExpandables cells cells)
             |> Grid
+            |> (\dstGrid ->
+                    Array.foldl checkExpandables (0, dstGrid) srcRows
+               )
+            |> Tuple.second
 
 
 oneLine : List Cell -> Grid
@@ -255,18 +268,8 @@ viewRows rows =
                 |> Array.indexedMap
                     (\subRow -> viewRow (row + subRow, col))
                 |> Array.toList
-        nestedRows =
-            rows
-                |> Array.foldl
-                    (\subRow (index, nestings) -> (index + 1, []))
-                    (0, [])
-                |> Tuple.second
-            -- rows
-            --     |> Array.indexedMap
-            --         (\subRow -> viewRow <| Origin (row + subRow, col))
-            --     |> Array.toList
     in
-        topRows ++ nestedRows |> div [ H.class "cells" ]
+        topRows |> div [ H.class "cells" ]
 
 
 
