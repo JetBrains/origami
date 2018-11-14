@@ -1,6 +1,6 @@
 module Gui.Gui exposing
     ( Msg
-    , UI
+    , Model
     , view
     , update
     , init
@@ -14,18 +14,11 @@ import Html.Events as H
 
 
 type alias CellPos = ( Int, Int )
+type alias Shape = ( Int, Int )
 
-
-type alias Bounds = ( Int, Int )
-
-
+type alias Cells = List Cell
 type alias Rows = Array Row
-
-
-type alias Row = Array Cell
-
-
---type Grid = Grid Origin Cells
+type alias Row = Array (Maybe Cell)
 type Grid = Grid Rows
 
 
@@ -50,20 +43,17 @@ type SelectionState
 
 
 type alias Handler = (() -> ())
-
-
 type alias Label = String
+type alias ItemChosen = Int
 
 
 type Cell
-    = Empty
+    = Root (Shape, Cells)
     | Knob Label Float
     | Toggle Label ToggleState
     | Button Label Handler
-    | Nested Label ExpandState Grid
-    | NestedItem Cell -- first cell holds the owning nested parent
-    | Choice Label ExpandState CellPos Grid -- pos holds the selected value from the grid
-    | ChoiceItem SelectionState Cell -- first cell holds the owning choise parent
+    | Nested Label ExpandState (Shape, Cells)
+    | Choice Label ExpandState ItemChosen (Shape, Cells)
     -- | Color
 
 
@@ -82,85 +72,100 @@ type Msg
 -- initialMode = Development
 
 
-type alias UI = Grid
+type alias Model = Cell
+type alias View = Grid
+--type alias Path = CellPos
 
 
-type alias Path = CellPos
-
-
-emptyGrid : Bounds -> Grid
+emptyGrid : Shape -> Grid
 emptyGrid ( width, height )
     = grid
-        <| List.repeat height (List.repeat width Empty)
+        <| List.repeat height (List.repeat width Nothing)
 
 
-grid : List (List Cell) -> Grid
+noChildren : ( Shape, Cells )
+noChildren =
+    ( ( 0, 0 ), [] )
+
+
+grid : List (List (Maybe Cell)) -> Grid
 grid cells =
     Grid
         <| Array.fromList
         <| List.map Array.fromList cells
 
 
-map : (Cell -> Cell) -> Grid -> Grid
-map f (Grid rows) =
-    Array.map (Array.map f) rows |> Grid
+-- map : (Cell -> Cell) -> Grid -> Grid
+-- map f (Grid rows) =
+--     Array.map (Array.map f) rows |> Grid
 
 
-put : CellPos -> Grid -> Grid -> Grid
-put (rowId, colId) (Grid srcRows) (Grid dstRows) =
-    let
-        updateCell dstRowId dstColId cell =
-            if (dstRowId >= rowId) && (dstColId >= colId) then
-                srcRows |> getCell_ (dstRowId - rowId, dstColId - colId) cell
-            else cell
-        updateRow dstRowId row =
-            row |> Array.indexedMap (updateCell dstRowId)
-        applyIfExpands srcRowId cell ( srcColId, grid ) =
-            ( srcColId + 1
-            , grid |> ensureToExpand ( rowId + srcRowId, colId + srcColId ) cell
-            )
-        checkExpandables row ( srcRowId, grid ) =
-            ( srcRowId + 1
-            , Array.foldl (applyIfExpands srcRowId) (0, grid) row
-                |> Tuple.second
-            )
-    in
-        dstRows
-            |> Array.indexedMap updateRow
-            |> Grid
-            |> (\dstGrid ->
-                    Array.foldl checkExpandables (0, dstGrid) srcRows
-               )
-            |> Tuple.second
+-- mapM : (Cell -> Cell) -> Model -> Model
+-- mapM f cell =
+--     case cell of
+--         Nested label state ( shape, cells ) ->
+--             Nested label state ( shape, List.map f cells )
+--         Choice label state chosen ( shape, cells ) ->
+--             Choice label state chosen ( shape, List.map f cells )
+--         _ -> cell
 
 
-nest : String -> Grid -> Cell
-nest label subGrid =
-    map NestedItem subGrid |>
-        Nested label Collapsed
+-- put : CellPos -> Grid -> Grid -> Grid
+-- put (rowId, colId) (Grid srcRows) (Grid dstRows) =
+--     let
+--         updateCell dstRowId dstColId cell =
+--             if (dstRowId >= rowId) && (dstColId >= colId) then
+--                 srcRows |> getCell_ (dstRowId - rowId, dstColId - colId) cell
+--             else cell
+--         updateRow dstRowId row =
+--             row |> Array.indexedMap (updateCell dstRowId)
+--         applyIfExpands srcRowId cell ( srcColId, grid ) =
+--             ( srcColId + 1
+--             , grid |> ensureToExpand ( rowId + srcRowId, colId + srcColId ) cell
+--             )
+--         checkExpandables row ( srcRowId, grid ) =
+--             ( srcRowId + 1
+--             , Array.foldl (applyIfExpands srcRowId) (0, grid) row
+--                 |> Tuple.second
+--             )
+--     in
+--         dstRows
+--             |> Array.indexedMap updateRow
+--             |> Grid
+--             |> (\dstGrid ->
+--                     Array.foldl checkExpandables (0, dstGrid) srcRows
+--                )
+--             |> Tuple.second
+
+-- root : Shape -> Cells -> Cell
+-- root shape cells = Root ( shape, cells )
 
 
-choise : String -> Grid -> Cell
-choise label subGrid =
-    map (ChoiceItem NotSelected) subGrid |>
-        Choice label Collapsed (0, 0)
+-- nest : String -> Shape -> Cells -> Cell
+-- nest label shape cells =
+--     Nested label Collapsed ( shape, cells )
 
 
-oneLine : List Cell -> Grid
+-- choise : String -> Shape -> Cells -> Cell
+-- choise label shape cells =
+--     Choice label Collapsed 0 ( shape, cells )
+
+
+oneLine : Cells -> ( Shape, Cells )
 oneLine cells =
-    grid [cells]
+    ( ( List.length cells, 1 ), cells )
 
 
 bottomLeft : CellPos
 bottomLeft = (0, 0)
 
 
-init : UI -- ( UI, Cmd Msg )
+init : Model -- ( UI, Cmd Msg )
 init =
     let
-        webglBlendGrid = emptyGrid ( 0, 0 )
-        svgBlendGrid = emptyGrid ( 0, 0 )
-        amplitudeGrid = emptyGrid ( 0, 0 )
+        webglBlendGrid = noChildren
+        svgBlendGrid = noChildren
+        amplitudeGrid = noChildren
         fssControls =
             oneLine
                 [ Toggle "visible" TurnedOn
@@ -169,29 +174,28 @@ init =
                 , Knob "col" 0
                 , Knob "vignette" 0
                 , Knob "iris" 0
-                , choise "mesh" <| emptyGrid (0, 0)
-                , nest "amplitude" amplitudeGrid
-                , nest "blend" webglBlendGrid
+                , Choice "mesh" Collapsed 0 noChildren
+                , Nested "amplitude" Collapsed amplitudeGrid
+                , Nested "blend" Collapsed webglBlendGrid
                 ]
         svgControls =
             oneLine
                 [ Toggle "visible" TurnedOn
-                , choise "blend" svgBlendGrid
-                ]
-        bottomLine =
-            oneLine
-                [ choise "product" <| emptyGrid (0, 0)
-                , Knob "rotation" 0
-                , choise "size" <| emptyGrid (0, 0)
-                , Button "save png" <| always ()
-                , Button "save batch" <| always ()
-                , nest "logo" svgControls
-                , nest "title" svgControls
-                , nest "net" fssControls
-                , nest "low-poly" fssControls
+                , Choice "blend" Collapsed 0 noChildren
                 ]
     in
-        put bottomLeft bottomLine <| emptyGrid (10, 10)
+        Root
+            <| oneLine
+                [ Choice "product" Collapsed 0 noChildren
+                , Knob "rotation" 0
+                , Choice "size" Collapsed 0 noChildren
+                , Button "save png" <| always ()
+                , Button "save batch" <| always ()
+                , Nested "logo" Collapsed svgControls
+                , Nested "title" Collapsed svgControls
+                , Nested "net" Collapsed fssControls
+                , Nested "low-poly" Collapsed fssControls
+                ]
 
 
 showPos : CellPos -> String
@@ -220,7 +224,9 @@ findClickMessage (( row, col ) as pos) cell =
 viewCell_ : CellPos -> Cell -> Html Msg
 viewCell_ (( row, col ) as pos) cell =
     case cell of
-        Empty -> span [] []
+        Root _ ->
+            span [ ] [ ]
+        -- Empty -> span [] []
         Knob label val ->
             span [ ] [ text <| showPos pos ++ " knob: " ++ label ++ " " ++ toString val ]
         Toggle label val ->
@@ -236,50 +242,55 @@ viewCell_ (( row, col ) as pos) cell =
                 [ text <| showPos pos ++ " nested: " ++ label ++ " "
                     ++ (if state == Expanded then "expanded" else "collapsed")
                 ]
-        NestedItem cell ->
-            span [ ]
-                [ text <| showPos pos ++ " nested item: "
-                , viewCell_ pos cell
-                ]
-        Choice label selected (x, y) _ ->
+        -- NestedItem level cell ->
+        --     span [ ]
+        --         [ text <| showPos pos ++ " nested item: " ++ toString level ++ " "
+        --         , viewCell_ pos cell
+        --         ]
+        Choice label selected id _ ->
             span [ ]
                 [ text <| showPos pos ++ " choice: " ++ label ++ " "
-                    ++ toString x ++ " " ++ toString y
+                    ++ toString id
                 ]
-        ChoiceItem state cell ->
-            span []
-                [ text <| if state == Selected then "selected" else "not selected"
-                , viewCell_ pos cell
-                ]
+        -- ChoiceItem level state cell ->
+        --     span []
+        --         [ text <| (if state == Selected then "selected" else "not selected")
+        --             ++ toString level
+        --         , viewCell_ pos cell
+        --         ]
 
 
 
-viewCell : CellPos -> Cell -> Html Msg
-viewCell pos cell =
+viewCell : CellPos -> Maybe Cell -> Html Msg
+viewCell pos maybeCell =
     let
         className =
-            case cell of
-                Empty -> "cell hole"
+            case maybeCell of
+                Just cell -> "cell hole"
                 _ -> "cell"
-
         handlers =
-            (findClickMessage pos cell
-                |> Maybe.map (\msg -> [ H.onClick msg ])
+            maybeCell
+                |> Maybe.map
+                    (\cell ->
+                        (findClickMessage pos cell
+                            |> Maybe.map (\msg -> [ H.onClick msg ])
+                            |> Maybe.withDefault []
+                        ) ++
+                        (findHoverMessage pos cell
+                            |> Maybe.map (\msg -> [ H.onMouseOver msg ])
+                            |> Maybe.withDefault []
+                        )
+                    )
                 |> Maybe.withDefault []
-            ) ++
-            (findHoverMessage pos cell
-                |> Maybe.map (\msg -> [ H.onMouseOver msg ])
-                |> Maybe.withDefault []
-            )
+        attributes = [ H.class className ] ++ handlers
+        children = maybeCell
+            |> Maybe.map (\cell -> [ viewCell_ pos cell ])
+            |> Maybe.withDefault []
     in
-        div
-            ([ H.class className ]
-            ++ handlers)
-            [ viewCell_ pos cell
-            ]
+        div attributes children
 
 
-viewRow : CellPos -> Array Cell -> Html Msg
+viewRow : CellPos -> Row -> Html Msg
 viewRow (row, col) cols =
     Array.indexedMap
         (\subCol -> viewCell ( row, col + subCol ))
@@ -309,73 +320,80 @@ viewGrid (Grid grid) =
         [ viewRows grid ]
 
 
-view : UI -> Html Msg
-view ui =
-    div [ H.class "gui" ] [ viewGrid ui ]
+layout : Model -> Grid
+layout model =
+    emptyGrid (0, 0)
 
 
-getCell : CellPos -> Cell -> Grid -> Cell
-getCell pos default (Grid rows) =
-    getCellSafe pos rows |> Maybe.withDefault default
+view : Model -> Html Msg
+view model =
+    div [ H.class "gui" ]
+        [ layout model |> viewGrid ]
 
 
-getCell_ : CellPos -> Cell -> Rows -> Cell
-getCell_ pos default rows =
-   getCellSafe pos rows |> Maybe.withDefault default
+-- getCell : CellPos -> Cell -> Grid -> Cell
+-- getCell pos default (Grid rows) =
+--     getCellSafe pos rows |> Maybe.withDefault default
 
 
-getCellSafe : CellPos -> Rows -> Maybe Cell
-getCellSafe ( row, col ) rows =
-    rows
-        |> Array.get row
-        |> Maybe.andThen (Array.get col)
+-- getCell_ : CellPos -> Cell -> Rows -> Cell
+-- getCell_ pos default rows =
+--    getCellSafe pos rows |> Maybe.withDefault default
 
 
-getGridSize : Grid -> ( Int, Int )
-getGridSize (Grid rows) =
-    ( Array.length rows
-    , Array.foldl
-        (max << Array.length)
-        0
-        rows
-    )
+-- getCellSafe : CellPos -> Rows -> Maybe Cell
+-- getCellSafe ( row, col ) rows =
+--     rows
+--         |> Array.get row
+--         |> Maybe.andThen (Array.get col)
 
 
-ensureToExpand : CellPos -> Cell -> Grid -> Grid
-ensureToExpand ( row, col ) newCell grid =
-    case newCell of
-        Nested _ Expanded nestedGrid ->
-            put ( row + 1, col ) nestedGrid grid
-        Nested _ Collapsed nestedGrid ->
-            put ( row + 1, col ) (fillEmpty nestedGrid) grid
-        _ -> grid
+-- getGridShape : Grid -> Shape
+-- getGridShape (Grid rows) =
+--     ( Array.length rows
+--     , Array.foldl
+--         (max << Array.length)
+--         0
+--         rows
+--     )
 
 
-updateCell : CellPos -> (Cell -> Cell) -> Grid -> Grid
-updateCell ( row, col ) f (Grid rows) =
-    case getCellSafe ( row, col ) rows of
-        Just prevCell ->
-            let
-                newCell = f prevCell
-            in
-                Array.get row rows
-                    |> Maybe.map (Array.set col newCell)
-                    |> Maybe.map (\newRow -> Array.set row newRow rows)
-                    |> Maybe.withDefault rows
-                    |> Grid
-                    |> ensureToExpand ( row, col ) newCell
-        Nothing -> Grid rows
+-- ensureToExpand : CellPos -> Cell -> Grid -> Grid
+-- ensureToExpand ( row, col ) newCell grid =
+--     case newCell of
+--         Nested _ Expanded nestedGrid ->
+--             put ( row + 1, col ) nestedGrid grid
+--         Nested _ Collapsed nestedGrid ->
+--             put ( row + 1, col ) (fillEmpty nestedGrid) grid
+--         _ -> grid
 
 
-fillEmpty : Grid -> Grid
-fillEmpty = map (always Empty)
+updateCell : CellPos -> (Cell -> Cell) -> Model -> Model
+updateCell ( row, col ) f root =
+    root
+    -- case getCellSafe ( row, col ) rows of
+    --     Just prevCell ->
+    --         let
+    --             newCell = f prevCell
+    --         in
+    --             Array.get row rows
+    --                 |> Maybe.map (Array.set col newCell)
+    --                 |> Maybe.map (\newRow -> Array.set row newRow rows)
+    --                 |> Maybe.withDefault rows
+    --                 |> Grid
+    --                 -- |> ensureToExpand ( row, col ) newCell
+    --     Nothing -> Grid rows
 
 
-subscriptions : UI -> Sub Msg
-subscriptions ui = Sub.batch []
+-- fillEmpty : Grid -> Grid
+-- fillEmpty = map (always Nothing)
 
 
-update : Msg -> UI -> UI -- ( UI, Cmd Msg )
+subscriptions : Model -> Sub Msg
+subscriptions model = Sub.batch []
+
+
+update : Msg -> Model -> Model -- ( UI, Cmd Msg )
 update msg ui =
     case msg of
         Tune pos value ->
