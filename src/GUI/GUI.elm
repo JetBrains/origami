@@ -111,10 +111,7 @@ put (rowId, colId) (Grid srcRows) (Grid dstRows) =
             row |> Array.indexedMap (updateCell dstRowId)
         applyIfExpands srcRowId cell ( srcColId, grid ) =
             ( srcColId + 1
-            , case cell of
-                Nested _ _ nestedGrid ->
-                    put ( rowId + srcRowId + 1, colId + srcColId ) nestedGrid grid
-                _ -> grid
+            , grid |> ensureToExpand ( rowId + srcRowId, colId + srcColId ) cell
             )
         checkExpandables row ( srcRowId, grid ) =
             ( srcRowId + 1
@@ -170,8 +167,8 @@ init =
                 , Knob "rotation" 0
                 , Choice "size" (0, 0)
                     <| emptyGrid ( 0, 0 )
-                , Button "save png" (\_ -> ())
-                , Button "save batch" (\_ -> ())
+                , Button "save png" <| always ()
+                , Button "save batch" <| always ()
                 , Nested "logo" Collapsed svgControls
                 , Nested "title" Collapsed svgControls
                 , Nested "net" Collapsed fssControls
@@ -313,16 +310,35 @@ getCellSafe ( row, col ) rows =
         |> Maybe.andThen (Array.get col)
 
 
+ensureToExpand : CellPos -> Cell -> Grid -> Grid
+ensureToExpand ( row, col ) newCell grid =
+    case newCell of
+        Nested _ Expanded nestedGrid ->
+            put ( row + 1, col ) nestedGrid grid
+        Nested _ Collapsed nestedGrid ->
+            put ( row + 1, col ) (fillEmpty nestedGrid) grid
+        _ -> grid
+
+
 updateCell : CellPos -> (Cell -> Cell) -> Grid -> Grid
 updateCell ( row, col ) f (Grid rows) =
     case getCellSafe ( row, col ) rows of
         Just prevCell ->
-            Array.get row rows
-                |> Maybe.map (Array.set col <| f prevCell)
-                |> Maybe.map (\newRow -> Array.set row newRow rows)
-                |> Maybe.withDefault rows
-                |> Grid
+            let
+                newCell = f prevCell
+            in
+                Array.get row rows
+                    |> Maybe.map (Array.set col newCell)
+                    |> Maybe.map (\newRow -> Array.set row newRow rows)
+                    |> Maybe.withDefault rows
+                    |> Grid
+                    |> ensureToExpand ( row, col ) newCell
         Nothing -> Grid rows
+
+
+fillEmpty : Grid -> Grid
+fillEmpty (Grid rows) =
+    Array.map (Array.map <| always Empty) rows |> Grid
 
 
 subscriptions : UI -> Sub Msg
