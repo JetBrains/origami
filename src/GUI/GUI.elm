@@ -70,7 +70,6 @@ type Msg
     = Tune CellPos Float
     | On CellPos
     | Off CellPos
-    | Click CellPos
     | Expand CellPos
     | Collapse CellPos
     | Choose CellPos CellPos
@@ -106,10 +105,7 @@ put (rowId, colId) (Grid srcRows) (Grid dstRows) =
     let
         updateCell dstRowId dstColId cell =
             if (dstRowId >= rowId) && (dstColId >= colId) then
-                srcRows
-                    |> Array.get (dstRowId - rowId)
-                    |> Maybe.andThen (Array.get (dstColId - colId))
-                    |> Maybe.withDefault cell
+                srcRows |> getCell_ (dstRowId - rowId, dstColId - colId) cell
             else cell
         updateRow dstRowId row =
             row |> Array.indexedMap (updateCell dstRowId)
@@ -284,9 +280,74 @@ view ui =
     div [ H.class "gui" ] [ viewGrid ui ]
 
 
+getCell : CellPos -> Cell -> Grid -> Cell
+getCell pos default (Grid rows) =
+    getCellSafe pos rows |> Maybe.withDefault default
+
+
+getCell_ : CellPos -> Cell -> Rows -> Cell
+getCell_ pos default rows =
+   getCellSafe pos rows |> Maybe.withDefault default
+
+
+getCellSafe : CellPos -> Rows -> Maybe Cell
+getCellSafe ( row, col ) rows =
+    rows
+        |> Array.get row
+        |> Maybe.andThen (Array.get col)
+
+
+updateCell : CellPos -> (Cell -> Cell) -> Grid -> Grid
+updateCell ( row, col ) f (Grid rows) =
+    case getCellSafe ( row, col ) rows of
+        Just prevCell ->
+            Array.get row rows
+                |> Maybe.map (Array.set col prevCell)
+                |> Maybe.map (\newRow -> Array.set row newRow rows)
+                |> Maybe.withDefault rows
+                |> Grid
+        Nothing -> Grid rows
+
+
 subscriptions : UI -> Sub Msg
 subscriptions ui = Sub.batch []
 
 
 update : Msg -> UI -> UI -- ( UI, Cmd Msg )
-update msg ui = ui -- ( ui, Cmd.none )
+update msg ui =
+    case msg of
+        On pos ->
+            ui |>
+                updateCell pos
+                    (\cell ->
+                        case cell of
+                            Toggle label _ -> Toggle label TurnedOn
+                            _ -> cell
+                    )
+        Off pos ->
+            ui |>
+                updateCell pos
+                    (\cell ->
+                        case cell of
+                            Toggle label _ -> Toggle label TurnedOff
+                            _ -> cell
+                    )
+        Expand pos ->
+            ui |>
+                updateCell pos
+                    (\cell ->
+                        case cell of
+                            Nested label _ grid ->
+                                Nested label Expanded grid
+                            _ -> cell
+                    )
+        Collapse pos ->
+            ui |>
+                updateCell pos
+                    (\cell ->
+                        case cell of
+                            Nested label _ grid ->
+                                Nested label Collapsed grid
+                            _ -> cell
+                    )
+        _ -> ui
