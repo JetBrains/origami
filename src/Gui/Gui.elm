@@ -61,8 +61,9 @@ type Cell
     | Toggle Label ToggleState
     | Button Label Handler
     | Nested Label ExpandState Grid
-    | Choice Label CellPos Grid
-    | ChoiceItem SelectionState Cell
+    | NestedItem Cell Cell -- first cell holds the owning nested parent
+    | Choice Label ExpandState CellPos Grid -- pos holds the selected value from the grid
+    | ChoiceItem Cell SelectionState Cell -- first cell holds the owning choise parent
     -- | Color
 
 
@@ -151,22 +152,22 @@ init =
                 , Knob "col" 0
                 , Knob "vignette" 0
                 , Knob "iris" 0
-                , Choice "mesh" (0, 0) <| emptyGrid ( 0, 0 )
+                , Choice "mesh" Collapsed (0, 0) <| emptyGrid (0, 0)
                 , Nested "amplitude" Collapsed amplitudeGrid
                 , Nested "blend" Collapsed webglBlendGrid
                 ]
         svgControls =
             oneLine
                 [ Toggle "visible" TurnedOn
-                , Nested "blend" Collapsed svgBlendGrid
+                , Choice "blend" Collapsed (0, 0) svgBlendGrid
                 ]
         bottomLine =
             oneLine
-                [ Choice "product" (0, 0)
-                    <| emptyGrid ( 0, 0 )
+                [ Choice "product" Collapsed (0, 0)
+                    <| emptyGrid (0, 0)
                 , Knob "rotation" 0
-                , Choice "size" (0, 0)
-                    <| emptyGrid ( 0, 0 )
+                , Choice "size" Collapsed (0, 0)
+                    <| emptyGrid (0, 0)
                 , Button "save png" <| always ()
                 , Button "save batch" <| always ()
                 , Nested "logo" Collapsed svgControls
@@ -220,12 +221,17 @@ viewCell_ (( row, col ) as pos) cell =
                 [ text <| showPos pos ++ " nested: " ++ label ++ " "
                     ++ (if state == Expanded then "expanded" else "collapsed")
                 ]
-        Choice label (x, y) _ ->
+        NestedItem _ cell ->
+            span [ ]
+                [ text <| showPos pos ++ " nested item: "
+                , viewCell_ pos cell
+                ]
+        Choice label selected (x, y) _ ->
             span [ ]
                 [ text <| showPos pos ++ " choice: " ++ label ++ " "
                     ++ toString x ++ " " ++ toString y
                 ]
-        ChoiceItem state cell ->
+        ChoiceItem _ state cell ->
             span []
                 [ text <| if state == Selected then "selected" else "not selected"
                 , viewCell_ pos cell
