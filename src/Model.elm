@@ -120,7 +120,7 @@ type alias PortBlend =
 
 type alias Model =
     { mode : UiMode
-    , gui : Gui.UI
+    , gui : Gui.Model
     , paused : Bool
     , autoRotate : Bool
     , fps : Int
