@@ -19,11 +19,14 @@ type alias CellPos = ( Int, Int )
 type alias Bounds = ( Int, Int )
 
 
-type Cells = Cells (Array (Array Cell))
+type alias Rows = Array Row
+
+
+type alias Row = Array Cell
 
 
 --type Grid = Grid Origin Cells
-type Grid = Grid Cells
+type Grid = Grid Rows
 
 
 type ExpandState
@@ -94,14 +97,18 @@ emptyGrid ( width, height )
 grid : List (List Cell) -> Grid
 grid cells =
     Grid
-        <| Cells
         <| Array.fromList
         <| List.map Array.fromList cells
 
 
 put : CellPos -> Grid -> Grid -> Grid
-put at what where_ =
-    where_
+put at (Grid srcRows) (Grid dstRows) =
+    let
+        checkRow index row = row
+    in
+        dstRows
+            |> Array.indexedMap checkRow
+            |> Grid
 
 
 oneLine : List Cell -> Grid
@@ -227,8 +234,8 @@ viewRow (row, col) cols =
         |> div [ H.class "row" ]
 
 
-viewRows : Cells -> Html Msg
-viewRows (Cells rows) =
+viewRows : Rows -> Html Msg
+viewRows rows =
     let
         origin  = bottomLeft
         ( row, col ) = origin
