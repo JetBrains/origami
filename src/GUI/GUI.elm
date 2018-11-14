@@ -8,13 +8,44 @@ import Html.Events exposing (on, onInput, onMouseUp, onClick)
 import Array exposing (..)
 
 
+type alias BlockSize = (Int, Int)
+
+
+type alias Shift = Int
+
+
+type Grid = Grid Shift (Array (Array Cell))
+
+
+type ExpandState
+    = Expanded
+    | Collapsed
+
+
+-- type ExpandDirection
+--     = Up
+--     | Down
+
+
+type ToggleState
+    = TurnedOn
+    | TurnedOff
+
+
+type alias Coord = ( Int, Int )
+
+
+type alias Handler = (() -> ())
+
+
 type Cell
     = Knob Float
-    | Toggle Bool
-    | Button (() -> ())
-    | Nested Bool (Array Cell)
-    | Choice Int (Array Cell)
+    | Toggle ToggleState
+    | Button Handler
+    | Nested ExpandState Grid
+    | Choice Coord Grid
     -- | Color
+
 
 type Msg
     = Tune Path Float
@@ -24,16 +55,27 @@ type Msg
     | Expand Path
     | Collapse Path
     | Choose Path Int Int
+    | Move Int Int
 
 
-type alias UI = Array Cell
+type alias UI = Grid
 
 
-type alias Path = Array Int
+type alias Path = Array Coord
+
+
+grid : Shift -> List (List Cell) -> Grid
+grid shift cells =
+    Grid shift <| Array.fromList (List.map Array.fromList cells)
+
+
+emptyGrid : Shift -> Grid
+emptyGrid shift
+    = grid shift []
 
 
 init : ( UI, Cmd Msg )
-init = ( Array.fromList [], Cmd.none )
+init = ( emptyGrid 0, Cmd.none )
 
 
 view : UI -> Html Msg
