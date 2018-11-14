@@ -612,6 +612,7 @@ vertexShader =
        float time = uNow;
        vec3 position = vec3(0.0);
        bool background = false;
+       bool low_poly = false;
 
        //       vec3 vertexOscillators(vec3 arg) {
        //     return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
@@ -647,9 +648,9 @@ vertexShader =
          vec4 adjustLight(vec4 origColor, float deltaHue, float deltaSaturation, float deltaBrightness) {
 
                 vec3 changedColor  = rgb2hsv(origColor.rgb);
-                    changedColor[0] *= deltaHue; // hue shift
-                    changedColor[1] *= deltaSaturation;
-                    changedColor[2] *= deltaBrightness;
+                    changedColor[0] = clamp(changedColor[0] + deltaHue, 0.0, 1.0); // hue shift
+                    changedColor[1] = clamp(changedColor[1] + deltaSaturation, 0.0, 1.0); // saturation shift
+                    changedColor[2] = clamp(changedColor[2] + deltaBrightness, 0.0, 1.0); // brightness shift
 
                     return vec4(vec3(hsv2rgb(changedColor)), 1.0);
          }   
@@ -662,6 +663,10 @@ vertexShader =
 
                background = true;
   
+           }
+
+            if ( uLayerIndex == 1 ) {
+              low_poly = true;
            }
 
 
@@ -699,10 +704,10 @@ vertexShader =
           //  if(uLayerIndex != 0) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * lightOscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
 
-                if ( background ) {
+                if ( low_poly ) {
 
-                    lightAmbient =  adjustLight(uLightAmbient[i], 0.1, 0.0, 0.0);
-                    lightDiffuse =  adjustLight(uLightDiffuse[i], 0.0, 0.7, 0.0);
+                    lightAmbient =  adjustLight(uLightAmbient[i], 0.0, 1.0, -0.1);
+                    lightDiffuse =  adjustLight(uLightDiffuse[i], 0.0, -1.0, 0.1);
 
                 } else {
                     lightAmbient = uLightAmbient[i];
@@ -711,7 +716,6 @@ vertexShader =
 
                 vec3 ray = normalize(lightPosition - aCentroid);
                 float illuminance = dot(aNormal, ray);
-               // float illuminance = pow(dot(aNormal, ray), 1.2);
                 illuminance = 1.1 * max(illuminance, 0.0);
 
                 vec3 col1 = rgb2hsv(lightAmbient.rgb);
@@ -720,7 +724,7 @@ vertexShader =
                      col1 = hsv2rgb(col1);
 
                 // Calculate ambient light
-                  vColor *=  vec4(col1, 1.0);
+                  vColor *=  lightAmbient;
 
                 // Calculate diffuse light
                   vColor +=  lightDiffuse * illuminance;

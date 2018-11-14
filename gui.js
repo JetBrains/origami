@@ -403,7 +403,7 @@ function start(document, model, funcs) {
     // });
 
 
-    updateProduct('jetbrains');
+    //updateProduct('jetbrains');
 
     // layers.map((layer, index) => {
     //     gui.addFolder()
