@@ -186,11 +186,21 @@ showPos (row, col) =
     "(" ++ toString row ++ "," ++ toString col ++ ")"
 
 
-handleClick : CellPos -> Cell -> Maybe Msg
-handleClick (( row, col ) as pos) cell =
+findHoverMessage : CellPos -> Cell -> Maybe Msg
+findHoverMessage (( row, col ) as pos) cell =
     case cell of
-        Toggle _ val -> Just (if val == TurnedOn then Off pos else On pos)
-        Nested _ state _ -> Just (if state == Expanded then Collapse pos else Expand pos)
+        Knob label value ->
+            Tune pos (value + 1) |> Just
+        _ -> Nothing
+
+
+findClickMessage : CellPos -> Cell -> Maybe Msg
+findClickMessage (( row, col ) as pos) cell =
+    case cell of
+        Toggle _ val ->
+            Just <| if val == TurnedOn then Off pos else On pos
+        Nested _ state _ ->
+            Just <| if state == Expanded then Collapse pos else Expand pos
         _ -> Nothing
 
 
@@ -233,10 +243,16 @@ viewCell pos cell =
             case cell of
                 Empty -> "cell hole"
                 _ -> "cell"
+
         handlers =
-            handleClick pos cell
-            |> Maybe.map (\msg -> [ H.onClick msg ])
-            |> Maybe.withDefault []
+            (findClickMessage pos cell
+                |> Maybe.map (\msg -> [ H.onClick msg ])
+                |> Maybe.withDefault []
+            ) ++
+            (findHoverMessage pos cell
+                |> Maybe.map (\msg -> [ H.onMouseOver msg ])
+                |> Maybe.withDefault []
+            )
     in
         div
             ([ H.class className ]
@@ -302,7 +318,7 @@ updateCell ( row, col ) f (Grid rows) =
     case getCellSafe ( row, col ) rows of
         Just prevCell ->
             Array.get row rows
-                |> Maybe.map (Array.set col prevCell)
+                |> Maybe.map (Array.set col <| f prevCell)
                 |> Maybe.map (\newRow -> Array.set row newRow rows)
                 |> Maybe.withDefault rows
                 |> Grid
@@ -316,6 +332,14 @@ subscriptions ui = Sub.batch []
 update : Msg -> UI -> UI -- ( UI, Cmd Msg )
 update msg ui =
     case msg of
+        Tune pos value ->
+            ui |>
+                updateCell pos
+                    (\cell ->
+                        case cell of
+                            Knob label _ -> Knob label value
+                            _ -> cell
+                    )
         On pos ->
             ui |>
                 updateCell pos
