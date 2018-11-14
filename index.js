@@ -24,7 +24,7 @@ const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
 const fssScenes = {};
 
-const batchPause = 500;
+const batchPause = 1000;
 let savingBatch = false;
 
 const exportScene = (scene) => {
@@ -207,15 +207,14 @@ const savePng = (hiddenLink) => {
         const trgContext = trgCanvas.getContext('2d');
         trgContext.drawImage(srcCanvas, 0, 0);
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
-            // FIXME: a temporary hack to draw a logo on the canvas,
-            // use product image itself instead
+        // FIXME: a temporary hack to draw a logo on the canvas,
+        // use product image itself instead
         hiddenLink.download = width + 'x'+ height + '-jetbrains.png';
             if (document.querySelector('.logo-layer')) {
                 const logoSrc = document.querySelector('.logo-layer');
                 const state = JSON.parse(logoSrc.getAttribute('data-stored'));
                 drawToCanvas.image(state.logoPath,
                     function(image, context) {
-
                         context.translate(state.posX, state.posY);
                         context.scale(state.scale, state.scale);
                         context.globalCompositeOperation = state.blend;
@@ -252,10 +251,13 @@ setTimeout(function() { // FIXME: change to document.ready
 
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
- 
+
 
     app.ports.presetSizeChanged.subscribe(size => {
-        if (savingBatch) setTimeout(() => savePng(hiddenLink, size), 0);
+        if (savingBatch) {
+            console.log('saving ', size);
+            savePng(hiddenLink, size);
+        };
     });
 
     app.ports.startGui.subscribe((model) => {
@@ -293,17 +295,20 @@ setTimeout(function() { // FIXME: change to document.ready
             }
             , savePng : () => savePng(hiddenLink)
             , saveBatch : sizes_ => {
-                let sizes = sizes_.concat([]);
+                let sizes = sizes_.concat([[0, 0]]);
+                let sizeIndex = 0;
                 savingBatch = true;
-
-                function nextPng() {
-                    const [ width, height ] = sizes.shift();
-                    if (sizes.length == 0) {
+                const nextPng = () => {
+                    if (sizeIndex < sizes.length) {
+                        const [ width, height ] = sizes[sizeIndex];
+                        console.log('sending', width, height);
+                        app.ports.setCustomSize.send([ width, height ]);
+                        sizeIndex = sizeIndex + 1;
+                        setTimeout(nextPng, batchPause);
+                    } else {
                         savingBatch = false;
-                        return;
+                        console.log('done saving batch');
                     }
-                    app.ports.setCustomSize.send([ width, height ]);
-                    setTimeout(nextPng, batchPause);
                 };
 
                 nextPng();
