@@ -14,13 +14,13 @@ import Html.Events exposing (on, onInput, onMouseUp, onClick)
 import Array exposing (..)
 
 
-type alias BlockSize = (Int, Int)
+type Shift = Shift Int
 
 
-type alias Shift = Int
+type Cells = Cells (Array (Array Cell))
 
 
-type Grid = Grid Shift (Array (Array Cell))
+type Grid = Grid Shift Cells
 
 
 type ExpandState
@@ -85,7 +85,10 @@ emptyGrid shift
 
 grid : Shift -> List (List Cell) -> Grid
 grid shift cells =
-    Grid shift <| Array.fromList (List.map Array.fromList cells)
+    Grid shift
+        <| Cells
+        <| Array.fromList
+        <| List.map Array.fromList cells
 
 
 oneLine : Shift -> List Cell -> Grid
@@ -96,9 +99,9 @@ oneLine shift cells =
 init : UI -- ( UI, Cmd Msg )
 init =
     let
-        webglBlendGrid = emptyGrid 0
-        svgBlendGrid = emptyGrid 0
-        amplitudeGrid = emptyGrid 0
+        webglBlendGrid = emptyGrid (Shift 0)
+        svgBlendGrid = emptyGrid (Shift 0)
+        amplitudeGrid = emptyGrid (Shift 0)
         fssControls shift =
             oneLine shift
                 [ Toggle "visible" TurnedOn
@@ -107,7 +110,7 @@ init =
                 , Knob "col" 0
                 , Knob "vignette" 0
                 , Knob "iris" 0
-                , Choice "mesh" (0, 0) <| emptyGrid 0
+                , Choice "mesh" (0, 0) <| emptyGrid (Shift 0)
                 , Nested "amplitude" Collapsed amplitudeGrid
                 , Nested "blend" Collapsed webglBlendGrid
                 ]
@@ -117,22 +120,60 @@ init =
                 , Nested "blend" Collapsed svgBlendGrid
                 ]
     in
-        oneLine 0
-            [ Choice "product" (0, 0) <| emptyGrid 0
+        oneLine (Shift 0)
+            [ Choice "product" (0, 0)
+                <| emptyGrid (Shift 0)
             , Knob "rotation" 0
-            , Choice "size" (0, 0) <| emptyGrid 0
+            , Choice "size" (0, 0)
+                <| emptyGrid (Shift 0)
             , Button "save png" (\_ -> ())
             , Button "save batch" (\_ -> ())
-            , Nested "logo" Collapsed <| svgControls 0
-            , Nested "title" Collapsed <| svgControls 0
-            , Nested "net" Collapsed <| fssControls 0
-            , Nested "low-poly" Collapsed <| fssControls 0
+            , Nested "logo" Collapsed
+                <| svgControls (Shift 0)
+            , Nested "title" Collapsed
+                <| svgControls (Shift 0)
+            , Nested "net" Collapsed
+                <| fssControls (Shift 0)
+            , Nested "low-poly" Collapsed
+                <| fssControls (Shift 0)
             ]
 
 
+viewHole : Html Msg
+viewHole =
+    div [ H.class "cell hole" ] []
+
+
+viewCell : Int -> Int -> Cell -> Html Msg
+viewCell rowIndex cellIndex cell =
+    div [ H.class "cell" ] []
+
+
+viewCellRow : Shift -> Int -> Array Cell -> Html Msg
+viewCellRow (Shift shift) rowIndex cells =
+    div [ H.class "row" ]
+        <| List.repeat shift viewHole ++
+            ( Array.indexedMap (viewCell rowIndex) cells
+                |> Array.toList
+            )
+
+
+viewCells : Shift -> Cells -> Html Msg
+viewCells shift (Cells cells) =
+    div [ H.class "cells" ]
+        <| Array.toList
+        <| Array.indexedMap (viewCellRow shift) cells
+
+
+viewGrid : Grid -> Html Msg
+viewGrid (Grid shift cells) =
+    div [ H.class "grid" ]
+        [ viewCells shift cells ]
+
+
 view : UI -> Html Msg
-view (Grid shift cells) =
-    div [ H.class "gui" ] []
+view ui =
+    div [ H.class "gui" ] [ viewGrid ui ]
 
 
 subscriptions : UI -> Sub Msg
@@ -141,13 +182,3 @@ subscriptions ui = Sub.batch []
 
 update : Msg -> UI -> UI -- ( UI, Cmd Msg )
 update msg ui = ui -- ( ui, Cmd.none )
-
-
--- main : Program Never UI Msg
--- main =
---     Html.program
---         { init = init
---         , view = view
---         , subscriptions = subscriptions
---         , update = update
---         }

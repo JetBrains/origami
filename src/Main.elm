@@ -1002,7 +1002,7 @@ view model =
                 , onClick TriggerPause
                 ]
         , mergeHtmlLayers model |> div [ H.class "svg-layers"]
-        , Html.map GuiMessage <| Gui.view model.gui
+        , Gui.view model.gui |> Html.map GuiMessage
         ]
 
 
