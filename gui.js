@@ -132,7 +132,7 @@ RENDER_MODES =
 
 
 RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
-{ 'window': [0, 0]
+{ 'window': [ 0, 0 ]
 , '640x400 spl' : [ 640, 400 ] // product splash background
 , '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
 , '650x170 nwlt' : [ 650, 170 ] // newsletter
@@ -144,7 +144,7 @@ RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 , '1600x800 blog@2x' : [ 1600, 800 ] // @2x Blog
 , '800x155 bfoot' : [ 800, 155 ] // Blog footer
 , '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
-, '2850x1200 landg' : [ 2850, 1200] // Landing page
+, '2850x1200 landg' : [ 2850, 1200 ] // Landing page
 };
 
 ALL_SIZES =
