@@ -128,7 +128,7 @@ SVG_BLENDS =
 
 
 RENDER_MODES =
-  [ 'triangles', 'lines', 'partial-lines', 'points' ]
+  [ 'triangles', 'lines' ] // disable ", 'partial-lines', 'points' modes"
 
 
 RELEASE_SIZES = // TODO: Multiply for creating @2x @3x

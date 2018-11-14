@@ -559,8 +559,8 @@ vertexShader =
 
         // Precision
         precision mediump float;
-
-
+        precision mediump int;
+ 
         // Attributes
         attribute float aSide;
         attribute vec3 aPosition;
@@ -646,12 +646,12 @@ vertexShader =
 
          vec4 adjustLight(vec4 origColor, float deltaHue, float deltaSaturation, float deltaBrightness) {
 
-                vec3 light  = rgb2hsv(origColor.rgb);
-                    light[0] -= deltaHue; // hue shift
-                    light[1] -= deltaSaturation;
-                    light[2] += deltaBrightness;
+                vec3 changedColor  = rgb2hsv(origColor.rgb);
+                    changedColor[0] *= deltaHue; // hue shift
+                    changedColor[1] *= deltaSaturation;
+                    changedColor[2] *= deltaBrightness;
 
-                    return vec4(vec3(hsv2rgb(light)), 1.0);
+                    return vec4(vec3(hsv2rgb(changedColor)), 1.0);
          }   
 
 
@@ -760,6 +760,7 @@ fragmentShader =
 
         // Precision
         precision mediump float;
+        precision mediump int;
 
         // Varyings
         varying vec4 vColor;
@@ -774,11 +775,13 @@ fragmentShader =
         uniform vec2 uScale;
         uniform float uVignette;
         uniform float uIris;
-       // uniform int uLayerIndex;
+        uniform int uLayerIndex;
 
 
 
        // vec4 bgColor = vec4(0.0, 0.0, 0.0, 1.0);
+
+       bool low_poly = false;
 
 
         float noise(vec2 seed, float time) {
@@ -792,6 +795,11 @@ fragmentShader =
 
         // Main
         void main() {
+
+        if ( uLayerIndex == 1 ) {
+              low_poly = true;
+           }
+
 
             vec2 actPos = gl_FragCoord.xy / uResolution.xy;
 
@@ -809,18 +817,19 @@ fragmentShader =
              gl_FragColor = vColor;
 
             // noise by brightness
+            if ( low_poly ) {
                gl_FragColor.rgb = mix(vColor.rgb, vec3(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor.rgb), 0.3));
+            }
 
-          //  if(uLayerIndex != 0) {
 
             // vignette
            //   gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, 1.0, distance(actPos,vec2(0.5))));
-           // }
+           
 
-            //opacity
-           //  if(uLayerIndex != 1) {
-            //   gl_FragColor.a = 1.0;
-         // }
+            // opacity
+            // if(low_poly) {
+             //  gl_FragColor.a = 0.3;
+          // }
 
 
 
