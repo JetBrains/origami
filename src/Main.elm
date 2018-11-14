@@ -427,20 +427,21 @@ update msg model =
 
 
         ShiftColor index ( newHue, newSaturation, newBrightness ) ->
-            model
-                |> updateAndRebuildFssWith index
-                    (\fss ->
-                        let
-                            ( currentHue, currentSaturation, currentBrightness )
-                                = fss.colorShift
-                        in
-                            { fss | colorShift =
-                                ( Maybe.withDefault currentHue newHue
-                                , Maybe.withDefault currentSaturation newSaturation
-                                , Maybe.withDefault currentBrightness newBrightness
-                                )
-                            }
-                    )                    
+            ( model |> updateFss index 
+                (\fss -> 
+                    let
+                        ( currentHue, currentSaturation, currentBrightness )
+                            = fss.colorShift
+                    in
+                        { fss | colorShift =
+                            ( Maybe.withDefault currentHue newHue
+                            , Maybe.withDefault currentSaturation newSaturation
+                            , Maybe.withDefault currentBrightness newBrightness
+                            )
+                        }
+                )
+            , Cmd.none
+            )            
 
         NoOp -> ( model, Cmd.none )
 
