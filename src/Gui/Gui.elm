@@ -61,9 +61,9 @@ type Cell
     | Toggle Label ToggleState
     | Button Label Handler
     | Nested Label ExpandState Grid
-    | NestedItem Cell Cell -- first cell holds the owning nested parent
+    | NestedItem Cell -- first cell holds the owning nested parent
     | Choice Label ExpandState CellPos Grid -- pos holds the selected value from the grid
-    | ChoiceItem Cell SelectionState Cell -- first cell holds the owning choise parent
+    | ChoiceItem SelectionState Cell -- first cell holds the owning choise parent
     -- | Color
 
 
@@ -101,6 +101,11 @@ grid cells =
         <| List.map Array.fromList cells
 
 
+map : (Cell -> Cell) -> Grid -> Grid
+map f (Grid rows) =
+    Array.map (Array.map f) rows |> Grid
+
+
 put : CellPos -> Grid -> Grid -> Grid
 put (rowId, colId) (Grid srcRows) (Grid dstRows) =
     let
@@ -129,6 +134,18 @@ put (rowId, colId) (Grid srcRows) (Grid dstRows) =
             |> Tuple.second
 
 
+nest : String -> Grid -> Cell
+nest label subGrid =
+    map NestedItem subGrid |>
+        Nested label Collapsed
+
+
+choise : String -> Grid -> Cell
+choise label subGrid =
+    map (ChoiceItem NotSelected) subGrid |>
+        Choice label Collapsed (0, 0)
+
+
 oneLine : List Cell -> Grid
 oneLine cells =
     grid [cells]
@@ -152,28 +169,26 @@ init =
                 , Knob "col" 0
                 , Knob "vignette" 0
                 , Knob "iris" 0
-                , Choice "mesh" Collapsed (0, 0) <| emptyGrid (0, 0)
-                , Nested "amplitude" Collapsed amplitudeGrid
-                , Nested "blend" Collapsed webglBlendGrid
+                , choise "mesh" <| emptyGrid (0, 0)
+                , nest "amplitude" amplitudeGrid
+                , nest "blend" webglBlendGrid
                 ]
         svgControls =
             oneLine
                 [ Toggle "visible" TurnedOn
-                , Choice "blend" Collapsed (0, 0) svgBlendGrid
+                , choise "blend" svgBlendGrid
                 ]
         bottomLine =
             oneLine
-                [ Choice "product" Collapsed (0, 0)
-                    <| emptyGrid (0, 0)
+                [ choise "product" <| emptyGrid (0, 0)
                 , Knob "rotation" 0
-                , Choice "size" Collapsed (0, 0)
-                    <| emptyGrid (0, 0)
+                , choise "size" <| emptyGrid (0, 0)
                 , Button "save png" <| always ()
                 , Button "save batch" <| always ()
-                , Nested "logo" Collapsed svgControls
-                , Nested "title" Collapsed svgControls
-                , Nested "net" Collapsed fssControls
-                , Nested "low-poly" Collapsed fssControls
+                , nest "logo" svgControls
+                , nest "title" svgControls
+                , nest "net" fssControls
+                , nest "low-poly" fssControls
                 ]
     in
         put bottomLeft bottomLine <| emptyGrid (10, 10)
@@ -221,7 +236,7 @@ viewCell_ (( row, col ) as pos) cell =
                 [ text <| showPos pos ++ " nested: " ++ label ++ " "
                     ++ (if state == Expanded then "expanded" else "collapsed")
                 ]
-        NestedItem _ cell ->
+        NestedItem cell ->
             span [ ]
                 [ text <| showPos pos ++ " nested item: "
                 , viewCell_ pos cell
@@ -231,7 +246,7 @@ viewCell_ (( row, col ) as pos) cell =
                 [ text <| showPos pos ++ " choice: " ++ label ++ " "
                     ++ toString x ++ " " ++ toString y
                 ]
-        ChoiceItem _ state cell ->
+        ChoiceItem state cell ->
             span []
                 [ text <| if state == Selected then "selected" else "not selected"
                 , viewCell_ pos cell
@@ -353,8 +368,7 @@ updateCell ( row, col ) f (Grid rows) =
 
 
 fillEmpty : Grid -> Grid
-fillEmpty (Grid rows) =
-    Array.map (Array.map <| always Empty) rows |> Grid
+fillEmpty = map (always Empty)
 
 
 subscriptions : UI -> Sub Msg
