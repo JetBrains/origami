@@ -38,19 +38,10 @@ const exportScene = (scene) => {
     ));
 }
 
-const import_ = (app, importedState) => {
-    const parsedState = JSON.parse(importedState);
-    scenes = {};
-    layers = [];
-    parsedState.layers.forEach((layer, index) => {
-        layers[index] = {
-            kind: layer.kind,
-            config: layer.config
-        };
-        //scenes[index] = layer.scene;
-    });
+const import_ = (app, parsedState) => {
+
     app.ports.pause.send(null);
-    app.ports.initLayers.send(layers.map((l) => l.kind));
+
     app.ports.import_.send(JSON.stringify({
         theta: parsedState.theta,
         omega: parsedState.omega,
@@ -58,25 +49,25 @@ const import_ = (app, importedState) => {
         origin: parsedState.origin,
         mouse: parsedState.mouse,
         now: parsedState.now,
-        now: parsedState.product,
+        product: parsedState.product,
         layers: parsedState.layers.map((layer) => (
-            { kind: layer.kind,
+            { kind : layer.kind,
               blend: layer.blend,
-              config: ''
+              isOn: layer.isOn,
+              model: JSON.stringify(layer.model),
+              name: layer.name
             }
         ))
     }));
-    parsedState.layers.forEach((layer, index) => {
+
+    parsedState.layers.map((layer, index) => {
         if (isFss(layer)) {
-            const scene = buildFSS(model, layer.config, layer.sceneFuzz);
-            scenes[index] = scene;
-            app.ports.configureFss.send([ layer.config, index ]);
-            app.ports.rebuildFss.send([ scene, index ]);
+            const fssScene = buildFSS(parsedState, layer.model, layer.sceneFuzz);
+            app.ports.rebuildFss.send({ value: fssScene, layer: index });
         }
     });
-    const mergedBlends = parsedState.layers.map(layer => layer.blend).join(':');
-    window.location.hash = '#blends=' + mergedBlends;
-    //if (layersNode) layersNode.inlets['code'].receive(mergedBlends);
+
+    app.ports.continue.send(null);
 }
 
 const export_ = (app, exportedState) => {
@@ -183,7 +174,8 @@ const prepareImportExport = () => {
     document.getElementById('import').addEventListener('click', () => {
         try {
             if (document.getElementById('import-code').value) {
-                import_(app, document.getElementById('import-code').value);
+                const importedScene = JSON.parse(document.getElementById('import-code').value);
+                import_(app, importedScene);
             } else {
                 alert('Nothing to import');
             }
