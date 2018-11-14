@@ -9,7 +9,7 @@ module Gui.Gui exposing
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H
     exposing (class, width, height, style, class, type_, min, max, value, id)
-import Html.Events exposing (on, onInput, onMouseUp, onClick)
+import Html.Events as H
 
 import Array exposing (..)
 
@@ -41,6 +41,11 @@ type ToggleState
     | TurnedOff
 
 
+type SelectionState
+    = Selected
+    | NotSelected
+
+
 type alias Handler = (() -> ())
 
 
@@ -53,18 +58,19 @@ type Cell
     | Button Label Handler
     | Nested Label ExpandState Grid
     | Choice Label CellPos Grid
+    | ChoiceItem SelectionState Cell
     -- | Color
 
 
 type Msg
-    = Tune Path Float
-    | On Path
-    | Off Path
-    | Click Path
-    | Expand Path
-    | Collapse Path
-    | Choose Path Int Int
-    | Move Int Int
+    = Tune CellPos Float
+    | On CellPos
+    | Off CellPos
+    | Click CellPos
+    | Expand CellPos
+    | Collapse CellPos
+    | Choose CellPos CellPos
+    | Move CellPos Int
 
 
 -- TODO:
@@ -75,7 +81,7 @@ type Msg
 type alias UI = Grid
 
 
-type alias Path = Array CellPos
+type alias Path = CellPos
 
 
 emptyGrid : Origin -> Grid
@@ -146,59 +152,94 @@ showPos (row, col) =
     "(" ++ toString row ++ "," ++ toString col ++ ")"
 
 
+handleClick : CellPos -> Cell -> Maybe Msg
+handleClick (( row, col ) as pos) cell =
+    case cell of
+        Toggle _ val -> Just (if val == TurnedOn then Off pos else On pos)
+        Nested _ state _ -> Just (if state == Expanded then Collapse pos else Expand pos)
+        _ -> Nothing
+
+
+viewCell_ : CellPos -> Cell -> Html Msg
+viewCell_ (( row, col ) as pos) cell =
+    case cell of
+        Knob label val ->
+            span [ ] [ text <| showPos pos ++ " knob: " ++ label ++ " " ++ toString val ]
+        Toggle label val ->
+            span [ ]
+                [ text <| showPos pos ++ " toggle: " ++ label ++ " "
+                    ++ (if val == TurnedOn then "on" else "off")
+                ]
+        Button label _ ->
+            span [ ]
+                [ text <| showPos pos ++ " button: " ++ label ]
+        Nested label state _ ->
+            span [ ]
+                [ text <| showPos pos ++ " toggle: " ++ label ++ " "
+                    ++ (if state == Expanded then "expanded" else "collapsed")
+                ]
+        Choice label (x, y) _ ->
+            span [ ]
+                [ text <| showPos pos ++ " choice: " ++ label ++ " "
+                    ++ toString x ++ " " ++ toString y
+                ]
+        ChoiceItem state cell ->
+            span []
+                [ text <| if state == Selected then "selected" else "not selected"
+                , viewCell_ pos cell
+                ]
+
+
+
 viewCell : CellPos -> Cell -> Html Msg
-viewCell (( row, col ) as pos) cell =
+viewCell pos cell =
     div
-        [ H.class "cell" ]
-        [ case cell of
-            Knob label val ->
-                span [ ] [ text <| showPos pos ++ " knob: " ++ label ++ " " ++ toString val ]
-            Toggle label val ->
-                span [ ]
-                    [ text <| showPos pos ++ " toggle: " ++ label ++ " "
-                      ++ (if val == TurnedOn then "on" else "off")
-                    ]
-            Button label _ ->
-                span [ ]
-                    [ text <| showPos pos ++ " button: " ++ label ]
-            Nested label state _ ->
-                span [ ]
-                    [ text <| showPos pos ++ " toggle: " ++ label ++ " "
-                      ++ (if state == Expanded then "expanded" else "collapsed")
-                    ]
-            Choice label (x, y) _ ->
-                span [ ]
-                    [ text <| showPos pos ++ " choice: " ++ label ++ " "
-                      ++ toString x ++ " " ++ toString y
-                    ]
+        ([ H.class "cell" ]
+        ++ (handleClick pos cell
+            |> Maybe.map (\msg -> [ H.onClick msg ])
+            |> Maybe.withDefault []))
+        [ viewCell_ pos cell
         ]
 
 
-viewCellRow : Origin -> Array Cell -> Html Msg
-viewCellRow (Origin (row, col)) cells =
+viewRow : Origin -> Array Cell -> Html Msg
+viewRow (Origin (row, col)) cols =
     div [ H.class "row" ]
         <| List.repeat row viewHole ++
             ( Array.indexedMap
                 (\subCol -> viewCell ( row, col + subCol ))
-                cells
+                cols
                 |> Array.toList
             )
 
 
-viewCells : Origin -> Cells -> Html Msg
-viewCells (Origin (row, col) as origin) (Cells cells) =
-    cells
-        |> Array.indexedMap
-            (\subRow -> viewCellRow <| Origin (row + subRow, col))
-        |> Array.toList
-        |> div [ H.class "cells" ]
+viewRows : Origin -> Cells -> Html Msg
+viewRows (Origin (row, col) as origin) (Cells rows) =
+    let
+        topRows =
+            rows
+                |> Array.indexedMap
+                    (\subRow -> viewRow <| Origin (row + subRow, col))
+                |> Array.toList
+        nestedRows =
+            rows
+                |> Array.foldl
+                    (\subRow (index, nestings) -> (index + 1, []))
+                    (0, [])
+                |> Tuple.second
+            -- rows
+            --     |> Array.indexedMap
+            --         (\subRow -> viewRow <| Origin (row + subRow, col))
+            --     |> Array.toList
+    in
+        topRows ++ nestedRows |> div [ H.class "cells" ]
 
 
 
 viewGrid : Grid -> Html Msg
-viewGrid (Grid shift cells) =
+viewGrid (Grid shift grid) =
     div [ H.class "grid" ]
-        [ viewCells shift cells ]
+        [ viewRows shift grid ]
 
 
 view : UI -> Html Msg
