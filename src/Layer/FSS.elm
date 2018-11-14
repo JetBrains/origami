@@ -720,22 +720,18 @@ vertexShader =
 
                 if ( low_poly ) {
 
-                    lightAmbient =  adjustLight(uLightAmbient[i], 0.0, 1.0, -0.1);
-                    lightDiffuse =  adjustLight(uLightDiffuse[i], 0.0, -1.0, 0.1);
+                    lightAmbient =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    lightDiffuse =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
 
                 } else {
-                    lightAmbient = uLightAmbient[i];
-                    lightDiffuse = uLightDiffuse[i];
+                    lightAmbient =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    lightDiffuse =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
                 }
 
                 vec3 ray = normalize(lightPosition - aCentroid);
                 float illuminance = dot(aNormal, ray);
                 illuminance = 1.1 * max(illuminance, 0.0);
 
-                vec3 col1 = rgb2hsv(lightAmbient.rgb);
-                // col1[2] = 0.7;
-                         // col1[0] -= 0.1; // hue shift
-                     col1 = hsv2rgb(col1);
 
                 // Calculate ambient light
                   vColor *=  lightAmbient;
