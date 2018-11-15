@@ -4,6 +4,7 @@ module Layer.FSS exposing
     , Mesh
     , SerializedScene
     , Amplitude, AmplitudeChange
+    , ColorShift, ColorShiftPatch
     , Vignette, Iris
     , Clip
     , makeEntity
@@ -36,7 +37,9 @@ type alias Faces = ( Int, Int )
 type alias Clip = ( Float, Float )
 type alias Mirror = Float
 type alias Amplitude = ( Float, Float, Float )
+type alias ColorShift = ( Float, Float, Float )
 type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
+type alias ColorShiftPatch = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
 type alias Vignette = Float
 type alias Iris = Float
@@ -55,6 +58,7 @@ type RenderMode
 type alias PortModel =
     { renderMode : String
     , amplitude : Amplitude
+    , colorShift : ColorShift
     , vignette : Vignette
     , iris : Iris 
     , faces : Faces
@@ -68,6 +72,7 @@ type alias PortModel =
 type alias Model =
     { renderMode : RenderMode
     , amplitude : Amplitude
+    , colorShift : ColorShift
     , vignette : Vignette
     , iris : Iris 
     , faces : Faces
@@ -157,6 +162,10 @@ defaultAmplitude : ( Float, Float, Float )
 defaultAmplitude = ( 0.3, 0.3, 0.3 )
 
 
+defaultColorShift : ( Float, Float, Float )
+defaultColorShift = ( 0.0, 0.0, 0.0 )
+
+
 defaultVignette : Vignette
 defaultVignette = 0.8
 
@@ -186,6 +195,7 @@ init =
     { faces = defaultFaces
     , renderMode = Triangles
     , amplitude = defaultAmplitude
+    , colorShift = defaultColorShift
     , vignette = defaultVignette
     , iris = defaultIris
     , mirror = False
@@ -383,6 +393,7 @@ type alias Uniforms =
         , uLayerIndex : Int
         , uMousePosition : Vec2
         , uAmplitude : Vec3
+        , uColorShift : Vec3
         , uVignette : Float
         , uIris : Float
         , uSegment : Vec3
@@ -422,6 +433,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         mirror = if model.mirror then 1.0 else 0.0
         clip =  model.clip |> Maybe.withDefault noClip
         ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
+        ( hue, saturation, brightness ) = model.colorShift
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -437,6 +449,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , uClip = vec2 (Tuple.first clip) (Tuple.second clip)
         , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
+        , uColorShift = vec3 hue saturation brightness
         , uVignette = model.vignette
         , uIris = model.iris
         , paused = v.paused
@@ -596,6 +609,7 @@ vertexShader =
         uniform float uLightSpeed;
 
         uniform vec3 uAmplitude;
+        uniform vec3 uColorShift;
 
         uniform vec2 uMousePosition;
         uniform float uMirror;
@@ -612,6 +626,7 @@ vertexShader =
        float time = uNow;
        vec3 position = vec3(0.0);
        bool background = false;
+       bool low_poly = false;
 
        //       vec3 vertexOscillators(vec3 arg) {
        //     return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
@@ -647,9 +662,9 @@ vertexShader =
          vec4 adjustLight(vec4 origColor, float deltaHue, float deltaSaturation, float deltaBrightness) {
 
                 vec3 changedColor  = rgb2hsv(origColor.rgb);
-                    changedColor[0] *= deltaHue; // hue shift
-                    changedColor[1] *= deltaSaturation;
-                    changedColor[2] *= deltaBrightness;
+                    changedColor[0] = clamp(changedColor[0] + deltaHue, 0.0, 1.0); // hue shift
+                    changedColor[1] = clamp(changedColor[1] + deltaSaturation, 0.0, 1.0); // saturation shift
+                    changedColor[2] = clamp(changedColor[2] + deltaBrightness, 0.0, 1.0); // brightness shift
 
                     return vec4(vec3(hsv2rgb(changedColor)), 1.0);
          }   
@@ -662,6 +677,10 @@ vertexShader =
 
                background = true;
   
+           }
+
+            if ( uLayerIndex == 1 ) {
+              low_poly = true;
            }
 
 
@@ -699,28 +718,23 @@ vertexShader =
           //  if(uLayerIndex != 0) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * lightOscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
 
-                if ( background ) {
+                if ( low_poly ) {
 
-                    lightAmbient =  adjustLight(uLightAmbient[i], 0.1, 0.0, 0.0);
-                    lightDiffuse =  adjustLight(uLightDiffuse[i], 0.0, 0.7, 0.0);
+                    lightAmbient =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    lightDiffuse =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
 
                 } else {
-                    lightAmbient = uLightAmbient[i];
-                    lightDiffuse = uLightDiffuse[i];
+                    lightAmbient =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    lightDiffuse =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
                 }
 
                 vec3 ray = normalize(lightPosition - aCentroid);
                 float illuminance = dot(aNormal, ray);
-               // float illuminance = pow(dot(aNormal, ray), 1.2);
                 illuminance = 1.1 * max(illuminance, 0.0);
 
-                vec3 col1 = rgb2hsv(lightAmbient.rgb);
-                // col1[2] = 0.7;
-                         // col1[0] -= 0.1; // hue shift
-                     col1 = hsv2rgb(col1);
 
                 // Calculate ambient light
-                  vColor *=  vec4(col1, 1.0);
+                  vColor *=  lightAmbient;
 
                 // Calculate diffuse light
                   vColor +=  lightDiffuse * illuminance;
@@ -737,7 +751,7 @@ vertexShader =
 
 
            // Gradients
-             vColor *=  mix(vec4(gradientColor , 1.0), vColor, abs(position.z));
+             vColor *=  mix(adjustLight(vec4(gradientColor,1.0), -0.3, 0.0, -0.1), vColor, pow(abs(position.z), 1.5));
 
           // Set gl_Position
              gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
