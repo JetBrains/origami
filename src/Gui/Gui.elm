@@ -61,8 +61,10 @@ type Msg
     = Tune ModelPos Float
     | On ModelPos
     | Off ModelPos
-    | Expand ModelPos
-    | Collapse ModelPos
+    | ExpandNested ModelPos
+    | CollapseNested ModelPos
+    | ExpandChoice ModelPos
+    | CollapseChoice ModelPos
     | Choose ModelPos ModelPos
     | Move ModelPos Int
 
@@ -163,12 +165,26 @@ init : Model -- ( UI, Cmd Msg )
 init =
     let
         webglBlendGrid = noChildren
-        svgBlendGrid = noChildren
+        svgBlendGrid =
+            ( ( 3, 3 )
+            ,
+                [ Toggle "normal" TurnedOn
+                , Toggle "overlay" TurnedOn
+                , Toggle "multiply" TurnedOn
+                , Toggle "darken" TurnedOn
+                , Toggle "lighten" TurnedOn
+                , Toggle "multiply" TurnedOn
+                , Toggle "multiply" TurnedOn
+                , Toggle "multiply" TurnedOn
+                , Toggle "multiply" TurnedOn
+                ]
+            )
+
         amplitudeGrid = noChildren
         fssControls =
             oneLine
                 [ Toggle "visible" TurnedOn
-                , Toggle "mirror" TurnedOn
+                , Toggle "mirror" TurnedOff
                 , Knob "lights" 0
                 , Knob "col" 0
                 , Knob "vignette" 0
@@ -180,7 +196,7 @@ init =
         svgControls =
             oneLine
                 [ Toggle "visible" TurnedOn
-                , Choice "blend" Collapsed 0 noChildren
+                , Choice "blend" Collapsed 0 svgBlendGrid
                 ]
     in
         oneLine
@@ -215,7 +231,9 @@ findClickMessage modelPos cell =
         Toggle _ val ->
             Just <| if val == TurnedOn then Off modelPos else On modelPos
         Nested _ state _ ->
-            Just <| if state == Expanded then Collapse modelPos else Expand modelPos
+            Just <| if state == Expanded then CollapseNested modelPos else ExpandNested modelPos
+        Choice _ state _ _ ->
+            Just <| if state == Expanded then CollapseChoice modelPos else ExpandChoice modelPos
         _ -> Nothing
 
 
@@ -261,8 +279,8 @@ viewCell gridPos maybeCellPair =
     let
         className =
             case maybeCellPair of
-                Just _ -> "cell hole"
-                _ -> "cell"
+                Just _ -> "cell"
+                _ -> "cell hole"
         handlers =
             maybeCellPair
                 |> Maybe.map
@@ -511,22 +529,40 @@ update msg ui =
                             Toggle label _ -> Toggle label TurnedOff
                             _ -> cell
                     )
-        Expand pos ->
+        ExpandNested pos ->
             ui |>
                 updateCell pos
                     (\cell ->
                         case cell of
-                            Nested label _ grid ->
-                                Nested label Expanded grid
+                            Nested label _ cells ->
+                                Nested label Expanded cells
                             _ -> cell
                     )
-        Collapse pos ->
+        CollapseNested pos ->
             ui |>
                 updateCell pos
                     (\cell ->
                         case cell of
-                            Nested label _ grid ->
-                                Nested label Collapsed grid
+                            Nested label _ cells ->
+                                Nested label Collapsed cells
+                            _ -> cell
+                    )
+        ExpandChoice pos ->
+            ui |>
+                updateCell pos
+                    (\cell ->
+                        case cell of
+                            Choice label _ selection cells ->
+                                Choice label Expanded selection cells
+                            _ -> cell
+                    )
+        CollapseChoice pos ->
+            ui |>
+                updateCell pos
+                    (\cell ->
+                        case cell of
+                            Choice label _ selection cells ->
+                                Choice label Collapsed selection cells
                             _ -> cell
                     )
         _ -> ui
