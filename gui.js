@@ -166,6 +166,12 @@ PREDEFINED_SIZES = RELEASE_SIZES; // TODO: Switcher by mode needed
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
+const update = (gui) => () => {
+  for (var i in gui.__controllers) {
+    gui.__controllers[i].updateDisplay();
+  }
+}
+
 const Config = function(layers, defaults, funcs, randomize) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
@@ -373,8 +379,8 @@ function start(document, model, funcs) {
       }
     }
 
-    const config = new Config(layers, defaults, funcs, randomize(funcs, model));
     const gui = new dat.GUI(/*{ load: JSON }*/);
+    const config = new Config(layers, defaults, funcs, randomize(funcs, model, update(gui)));
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
@@ -437,15 +443,19 @@ function start(document, model, funcs) {
     // });
 }
 
-const randomize = (funcs, model) => (config) => () => {
+const randomize = (funcs, model, updateGui) => (config) => () => {
   model.layers.forEach((_, index) => {
-    const lightSpeed = Math.random() * 1040 + 100;
+    const lightSpeed = Math.floor(Math.random() * 1040 + 100);
+    const omega = Math.random() * 2 - 1;
     const productIdx = Math.floor(Math.random() * PRODUCTS.length);
     const product = PRODUCTS[productIdx].id;
     config.product = product;
     config.lightSpeed = lightSpeed;
+    config.omega = omega;
     model.product = product;
-    model.lightSpeed = lightSpeed
+    model.lightSpeed = lightSpeed;
+    model.omega = omega;
+    updateGui();
     funcs.applyRandomizer(model);
   });
 }
