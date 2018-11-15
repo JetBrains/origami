@@ -351,7 +351,7 @@ update msg model =
         ChangeLightSpeed index lightSpeed ->
             model
                 |> updateAndRebuildFssWith index
-                    (\fssModel -> { fssModel | lightSpeed = Debug.log "lightSpeed" lightSpeed })
+                    (\fssModel -> { fssModel | lightSpeed = lightSpeed })
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
