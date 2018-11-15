@@ -317,38 +317,19 @@ viewGrid (Grid grid) =
 
 
 put : ModelPos -> GridPos -> Shape -> List Cell -> Grid -> Grid
-put modelPos ((GridPos row col) as gridPos) shape cellsList ((Grid rows) as grid) =
+put (ModelPos nest index) (GridPos row col) shape cellsList (Grid rows) =
     let
         cells = Array.fromList cellsList
         indexOf ( row, col ) ( width, _ ) =
             row * width + col
-        -- updateCell row_ col_ prevCell =
-        --     if (row_ >= row) && (col_ >= col) then
-        --         case Array.get (indexOf ( row_, col_ ) shape) cells of
-        --             Just newCell -> Just newCell
-        --             Nothing -> prevCell
-        --     else prevCell
-        updateCell prevCell data =
-            let
-                (GridPos curRow curCol) = data.gPos
-                if (curRow >= row) && (curCol >= col) then
-                    case Array.get (indexOf ( row_, col_ ) shape) cells of
-                        Just newCell -> Just newCell
-                        Nothing -> prevCell
-                    else prevCell
-            in
-                { data
-                | gPos = GridPos curRow (curCol + 1)
-                }
-        updateRow row data =
-            let
-                -- newData = row |> Array.foldl updateCell data
-                ( newData, _ ) = row |> Array.foldl updateCell data
-                (GridPos mRow _) = data.gPos
-            in
-                { newData
-                | gPos = GridPos (mRow + 1) col
-                }
+        updateCell row_ col_ prevCell =
+            if (row_ >= row) && (col_ >= col) then
+                case Array.get (indexOf ( row_, col_ ) shape) cells of
+                    Just newCell -> Just ( newCell, ModelPos nest index )
+                    Nothing -> prevCell
+            else prevCell
+        updateRow row_ row =
+            row |> Array.indexedMap (updateCell row_)
         -- applyIfExpands srcRowId cell ( srcColId, grid ) =
         --     ( srcColId + 1
         --     , grid |> ensureToExpand ( rowId + srcRowId, colId + srcColId ) cell
@@ -360,10 +341,8 @@ put modelPos ((GridPos row col) as gridPos) shape cellsList ((Grid rows) as grid
         --     )
     in
         rows
-            |> Array.foldl updateRow
-                { mPos = modelPos, gPos = GridPos row col, grid = grid }
-            |> .grid
-
+            |> Array.indexedMap updateRow
+            |> Grid
 
 
 -- put : GridPos -> Cell -> Grid -> Grid
@@ -446,27 +425,45 @@ view model =
 --         _ -> grid
 
 
+traverseModel : (Cell -> ModelPos -> Cell) -> Model -> Model
+traverseModel f ( shape, cells ) =
+    ( shape, traverseCells f cells )
+
+
+traverseCells : (Cell -> ModelPos -> Cell) -> Cells -> Cells
+traverseCells f cells =
+    let
+        scanCell nest index cell =
+            case f cell (ModelPos nest index) of
+                Nested label state ( shape, nestedCells ) ->
+                    Nested
+                        label
+                        state
+                        ( shape
+                        , List.indexedMap (scanCell (nest + 1)) nestedCells
+                        )
+                Choice label state selected ( shape, nestedCells ) ->
+                    Choice
+                        label
+                        state
+                        selected
+                        ( shape
+                        , List.indexedMap (scanCell (nest + 1)) nestedCells
+                        )
+                newCell -> newCell
+
+    in
+        List.indexedMap (scanCell 0) cells
+
 
 updateCell : ModelPos -> (Cell -> Cell) -> Model -> Model
-updateCell (ModelPos nest index) f (( _, cells ) as model) =
-    model
-
-    -- case getCellSafe ( row, col ) rows of
-    --     Just prevCell ->
-    --         let
-    --             newCell = f prevCell
-    --         in
-    --             Array.get row rows
-    --                 |> Maybe.map (Array.set col newCell)
-    --                 |> Maybe.map (\newRow -> Array.set row newRow rows)
-    --                 |> Maybe.withDefault rows
-    --                 |> Grid
-    --                 -- |> ensureToExpand ( row, col ) newCell
-    --     Nothing -> Grid rows
-
-
--- fillEmpty : Grid -> Grid
--- fillEmpty = map (always Nothing)
+updateCell ((ModelPos expectedNest expectedIndex) as modelPos) f model =
+    traverseModel
+        (\cell (ModelPos nest index) ->
+            if (expectedNest == nest) && (expectedIndex == index) then
+                f cell
+            else cell)
+        model
 
 
 subscriptions : Model -> Sub Msg
