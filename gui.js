@@ -202,14 +202,14 @@ const Config = function(layers, defaults, funcs, randomize) {
       this['renderMode' + index] = 'triangles';
 
       if (isFss(layer)) {
-        this['lightSpeed' + index] = defaults.fss.lightSpeed;
-        this['facesX' + index] = defaults.fss.faces[0];
-        this['facesY' + index] = defaults.fss.faces[1];
-        this['vignette' + index] = defaults.fss.vignette;
-        this['iris' + index] = defaults.fss.iris;
-        this['amplitudeX' + index] = defaults.fss.amplitude[0];
-        this['amplitudeY' + index] = defaults.fss.amplitude[1];
-        this['amplitudeZ' + index] = defaults.fss.amplitude[2];
+        this['lightSpeed' + index] = layer.model.lightSpeed;
+        this['facesX' + index] = layer.model.faces[0];
+        this['facesY' + index] = layer.model.faces[1];
+        this['vignette' + index] = layer.model.vignette;
+        this['iris' + index] = layer.model.iris;
+        this['amplitudeX' + index] = layer.model.amplitude[0];
+        this['amplitudeY' + index] = layer.model.amplitude[1];
+        this['amplitudeZ' + index] = layer.model.amplitude[2];
       }
     });
 

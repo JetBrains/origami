@@ -61,6 +61,7 @@ const import_ = (app, parsedState) => {
     parsedState.layers.map((layer, index) => {
         if (isFss(layer)) {
             const fssScene = buildFSS(parsedState, layer.model, layer.sceneFuzz);
+            fssScenes[index] = fssScene;
             app.ports.rebuildFss.send({ value: fssScene, layer: index });
         }
     });
@@ -237,11 +238,11 @@ const savePng = (hiddenLink) => {
 
 prepareImportExport();
 
-setTimeout(function() { // FIXME: change to document.ready
+// document.addEventListener('DOMContentLoaded', () => {
+setTimeout(() => {
 
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
-
 
     app.ports.presetSizeChanged.subscribe(size => {
         if (savingBatch) {
@@ -252,6 +253,9 @@ setTimeout(function() { // FIXME: change to document.ready
 
     app.ports.startGui.subscribe((model) => {
         console.log('startGui', model);
+        model.layers.forEach(layer => {
+            layer.model = JSON.parse(layer.model) || {};
+        });
         startGui(
             document,
             model,
@@ -321,7 +325,8 @@ setTimeout(function() { // FIXME: change to document.ready
         model.layers.forEach((layer, index) => {
             if (isFss(layer)) {
                 console.log('rebuild FSS layer', index);
-                const fssScene = buildFSS(model, model.fss);
+                const fssScene = buildFSS(model, layer.model);
+                fssScenes[index] = fssScene;
                 app.ports.rebuildFss.send({ value: fssScene, layer: index });
             }
         });
@@ -330,6 +335,7 @@ setTimeout(function() { // FIXME: change to document.ready
             const layer = model.layers[index];
             if (isFss(layer)) {
                 console.log('forced to rebuild FSS layer', index);
+                // FIXME: just use layer.model instead of `fssModel`
                 const fssScene = buildFSS(model, fssModel);
                 fssScenes[index] = fssScene;
                 app.ports.rebuildFss.send({ value: fssScene, layer: index });

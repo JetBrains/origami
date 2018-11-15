@@ -11,6 +11,7 @@ const import_ = (app, importedState) => {
         const layer = model.layers[index];
         if (isFss(layer)) {
             console.log('forced to rebuild FSS layer', index);
+            // FIXME: just use layer.model instead of `fssModel`
             const fssScene = buildFSS(model, fssModel, parsedState.layers[index].sceneFuzz);
             app.ports.rebuildFss.send({ value: fssScene, layer: index });
         }

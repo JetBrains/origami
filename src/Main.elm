@@ -22,7 +22,7 @@ import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 import Controls
-import ImportExport as IE exposing (EncodedState)
+import ImportExport as IE
 import Product exposing (Product)
 import Product as Product
 
@@ -43,7 +43,7 @@ type Msg
     | ResizeFromPreset Window.Size
     | Locate Position
     | Rotate Float
-    | Import EncodedState
+    | Import String
     | Export
     | ExportZip
     | TimeTravel Float
@@ -585,7 +585,7 @@ createLayer kind layerModel =
 -- extractFssBuildOptions = prepareGuiConfig
 
 
-prepareGuiConfig : Model -> GuiDefaults
+prepareGuiConfig : Model -> GuiModel
 prepareGuiConfig model =
     { mode = IE.encodeMode model.mode
     , product = Product.encode model.product
@@ -595,15 +595,9 @@ prepareGuiConfig model =
              )
     , layers =
         model.layers |>
-            List.map (\{ kind, layer, on, name } ->
-                { kind = encodeLayerKind kind
-                , blend = getBlendForPort layer
-                , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
-                , on = on
-                , name = name
-                })
-    , fss = IE.encodeFss FSS.init model.product
-    , vignette = Vignette.init
+            List.map IE.encodePortLayer
+    -- , fss = IE.encodeFss FSS.init model.product
+    -- , vignette = Vignette.init
     , customSize = Nothing
     , omega = model.omega
     }
@@ -1071,7 +1065,7 @@ port changeSVGBlend :
 
 -- OUTGOING PORTS
 
-port startGui : GuiDefaults -> Cmd msg
+port startGui : GuiModel -> Cmd msg
 
 port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: FSS.PortModel } -> Cmd msg
 

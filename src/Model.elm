@@ -12,7 +12,7 @@ module Model exposing
     , WebGLLayer_(..)
     , SVGLayer_(..)
     , CreateLayer
-    , GuiDefaults
+    , GuiModel
     , Size
     , Pos
     , PortModel
@@ -160,10 +160,11 @@ type alias PortLayerDef =
     , webglOrSvg : String
     , on : Bool
     , name : String
+    , model : String
     }
 
 
-type alias GuiDefaults =
+type alias GuiModel =
     { mode : String
     , product : String
     , palette : List String
@@ -171,8 +172,8 @@ type alias GuiDefaults =
     , size : ( Int, Int )
     , customSize : Maybe (Int, Int)
     , omega : Float
-    , fss : FSS.PortModel
-    , vignette : Vignette.PortModel
+    -- , fss : FSS.PortModel
+    -- , vignette : Vignette.PortModel
     }
 
 
