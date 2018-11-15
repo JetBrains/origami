@@ -133,6 +133,8 @@ RENDER_MODES =
 
 RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 { 'window': [ 0, 0 ]
+, '480x297 prodcard' : [ 480, 297 ] //product card
+, '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
 , '640x400 spl' : [ 640, 400 ] // product splash background
 , '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
 , '650x170 nwlt' : [ 650, 170 ] // newsletter
