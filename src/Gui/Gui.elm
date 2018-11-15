@@ -317,15 +317,21 @@ viewGrid (Grid grid) =
 
 
 put : ModelPos -> GridPos -> Shape -> List Cell -> Grid -> Grid
-put (ModelPos nest index) (GridPos row col) shape cellsList (Grid rows) =
+put
+    (ModelPos nest index)
+    (GridPos row col)
+    shape
+    cellsList
+    (Grid rows) =
     let
         cells = Array.fromList cellsList
+            |> Array.indexedMap (\index cell -> ( cell, ModelPos 0 index ) )
         indexOf ( row, col ) ( width, _ ) =
             row * width + col
         updateCell row_ col_ prevCell =
             if (row_ >= row) && (col_ >= col) then
                 case Array.get (indexOf ( row_, col_ ) shape) cells of
-                    Just newCell -> Just ( newCell, ModelPos nest index )
+                    Just ( newCell, modelPos ) -> Just ( newCell, modelPos )
                     Nothing -> prevCell
             else prevCell
         updateRow row_ row =
