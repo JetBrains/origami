@@ -342,6 +342,7 @@ put
     cellsList
     (Grid rows) =
     let
+        --a = Debug.log "gPos" (GridPos row col)
         cells = Array.fromList cellsList
             |> Array.indexedMap
                 (\cellIndex cell -> ( cell, ModelPos nest cellIndex ))
@@ -350,7 +351,6 @@ put
             (row < height) && ( col < width )
         indexOf ( row, col ) ( width, _ ) =
             row * width + col
-            -- Debug.log "index" ((Debug.log "row" row) * (Debug.log "width" width) + (Debug.log "col" col))
         updateCell row_ col_ prevCell =
             if (row_ >= row) && (col_ >= col) then
                 let
@@ -364,8 +364,9 @@ put
             else prevCell
         updateRow row_ row =
             row |> Array.indexedMap (updateCell row_)
-        applyColExpands maybeCell grid =
-            case maybeCell of
+        applyColExpands maybeCell ( col, grid ) =
+            ( col + 1
+            , case maybeCell of
                 Just ( cell, (ModelPos cellNest _) ) ->
                     if (cellNest == nest) then
                         case cell of
@@ -376,8 +377,10 @@ put
                             _ -> grid
                     else grid
                 _ -> grid
+            )
         applyExpands row grid =
-            Array.foldl applyColExpands grid row
+            Array.foldl applyColExpands ( 0, grid ) row
+                |> Tuple.second
     in
         rows
             |> Array.indexedMap updateRow
@@ -421,8 +424,7 @@ layout : Model -> Grid
 layout ( shape, cells ) =
     emptyGrid (10, 6)
         |> put 0 (GridPos 0 0) shape cells
-        |> flip
-
+        -- |> flip
 
 
 flip : Grid -> Grid
