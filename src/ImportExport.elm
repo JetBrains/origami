@@ -186,7 +186,7 @@ decodePortModel createLayer portModel =
 encodePortLayer : M.LayerDef -> M.PortLayerDef
 encodePortLayer layerDef =
     { kind = encodeKind_ layerDef.kind
-    , on = layerDef.on
+    , isOn = layerDef.on
     , webglOrSvg =
         case layerDef.layer of
             M.WebGLLayer _ _ -> "webgl"
@@ -228,7 +228,7 @@ decodePortLayer createLayer portLayerDef =
                     |> M.SVGLayer svgLayer
     in
         { kind = kind
-        , on = portLayerDef.on
+        , on = portLayerDef.isOn
         , layer = layer
         , model = layerModel
         , name = portLayerDef.name
