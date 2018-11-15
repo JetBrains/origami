@@ -421,6 +421,17 @@ layout : Model -> Grid
 layout ( shape, cells ) =
     emptyGrid (10, 6)
         |> put 0 (GridPos 0 0) shape cells
+        |> flip
+
+
+
+flip : Grid -> Grid
+flip (Grid rows) =
+    rows
+        |> Array.toList
+        |> List.reverse
+        |> Array.fromList
+        |> Grid
 
 
 view : Model -> Html Msg
