@@ -218,7 +218,7 @@ const Config = function(layers, defaults, funcs, randomize) {
       }
     });
 
-    this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
+    this.customSize = PREDEFINED_SIZES['window'];
 
     this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
@@ -440,7 +440,8 @@ function start(document, model, funcs) {
 const randomize = (funcs, model) => (config) => () => {
   model.layers.forEach((_, index) => {
     const lightSpeed = Math.random() * 1040 + 100;
-    const product = Math.floor(Math.random() * PRODUCTS.length);
+    const productIdx = Math.floor(Math.random() * PRODUCTS.length);
+    const product = PRODUCTS[productIdx].id;
     config.product = product;
     config.lightSpeed = lightSpeed;
     model.product = product;

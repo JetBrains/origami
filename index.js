@@ -39,30 +39,22 @@ const exportScene = (scene) => {
 }
 
 const prepareModelForImport = (model) => {
-    return {
-      mode: model.mode,
-      theta: model.theta,
-      omega: model.omega,
-      size: model.size,
-      origin: model.origin,
-      mouse: model.mouse || [0, 0],
-      now: model.now,
-      product: model.product,
-      layers: model.layers.map((layer) => (
-        { kind : layer.kind,
-          blend: layer.blend,
-          isOn: layer.isOn,
-          model: JSON.stringify(layer.model),
-          name: layer.name,
-          webglOrSvg: layer.webglOrSvg
-        }
-      ))
-    }
+    const toSend = deepClone(model);
+    toSend.layers =
+        model.layers.map(layer => {
+            const layerModel = deepClone(layer);
+            layerModel.model = JSON.stringify(layer.model);
+            return layerModel;
+        });
+    console.log('sending for the import', toSend);
+
+    return toSend;
 }
 
 const import_ = (app, parsedState) => {
 
-    app.ports.import_.send(JSON.stringify(prepareModelForImport(parsedState)));
+    const preparedModel = prepareModelForImport(parsedState);
+    app.ports.import_.send(JSON.stringify(preparedModel));
 
     parsedState.layers.map((layer, index) => {
         if (isFss(layer)) {

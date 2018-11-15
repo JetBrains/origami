@@ -13,7 +13,6 @@ module Model exposing
     , WebGLLayer_(..)
     , SVGLayer_(..)
     , CreateLayer
-    , GuiModel
     , Size
     , Pos
     , PortModel
@@ -162,19 +161,6 @@ type alias PortLayerDef =
     , isOn : Bool
     , name : String
     , model : String
-    }
-
-
-type alias GuiModel =
-    { mode : String
-    , product : String
-    , palette : List String
-    , layers : List PortLayerDef
-    , size : ( Int, Int )
-    , customSize : Maybe (Int, Int)
-    , omega : Float
-    -- , fss : FSS.PortModel
-    -- , vignette : Vignette.PortModel
     }
 
 
