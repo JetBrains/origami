@@ -325,12 +325,13 @@ put
     (Grid rows) =
     let
         cells = Array.fromList cellsList
-            |> Array.indexedMap (\cellIndex cell -> ( cell, ModelPos nest cellIndex ) )
+            |> Array.indexedMap (\cellIndex cell -> ( cell, ModelPos nest cellIndex ))
+        -- hasNesting = Debug.log "nests" <| Array.map (\(_, (ModelPos nest _)) -> nest) cells
         indexOf ( row, col ) ( width, _ ) =
             row * width + col
         updateCell row_ col_ prevCell =
             if (row_ >= row) && (col_ >= col) then
-                case Array.get (indexOf ( row_, col_ ) shape) cells of
+                case Array.get (indexOf (row_ - row, col_ - col) shape) cells of
                     Just ( newCell, modelPos ) -> Just ( newCell, modelPos )
                     Nothing -> prevCell
             else prevCell
@@ -338,13 +339,15 @@ put
             row |> Array.indexedMap (updateCell row_)
         applyColExpands maybeCell grid =
             case maybeCell of
-                Just ( cell, modelPos ) ->
-                    case cell of
-                        Nested _ Expanded ( shape, cells ) ->
-                            put (nest + 1) (GridPos (row + 1) col) shape cells grid
-                        Choice _ Expanded _ ( shape, cells ) ->
-                            put (nest + 1) (GridPos (row + 1) col) shape cells grid
-                        _ -> grid
+                Just ( cell, (ModelPos cellNest _) ) ->
+                    if (cellNest == nest) then
+                        case cell of
+                            Nested _ Expanded ( shape, cells ) ->
+                                put (nest + 1) (GridPos (row + 1) col) shape cells grid
+                            Choice _ Expanded _ ( shape, cells ) ->
+                                put (nest + 1) (GridPos (row + 1) col) shape cells grid
+                            _ -> grid
+                    else grid
                 _ -> grid
         applyExpands row grid =
             Array.foldl applyColExpands grid row
