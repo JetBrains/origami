@@ -316,16 +316,16 @@ viewGrid (Grid grid) =
 
 
 
-put : ModelPos -> GridPos -> Shape -> List Cell -> Grid -> Grid
+put : Int -> GridPos -> Shape -> List Cell -> Grid -> Grid
 put
-    (ModelPos nest index)
+    nest
     (GridPos row col)
     shape
     cellsList
     (Grid rows) =
     let
         cells = Array.fromList cellsList
-            |> Array.indexedMap (\index cell -> ( cell, ModelPos 0 index ) )
+            |> Array.indexedMap (\cellIndex cell -> ( cell, ModelPos nest cellIndex ) )
         indexOf ( row, col ) ( width, _ ) =
             row * width + col
         updateCell row_ col_ prevCell =
@@ -336,19 +336,24 @@ put
             else prevCell
         updateRow row_ row =
             row |> Array.indexedMap (updateCell row_)
-        -- applyIfExpands srcRowId cell ( srcColId, grid ) =
-        --     ( srcColId + 1
-        --     , grid |> ensureToExpand ( rowId + srcRowId, colId + srcColId ) cell
-        --     )
-        -- checkExpandables row ( srcRowId, grid ) =
-        --     ( srcRowId + 1
-        --     , Array.foldl (applyIfExpands srcRowId) (0, grid) row
-        --         |> Tuple.second
-        --     )
+        applyColExpands maybeCell grid =
+            case maybeCell of
+                Just ( cell, modelPos ) ->
+                    case cell of
+                        Nested _ Expanded ( shape, cells ) ->
+                            put (nest + 1) (GridPos (row + 1) col) shape cells grid
+                        Choice _ Expanded _ ( shape, cells ) ->
+                            put (nest + 1) (GridPos (row + 1) col) shape cells grid
+                        _ -> grid
+                _ -> grid
+        applyExpands row grid =
+            Array.foldl applyColExpands grid row
     in
         rows
             |> Array.indexedMap updateRow
-            |> Grid
+            |> (\rows ->
+                    Array.foldl applyExpands (Grid rows) rows
+                )
 
 
 -- put : GridPos -> Cell -> Grid -> Grid
@@ -385,7 +390,7 @@ set (GridPos row col) cell ((Grid rows) as grid) =
 layout : Model -> Grid
 layout ( shape, cells ) =
     emptyGrid (10, 6)
-        |> put (ModelPos 0 0) (GridPos 0 0) shape cells
+        |> put 0 (GridPos 0 0) shape cells
 
 
 view : Model -> Html Msg
