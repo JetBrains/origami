@@ -464,13 +464,23 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
       // .visible
       if (isFss(layerDef)) {
         const lightSpeed = Math.floor(Math.random() * 1040 + 100);
-        layerDef.lightSpeed = lightSpeed;
+        layerDef.model.lightSpeed = lightSpeed;
         config['lightSpeed' + index] = lightSpeed;
 
         const renderModeIdx = Math.floor(Math.random() * RENDER_MODES.length);
         const renderMode = RENDER_MODES[renderModeIdx];
-        layerDef.renderMode = renderMode;
+        layerDef.model.renderMode = renderMode;
         config['renderMode' + index] = renderMode;
+
+        const [ facesX, facesY ] =
+          [ Math.floor(Math.random() * 100), Math.floor(Math.random() * 100) ];
+        layerDef.model.faces = [ facesX, facesY ];
+        config['facesX' + index] = facesX;
+        config['facesY' + index] = facesY;
+
+        const iris = Math.random();
+        layerDef.model.iris = iris;
+        config['iris' + index] = iris;
       }
 
       if (layerDef.webglOrSvg == 'webgl') {
@@ -478,6 +488,8 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
 
       }
   });
+  console.log(toSend);
+
   // toSend.layers = model.layers.reverse().map((layerDef, index) => {
   //     return layerDef;
   // });

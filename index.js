@@ -41,12 +41,12 @@ const exportScene = (scene) => {
 const prepareModelForImport = (model) => {
     const toSend = deepClone(model);
     toSend.layers =
-        model.layers.map(layer => {
-            const layerModel = deepClone(layer);
-            layerModel.model = JSON.stringify(layer.model);
-            return layerModel;
+        model.layers.map(layerDef => {
+            const layerDef_ = deepClone(layerDef);
+            layerDef_.model = JSON.stringify(layerDef.model);
+            return layerDef_;
         });
-    console.log('sending for the import', toSend);
+    //console.log('sending for the import', toSend);
 
     return toSend;
 }
@@ -74,7 +74,7 @@ const export_ = (app, exportedState) => {
             ? exportScene(fssScenes[index]) || exportScene(buildFSS(model, layer.model))
             : null;
     })
-    console.log(stateObj);
+    //console.log(stateObj);
     return JSON.stringify(stateObj, null, 2);
 }
 
@@ -82,7 +82,7 @@ const waitForContent = ({ path, id, name }) => {
     return new Promise((resolve, reject) => {
         JSZipUtils.getBinaryContent(path, (err, content) => {
             if (err) { reject(err); return; }
-            console.log('packing ' + path);
+            // console.log('packing ' + path);
             resolve({ path, id, name, content });
         });
     });
@@ -149,7 +149,7 @@ const prepareImportExport = () => {
     });
     app.ports.exportZip_.subscribe((exportedState) => {
         try {
-            console.log('exportedState', exportedState);
+            // console.log('exportedState', exportedState);
             exportZip_(app, exportedState);
         } catch(e) {
             console.error(e);
@@ -243,13 +243,13 @@ setTimeout(() => {
 
     app.ports.presetSizeChanged.subscribe(size => {
         if (savingBatch) {
-            console.log('saving ', size);
+            // console.log('saving ', size);
             savePng(hiddenLink, size);
         };
     });
 
     app.ports.startGui.subscribe((model) => {
-        console.log('startGui', model);
+        // console.log('startGui', model);
         model.layers.forEach(layer => {
             layer.model = JSON.parse(layer.model) || {};
         });
@@ -292,13 +292,13 @@ setTimeout(() => {
                 const nextPng = () => {
                     if (sizeIndex < sizes.length) {
                         const [ width, height ] = sizes[sizeIndex];
-                        console.log('sending', width, height);
+                        // console.log('sending', width, height);
                         app.ports.setCustomSize.send([ width, height ]);
                         sizeIndex = sizeIndex + 1;
                         setTimeout(nextPng, batchPause);
                     } else {
                         savingBatch = false;
-                        console.log('done saving batch');
+                        // console.log('done saving batch');
                     }
                 };
 
@@ -326,7 +326,7 @@ setTimeout(() => {
 
         model.layers.forEach((layer, index) => {
             if (isFss(layer)) {
-                console.log('rebuild FSS layer', index);
+                // console.log('rebuild FSS layer', index);
                 const fssScene = buildFSS(model, layer.model);
                 fssScenes[index] = fssScene;
                 app.ports.rebuildFss.send({ value: fssScene, layer: index });
@@ -336,7 +336,7 @@ setTimeout(() => {
         app.ports.requestFssRebuild.subscribe(({ layer : index, model, value : fssModel }) => {
             const layer = model.layers[index];
             if (isFss(layer)) {
-                console.log('forced to rebuild FSS layer', index);
+                // console.log('forced to rebuild FSS layer', index);
                 // FIXME: just use layer.model instead of `fssModel`
                 const fssScene = buildFSS(model, fssModel);
                 fssScenes[index] = fssScene;

@@ -11,7 +11,7 @@ const import_ = (app, importedState) => {
     app.ports.requestFssRebuild.subscribe(({ layer : index, model, value : fssModel }) => {
         const layer = model.layers[index];
         if (isFss(layer)) {
-            console.log('forced to rebuild FSS layer', index);
+            //console.log('forced to rebuild FSS layer', index);
             // FIXME: just use layer.model instead of `fssModel`
             const fssScene = buildFSS(model, fssModel, parsedState.layers[index].sceneFuzz);
             app.ports.rebuildFss.send({ value: fssScene, layer: index });
@@ -28,7 +28,7 @@ const import_ = (app, importedState) => {
             layerModel.model = JSON.stringify(layer.model);
             return layerModel;
         });
-    console.log('sending for the import', toSend);
+    //console.log('sending for the import', toSend);
 
     app.ports.import_.send(JSON.stringify(toSend));
 }
@@ -37,7 +37,7 @@ window.runGenScene = function() {
     var node = document.getElementById("app");
     var app = App.Main.embed(node);
 
-    console.log('runGenScene', window.jsGenScene, app);
+    //console.log('runGenScene', window.jsGenScene, app);
 
     import_(app, window.jsGenScene);
 }

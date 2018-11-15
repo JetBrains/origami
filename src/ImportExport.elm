@@ -210,7 +210,7 @@ decodePortLayer createLayer portLayerDef =
         kind = decodeKind portLayerDef.kind
         layerModel = portLayerDef.model
                 |> D.decodeString (layerModelDecoder kind)
-                |> Debug.log "Layer Model Decode Result: "
+                -- |> Debug.log "Layer Model Decode Result: "
                 |> Result.toMaybe
                 |> Maybe.withDefault M.NoModel
         layerNoBlend = createLayer kind layerModel
@@ -284,7 +284,7 @@ layerDefDecoder createLayer =
                 kind = decodeKind kindStr
                 layerModel = layerModelStr
                         |> D.decodeString (layerModelDecoder kind)
-                        |> Debug.log "Layer Model Decode Result: "
+                        -- |> Debug.log "Layer Model Decode Result: "
                         |> Result.toMaybe
                         |> Maybe.withDefault M.NoModel
                 layerNoBlend = createLayer kind layerModel
@@ -365,7 +365,8 @@ layerModelDecoder kind =
                             , vignette = vignette
                             , iris = iris
                             }
-                    _ -> Debug.log "failed to parse model" M.NoModel
+                    _ -> M.NoModel
+                    -- _ -> Debug.log "failed to parse model" M.NoModel
             in
                 D.decode createFssModel
                     |> D.required "renderMode" D.string
@@ -420,7 +421,7 @@ modelDecoder mode createLayer =
 decodeModel : M.UiMode -> M.CreateLayer -> String -> Maybe M.Model
 decodeModel mode createLayer modelStr =
     D.decodeString (modelDecoder mode createLayer) modelStr
-        |> Debug.log "Decode Result: "
+        -- |> Debug.log "Decode Result: "
         |> Result.toMaybe
 
 
