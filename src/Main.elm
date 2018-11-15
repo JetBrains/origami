@@ -172,7 +172,7 @@ update msg model =
             encodedModel
                 |> IE.decodeModel initialMode createLayer
                 |> Maybe.withDefault model
-                |> Debug.log "import model"
+                -- |> Debug.log "import model"
                 |> rebuildAllFssLayersWith
 
             -- ( encodedModel
@@ -189,7 +189,8 @@ update msg model =
             )
 
         ExportZip ->
-            ( Debug.log "model" model
+            -- ( Debug.log "model" model
+            ( model
             , model |> IE.encodeModel |> exportZip_
             )
 
@@ -444,8 +445,10 @@ update msg model =
             , Cmd.none
             )
 
-        ApplyRandomizer model ->
-            IE.decodePortModel createLayer model |> rebuildAllFssLayersWith
+        ApplyRandomizer portModel ->
+            IE.decodePortModel createLayer portModel
+                -- |> Debug.log "decoded model"
+                |> rebuildAllFssLayersWith
 
         NoOp -> ( model, Cmd.none )
 
