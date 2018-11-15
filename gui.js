@@ -164,6 +164,9 @@ ALL_SIZES =
 
 PREDEFINED_SIZES = RELEASE_SIZES; // TODO: Switcher by mode needed
 
+const funcKeys = Object.keys(BLEND_FUNCS);
+const factorKeys = Object.keys(BLEND_FACTORS);
+
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
 const update = (gui) => () => {
@@ -183,8 +186,6 @@ const Config = function(layers, defaults, funcs, randomize) {
     this.product = defaults.product;
     this.omega = defaults.omega;
 
-    const funcKeys = Object.keys(BLEND_FUNCS);
-    const factorKeys = Object.keys(BLEND_FACTORS);
     layers.forEach((layer, index) => {
       if (layer.webglOrSvg == 'webgl') {
         if (layer.blend[0]) {
@@ -509,6 +510,34 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
       }
 
       if (layerDef.webglOrSvg == 'webgl') {
+        const blendFuncsCount = Object.values(BLEND_FUNCS_IDS).length;
+        const blendFactorsCount = Object.values(BLEND_FACTORS_IDS).length;
+        const colorEq =
+          [ Math.floor(Math.random() * blendFuncsCount)
+          , Math.floor(Math.random() * blendFactorsCount)
+          , Math.floor(Math.random() * blendFactorsCount)
+          ];
+        const alphaEq =
+          [ Math.floor(Math.random() * blendFuncsCount)
+          , Math.floor(Math.random() * blendFactorsCount)
+          , Math.floor(Math.random() * blendFactorsCount)
+          ];
+
+        //config['blendColor' + index] = [ 0, 0, 0, 0 ];
+        config['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[colorEq[0]]];
+        config['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[colorEq[0]]];
+        config['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[colorEq[1]]];
+        config['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[alphaEq[0]]];;
+        config['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[alphaEq[0]]];
+        config['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[alphaEq[1]]];
+        // TODO: color { r: color[0], g: color[1], b: color[2], a: color[3] }
+        layerDef.blend =
+          [ { color: null
+            , colorEq: colorEq
+            , alphaEq: alphaEq
+            }
+          , null
+          ]
       } else {
 
       }
