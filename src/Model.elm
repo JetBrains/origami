@@ -41,13 +41,11 @@ type alias Pos = (Int, Int)
 
 type alias CreateLayer = LayerKind -> LayerModel -> Layer
 
-
-type UiMode
-    = Development
+type UiMode 
+    = Development 
     | Production
     | Release
     | Ads
-
 
 type LayerKind
     = Lorenz
