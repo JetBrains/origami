@@ -20,7 +20,7 @@ type alias Shape = ( Int, Int )
 type alias Cells = List Cell
 type alias Rows = Array Row
 type alias Row = Array (Maybe (Cell, ModelPos))
-type Grid = Grid Rows
+type Grid = Grid Shape Rows
 
 
 type ExpandState
@@ -80,8 +80,8 @@ type alias View = Grid
 
 
 emptyGrid : Shape -> Grid
-emptyGrid ( width, height )
-    = Grid <| Array.repeat height (Array.repeat width Nothing)
+emptyGrid (( width, height ) as shape)
+    = Grid shape <| Array.repeat height (Array.repeat width Nothing)
 
 
 noChildren : ( Shape, Cells )
@@ -328,7 +328,7 @@ viewRows rows =
 
 
 viewGrid : Grid -> Html Msg
-viewGrid (Grid grid) =
+viewGrid (Grid _ grid) =
     div [ H.class "grid" ]
         [ viewRows grid ]
 
@@ -340,9 +340,10 @@ put
     (GridPos row col)
     shape
     cellsList
-    (Grid rows) =
+    (Grid gridShape rows) =
     let
         --a = Debug.log "gPos" (GridPos row col)
+        ( gridWidth, _ ) = gridShape
         cells = Array.fromList cellsList
             |> Array.indexedMap
                 (\cellIndex cell -> ( cell, ModelPos nest cellIndex ))
@@ -364,6 +365,10 @@ put
             else prevCell
         updateRow row_ row =
             row |> Array.indexedMap (updateCell row_)
+        findNextPos row_ col_ ( width, height ) =
+            if (col_ + width < gridWidth) then
+                GridPos (row_ + 1) col_
+            else GridPos (row_ + 1) (gridWidth - width)
         applyColExpands maybeCell ( col, grid ) =
             ( col + 1
             , case maybeCell of
@@ -371,9 +376,9 @@ put
                     if (cellNest == nest) then
                         case cell of
                             Nested _ Expanded ( shape, cells ) ->
-                                put (nest + 1) (GridPos (row + 1) col) shape cells grid
+                                put (nest + 1) (findNextPos row col shape) shape cells grid
                             Choice _ Expanded _ ( shape, cells ) ->
-                                put (nest + 1) (GridPos (row + 1) col) shape cells grid
+                                put (nest + 1) (findNextPos row col shape) shape cells grid
                             _ -> grid
                     else grid
                 _ -> grid
@@ -385,7 +390,7 @@ put
         rows
             |> Array.indexedMap updateRow
             |> (\rows ->
-                    Array.foldl applyExpands (Grid rows) rows
+                    Array.foldl applyExpands (Grid gridShape rows) rows
                 )
 
 
@@ -407,7 +412,7 @@ put
 
 
 set : GridPos -> ( Cell, ModelPos ) -> Grid -> Grid
-set (GridPos row col) cell ((Grid rows) as grid) =
+set (GridPos row col) cell ((Grid shape rows) as grid) =
     Array.get row rows
         |> Maybe.map
             (\prevRow ->
@@ -416,7 +421,7 @@ set (GridPos row col) cell ((Grid rows) as grid) =
         |> Maybe.map
             (\newRow ->
                 Array.set row newRow rows)
-        |> Maybe.map Grid
+        |> Maybe.map (Grid shape)
         |> Maybe.withDefault grid
 
 
@@ -424,16 +429,16 @@ layout : Model -> Grid
 layout ( shape, cells ) =
     emptyGrid (10, 6)
         |> put 0 (GridPos 0 0) shape cells
-        -- |> flip
+        |> flip
 
 
 flip : Grid -> Grid
-flip (Grid rows) =
+flip (Grid shape rows) =
     rows
         |> Array.toList
         |> List.reverse
         |> Array.fromList
-        |> Grid
+        |> Grid shape
 
 
 view : Model -> Html Msg
