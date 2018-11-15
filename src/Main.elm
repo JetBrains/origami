@@ -69,6 +69,7 @@ type Msg
     | ChangeIris LayerIndex FSS.Iris
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
+    | FromRandomizer PortModel
     | NoOp
 
 
@@ -351,7 +352,7 @@ update msg model =
         ChangeLightSpeed index lightSpeed ->
             model
                 |> updateAndRebuildFssWith index
-                    (\fssModel -> { fssModel | lightSpeed = Debug.log "lightSpeed" lightSpeed })
+                    (\fssModel -> { fssModel | lightSpeed = lightSpeed })
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
@@ -427,8 +428,8 @@ update msg model =
 
 
         ShiftColor index ( newHue, newSaturation, newBrightness ) ->
-            ( model |> updateFss index 
-                (\fss -> 
+            ( model |> updateFss index
+                (\fss ->
                     let
                         ( currentHue, currentSaturation, currentBrightness )
                             = fss.colorShift
@@ -441,7 +442,10 @@ update msg model =
                         }
                 )
             , Cmd.none
-            )            
+            )
+
+        FromRandomizer model ->
+            IE.decodePortModel createLayer model |> rebuildAllFssLayersWith
 
         NoOp -> ( model, Cmd.none )
 
@@ -1080,7 +1084,7 @@ port changeWGLBlend :
 
 port changeSVGBlend :
     ( { layer : Int
-      , value : SVGBlend.PortBlend
+      , value : String
       }
     -> msg) -> Sub msg
 

@@ -373,7 +373,7 @@ function start(document, model, funcs) {
       }
     }
 
-    const config = new Config(layers, defaults, funcs, randomize(funcs, layers));
+    const config = new Config(layers, defaults, funcs, randomize(funcs, model));
     const gui = new dat.GUI(/*{ load: JSON }*/);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
@@ -437,8 +437,8 @@ function start(document, model, funcs) {
     // });
 }
 
-const randomize = (funcs, layers) => () => {
-  layers.forEach((_, index) => {
+const randomize = (funcs, model) => () => {
+  model.layers.forEach((_, index) => {
     const lightSpeed = Math.random() * 1040 + 100;
     funcs.changeLightSpeed(index)(lightSpeed);
     const product = Math.floor(Math.random() * PRODUCTS.length);
