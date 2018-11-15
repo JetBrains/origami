@@ -170,6 +170,9 @@ const update = (gui) => () => {
   for (var i in gui.__controllers) {
     gui.__controllers[i].updateDisplay();
   }
+  for (var i in gui.__folders) {
+    update(gui.__folders[i])();
+  }
 }
 
 const Config = function(layers, defaults, funcs, randomize) {
@@ -391,7 +394,7 @@ function start(document, model, funcs) {
     omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
 
-    layers.reverse().forEach((layer, revIndex) => {
+    layers.concat([]).reverse().forEach((layer, revIndex) => {
       if ((mode == 'prod') && (layer.name == 'Logo')) return;
 
       const index = layers.length - 1 - revIndex;
@@ -410,6 +413,8 @@ function start(document, model, funcs) {
     });
 
     let guiHidden = false;
+
+    //update(gui);
 
     document.addEventListener('keydown', (event) => {
         if (event.keyCode == 32) {
@@ -444,20 +449,41 @@ function start(document, model, funcs) {
 }
 
 const randomize = (funcs, model, updateGui) => (config) => () => {
-  model.layers.forEach((_, index) => {
-    const lightSpeed = Math.floor(Math.random() * 1040 + 100);
-    const omega = Math.random() * 2 - 1;
-    const productIdx = Math.floor(Math.random() * PRODUCTS.length);
-    const product = PRODUCTS[productIdx].id;
-    config.product = product;
-    config.lightSpeed = lightSpeed;
-    config.omega = omega;
-    model.product = product;
-    model.lightSpeed = lightSpeed;
-    model.omega = omega;
-    updateGui();
-    funcs.applyRandomizer(model);
+  const toSend = deepClone(model);
+  const omega = Math.random() * 2 - 1;
+  const productIdx = Math.floor(Math.random() * PRODUCTS.length);
+  const product = PRODUCTS[productIdx].id;
+
+  config.product = product;
+  config.omega = omega;
+
+  toSend.product = product;
+  toSend.omega = omega;
+
+  toSend.layers.forEach((layerDef, index) => {
+      // .visible
+      if (isFss(layerDef)) {
+        const lightSpeed = Math.floor(Math.random() * 1040 + 100);
+        layerDef.lightSpeed = lightSpeed;
+        config['lightSpeed' + index] = lightSpeed;
+
+        const renderModeIdx = Math.floor(Math.random() * RENDER_MODES.length);
+        const renderMode = RENDER_MODES[renderModeIdx];
+        layerDef.renderMode = renderMode;
+        config['renderMode' + index] = renderMode;
+      }
+
+      if (layerDef.webglOrSvg == 'webgl') {
+      } else {
+
+      }
   });
+  // toSend.layers = model.layers.reverse().map((layerDef, index) => {
+  //     return layerDef;
+  // });
+  updateGui();
+  // });
+  funcs.applyRandomizer(toSend);
 }
 
 module.exports = start;
