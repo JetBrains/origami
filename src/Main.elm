@@ -969,8 +969,8 @@ view model =
                 , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
                 , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
                 , input
-                    [ type_ "button", onClick ExportZip, value "Export .zip" ]
-                    [ text "Export .zip" ]
+                    [ type_ "button", onClick ExportZip, value "Export.zip" ]
+                    [ text "Export.zip" ]
                 ]
             ) else div [] []
         , mergeWebGLLayers model |>
