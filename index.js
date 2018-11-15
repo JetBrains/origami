@@ -52,7 +52,6 @@ const prepareModelForImport = (model) => {
 }
 
 const import_ = (app, parsedState) => {
-
     const preparedModel = prepareModelForImport(parsedState);
     app.ports.import_.send(JSON.stringify(preparedModel));
 
