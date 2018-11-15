@@ -133,6 +133,8 @@ RENDER_MODES =
 
 RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 { 'window': [ 0, 0 ]
+, '480x297 prodcard' : [ 480, 297 ] //product card
+, '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
 , '640x400 spl' : [ 640, 400 ] // product splash background
 , '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
 , '650x170 nwlt' : [ 650, 170 ] // newsletter
@@ -164,7 +166,7 @@ PREDEFINED_SIZES = RELEASE_SIZES; // TODO: Switcher by mode needed
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
-const Config = function(layers, defaults, funcs, randomize) {
+const Config = function(layers, defaults, funcs) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
@@ -210,6 +212,9 @@ const Config = function(layers, defaults, funcs, randomize) {
         this['amplitudeX' + index] = layer.model.amplitude[0];
         this['amplitudeY' + index] = layer.model.amplitude[1];
         this['amplitudeZ' + index] = layer.model.amplitude[2];
+        this['hue' + index] = layer.model.colorShift[0];
+        this['saturation' + index] = layer.model.colorShift[1];
+        this['brightness' + index] = layer.model.colorShift[2];
       }
     });
 
@@ -217,7 +222,6 @@ const Config = function(layers, defaults, funcs, randomize) {
 
     this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
-    this.randomize = randomize;
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -321,6 +325,7 @@ function start(document, model, funcs) {
         const vignette = folder.add(config, 'vignette' + index).name('vignette').min(0.0).max(1.0);
         const iris = folder.add(config, 'iris' + index).name('iris').min(0.0).max(1.0);
         const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
+
         const amplitudeFolder = folder.addFolder('amplitude');
         const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('amplitudeX')
           .min(0.0).max(1.0);
@@ -329,6 +334,14 @@ function start(document, model, funcs) {
         const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('amplitudeZ')
           .min(0.0).max(1.0);
 
+        const colorShiftFolder = folder.addFolder('hsb');
+        const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
+          .min(-1.0).max(1.0).step(0.01);
+        const saturation = colorShiftFolder.add(config, 'saturation' + index).name('saturation')
+          .min(-1.0).max(1.0).step(0.01);
+        const brightness = colorShiftFolder.add(config, 'brightness' + index).name('brightness')
+          .min(-1.0).max(1.0).step(0.01);
+
         mirrorSwitch.onFinishChange(val => switchMirror(index, val));
         lightSpeed.onFinishChange(funcs.changeLightSpeed(index));
         facesX.onFinishChange(funcs.changeFacesX(index));
@@ -336,6 +349,7 @@ function start(document, model, funcs) {
         vignette.onFinishChange(funcs.changeVignette(index));
         iris.onFinishChange(funcs.changeIris(index));
         renderMode.onFinishChange(funcs.changeRenderMode(index));
+
         amplitudeX.onFinishChange(value => {
           funcs.changeAmplitude(index)(value, null, null);
         });
@@ -345,17 +359,26 @@ function start(document, model, funcs) {
         amplitudeZ.onFinishChange(value => {
           funcs.changeAmplitude(index)(null, null, value);
         });
+
+        hue.onFinishChange(value => {
+          funcs.shiftColor(index)(value, null, null);
+        });
+        saturation.onFinishChange(value => {
+          funcs.shiftColor(index)(null, value, null);
+        });
+        brightness.onFinishChange(value => {
+          funcs.shiftColor(index)(null, null, value);
+        });
       }
     }
 
-    const config = new Config(layers, defaults, funcs, randomize(funcs, layers));
+    const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     gui.add(config, 'savePng').name('save png');
-    if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
-    gui.add(config, 'randomize').name('randomize');
+    if (mode !== 'prod' ) gui.add(config, 'saveBatch').name('save batch');
     product.onFinishChange(funcs.changeProduct);
     omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
@@ -405,20 +428,11 @@ function start(document, model, funcs) {
     // });
 
 
-    //updateProduct('jetbrains');
+    updateProduct('jetbrains');
 
     // layers.map((layer, index) => {
     //     gui.addFolder()
     // });
-}
-
-const randomize = (funcs, layers) => () => {
-  layers.forEach((_, index) => {
-    const lightSpeed = Math.random() * 1040 + 100;
-    funcs.changeLightSpeed(index)(lightSpeed);
-    const product = Math.floor(Math.random() * PRODUCTS.length);
-    funcs.changeProduct(PRODUCTS[product].id);
-  });
 }
 
 module.exports = start;

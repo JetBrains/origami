@@ -104,6 +104,7 @@ encodeLayerModel layerModel =
                 , ( "faces", encodePairAsArray E.int fssModel.faces )
                 , ( "lightSpeed", E.int fssModel.lightSpeed )
                 , ( "amplitude", encodeTripleAsArray E.float fssModel.amplitude )
+                , ( "colorShift", encodeTripleAsArray E.float fssModel.colorShift )
                 , ( "mirror", E.bool fssModel.mirror )
                 , ( "clip",
                         Maybe.withDefault FSS.noClip fssModel.clip
@@ -287,21 +288,24 @@ layerModelDecoder kind =
                     renderModeStr
                     faces
                     amplitude
+                    colorShift
                     mirror
                     clip
                     lightSpeed
                     shareMesh
                     vignette
                     iris =
-                case ( faces, amplitude, clip ) of
+                case ( faces, amplitude, colorShift, clip ) of
                     ( [facesX, facesY]
                     , [amplitudeX, amplitudeY, amplitudeZ]
+                    , [hue, saturation, brightness]
                     , [clipX, clipY]
                     ) ->
                         M.FssModel
                             { renderMode = decodeFssRenderMode renderModeStr
                             , faces = ( facesX, facesY )
                             , amplitude = ( amplitudeX, amplitudeY, amplitudeZ )
+                            , colorShift = ( hue, saturation, brightness )
                             , mirror = mirror
                             , clip = Just ( clipX, clipY )
                             , lightSpeed = lightSpeed
@@ -315,6 +319,7 @@ layerModelDecoder kind =
                     |> D.required "renderMode" D.string
                     |> D.required "faces" (D.list D.int)
                     |> D.required "amplitude" (D.list D.float)
+                    |> D.required "colorShift" (D.list D.float)
                     |> D.required "mirror" D.bool
                     |> D.required "clip" (D.list D.float)
                     |> D.required "lightSpeed" D.int
@@ -370,6 +375,7 @@ decodeModel mode createLayer modelStr =
 encodeFss : FSS.Model -> Product -> FSS.PortModel
 encodeFss m product =
     { amplitude = m.amplitude
+    , colorShift = m.colorShift
     , faces = m.faces
     , lightSpeed = m.lightSpeed
     , renderMode = encodeFssRenderMode m.renderMode
