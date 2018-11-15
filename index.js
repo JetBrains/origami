@@ -74,8 +74,11 @@ const export_ = (app, exportedState) => {
             ? exportScene(fssScenes[index]) || exportScene(buildFSS(model, layer.model))
             : null;
     })
-    //console.log(stateObj);
-    return JSON.stringify(stateObj, null, 2);
+    console.log(stateObj);
+    return {
+        source: stateObj,
+        json: JSON.stringify(stateObj, null, 2)
+    };
 }
 
 const waitForContent = ({ path, id, name }) => {
@@ -99,23 +102,24 @@ const exportZip_ = (app, exportedState) => {
             (err, playerHtml) => {
             if (err) { throw err; }
 
-            const sceneJson = export_(app, exportedState);
+            const { json, source }  = export_(app, exportedState);
             const zip = new JSZip();
             // const js = zip.folder("js");
             // js.file('run-scene.js', runScene, { binary: true });
             // js.file(zipMinified ? 'Main.min.js' : 'Main.js', elmApp, { binary: true });
-            // js.file('scene.js', 'window.jsGenScene = ' + sceneJson + ';');
+            // js.file('scene.js', 'window.jsGenScene = ' + json + ';');
             zip.file('player.bundle.js', playerBundle, { binary: true });
-            zip.file('scene.js', 'window.jsGenScene = ' + sceneJson + ';');
+            zip.file('scene.js', 'window.jsGenScene = ' + json + ';');
             zip.file('index.html', playerHtml, { binary: true });
             const assets = zip.folder('assets');
             const assetPromises =
-                [ 'appcode', 'clion', 'datagrip', 'dotcover', 'dotmemory', 'dotpeek'
-                , 'dottrace', 'gogland', 'hub', 'intellij-idea-ce', 'intellij-idea'
-                , 'jetbrains-simple', 'jetbrains', 'kotlin', 'mps', 'phpstorm'
-                , 'pycharm-ce', 'pycharm-edu', 'pycharm', 'resharper', 'resharper-cpp'
-                , 'resharper', 'rider', 'rubymine', 'teamcity', 'test', 'toolbox', 'upsource'
-                , 'webstorm', 'youtrack' ]
+                [ source.product ]
+                // [ 'appcode', 'clion', 'datagrip', 'dotcover', 'dotmemory', 'dotpeek'
+                // , 'dottrace', 'gogland', 'hub', 'intellij-idea-ce', 'intellij-idea'
+                // , 'jetbrains-simple', 'jetbrains', 'kotlin', 'mps', 'phpstorm'
+                // , 'pycharm-ce', 'pycharm-edu', 'pycharm', 'resharper', 'resharper-cpp'
+                // , 'resharper', 'rider', 'rubymine', 'teamcity', 'test', 'toolbox', 'upsource'
+                // , 'webstorm', 'youtrack' ]
                     .map(productId => {
                         return { id : productId
                                , name: productId + '.svg'
@@ -126,12 +130,12 @@ const exportZip_ = (app, exportedState) => {
             Promise.all(assetPromises)
                    .then(files =>
                         files.map(
-                            ({ content, name }) =>
-                                assets.file(name, content, { binary: true })
+                            ({ content, name }) => {
+                                assets.file(name, content, { binary: true }) }
                         )
                     )
                    .then(() => zip.generateAsync({type:"blob"}))
-                   .then(content => new FileSaver(content, "export.zip"));
+                   .then(content => new FileSaver(content, source.product + "_html5.zip"));
             // zip.generateAsync({type:"blob"})
             //     .then(function(content) {
             //         new FileSaver(content, "export.zip");
@@ -142,7 +146,7 @@ const exportZip_ = (app, exportedState) => {
 
 const prepareImportExport = () => {
     app.ports.export_.subscribe((exportedState) => {
-        const exportCode = export_(app, exportedState);
+        const exportCode = export_(app, exportedState).json;
 
         document.getElementById('export-target').className = 'shown';
         document.getElementById('export-code').value = exportCode;
