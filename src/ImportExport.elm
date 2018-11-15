@@ -1,8 +1,8 @@
 module ImportExport exposing
     ( encodeModel
     , decodeModel
-    , EncodedState
     , encodePortModel
+    , encodePortLayer
     , encodeFss
     , fromFssPortModel
     , encodeFssRenderMode
@@ -23,8 +23,6 @@ import Layer.FSS as FSS
 import Product exposing (..)
 
 import Model as M
-
-type alias EncodedState = String
 
 
 encodeIntPair : ( Int, Int ) -> E.Value
@@ -115,8 +113,11 @@ encodeLayerModel layerModel =
                 , ( "vignette", E.float fssModel.vignette )
                 , ( "iris", E.float fssModel.iris )
                 ]
+            M.VignetteModel vignetteModel ->
+                [ ( "opacity", E.float vignetteModel.opacity )
+                , ( "color", encodeTripleAsArray E.float vignetteModel.color )
+                ]
             _ -> []
-
 
 
 encodeModel_ : M.Model -> E.Value
@@ -141,7 +142,7 @@ encodeModel_ model =
         ]
 
 
-encodeModel : M.Model -> EncodedState
+encodeModel : M.Model -> String
 encodeModel model = model |> encodeModel_ |> E.encode 2
 
 
@@ -175,6 +176,9 @@ encodePortLayer layerDef =
             M.SVGLayer _ svgBlend ->
                 ( Nothing, SVGBlend.encode svgBlend |> Just )
     , name = layerDef.name
+    , model = layerDef.model
+        |> encodeLayerModel
+        |> E.encode 2
     }
 
 
@@ -356,7 +360,7 @@ modelDecoder mode createLayer =
             |> D.required "product" D.string
 
 
-decodeModel : M.UiMode -> M.CreateLayer -> EncodedState -> Maybe M.Model
+decodeModel : M.UiMode -> M.CreateLayer -> String -> Maybe M.Model
 decodeModel mode createLayer modelStr =
     D.decodeString (modelDecoder mode createLayer) modelStr
         |> Debug.log "Decode Result: "
