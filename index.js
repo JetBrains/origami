@@ -38,25 +38,31 @@ const exportScene = (scene) => {
     ));
 }
 
+const prepareModelForImport = (model) => {
+    return {
+      mode: model.mode,
+      theta: model.theta,
+      omega: model.omega,
+      size: model.size,
+      origin: model.origin,
+      mouse: model.mouse || [0, 0],
+      now: model.now,
+      product: model.product,
+      layers: model.layers.map((layer) => (
+        { kind : layer.kind,
+          blend: layer.blend,
+          isOn: layer.isOn,
+          model: JSON.stringify(layer.model),
+          name: layer.name,
+          webglOrSvg: layer.webglOrSvg
+        }
+      ))
+    }
+}
+
 const import_ = (app, parsedState) => {
 
-    app.ports.import_.send(JSON.stringify({
-        theta: parsedState.theta,
-        omega: parsedState.omega,
-        size: parsedState.size,
-        origin: parsedState.origin,
-        mouse: parsedState.mouse,
-        now: parsedState.now,
-        product: parsedState.product,
-        layers: parsedState.layers.map((layer) => (
-            { kind : layer.kind,
-              blend: layer.blend,
-              isOn: layer.isOn,
-              model: JSON.stringify(layer.model),
-              name: layer.name
-            }
-        ))
-    }));
+    app.ports.import_.send(JSON.stringify(prepareModelForImport(parsedState)));
 
     parsedState.layers.map((layer, index) => {
         if (isFss(layer)) {
@@ -312,7 +318,7 @@ setTimeout(() => {
             }
             , shiftColor : index => (h, s, b) => {
                 app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]});
-            }            
+            }
             , turnOn : index =>
                 { app.ports.turnOn.send(index); }
             , turnOff : index =>
@@ -323,6 +329,8 @@ setTimeout(() => {
                 { app.ports.mirrorOff.send(index); }
             , rotate : value =>
                 { app.ports.rotate.send(value); }
+            , applyRandomizer : value =>
+                { app.ports.applyRandomizer.send(prepareModelForImport(value)); }
             });
 
         model.layers.forEach((layer, index) => {

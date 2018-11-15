@@ -159,7 +159,7 @@ type alias PortLayerDef =
     { kind : String
     , blend : PortBlend
     , webglOrSvg : String
-    , on : Bool
+    , isOn : Bool
     , name : String
     , model : String
     }

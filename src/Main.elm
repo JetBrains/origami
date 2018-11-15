@@ -69,7 +69,7 @@ type Msg
     | ChangeIris LayerIndex FSS.Iris
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
-    | FromRandomizer PortModel
+    | ApplyRandomizer PortModel
     | NoOp
 
 
@@ -444,7 +444,7 @@ update msg model =
             , Cmd.none
             )
 
-        FromRandomizer model ->
+        ApplyRandomizer model ->
             IE.decodePortModel createLayer model |> rebuildAllFssLayersWith
 
         NoOp -> ( model, Cmd.none )
@@ -774,6 +774,7 @@ subscriptions model =
         , rebuildFss (\{ layer, value } ->
             RebuildFss layer value
           )
+        , applyRandomizer ApplyRandomizer
         , import_ Import
         , pause (\_ -> Pause)
         , continue (\_ -> Continue)
@@ -1075,6 +1076,8 @@ port changeAmplitude : ({ value: FSS.AmplitudeChange, layer: LayerIndex } -> msg
 port shiftColor : ({ value: FSS.ColorShiftPatch, layer: LayerIndex } -> msg) -> Sub msg
 
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
+
+port applyRandomizer : (PortModel -> msg) -> Sub msg
 
 port changeWGLBlend :
     ( { layer : Int

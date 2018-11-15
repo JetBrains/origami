@@ -22,6 +22,7 @@ const import_ = (app, importedState) => {
 
     console.log('sending for the import', parsedState);
     app.ports.import_.send(JSON.stringify({
+        mode: model.mode,
         theta: parsedState.theta,
         omega: parsedState.omega,
         size: parsedState.size,
@@ -34,7 +35,8 @@ const import_ = (app, importedState) => {
               blend: layer.blend,
               isOn: layer.isOn,
               model: JSON.stringify(layer.model),
-              name: layer.name
+              name: layer.name,
+              webglOrSvg: layer.webglOrSvg
             }
         ))
     }));

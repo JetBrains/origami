@@ -222,7 +222,7 @@ const Config = function(layers, defaults, funcs, randomize) {
 
     this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
-    this.randomize = randomize;
+    this.randomize = randomize(this);
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -437,12 +437,15 @@ function start(document, model, funcs) {
     // });
 }
 
-const randomize = (funcs, model) => () => {
+const randomize = (funcs, model) => (config) => () => {
   model.layers.forEach((_, index) => {
     const lightSpeed = Math.random() * 1040 + 100;
-    funcs.changeLightSpeed(index)(lightSpeed);
     const product = Math.floor(Math.random() * PRODUCTS.length);
-    funcs.changeProduct(PRODUCTS[product].id);
+    config.product = product;
+    config.lightSpeed = lightSpeed;
+    model.product = product;
+    model.lightSpeed = lightSpeed
+    funcs.applyRandomizer(model);
   });
 }
 
