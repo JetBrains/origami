@@ -200,8 +200,7 @@ init mode initialLayers createLayer
       , now = 0.0
       , timeShift = 0.0
       --, range = ( 0.8, 1.0 )
-      -- , product = Product.JetBrains
-      , product = Product.GogLand
+      , product = Product.JetBrains
       , controlsVisible = True
       }
 

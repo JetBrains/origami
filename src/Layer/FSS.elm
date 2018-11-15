@@ -751,7 +751,7 @@ vertexShader =
 
 
            // Gradients
-             vColor *=  mix(vec4(gradientColor , 1.0), vColor, abs(position.z));
+             vColor *=  mix(adjustLight(vec4(gradientColor,1.0), -0.3, 0.0, -0.1), vColor, pow(abs(position.z), 1.5));
 
           // Set gl_Position
              gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
