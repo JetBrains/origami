@@ -343,15 +343,24 @@ put
     (Grid rows) =
     let
         cells = Array.fromList cellsList
-            |> Array.indexedMap (\cellIndex cell -> ( cell, ModelPos nest cellIndex ))
+            |> Array.indexedMap
+                (\cellIndex cell -> ( cell, ModelPos nest cellIndex ))
         -- hasNesting = Debug.log "nests" <| Array.map (\(_, (ModelPos nest _)) -> nest) cells
+        fits ( row, col ) ( width, height ) =
+            (row < height) && ( col < width )
         indexOf ( row, col ) ( width, _ ) =
             row * width + col
+            -- Debug.log "index" ((Debug.log "row" row) * (Debug.log "width" width) + (Debug.log "col" col))
         updateCell row_ col_ prevCell =
             if (row_ >= row) && (col_ >= col) then
-                case Array.get (indexOf (row_ - row, col_ - col) shape) cells of
-                    Just ( newCell, modelPos ) -> Just ( newCell, modelPos )
-                    Nothing -> prevCell
+                let
+                    localPos = (row_ - row, col_ - col)
+                in
+                    if fits localPos shape then
+                        case Array.get (indexOf localPos shape) cells of
+                            Just ( newCell, modelPos ) -> Just ( newCell, modelPos )
+                            Nothing -> prevCell
+                    else prevCell
             else prevCell
         updateRow row_ row =
             row |> Array.indexedMap (updateCell row_)
