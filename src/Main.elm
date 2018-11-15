@@ -68,6 +68,7 @@ type Msg
     | ChangeVignette LayerIndex FSS.Vignette
     | ChangeIris LayerIndex FSS.Iris
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
+    | ShiftColor LayerIndex FSS.ColorShiftPatch
     | NoOp
 
 
@@ -350,7 +351,7 @@ update msg model =
         ChangeLightSpeed index lightSpeed ->
             model
                 |> updateAndRebuildFssWith index
-                    (\fssModel -> { fssModel | lightSpeed = Debug.log "lightSpeed" lightSpeed })
+                    (\fssModel -> { fssModel | lightSpeed = lightSpeed })
 
         RebuildFss index serializedScene ->
             ( model |> updateLayer index
@@ -423,6 +424,24 @@ update msg model =
                                 )
                             }
                     )
+
+
+        ShiftColor index ( newHue, newSaturation, newBrightness ) ->
+            ( model |> updateFss index 
+                (\fss -> 
+                    let
+                        ( currentHue, currentSaturation, currentBrightness )
+                            = fss.colorShift
+                    in
+                        { fss | colorShift =
+                            ( Maybe.withDefault currentHue newHue
+                            , Maybe.withDefault currentSaturation newSaturation
+                            , Maybe.withDefault currentBrightness newBrightness
+                            )
+                        }
+                )
+            , Cmd.none
+            )            
 
         NoOp -> ( model, Cmd.none )
 
@@ -725,6 +744,7 @@ subscriptions model =
           )
         , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
         , changeAmplitude (\{value, layer} -> ChangeAmplitude layer value)
+        , shiftColor (\{value, layer} -> ShiftColor layer value)
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , changeIris (\{value, layer} -> ChangeIris layer value)
         , setCustomSize
@@ -1047,6 +1067,8 @@ port changeVignette : ({ value: FSS.Vignette, layer: LayerIndex } -> msg) -> Sub
 port changeIris : ({ value: FSS.Iris, layer: LayerIndex } -> msg) -> Sub msg
 
 port changeAmplitude : ({ value: FSS.AmplitudeChange, layer: LayerIndex } -> msg) -> Sub msg
+
+port shiftColor : ({ value: FSS.ColorShiftPatch, layer: LayerIndex } -> msg) -> Sub msg
 
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
