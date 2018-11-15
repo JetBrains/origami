@@ -509,6 +509,7 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         config['brightness' + index] = brightness;
       }
 
+      // comment this out to not randomize blends
       if (layerDef.webglOrSvg == 'webgl') {
         const blendFuncsCount = Object.values(BLEND_FUNCS_IDS).length;
         const blendFactorsCount = Object.values(BLEND_FACTORS_IDS).length;
