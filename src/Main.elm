@@ -131,7 +131,7 @@ update msg model =
 
         Bang ->
             ( model
-            , model |> prepareGuiConfig |> startGui
+            , model |> IE.encodePortModel |> startGui
             )
 
         Animate dt ->
@@ -608,23 +608,6 @@ createLayer kind layerModel =
 -- extractFssBuildOptions = prepareGuiConfig
 
 
-prepareGuiConfig : Model -> GuiModel
-prepareGuiConfig model =
-    { mode = IE.encodeMode model.mode
-    , product = Product.encode model.product
-    , palette = Product.getPalette model.product
-    , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
-             , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
-             )
-    , layers =
-        model.layers |>
-            List.map IE.encodePortLayer
-    -- , fss = IE.encodeFss FSS.init model.product
-    -- , vignette = Vignette.init
-    , customSize = Nothing
-    , omega = model.omega
-    }
-
 
 timeShiftRange : Float
 timeShiftRange = 500.0
@@ -1094,7 +1077,7 @@ port changeSVGBlend :
 
 -- OUTGOING PORTS
 
-port startGui : GuiModel -> Cmd msg
+port startGui : PortModel -> Cmd msg
 
 port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: FSS.PortModel } -> Cmd msg
 

@@ -1,4 +1,5 @@
 const buildFSS = require('./fss.js');
+const deepClone = require('./deep-clone.js')
 const App = require('./src/Main.elm');
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
@@ -20,26 +21,16 @@ const import_ = (app, importedState) => {
         app.ports.pause.send(null);
     });
 
-    console.log('sending for the import', parsedState);
-    app.ports.import_.send(JSON.stringify({
-        mode: model.mode,
-        theta: parsedState.theta,
-        omega: parsedState.omega,
-        size: parsedState.size,
-        origin: parsedState.origin,
-        mouse: parsedState.mouse,
-        now: parsedState.now,
-        product: parsedState.product,
-        layers: parsedState.layers.map((layer) => (
-            { kind : layer.kind,
-              blend: layer.blend,
-              isOn: layer.isOn,
-              model: JSON.stringify(layer.model),
-              name: layer.name,
-              webglOrSvg: layer.webglOrSvg
-            }
-        ))
-    }));
+    const toSend = deepClone(parsedState);
+    toSend.layers =
+        parsedState.layers.map(layer => {
+            const layerModel = deepClone(layer);
+            layerModel.model = JSON.stringify(layer.model);
+            return layerModel;
+        });
+    console.log('sending for the import', toSend);
+
+    app.ports.import_.send(JSON.stringify(toSend));
 }
 
 window.runGenScene = function() {
