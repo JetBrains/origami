@@ -1,5 +1,6 @@
 module Model exposing
     ( init
+    , initEmpty
     , Model
     , UiMode(..)
     , Layer
@@ -115,7 +116,7 @@ type alias LayerDef =
 --    ( Nothing, Nothing ) --> None
 --    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
 type alias PortBlend =
-    ( Maybe WGLBlend.Blend, Maybe SVGBlend.PortBlend )
+    ( Maybe WGLBlend.Blend, Maybe String )
 
 
 type alias Model =
@@ -177,19 +178,37 @@ type alias GuiModel =
     }
 
 
+initEmpty : UiMode -> Model
+initEmpty mode =
+    { mode = mode
+    , paused = False
+    , autoRotate = False
+    , fps = 0
+    , theta = 0.1
+    , omega = 0.0
+    , layers = []
+    , size = ( 1200, 1200 )
+    , origin = ( 0, 0 )
+    , mouse = ( 0, 0 )
+    , now = 0.0
+    , timeShift = 0.0
+    --, range = ( 0.8, 1.0 )
+    , product = Product.JetBrains
+    , controlsVisible = True
+    }
+
+
 init
     :  UiMode
     -> List ( LayerKind, String, LayerModel )
     -> CreateLayer
     -> Model
-init mode initialLayers createLayer
-    = { mode = mode
-      , paused = False
-      , autoRotate = False
-      , fps = 0
-      , theta = 0.1
-      , omega = 0.0
-      , layers = initialLayers |> List.map
+init mode initialLayers createLayer =
+    let
+        initialModel = initEmpty mode
+    in
+        { initialModel
+        | layers = initialLayers |> List.map
             (\(kind, name, layerModel) ->
                 { kind = kind
                 , layer = layerModel |> createLayer kind
@@ -197,15 +216,7 @@ init mode initialLayers createLayer
                 , model = layerModel
                 , on = True
                 })
-      , size = ( 1200, 1200 )
-      , origin = ( 0, 0 )
-      , mouse = ( 0, 0 )
-      , now = 0.0
-      , timeShift = 0.0
-      --, range = ( 0.8, 1.0 )
-      , product = Product.JetBrains
-      , controlsVisible = True
-      }
+        }
 
 
 emptyLayer : Layer
