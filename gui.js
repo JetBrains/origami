@@ -208,11 +208,12 @@ const Config = function(layers, defaults, funcs, randomize) {
       } else {
         this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
+
       this['visible' + index] = true;
-      this['mirror' + index] = true;
-      this['renderMode' + index] = 'triangles';
 
       if (isFss(layer)) {
+        this['mirror' + index] = true;
+        this['renderMode' + index] = 'triangles';
         this['lightSpeed' + index] = layer.model.lightSpeed;
         this['facesX' + index] = layer.model.faces[0];
         this['facesY' + index] = layer.model.faces[1];
@@ -463,6 +464,10 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
   toSend.layers.forEach((layerDef, index) => {
       // .visible
       if (isFss(layerDef)) {
+        const mirror = Math.random() > 0.5 ? true : false;
+        layerDef.model.mirror = mirror;
+        config['mirror' + index] = mirror;
+
         const lightSpeed = Math.floor(Math.random() * 1040 + 100);
         layerDef.model.lightSpeed = lightSpeed;
         config['lightSpeed' + index] = lightSpeed;
@@ -481,6 +486,26 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         const iris = Math.random();
         layerDef.model.iris = iris;
         config['iris' + index] = iris;
+
+        const vignette = Math.random();
+        layerDef.model.vignette = vignette;
+        config['vignette' + index] = vignette;
+
+        const [ amplitudeX, amplitudeY, amplitudeZ ] =
+          [ Math.random(), Math.random(), Math.random() ];
+        layerDef.model.amplitude = [ amplitudeX, amplitudeY, amplitudeZ ];
+        config['amplitudeX' + index] = amplitudeX;
+        config['amplitudeY' + index] = amplitudeY;
+        config['amplitudeZ' + index] = amplitudeZ;
+
+        const [ hue, saturation, brightness ] =
+          [ Math.random() * 2.0 - 1.0,
+            Math.random() * 2.0 - 1.0,
+            Math.random() * 2.0 - 1.0 ];
+        layerDef.model.colorShift = [ hue, saturation, brightness ];
+        config['hue' + index] = hue;
+        config['saturation' + index] = saturation;
+        config['brightness' + index] = brightness;
       }
 
       if (layerDef.webglOrSvg == 'webgl') {
