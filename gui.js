@@ -166,7 +166,7 @@ PREDEFINED_SIZES = RELEASE_SIZES; // TODO: Switcher by mode needed
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
-const Config = function(layers, defaults, funcs) {
+const Config = function(layers, defaults, funcs, randomize) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
@@ -222,6 +222,7 @@ const Config = function(layers, defaults, funcs) {
 
     this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
+    this.randomize = randomize;
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -372,13 +373,14 @@ function start(document, model, funcs) {
       }
     }
 
-    const config = new Config(layers, defaults, funcs);
+    const config = new Config(layers, defaults, funcs, randomize(funcs, layers));
     const gui = new dat.GUI(/*{ load: JSON }*/);
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     gui.add(config, 'savePng').name('save png');
-    if (mode !== 'prod' ) gui.add(config, 'saveBatch').name('save batch');
+    if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
+    gui.add(config, 'randomize').name('randomize');
     product.onFinishChange(funcs.changeProduct);
     omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
@@ -428,11 +430,20 @@ function start(document, model, funcs) {
     // });
 
 
-    updateProduct('jetbrains');
+    //updateProduct('jetbrains');
 
     // layers.map((layer, index) => {
     //     gui.addFolder()
     // });
+}
+
+const randomize = (funcs, layers) => () => {
+  layers.forEach((_, index) => {
+    const lightSpeed = Math.random() * 1040 + 100;
+    funcs.changeLightSpeed(index)(lightSpeed);
+    const product = Math.floor(Math.random() * PRODUCTS.length);
+    funcs.changeProduct(PRODUCTS[product].id);
+  });
 }
 
 module.exports = start;
