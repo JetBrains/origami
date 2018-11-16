@@ -149,20 +149,18 @@ RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 , '2850x1200 landg' : [ 2850, 1200 ] // Landing page
 };
 
-ALL_SIZES =
+WALLPAPER_SIZES =
   { 'window': [0, 0]
   , '1920x1980': [ 1920, 1980 ]
   , '1366x768': [ 1366, 768 ]
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
   , '1680x1050': [ 1680, 1050 ]
-  , '800x418': [ 800, 418 ]
-  , '640x400': [ 640, 400 ] // product splash background
-  , '1280x800': [ 1280, 800 ] // @2x splash background
-  , '480x360': [ 480, 360 ]
+  , '640x400' : [ 640, 400 ] // for testing, in production delete
+  , '250x250' : [ 250, 250 ] // for testing, in production delete
   };
 
-PREDEFINED_SIZES = RELEASE_SIZES; // TODO: Switcher by mode needed
+PREDEFINED_SIZES = WALLPAPER_SIZES; // TODO: Switcher by mode needed
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
@@ -327,12 +325,12 @@ function start(document, model, funcs) {
         const iris = fogFolder.add(config, 'iris' + index).name('density').min(0).max(1).step(0.01);
         const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
         
-        const amplitudeFolder = folder.addFolder('amplitude');
-        const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('amplitudeX')
+        const amplitudeFolder = folder.addFolder('ranges');
+        const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('horizontal')
           .min(0.0).max(1.0);
-        const amplitudeY = amplitudeFolder.add(config, 'amplitudeY' + index).name('amplitudeY')
+        const amplitudeY = amplitudeFolder.add(config, 'amplitudeY' + index).name('vertical')
           .min(0.0).max(1.0);
-        const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('amplitudeZ')
+        const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('depth')
           .min(0.0).max(1.0);
           
         const colorShiftFolder = folder.addFolder('hsb');

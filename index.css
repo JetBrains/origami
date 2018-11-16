@@ -25,9 +25,9 @@ body {
     color: white;
 }
 
-.rpd-node.rpd-jb-layers .rpd-process text {
+/* .rpd-node.rpd-jb-layers .rpd-process text {
     dominant-baseline: hanging;
-}
+} */
 
 .rpd-jb-palette-variant rect {
     stroke: black;
@@ -88,9 +88,6 @@ svg.text-layer {
     border-radius: 5px;
 }
 
-.hide-on-space {
-
-}
 
 .import-export-panel {
     top: 10px;
@@ -117,4 +114,11 @@ svg.text-layer {
     left: 0;
     display: none;
     /* border: 1px solid red; */
+}
+
+/* Logo */
+
+.logo-layer {
+    max-width: 96px !important;
+    max-height:96px !important;
 }
