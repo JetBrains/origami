@@ -390,7 +390,7 @@ function start(document, model, funcs) {
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     gui.add(config, 'savePng').name('save png');
     if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
-    gui.add(config, 'randomize').name('randomize');
+    gui.add(config, 'randomize').name('i feel lucky');
     product.onFinishChange(funcs.changeProduct);
     omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
