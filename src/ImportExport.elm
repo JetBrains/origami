@@ -1,8 +1,9 @@
 module ImportExport exposing
     ( encodeModel
     , decodeModel
-    , EncodedState
     , encodePortModel
+    , encodePortLayer
+    , decodePortModel
     , encodeFss
     , fromFssPortModel
     , encodeFssRenderMode
@@ -23,8 +24,6 @@ import Layer.FSS as FSS
 import Product exposing (..)
 
 import Model as M
-
-type alias EncodedState = String
 
 
 encodeIntPair : ( Int, Int ) -> E.Value
@@ -116,14 +115,18 @@ encodeLayerModel layerModel =
                 , ( "vignette", E.float fssModel.vignette )
                 , ( "iris", E.float fssModel.iris )
                 ]
+            M.VignetteModel vignetteModel ->
+                [ ( "opacity", E.float vignetteModel.opacity )
+                , ( "color", encodeTripleAsArray E.float vignetteModel.color )
+                ]
             _ -> []
-
 
 
 encodeModel_ : M.Model -> E.Value
 encodeModel_ model =
     E.object
-        [ ( "theta", E.float model.theta )
+        [ ( "mode", E.string <| encodeMode model.mode )
+        , ( "theta", E.float model.theta )
         , ( "omega", E.float model.omega )
         , ( "layers", E.list (List.map encodeLayerDef model.layers) )
         -- , ( "layers", E.list (List.filterMap
@@ -142,7 +145,7 @@ encodeModel_ model =
         ]
 
 
-encodeModel : M.Model -> EncodedState
+encodeModel : M.Model -> String
 encodeModel model = model |> encodeModel_ |> E.encode 2
 
 
@@ -161,10 +164,29 @@ encodePortModel model =
     }
 
 
+decodePortModel : M.CreateLayer -> M.PortModel -> M.Model
+decodePortModel createLayer portModel =
+    let
+        mode = decodeMode portModel.mode
+        initialModel = M.initEmpty mode
+    in
+        { initialModel
+        | mode = mode
+        , now = portModel.now
+        , theta = portModel.theta
+        , omega = portModel.omega
+        , layers = List.map (decodePortLayer createLayer) portModel.layers
+        , size = portModel.size
+        , origin = portModel.origin
+        , mouse = portModel.mouse
+        , product = portModel.product |> Product.decode
+        }
+
+
 encodePortLayer : M.LayerDef -> M.PortLayerDef
 encodePortLayer layerDef =
     { kind = encodeKind_ layerDef.kind
-    , on = layerDef.on
+    , isOn = layerDef.on
     , webglOrSvg =
         case layerDef.layer of
             M.WebGLLayer _ _ -> "webgl"
@@ -176,7 +198,41 @@ encodePortLayer layerDef =
             M.SVGLayer _ svgBlend ->
                 ( Nothing, SVGBlend.encode svgBlend |> Just )
     , name = layerDef.name
+    , model = layerDef.model
+        |> encodeLayerModel
+        |> E.encode 2
     }
+
+
+decodePortLayer : M.CreateLayer -> M.PortLayerDef -> M.LayerDef
+decodePortLayer createLayer portLayerDef =
+    let
+        kind = decodeKind portLayerDef.kind
+        layerModel = portLayerDef.model
+                |> D.decodeString (layerModelDecoder kind)
+                -- |> Debug.log "Layer Model Decode Result: "
+                |> Result.toMaybe
+                |> Maybe.withDefault M.NoModel
+        layerNoBlend = createLayer kind layerModel
+        layer = case layerNoBlend of
+            M.WebGLLayer webglLayer _ ->
+                portLayerDef.blend
+                    |> Tuple.first
+                    |> Maybe.withDefault WGLBlend.default
+                    |> M.WebGLLayer webglLayer
+            M.SVGLayer svgLayer _ ->
+                portLayerDef.blend
+                    |> Tuple.second
+                    |> Maybe.map SVGBlend.decode
+                    |> Maybe.withDefault SVGBlend.default
+                    |> M.SVGLayer svgLayer
+    in
+        { kind = kind
+        , on = portLayerDef.isOn
+        , layer = layer
+        , model = layerModel
+        , name = portLayerDef.name
+        }
 
 
 decodeKind : String -> M.LayerKind
@@ -228,7 +284,7 @@ layerDefDecoder createLayer =
                 kind = decodeKind kindStr
                 layerModel = layerModelStr
                         |> D.decodeString (layerModelDecoder kind)
-                        |> Debug.log "Layer Model Decode Result: "
+                        -- |> Debug.log "Layer Model Decode Result: "
                         |> Result.toMaybe
                         |> Maybe.withDefault M.NoModel
                 layerNoBlend = createLayer kind layerModel
@@ -309,7 +365,8 @@ layerModelDecoder kind =
                             , vignette = vignette
                             , iris = iris
                             }
-                    _ -> Debug.log "failed to parse model" M.NoModel
+                    _ -> M.NoModel
+                    -- _ -> Debug.log "failed to parse model" M.NoModel
             in
                 D.decode createFssModel
                     |> D.required "renderMode" D.string
@@ -361,10 +418,10 @@ modelDecoder mode createLayer =
             |> D.required "product" D.string
 
 
-decodeModel : M.UiMode -> M.CreateLayer -> EncodedState -> Maybe M.Model
+decodeModel : M.UiMode -> M.CreateLayer -> String -> Maybe M.Model
 decodeModel mode createLayer modelStr =
     D.decodeString (modelDecoder mode createLayer) modelStr
-        |> Debug.log "Decode Result: "
+        -- |> Debug.log "Decode Result: "
         |> Result.toMaybe
 
 
@@ -417,3 +474,13 @@ encodeMode mode =
         M.Production -> "prod"
         M.Release -> "release"
         M.Ads -> "ads"
+
+
+decodeMode : String -> M.UiMode
+decodeMode mode =
+    case mode of
+        "dev" -> M.Development
+        "prod" -> M.Production
+        "release" -> M.Release
+        "ads" -> M.Ads
+        _ -> M.Production
