@@ -396,7 +396,7 @@ function start(document, model, funcs) {
     customSize.onFinishChange(funcs.setCustomSize);
 
     layers.concat([]).reverse().forEach((layer, revIndex) => {
-      if ((mode == 'prod') && (layer.name == 'Logo')) return;
+      if ((mode == 'prod') && (layer.name == 'Cover')) return;
 
       const index = layers.length - 1 - revIndex;
       //const folder = gui.addFolder('Layer ' + index + ' (' + layer.kind + ')');
