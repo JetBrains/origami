@@ -1,5 +1,5 @@
 function htmlToCanvas(node, canvas, width, height, whenDone) {
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext('2d');
     const data =
         '<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'px" height="'+height+'px">' +
               '<foreignObject width="100%" height="100%">' +
