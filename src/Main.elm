@@ -993,7 +993,7 @@ view model =
                 [ WebGL.antialias
                 , WebGL.alpha True
                 , WebGL.clearColor 0.0 0.0 0.0 1.0
-                --, WebGL.depth 0.5
+                -- , WebGL.depth 0.5
                 ]
                 [ H.class "webgl-layers"
                 , width (Tuple.first model.size)

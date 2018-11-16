@@ -25,7 +25,7 @@ function buildFSS(model, fss, source) {
     var geometry = new FSS.Plane(model.size[0], model.size[1],
                                  fss.faces[0], fss.faces[1]);
     //var material = new FSS.Material('#00ffff', '#ffff00');
-    var material = new FSS.Material(palette[0], palette[2]); 
+    var material = new FSS.Material(palette[0], palette[1]); 
     var mesh = new FSS.Mesh(geometry, material);
 
     var light1 = new FSS.Light(palette[0], palette[1]);
@@ -55,7 +55,7 @@ function buildFSS(model, fss, source) {
                 : Math.randomInRange(0, Math.PIM2);
             vertex.gradient = source && source[v]
                 ? source[v].gradient
-                : Math.randomInRange(0.2, 0.7);
+                : Math.randomInRange(0.2, 0.2);
         }
 
         light1.setPosition(120, 120, 50);

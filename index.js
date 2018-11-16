@@ -198,7 +198,7 @@ const savePng = (hiddenLink) => {
     if (!srcCanvas || !trgCanvas) return;
     trgCanvas.style.display = 'block';
     requestAnimationFrame(() => { // without that, image buffer will be empty
-        const trgContext = trgCanvas.getContext('2d');
+        const trgContext = trgCanvas('2d');
         trgContext.drawImage(srcCanvas, 0, 0);
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
         // FIXME: a temporary hack to draw a logo on the canvas,
@@ -262,9 +262,9 @@ setTimeout(function() { // FIXME: change to document.ready
             { changeLightSpeed : index => value =>
                 { app.ports.changeLightSpeed.send({ layer: index, value: Math.round(value) }) }
             , changeVignette : index => value =>
-                { app.ports.changeVignette.send({ layer: index, value: Math.round(value) }) }
+                { app.ports.changeVignette.send({ layer: index, value: value }) }
             , changeIris : index => value =>
-                { app.ports.changeIris.send({ layer: index, value: Math.round(value) }) }
+                { app.ports.changeIris.send({ layer: index, value: value }) }
             , changeFacesX : index => value =>
                 { app.ports.changeFacesX.send({ layer: index, value: Math.round(value) }) }
             , changeFacesY : index => value =>
