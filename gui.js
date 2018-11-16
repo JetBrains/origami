@@ -318,12 +318,13 @@ function start(document, model, funcs) {
     function addLayerProps(folder, config, layer, index) {
       if (isFss(layer)) {
         const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
-        const lightSpeed = folder.add(config, 'lightSpeed' + index).name('lights agile')
+        const lightSpeed = folder.add(config, 'lightSpeed' + index).name('light pace')
                                  .min(100).max(1140);
         const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
         const facesY = folder.add(config, 'facesY' + index).name('row').min(1).max(100).step(1);
-        const vignette = folder.add(config, 'vignette' + index).name('vignette').min(0.0).max(1.0);
-        const iris = folder.add(config, 'iris' + index).name('iris').min(0.0).max(1.0);
+        const fogFolder = folder.addFolder('fog');
+        const vignette = fogFolder.add(config, 'vignette' + index).name('shine').min(0).max(1).step(0.01);
+        const iris = fogFolder.add(config, 'iris' + index).name('density').min(0).max(1).step(0.01);
         const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
         
         const amplitudeFolder = folder.addFolder('amplitude');
