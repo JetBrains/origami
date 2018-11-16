@@ -22,7 +22,7 @@ import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 import Controls
-import ImportExport as IE exposing (EncodedState)
+import ImportExport as IE
 import Product exposing (Product)
 import Product as Product
 
@@ -43,7 +43,7 @@ type Msg
     | ResizeFromPreset Window.Size
     | Locate Position
     | Rotate Float
-    | Import EncodedState
+    | Import String
     | Export
     | ExportZip
     | TimeTravel Float
@@ -69,6 +69,7 @@ type Msg
     | ChangeIris LayerIndex FSS.Iris
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
+    | ApplyRandomizer PortModel
     | NoOp
 
 
@@ -130,7 +131,7 @@ update msg model =
 
         Bang ->
             ( model
-            , model |> prepareGuiConfig |> startGui
+            , model |> IE.encodePortModel |> startGui
             )
 
         Animate dt ->
@@ -171,7 +172,7 @@ update msg model =
             encodedModel
                 |> IE.decodeModel initialMode createLayer
                 |> Maybe.withDefault model
-                |> Debug.log "import model"
+                -- |> Debug.log "import model"
                 |> rebuildAllFssLayersWith
 
             -- ( encodedModel
@@ -188,7 +189,8 @@ update msg model =
             )
 
         ExportZip ->
-            ( Debug.log "model" model
+            -- ( Debug.log "model" model
+            ( model
             , model |> IE.encodeModel |> exportZip_
             )
 
@@ -427,8 +429,8 @@ update msg model =
 
 
         ShiftColor index ( newHue, newSaturation, newBrightness ) ->
-            ( model |> updateFss index 
-                (\fss -> 
+            ( model |> updateFss index
+                (\fss ->
                     let
                         ( currentHue, currentSaturation, currentBrightness )
                             = fss.colorShift
@@ -441,7 +443,12 @@ update msg model =
                         }
                 )
             , Cmd.none
-            )            
+            )
+
+        ApplyRandomizer portModel ->
+            IE.decodePortModel createLayer portModel
+                -- |> Debug.log "decoded model"
+                |> rebuildAllFssLayersWith
 
         NoOp -> ( model, Cmd.none )
 
@@ -604,29 +611,6 @@ createLayer kind layerModel =
 -- extractFssBuildOptions = prepareGuiConfig
 
 
-prepareGuiConfig : Model -> GuiDefaults
-prepareGuiConfig model =
-    { mode = IE.encodeMode model.mode
-    , product = Product.encode model.product
-    , palette = Product.getPalette model.product
-    , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
-             , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
-             )
-    , layers =
-        model.layers |>
-            List.map (\{ kind, layer, on, name } ->
-                { kind = encodeLayerKind kind
-                , blend = getBlendForPort layer
-                , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
-                , on = on
-                , name = name
-                })
-    , fss = IE.encodeFss FSS.init model.product
-    , vignette = Vignette.init
-    , customSize = Nothing
-    , omega = model.omega
-    }
-
 
 timeShiftRange : Float
 timeShiftRange = 500.0
@@ -776,6 +760,7 @@ subscriptions model =
         , rebuildFss (\{ layer, value } ->
             RebuildFss layer value
           )
+        , applyRandomizer ApplyRandomizer
         , import_ Import
         , pause (\_ -> Pause)
         , continue (\_ -> Continue)
@@ -1078,6 +1063,8 @@ port shiftColor : ({ value: FSS.ColorShiftPatch, layer: LayerIndex } -> msg) -> 
 
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
+port applyRandomizer : (PortModel -> msg) -> Sub msg
+
 port changeWGLBlend :
     ( { layer : Int
       , value : WGLBlend.Blend
@@ -1086,14 +1073,14 @@ port changeWGLBlend :
 
 port changeSVGBlend :
     ( { layer : Int
-      , value : SVGBlend.PortBlend
+      , value : String
       }
     -> msg) -> Sub msg
 
 
 -- OUTGOING PORTS
 
-port startGui : GuiDefaults -> Cmd msg
+port startGui : PortModel -> Cmd msg
 
 port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: FSS.PortModel } -> Cmd msg
 

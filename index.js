@@ -38,29 +38,27 @@ const exportScene = (scene) => {
     ));
 }
 
-const import_ = (app, parsedState) => {
+const prepareModelForImport = (model) => {
+    const toSend = deepClone(model);
+    toSend.layers =
+        model.layers.map(layerDef => {
+            const layerDef_ = deepClone(layerDef);
+            layerDef_.model = JSON.stringify(layerDef.model);
+            return layerDef_;
+        });
+    //console.log('sending for the import', toSend);
 
-    app.ports.import_.send(JSON.stringify({
-        theta: parsedState.theta,
-        omega: parsedState.omega,
-        size: parsedState.size,
-        origin: parsedState.origin,
-        mouse: parsedState.mouse,
-        now: parsedState.now,
-        product: parsedState.product,
-        layers: parsedState.layers.map((layer) => (
-            { kind : layer.kind,
-              blend: layer.blend,
-              isOn: layer.isOn,
-              model: JSON.stringify(layer.model),
-              name: layer.name
-            }
-        ))
-    }));
+    return toSend;
+}
+
+const import_ = (app, parsedState) => {
+    const preparedModel = prepareModelForImport(parsedState);
+    app.ports.import_.send(JSON.stringify(preparedModel));
 
     parsedState.layers.map((layer, index) => {
         if (isFss(layer)) {
             const fssScene = buildFSS(parsedState, layer.model, layer.sceneFuzz);
+            fssScenes[index] = fssScene;
             app.ports.rebuildFss.send({ value: fssScene, layer: index });
         }
     });
@@ -78,8 +76,8 @@ const export_ = (app, exportedState) => {
     })
     console.log(stateObj);
     return {
-        source: stateObj,  
-        json: JSON.stringify(stateObj, null, 2) 
+        source: stateObj,
+        json: JSON.stringify(stateObj, null, 2)
     };
 }
 
@@ -87,7 +85,7 @@ const waitForContent = ({ path, id, name }) => {
     return new Promise((resolve, reject) => {
         JSZipUtils.getBinaryContent(path, (err, content) => {
             if (err) { reject(err); return; }
-            console.log('packing ' + path);
+            // console.log('packing ' + path);
             resolve({ path, id, name, content });
         });
     });
@@ -155,7 +153,7 @@ const prepareImportExport = () => {
     });
     app.ports.exportZip_.subscribe((exportedState) => {
         try {
-            console.log('exportedState', exportedState);
+            // console.log('exportedState', exportedState);
             exportZip_(app, exportedState);
         } catch(e) {
             console.error(e);
@@ -241,21 +239,24 @@ const savePng = (hiddenLink) => {
 
 prepareImportExport();
 
-setTimeout(function() { // FIXME: change to document.ready
+// document.addEventListener('DOMContentLoaded', () => {
+setTimeout(() => {
 
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
-
     app.ports.presetSizeChanged.subscribe(size => {
         if (savingBatch) {
-            console.log('saving ', size);
+            // console.log('saving ', size);
             savePng(hiddenLink, size);
         };
     });
 
     app.ports.startGui.subscribe((model) => {
-        console.log('startGui', model);
+        // console.log('startGui', model);
+        model.layers.forEach(layer => {
+            layer.model = JSON.parse(layer.model) || {};
+        });
         startGui(
             document,
             model,
@@ -295,13 +296,13 @@ setTimeout(function() { // FIXME: change to document.ready
                 const nextPng = () => {
                     if (sizeIndex < sizes.length) {
                         const [ width, height ] = sizes[sizeIndex];
-                        console.log('sending', width, height);
+                        // console.log('sending', width, height);
                         app.ports.setCustomSize.send([ width, height ]);
                         sizeIndex = sizeIndex + 1;
                         setTimeout(nextPng, batchPause);
                     } else {
                         savingBatch = false;
-                        console.log('done saving batch');
+                        // console.log('done saving batch');
                     }
                 };
 
@@ -312,7 +313,7 @@ setTimeout(function() { // FIXME: change to document.ready
             }
             , shiftColor : index => (h, s, b) => {
                 app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]});
-            }            
+            }
             , turnOn : index =>
                 { app.ports.turnOn.send(index); }
             , turnOff : index =>
@@ -323,12 +324,15 @@ setTimeout(function() { // FIXME: change to document.ready
                 { app.ports.mirrorOff.send(index); }
             , rotate : value =>
                 { app.ports.rotate.send(value); }
+            , applyRandomizer : value =>
+                { app.ports.applyRandomizer.send(prepareModelForImport(value)); }
             });
 
         model.layers.forEach((layer, index) => {
             if (isFss(layer)) {
-                console.log('rebuild FSS layer', index);
-                const fssScene = buildFSS(model, model.fss);
+                // console.log('rebuild FSS layer', index);
+                const fssScene = buildFSS(model, layer.model);
+                fssScenes[index] = fssScene;
                 app.ports.rebuildFss.send({ value: fssScene, layer: index });
             }
         });
@@ -336,7 +340,8 @@ setTimeout(function() { // FIXME: change to document.ready
         app.ports.requestFssRebuild.subscribe(({ layer : index, model, value : fssModel }) => {
             const layer = model.layers[index];
             if (isFss(layer)) {
-                console.log('forced to rebuild FSS layer', index);
+                // console.log('forced to rebuild FSS layer', index);
+                // FIXME: just use layer.model instead of `fssModel`
                 const fssScene = buildFSS(model, fssModel);
                 fssScenes[index] = fssScene;
                 app.ports.rebuildFss.send({ value: fssScene, layer: index });
