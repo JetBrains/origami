@@ -189,7 +189,7 @@ const savePng = (hiddenLink) => {
     if (!srcCanvas || !trgCanvas) return;
     trgCanvas.style.display = 'block';
     requestAnimationFrame(() => { // without that, image buffer will be empty
-        const trgContext = trgCanvas('2d');
+        const trgContext = trgCanvas.getContext('2d');
         trgContext.drawImage(srcCanvas, 0, 0);
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
         // FIXME: a temporary hack to draw a logo on the canvas,
