@@ -167,11 +167,11 @@ defaultColorShift = ( 0.0, 0.0, 0.0 )
 
 
 defaultVignette : Vignette
-defaultVignette = 0.8
+defaultVignette = 0.0
 
 
 defaultIris : Iris
-defaultIris = 1.0
+defaultIris = 0.07
 
 
 defaultMirror : Float
@@ -451,7 +451,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
         , uColorShift = vec3 hue saturation brightness
         , uVignette = model.vignette
-        , uIris = model.iris
+        , uIris = model.iris 
         , paused = v.paused
         , rotation = v.rotation
         , perspective = v.perspective
@@ -688,8 +688,8 @@ vertexShader =
             vec3 speed = normalize(aV0) * 0.0008;
 
             // Create color
-             vec4 vColorI = materialAmbient;
-             vec4 vColorII = materialDiffuse;
+             vColorI = materialAmbient;
+             vColorII = materialDiffuse;
              vColor = vec4(1.0);
 
             // Calculate the vertex position
@@ -745,13 +745,13 @@ vertexShader =
 
             vec3 gradientColor = rgb2hsv(vColor.xyz);
             gradientColor[2] /= 3.0;
-           // gradientColor[1] -= 0.6; // hue shift
+          // gradientColor[1] -= 0.6; // hue shift
             gradientColor = hsv2rgb(gradientColor);
 
 
 
            // Gradients
-             vColor *=  mix(adjustLight(vec4(gradientColor,1.0), -0.3, 0.0, -0.1), vColor, pow(abs(position.z), 1.5));
+             vColor *=  mix(vec4(gradientColor,1.0), vColor, abs(position.z));
 
           // Set gl_Position
              gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
@@ -760,6 +760,8 @@ vertexShader =
           if (uMirror > 0.0) {
               gl_Position.x = -1.0 * gl_Position.x;
           }
+
+        //  vColor = materialDiffuse;
 
         }
 
@@ -792,7 +794,6 @@ fragmentShader =
         uniform int uLayerIndex;
 
 
-
        // vec4 bgColor = vec4(0.0, 0.0, 0.0, 1.0);
 
        bool low_poly = false;
@@ -806,6 +807,35 @@ fragmentShader =
         float brightness(vec3 color) {
                 return (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b);
         }
+
+        vec3 rgb2hsv(vec3 c){
+        vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+        vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+        vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+        float d = q.x - min(q.w, q.y);
+        float e = 1.0e-10;
+        return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+        }
+
+        vec3 hsv2rgb(vec3 c)
+        {
+        vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+        vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+        return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+        }
+
+        vec4 adjustColor(vec4 origColor, float deltaHue, float deltaSaturation, float deltaBrightness) {
+
+        vec3 changedColor  = rgb2hsv(origColor.rgb);
+        changedColor[0] = clamp(changedColor[0] + deltaHue, 0.0, 1.0); // hue shift
+        changedColor[1] = clamp(changedColor[1] + deltaSaturation, 0.0, 1.0); // saturation shift
+        changedColor[2] = clamp(changedColor[2] + deltaBrightness, 0.0, 1.0); // brightness shift
+
+        return vec4(vec3(hsv2rgb(changedColor)), 1.0);
+        }   
+
+
 
         // Main
         void main() {
@@ -836,15 +866,19 @@ fragmentShader =
             }
 
 
-            // vignette
-           //   gl_FragColor.rgb =  mix(gl_FragColor.rgb, vColorII.rgb, smoothstep(1.0 - uVignette, 1.0, distance(actPos,vec2(0.5))));
-           
+            // fog
+                vec3 shadowHSV = rgb2hsv(vColorI.rgb);
+                shadowHSV[2] *=  uVignette + 0.1;
+                vec3 shadowRGB = hsv2rgb(shadowHSV);
+             gl_FragColor.rgb =  mix(vColor.rgb, shadowRGB, smoothstep(0.0, 1.3 - uIris, distance(actPos, vec2(0.5))));
+
 
             // opacity
-            // if(low_poly) {
-             //  gl_FragColor.a = 0.3;
+         //    if(low_poly) {
+           //    gl_FragColor.a = 0.6;
           // }
 
+         //  gl_FragColor.rgb *= gl_FragColor.a;
 
 
 

@@ -16,11 +16,12 @@ const import_ = (app, importedState) => {
         }
 
         app.ports.hideControls.send(null);
-        app.ports.pause.send(null);
+       // app.ports.pause.send(null); TODO: control by url parameter
     });
 
     console.log('sending for the import', parsedState);
     app.ports.import_.send(JSON.stringify({
+        
         theta: parsedState.theta,
         omega: parsedState.omega,
         size: parsedState.size,
