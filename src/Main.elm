@@ -31,8 +31,7 @@ import Layer.Fractal as Fractal
 import Layer.Voronoi as Voronoi
 import Layer.FSS as FSS
 import Layer.Template as Template
-import Layer.JbText as JbText
-import Layer.SVGImage as SVGImage
+import Layer.Cover as Cover
 import Layer.Vignette as Vignette
 
 
@@ -103,24 +102,12 @@ initialLayers =
             , shareMesh = True
             } |> FssModel
       )
-    , ( Text, "Title", NoModel )
+    , ( Cover, "Cover", NoModel )
     -- , ( Vignette, Vignette.init )
-    , ( SvgImage, "Logo", NoModel )
     ]
     |> List.filter (\(kind, _, _) ->
         case ( kind, initialMode ) of
-            ( Text, Development ) -> True
-            ( SvgImage, Development ) -> True
-
-            ( SvgImage, Production ) -> True
-            ( Text, Production ) -> False
-
-            ( Text, Release ) -> False
-            ( SvgImage, Release ) -> False
-
-            ( Text, Ads ) -> False
-            ( SvgImage, Ads ) -> False
-
+            ( Cover, Ads ) -> False
             _ -> True
     )
 
@@ -536,8 +523,7 @@ encodeLayerKind kind =
         Template -> "template"
         Voronoi -> "voronoi"
         Fractal -> "fractal"
-        Text -> "text"
-        SvgImage -> "svg"
+        Cover -> "cover"
         Vignette -> "vignette"
         Empty -> "empty"
 
@@ -595,13 +581,9 @@ createLayer kind layerModel =
                 (B.customAdd, B.one, B.oneMinusSrcAlpha) )
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
-        ( Text, _ ) ->
+        ( Cover, _ ) ->
             SVGLayer
-            TextLayer
-            SVGBlend.default
-        ( SvgImage, _ ) ->
-            SVGLayer
-            SvgImageLayer
+            CoverLayer
             SVGBlend.default
         _ ->
             Model.emptyLayer
@@ -841,10 +823,9 @@ layerToHtml model index { layer } =
     case layer of
         SVGLayer svgLayer svgBlend ->
             case svgLayer of
-                TextLayer ->
-                    JbText.view model.product model.size model.origin svgBlend
-                SvgImageLayer ->
-                    SVGImage.view model.size model.origin model.product svgBlend
+                CoverLayer ->
+                    -- Cover.view model.size model.origin model.product svgBlend
+                    Cover.view model.product model.size model.origin svgBlend
                 NoContent -> div [] []
         _ -> div [] []
 

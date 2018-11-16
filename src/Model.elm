@@ -56,8 +56,7 @@ type LayerKind
     | Voronoi
     | Fss
     | MirroredFss
-    | Text
-    | SvgImage
+    | Cover
     | Vignette
     | Empty
 
@@ -88,8 +87,7 @@ type WebGLLayer_
 
 
 type SVGLayer_
-    = TextLayer
-    | SvgImageLayer
+    = CoverLayer
     | NoContent
 
 
@@ -162,7 +160,7 @@ type alias PortLayerDef =
     , name : String
     , model : String
     }
-
+    
 
 initEmpty : UiMode -> Model
 initEmpty mode =

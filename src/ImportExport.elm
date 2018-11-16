@@ -59,8 +59,7 @@ encodeKind_ kind =
         M.Fractal -> "fractal"
         M.Template -> "template"
         M.Voronoi -> "voronoi"
-        M.Text -> "text"
-        M.SvgImage -> "logo"
+        M.Cover -> "cover"
         M.Vignette -> "vignette"
         M.Empty -> "empty"
 
@@ -244,8 +243,7 @@ decodeKind layerTypeStr =
         "fractal" -> M.Fractal
         "template" -> M.Template
         "voronoi" -> M.Voronoi
-        "text" -> M.Text
-        "logo" -> M.SvgImage
+        "cover" -> M.Cover
         "vignette" -> M.Vignette
         _ -> M.Empty
 
