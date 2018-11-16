@@ -162,9 +162,21 @@ WALLPAPER_SIZES =
 
 PREDEFINED_SIZES = WALLPAPER_SIZES; // TODO: Switcher by mode needed
 
+const funcKeys = Object.keys(BLEND_FUNCS);
+const factorKeys = Object.keys(BLEND_FACTORS);
+
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
-const Config = function(layers, defaults, funcs) {
+const update = (gui) => () => {
+  for (var i in gui.__controllers) {
+    gui.__controllers[i].updateDisplay();
+  }
+  for (var i in gui.__folders) {
+    update(gui.__folders[i])();
+  }
+}
+
+const Config = function(layers, defaults, funcs, randomize) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
@@ -172,8 +184,6 @@ const Config = function(layers, defaults, funcs) {
     this.product = defaults.product;
     this.omega = defaults.omega;
 
-    const funcKeys = Object.keys(BLEND_FUNCS);
-    const factorKeys = Object.keys(BLEND_FACTORS);
     layers.forEach((layer, index) => {
       if (layer.webglOrSvg == 'webgl') {
         if (layer.blend[0]) {
@@ -197,29 +207,31 @@ const Config = function(layers, defaults, funcs) {
       } else {
         this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
+
       this['visible' + index] = true;
-      this['mirror' + index] = true;
-      this['renderMode' + index] = 'triangles';
 
       if (isFss(layer)) {
-        this['lightSpeed' + index] = defaults.fss.lightSpeed;
-        this['facesX' + index] = defaults.fss.faces[0];
-        this['facesY' + index] = defaults.fss.faces[1];
-        this['vignette' + index] = defaults.fss.vignette;
-        this['iris' + index] = defaults.fss.iris;
-        this['amplitudeX' + index] = defaults.fss.amplitude[0];
-        this['amplitudeY' + index] = defaults.fss.amplitude[1];
-        this['amplitudeZ' + index] = defaults.fss.amplitude[2];        
-        this['hue' + index] = defaults.fss.colorShift[0];
-        this['saturation' + index] = defaults.fss.colorShift[1];
-        this['brightness' + index] = defaults.fss.colorShift[2];
+        this['mirror' + index] = true;
+        this['renderMode' + index] = 'triangles';
+        this['lightSpeed' + index] = layer.model.lightSpeed;
+        this['facesX' + index] = layer.model.faces[0];
+        this['facesY' + index] = layer.model.faces[1];
+        this['vignette' + index] = layer.model.vignette;
+        this['iris' + index] = layer.model.iris;
+        this['amplitudeX' + index] = layer.model.amplitude[0];
+        this['amplitudeY' + index] = layer.model.amplitude[1];
+        this['amplitudeZ' + index] = layer.model.amplitude[2];
+        this['hue' + index] = layer.model.colorShift[0];
+        this['saturation' + index] = layer.model.colorShift[1];
+        this['brightness' + index] = layer.model.colorShift[2];
       }
     });
 
-    this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
+    this.customSize = PREDEFINED_SIZES['window'];
 
     this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
+    this.randomize = randomize(this);
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -332,14 +344,14 @@ function start(document, model, funcs) {
           .min(0.0).max(1.0);
         const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('depth')
           .min(0.0).max(1.0);
-          
+
         const colorShiftFolder = folder.addFolder('hsb');
         const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
           .min(-1.0).max(1.0).step(0.01);
         const saturation = colorShiftFolder.add(config, 'saturation' + index).name('saturation')
           .min(-1.0).max(1.0).step(0.01);
         const brightness = colorShiftFolder.add(config, 'brightness' + index).name('brightness')
-          .min(-1.0).max(1.0).step(0.01);  
+          .min(-1.0).max(1.0).step(0.01);
 
         mirrorSwitch.onFinishChange(val => switchMirror(index, val));
         lightSpeed.onFinishChange(funcs.changeLightSpeed(index));
@@ -371,18 +383,19 @@ function start(document, model, funcs) {
       }
     }
 
-    const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
+    const config = new Config(layers, defaults, funcs, randomize(funcs, model, update(gui)));
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     gui.add(config, 'savePng').name('save png');
-    if (mode !== 'prod' ) gui.add(config, 'saveBatch').name('save batch');
+    if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
+    gui.add(config, 'randomize').name('randomize');
     product.onFinishChange(funcs.changeProduct);
     omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
 
-    layers.reverse().forEach((layer, revIndex) => {
+    layers.concat([]).reverse().forEach((layer, revIndex) => {
       if ((mode == 'prod') && (layer.name == 'Logo')) return;
 
       const index = layers.length - 1 - revIndex;
@@ -401,6 +414,8 @@ function start(document, model, funcs) {
     });
 
     let guiHidden = false;
+
+    //update(gui);
 
     document.addEventListener('keydown', (event) => {
         if (event.keyCode == 32) {
@@ -427,11 +442,114 @@ function start(document, model, funcs) {
     // });
 
 
-    updateProduct('jetbrains');
+    //updateProduct('jetbrains');
 
     // layers.map((layer, index) => {
     //     gui.addFolder()
     // });
+}
+
+const randomize = (funcs, model, updateGui) => (config) => () => {
+  const toSend = deepClone(model);
+  const omega = Math.random() * 2 - 1;
+  const productIdx = Math.floor(Math.random() * PRODUCTS.length);
+  const product = PRODUCTS[productIdx].id;
+
+  config.product = product;
+  config.omega = omega;
+
+  toSend.product = product;
+  toSend.omega = omega;
+
+  toSend.layers.forEach((layerDef, index) => {
+      // .visible
+      if (isFss(layerDef)) {
+        const mirror = Math.random() > 0.5 ? true : false;
+        layerDef.model.mirror = mirror;
+        config['mirror' + index] = mirror;
+
+        const lightSpeed = Math.floor(Math.random() * 1040 + 100);
+        layerDef.model.lightSpeed = lightSpeed;
+        config['lightSpeed' + index] = lightSpeed;
+
+        const renderModeIdx = Math.floor(Math.random() * RENDER_MODES.length);
+        const renderMode = RENDER_MODES[renderModeIdx];
+        layerDef.model.renderMode = renderMode;
+        config['renderMode' + index] = renderMode;
+
+        const [ facesX, facesY ] =
+          [ Math.floor(Math.random() * 100), Math.floor(Math.random() * 100) ];
+        layerDef.model.faces = [ facesX, facesY ];
+        config['facesX' + index] = facesX;
+        config['facesY' + index] = facesY;
+
+        const iris = Math.random();
+        layerDef.model.iris = iris;
+        config['iris' + index] = iris;
+
+        const vignette = Math.random();
+        layerDef.model.vignette = vignette;
+        config['vignette' + index] = vignette;
+
+        const [ amplitudeX, amplitudeY, amplitudeZ ] =
+          [ Math.random(), Math.random(), Math.random() ];
+        layerDef.model.amplitude = [ amplitudeX, amplitudeY, amplitudeZ ];
+        config['amplitudeX' + index] = amplitudeX;
+        config['amplitudeY' + index] = amplitudeY;
+        config['amplitudeZ' + index] = amplitudeZ;
+
+        const [ hue, saturation, brightness ] =
+          [ Math.random() * 2.0 - 1.0,
+            Math.random() * 2.0 - 1.0,
+            Math.random() * 2.0 - 1.0 ];
+        layerDef.model.colorShift = [ hue, saturation, brightness ];
+        config['hue' + index] = hue;
+        config['saturation' + index] = saturation;
+        config['brightness' + index] = brightness;
+      }
+
+      // comment this out to not randomize blends
+      if (layerDef.webglOrSvg == 'webgl') {
+        const blendFuncsCount = Object.values(BLEND_FUNCS_IDS).length;
+        const blendFactorsCount = Object.values(BLEND_FACTORS_IDS).length;
+        const colorEq =
+          [ Math.floor(Math.random() * blendFuncsCount)
+          , Math.floor(Math.random() * blendFactorsCount)
+          , Math.floor(Math.random() * blendFactorsCount)
+          ];
+        const alphaEq =
+          [ Math.floor(Math.random() * blendFuncsCount)
+          , Math.floor(Math.random() * blendFactorsCount)
+          , Math.floor(Math.random() * blendFactorsCount)
+          ];
+
+        //config['blendColor' + index] = [ 0, 0, 0, 0 ];
+        config['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[colorEq[0]]];
+        config['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[colorEq[0]]];
+        config['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[colorEq[1]]];
+        config['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[alphaEq[0]]];;
+        config['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[alphaEq[0]]];
+        config['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[alphaEq[1]]];
+        // TODO: color { r: color[0], g: color[1], b: color[2], a: color[3] }
+        layerDef.blend =
+          [ { color: null
+            , colorEq: colorEq
+            , alphaEq: alphaEq
+            }
+          , null
+          ]
+      } else {
+
+      }
+  });
+  console.log(toSend);
+
+  // toSend.layers = model.layers.reverse().map((layerDef, index) => {
+  //     return layerDef;
+  // });
+  updateGui();
+  // });
+  funcs.applyRandomizer(toSend);
 }
 
 module.exports = start;
