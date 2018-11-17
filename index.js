@@ -81,12 +81,12 @@ const export_ = (app, exportedState) => {
     };
 }
 
-const waitForContent = ({ path, id, name }) => {
+const waitForContent = ({ path, name }) => {
     return new Promise((resolve, reject) => {
         JSZipUtils.getBinaryContent(path, (err, content) => {
             if (err) { reject(err); return; }
             // console.log('packing ' + path);
-            resolve({ path, id, name, content });
+            resolve({ path, name, content });
         });
     });
 };
@@ -113,17 +113,10 @@ const exportZip_ = (app, exportedState) => {
             zip.file('index.html', playerHtml, { binary: true });
             const assets = zip.folder('assets');
             const assetPromises =
-                [ source.product ]
-                // [ 'appcode', 'clion', 'datagrip', 'dotcover', 'dotmemory', 'dotpeek'
-                // , 'dottrace', 'gogland', 'hub', 'intellij-idea-ce', 'intellij-idea'
-                // , 'jetbrains-simple', 'jetbrains', 'kotlin', 'mps', 'phpstorm'
-                // , 'pycharm-ce', 'pycharm-edu', 'pycharm', 'resharper', 'resharper-cpp'
-                // , 'resharper', 'rider', 'rubymine', 'teamcity', 'test', 'toolbox', 'upsource'
-                // , 'webstorm', 'youtrack' ]
-                    .map(productId => {
-                        return { id : productId
-                               , name: productId + '.svg'
-                               , path : './assets/' + productId + '.svg'
+                [ source.product + '-text', 'jetbrains' ]
+                    .map(fileName => {
+                        return { name: fileName + '.svg'
+                               , path : './assets/' + fileName + '.svg'
                                };
                     })
                     .map(waitForContent);
