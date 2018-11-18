@@ -391,7 +391,7 @@ modelDecoder mode createLayer =
     let
         createModel theta omega layers size origin mouse now productStr =
             let
-                initialModel = M.init mode [] createLayer
+                initialModel = M.init mode (always []) createLayer
                 product = Product.decode productStr
             in
                 { initialModel

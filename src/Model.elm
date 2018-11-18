@@ -184,7 +184,7 @@ initEmpty mode =
 
 init
     :  UiMode
-    -> List ( LayerKind, String, LayerModel )
+    -> (UiMode -> List ( LayerKind, String, LayerModel ))
     -> CreateLayer
     -> Model
 init mode initialLayers createLayer =
@@ -192,7 +192,7 @@ init mode initialLayers createLayer =
         initialModel = initEmpty mode
     in
         { initialModel
-        | layers = initialLayers |> List.map
+        | layers = initialLayers mode |> List.map
             (\(kind, name, layerModel) ->
                 { kind = kind
                 , layer = layerModel |> createLayer kind

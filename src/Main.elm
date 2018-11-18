@@ -91,8 +91,8 @@ init =
     )
 
 
-initialLayers : List ( LayerKind, String, LayerModel )
-initialLayers =
+initialLayers : UiMode -> List ( LayerKind, String, LayerModel )
+initialLayers mode =
     [ ( MirroredFss, "Background", FssModel FSS.init )
     , ( MirroredFss, "Low-Poly", FssModel FSS.init )
     , ( MirroredFss, "Net"
@@ -108,7 +108,7 @@ initialLayers =
     -- , ( Vignette, Vignette.init )
     ]
     |> List.filter (\(kind, _, _) ->
-        case ( kind, initialMode ) of
+        case ( kind, mode ) of
             ( Cover, Ads ) -> False
             _ -> True
     )
@@ -278,8 +278,18 @@ update msg model =
             |> rebuildAllFssLayersWith
 
         ChangeMode mode ->
-            { model | mode = Debug.log "mode"  mode  }
-           |>  rebuildAllFssLayersWith
+            ( let
+                newModel = Model.init mode initialLayers createLayer
+              in
+                { newModel
+                | size = model.size
+                , mouse = model.mouse
+                , product = model.product
+                , origin = model.origin
+                }
+            , Cmd.none
+            )
+            -- |>  rebuildAllFssLayersWith
 
 
 

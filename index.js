@@ -349,7 +349,6 @@ setTimeout(() => {
 
     app.ports.bang.send(null);
 
-
     const getUrlParameter = (name) => {
         name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
         var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -357,10 +356,8 @@ setTimeout(() => {
         return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
     };
 
-    app.ports.changeMode.send(getUrlParameter("mode"));
-
-
-
+    const modeFromUrl = getUrlParameter("mode");
+    if (modeFromUrl) app.ports.changeMode.send(modeFromUrl);
 
     let panelsHidden = false;
 
@@ -374,9 +371,9 @@ setTimeout(() => {
         }
       });
 
-      
 
- 
+
+
 
 }, 100);
 
