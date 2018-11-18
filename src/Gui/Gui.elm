@@ -484,6 +484,29 @@ view model =
 --         _ -> grid
 
 
+
+collapseAllAbove : ModelPos -> Model -> Model
+collapseAllAbove  (ModelPos srcNest _) model =
+    model |> traverseModel
+        (\cell  (ModelPos nest index) ->
+            if (nest >= srcNest) then
+                case cell of
+                    Nested label _ nestedCells ->
+                        Nested
+                            label
+                            Collapsed
+                            nestedCells
+                    Choice label _ selected nestedCells ->
+                        Choice
+                            label
+                            Collapsed
+                            selected
+                            nestedCells
+                    _ -> cell
+            else cell
+        )
+
+
 traverseModel : (Cell -> ModelPos -> Cell) -> Model -> Model
 traverseModel f ( shape, cells ) =
     ( shape, traverseCells f cells )
@@ -557,8 +580,9 @@ update msg ui =
                             _ -> cell
                     )
         ExpandNested pos ->
-            ui |>
-                updateCell pos
+            ui
+                |> collapseAllAbove pos
+                |> updateCell pos
                     (\cell ->
                         case cell of
                             Nested label _ cells ->
@@ -575,8 +599,9 @@ update msg ui =
                             _ -> cell
                     )
         ExpandChoice pos ->
-            ui |>
-                updateCell pos
+            ui
+                |> collapseAllAbove pos
+                |> updateCell pos
                     (\cell ->
                         case cell of
                             Choice label _ selection cells ->
