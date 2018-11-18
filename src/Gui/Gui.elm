@@ -213,9 +213,14 @@ init =
             ]
 
 
-showPos : GridPos -> String
-showPos (GridPos row col) =
+showGridPos : GridPos -> String
+showGridPos (GridPos row col) =
     "(" ++ toString row ++ "," ++ toString col ++ ")"
+
+
+showModelPos : ModelPos -> String
+showModelPos (ModelPos nest index) =
+    "<" ++ toString nest ++ "," ++ toString index ++ ">"
 
 
 findHoverMessage : ModelPos -> Cell -> Maybe Msg
@@ -239,21 +244,27 @@ findClickMessage modelPos cell =
 
 
 viewCell_ : GridPos -> GridCell -> Html Msg
-viewCell_ ((GridPos row col) as gridPos) ( cell, _, isSelected ) =
-    case cell of
+viewCell_ ((GridPos row col) as gridPos) ( cell, modelPos, selectedState ) =
+    let
+        attrs =  case selectedState of
+            Selected -> [ H.class "selected" ]
+            NotSelected -> []
+        posStr = showGridPos gridPos ++ " " ++ showModelPos modelPos
+    in case cell of
         Knob label val ->
-            span [ ] [ text <| showPos gridPos ++ " knob: " ++ label ++ " " ++ toString val ]
+            span attrs
+                [ text <| posStr ++ " knob: " ++ label ++ " " ++ toString val ]
         Toggle label val ->
-            span [ ]
-                [ text <| showPos gridPos ++ " toggle: " ++ label ++ " "
+            span attrs
+                [ text <| posStr ++ " toggle: " ++ label ++ " "
                     ++ (if val == TurnedOn then "on" else "off")
                 ]
         Button label _ ->
-            span [ ]
-                [ text <| showPos gridPos ++ " button: " ++ label ]
+            span attrs
+                [ text <| posStr ++ " button: " ++ label ]
         Nested label state _ ->
-            span [ ]
-                [ text <| showPos gridPos ++ " nested: " ++ label ++ " "
+            span attrs
+                [ text <| posStr ++ " nested: " ++ label ++ " "
                     ++ (if state == Expanded then "expanded" else "collapsed")
                 ]
         -- NestedItem level cell ->
@@ -262,8 +273,8 @@ viewCell_ ((GridPos row col) as gridPos) ( cell, _, isSelected ) =
         --         , viewCell_ pos cell
         --         ]
         Choice label selected id _ ->
-            span [ ]
-                [ text <| showPos gridPos ++ " choice: " ++ label ++ " "
+            span attrs
+                [ text <| posStr ++ " choice: " ++ label ++ " "
                     ++ toString id
                 ]
         -- ChoiceItem level state cell ->
