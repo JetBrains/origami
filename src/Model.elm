@@ -160,7 +160,7 @@ type alias PortLayerDef =
     , name : String
     , model : String
     }
-    
+
 
 initEmpty : UiMode -> Model
 initEmpty mode =

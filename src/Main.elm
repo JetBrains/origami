@@ -159,7 +159,7 @@ update msg model =
 
         Import encodedModel ->
             encodedModel
-                |> IE.decodeModel initialMode createLayer
+                |> IE.decodeModel model.mode createLayer
                 |> Maybe.withDefault model
                 -- |> Debug.log "import model"
                 |> rebuildAllFssLayersWith
@@ -280,7 +280,7 @@ update msg model =
         ChangeMode mode ->
             { model | mode = Debug.log "mode"  mode  }
            |>  rebuildAllFssLayersWith
-            
+
 
 
         Configure index layerModel ->
@@ -444,7 +444,7 @@ update msg model =
             IE.decodePortModel createLayer portModel
                 -- |> Debug.log "decoded model"
                 |> rebuildAllFssLayersWith
-        
+
 
         NoOp -> ( model, Cmd.none )
 
@@ -504,11 +504,11 @@ rebuildAllFssLayersWith model =
                 }
 
     in
-        ( model 
-        , List.filterMap isLayerFss model.layers 
+        ( model
+        , List.filterMap isLayerFss model.layers
           |> List.indexedMap rebuildPotentialFss
           |> Cmd.batch
-        ) 
+        )
 
 
 getBlendForPort : Layer -> PortBlend
@@ -835,7 +835,7 @@ layerToHtml model index { layer } =
             case svgLayer of
                 CoverLayer ->
                     -- Cover.view model.size model.origin model.product svgBlend
-                    Cover.view initialMode model.product model.size model.origin svgBlend
+                    Cover.view model.mode model.product model.size model.origin svgBlend
                 NoContent -> div [] []
         _ -> div [] []
 
@@ -1069,7 +1069,7 @@ port changeSVGBlend :
     -> msg) -> Sub msg
 
 
-port changeMode : (String -> msg) -> Sub msg 
+port changeMode : (String -> msg) -> Sub msg
 
 port locationSearch : (String -> msg) -> Sub msg
 
