@@ -4,6 +4,7 @@ module ImportExport exposing
     , encodePortModel
     , encodePortLayer
     , decodePortModel
+    , decodeMode
     , encodeFss
     , fromFssPortModel
     , encodeFssRenderMode

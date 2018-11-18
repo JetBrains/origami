@@ -12,6 +12,7 @@ import Html.Attributes as H
     exposing (class, width, height, style, class, type_, min, max, value, id)
 import Html.Events exposing (on, onInput, onMouseUp, onClick)
 
+
 import WebGL exposing (Mesh, Option)
 import WebGL.Settings.Blend as B
 import WebGL.Settings exposing (sampleAlphaToCoverage)
@@ -69,6 +70,7 @@ type Msg
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
     | ApplyRandomizer PortModel
+    | ChangeMode UiMode
     | NoOp
 
 
@@ -275,6 +277,12 @@ update msg model =
             { model | product = product }
             |> rebuildAllFssLayersWith
 
+        ChangeMode mode ->
+            { model | mode = Debug.log "mode"  mode  }
+           |>  rebuildAllFssLayersWith
+            
+
+
         Configure index layerModel ->
             ( model |> updateLayer index
                 (\layer layerModel ->
@@ -436,6 +444,7 @@ update msg model =
             IE.decodePortModel createLayer portModel
                 -- |> Debug.log "decoded model"
                 |> rebuildAllFssLayersWith
+        
 
         NoOp -> ( model, Cmd.none )
 
@@ -495,11 +504,11 @@ rebuildAllFssLayersWith model =
                 }
 
     in
-        ( model
-        , List.filterMap isLayerFss model.layers
+        ( model 
+        , List.filterMap isLayerFss model.layers 
           |> List.indexedMap rebuildPotentialFss
           |> Cmd.batch
-        )
+        ) 
 
 
 getBlendForPort : Layer -> PortBlend
@@ -698,6 +707,7 @@ subscriptions model =
           )
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
+        , changeMode (\modeStr ->  IE.decodeMode modeStr  |> ChangeMode )
         , changeFssRenderMode (\{value, layer} ->
             IE.decodeFssRenderMode value |> ChangeFssRenderMode layer)
         , changeFacesX (\{value, layer} ->
@@ -1057,6 +1067,11 @@ port changeSVGBlend :
       , value : String
       }
     -> msg) -> Sub msg
+
+
+port changeMode : (String -> msg) -> Sub msg 
+
+port locationSearch : (String -> msg) -> Sub msg
 
 
 -- OUTGOING PORTS
