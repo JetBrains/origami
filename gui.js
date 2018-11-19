@@ -367,7 +367,7 @@ function start(document, model, funcs) {
                      , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[5]]]
                      ]
           }
-        funcs.changeWGLBlend(index, newBlend);
+          funcs.changeWGLBlend(index, newBlend);
           // blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
           //return blend;
         });
@@ -512,6 +512,7 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
   const omega = Math.random() * 2 - 1;
   const productIdx = Math.floor(Math.random() * PRODUCTS.length);
   const product = PRODUCTS[productIdx].id;
+  console.log(productIdx, product);
 
   config.product = product;
   config.omega = omega;
@@ -559,16 +560,15 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         config['amplitudeY' + index] = amplitudeY;
         config['amplitudeZ' + index] = amplitudeZ;
 
-        if (mode !== 'prod') {
-          const [ hue, saturation, brightness ] =
-            [ Math.random() * 2.0 - 1.0,
-              Math.random() * 2.0 - 1.0,
-              Math.random() * 2.0 - 1.0 ];
-          layerDef.model.colorShift = [ hue, saturation, brightness ];
-          config['hue' + index] = hue;
-          config['saturation' + index] = saturation;
-          config['brightness' + index] = brightness;
-        }
+
+        const [ hue, saturation, brightness ] =
+          [ (mode !== 'prod') ? Math.random() * 2.0 - 1.0 : 0.0,
+            Math.random() * 2.0 - 1.0,
+            Math.random() * 2.0 - 1.0 ];
+        layerDef.model.colorShift = [ hue, saturation, brightness ];
+        config['hue' + index] = hue;
+        config['saturation' + index] = saturation;
+        config['brightness' + index] = brightness;
       }
 
       // comment this out to not randomize blends
