@@ -160,7 +160,7 @@ WALLPAPER_SIZES =
   , '250x250' : [ 250, 250 ] // for testing, in production delete
   };
 
-PREDEFINED_SIZES = WALLPAPER_SIZES; // TODO: Switcher by mode needed
+//PREDEFINED_SIZES = WALLPAPER_SIZES; // TODO: Switcher by mode needed
 
 const funcKeys = Object.keys(BLEND_FUNCS);
 const factorKeys = Object.keys(BLEND_FACTORS);
@@ -176,10 +176,15 @@ const update = (gui) => () => {
   }
 }
 
+const getSizesSet = (mode) =>
+  (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
+
 const Config = function(layers, defaults, funcs, randomize) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
+
+    const PREDEFINED_SIZES = getSizesSet(defaults.mode);
 
     this.product = defaults.product;
     this.omega = defaults.omega;
@@ -242,6 +247,8 @@ const Config = function(layers, defaults, funcs, randomize) {
 function start(document, model, funcs) {
     const defaults = model;
     const { mode, layers } = model;
+
+    const PREDEFINED_SIZES = getSizesSet(mode);
 
     function updateProduct(id) {
       const product = PRODUCTS_BY_ID[id];
