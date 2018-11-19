@@ -64,7 +64,7 @@ type Cell
     | Button Label Handler
     | Nested Label ExpandState (Shape, Cells)
     | Choice Label ExpandState ItemChosen (Shape, Cells)
-    | ChoiceItem Label SelectionState
+    | ChoiceItem Label
     -- | Color
 
 
@@ -175,15 +175,15 @@ init =
         svgBlendGrid =
             ( ( 3, 3 )
             ,
-                [ ChoiceItem "normal" Selected
-                , ChoiceItem "overlay" NotSelected
-                , ChoiceItem "multiply" NotSelected
-                , ChoiceItem "darken" NotSelected
-                , ChoiceItem "lighten" NotSelected
-                , ChoiceItem "multiply" NotSelected
-                , ChoiceItem "multiply" NotSelected
-                , ChoiceItem "multiply" NotSelected
-                , ChoiceItem "multiply" NotSelected
+                [ ChoiceItem "normal"
+                , ChoiceItem "overlay"
+                , ChoiceItem "multiply"
+                , ChoiceItem "darken"
+                , ChoiceItem "lighten"
+                , ChoiceItem "multiply"
+                , ChoiceItem "multiply"
+                , ChoiceItem "multiply"
+                , ChoiceItem "multiply"
                 ]
             )
 
@@ -283,10 +283,10 @@ viewCell_ ((GridPos row col) as gridPos) { cell, modelPos, isSelected } =
                 [ text <| posStr ++ " choice: " ++ label ++ " "
                     ++ toString id
                 ]
-        ChoiceItem label state ->
+        ChoiceItem label ->
             span []
                 [ text <| posStr ++ " choiceitem: " ++ label ++ " "
-                    ++ (if state == Selected then "selected" else "not-selected")
+                    ++ (if isSelected == Just Selected then "selected" else "not-selected")
                 ]
 
 
@@ -537,20 +537,6 @@ view model =
 --         _ -> grid
 
 
-
-deselectAllWith : ModelPos -> Model -> Model
-deselectAllWith parentPos model =
-    model |> traverseModel
-        (\cell _ maybeParentPos ->
-            case ( cell, maybeParentPos ) of
-                ( ChoiceItem label _, Just actualParentPos )
-                    -> if parentPos == actualParentPos
-                       then ChoiceItem label NotSelected
-                       else cell
-                _ -> cell
-        )
-
-
 collapseAllAbove : ModelPos -> Model -> Model
 collapseAllAbove  (ModelPos srcNest _) model =
     model |> traverseModel
@@ -686,14 +672,6 @@ update msg ui =
                     )
         Select parentPos ((ModelPos  _ index) as pos) ->
             ui
-                |> deselectAllWith parentPos
-                |> updateCell pos
-                    (\cell ->
-                        case cell of
-                            ChoiceItem label _ ->
-                                ChoiceItem label Selected
-                            _ -> cell
-                    )
                 |> updateCell parentPos
                     (\cell ->
                         case cell of
