@@ -153,30 +153,30 @@ const prepareImportExport = () => {
             alert('Failed to create .zip');
         }
     });
-    document.getElementById('close-export').addEventListener('click', () => {
-        document.getElementById('export-target').className = '';
-    });
-    document.getElementById('close-import').addEventListener('click', () => {
-        document.getElementById('import-target').className = '';
-    });
-    setTimeout(() => {
-        document.getElementById('import-button').addEventListener('click', () => {
-            document.getElementById('import-target').className = 'shown';
-        });
-    }, 100);
-    document.getElementById('import').addEventListener('click', () => {
-        try {
-            if (document.getElementById('import-code').value) {
-                const importedScene = JSON.parse(document.getElementById('import-code').value);
-                import_(app, importedScene);
-            } else {
-                alert('Nothing to import');
-            }
-        } catch(e) {
-            console.error(e);
-            alert('Failed to parse or send, incorrect format?');
-        }
-    });
+    // document.getElementById('close-export').addEventListener('click', () => {
+    //     document.getElementById('export-target').className = '';
+    // });
+    // document.getElementById('close-import').addEventListener('click', () => {
+    //     document.getElementById('import-target').className = '';
+    // });
+    // setTimeout(() => {
+    //     document.getElementById('import-button').addEventListener('click', () => {
+    //         document.getElementById('import-target').className = 'shown';
+    //     });
+    // }, 100);
+    // document.getElementById('import').addEventListener('click', () => {
+    //     try {
+    //         if (document.getElementById('import-code').value) {
+    //             const importedScene = JSON.parse(document.getElementById('import-code').value);
+    //             import_(app, importedScene);
+    //         } else {
+    //             alert('Nothing to import');
+    //         }
+    //     } catch(e) {
+    //         console.error(e);
+    //         alert('Failed to parse or send, incorrect format?');
+    //     }
+    // });
 
 }
 

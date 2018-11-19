@@ -336,7 +336,7 @@ function start(document, model, funcs) {
         const vignette = fogFolder.add(config, 'vignette' + index).name('shine').min(0).max(1).step(0.01);
         const iris = fogFolder.add(config, 'iris' + index).name('density').min(0).max(1).step(0.01);
         const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
-        
+
         const amplitudeFolder = folder.addFolder('ranges');
         const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('horizontal')
           .min(0.0).max(1.0);
