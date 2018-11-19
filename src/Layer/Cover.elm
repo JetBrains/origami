@@ -13,8 +13,6 @@ import Product
 
 
 
-shiftX = 0 -- half of the text width
-shiftY = 0 -- half of the text height
 defaultSize = 110
 defaultWidth = 1500.0
 imageWidth : Int
@@ -29,8 +27,8 @@ scaleFactor = 0.1
 view : UiMode -> Product -> (Int, Int) -> (Int, Int) -> Blend.Blend -> Html a
 view mode product ( w, h ) ( x, y ) blend =
     let
-
         scale = toFloat w / defaultWidth
+
         centerX = (toFloat w / 2) - toFloat x
         centerY = (toFloat h / 2) - toFloat y
         logoX = toFloat w - toFloat x
@@ -58,8 +56,8 @@ view mode product ( w, h ) ( x, y ) blend =
             ]
         ( if mode == Production then
             [ 
-                -- productName product centerX centerY textPath blend scale
---            , 
+            productName product centerX centerY textPath blend scale
+            , 
             productName JetBrains (logoX -  0.1 * toFloat w) (logoY -  0.1 * toFloat w) logoPath blend scale
             ]
           else
@@ -73,9 +71,11 @@ view mode product ( w, h ) ( x, y ) blend =
 productName : Product -> Float -> Float  -> String -> Blend.Blend -> Float -> Html a
 productName product posX posY logoPath blend scale =
     let
-        ( imageWidth, imageHeight ) = case product of 
-            IntelliJ -> ( 600, 88 )
-            _ -> ( 90, 90 )
+        ( imageWidth, imageHeight) = case product of 
+            IntelliJ -> ( 616, 90)
+            PhpStorm -> ( 518, 108)
+            PyCharm -> ( 479, 108)
+            _ -> ( 90, 90)
     in
         div
             [ HAttrs.class ("logo-layer logo-layer--" ++ Product.encode product)
@@ -92,16 +92,12 @@ productName product posX posY logoPath blend scale =
             |> HAttrs.attribute "data-stored"
             , HAttrs.style 
                 [ ("mix-blend-mode", Blend.encode blend)
-                -- , ("position", "absolute")
-                -- , ("transform", "scale(" ++ toString scale ++ ")")
-                -- , ("top",  toString  posY ++ "px")
-                -- , ("left", toString posX ++ "px")
+                , ("position", "absolute")
+                , ("top", "0px")
+                , ("left", "0px")
                 , ("width",  toString ( toFloat imageWidth * scale ) ++ "px")
                 , ("height",  toString ( toFloat imageHeight * scale ) ++ "px")
-                , ("transform", "translate(" ++ toString (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, " ++ toString (posY - (toFloat imageWidth * scale) / 2.0) ++ "px)")
-                -- , ("width",  (if (imageWidth < 48) then "48" else toString ( toFloat imageWidth * scale )) ++ "px")
-
-                -- , ("font-size", toString defaultSize ++ "px")
+                , ("transform", "translate(" ++ toString (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, " ++ toString (posY - (toFloat imageHeight * scale) / 2.0) ++ "px)")
                 , ("background-image", "url(\"" ++ logoPath ++ "\")")
                 , ("background-repeat", "no-repeat")
                 , ("background-position", "center center")
@@ -134,50 +130,6 @@ title product =
         ]
         [ text <| getName product ]
 
---JetBrains logo
-logo : Product -> Float -> Float -> String -> Blend.Blend -> Float -> Html a
-logo product posX posY logoPath blend scale =
-    div
-        [ HAttrs.class ("logo-layer logo-layer--jetbrains")
-        , { blend = Blend.encode blend
-        , posX = posX
-        , posY = posY
-        , width = imageWidth
-        , height = imageHeight
-        , logoPath = logoPath
-        , scale = scale
-        }
-        |> encodeStoredData
-        |> E.encode 0
-        |> HAttrs.attribute "data-stored"
---        , widthcc (Tuple.first model.size)
---        , heightcc (Tuple.second model.size)
-        , HAttrs.style
-            [ ("mix-blend-mode", Blend.encode blend)
-            , ("width", toString imageWidth ++ "px")
-            , ("height", toString imageHeight ++ "px")
-            , ("position", "absolute")
-            , ("top", toString posY ++" px")
-            , ("left", toString posX ++" px")
---            , ("transform", "translate(" ++ toString posX ++ "px , " ++ toString posY  ++ ")")
-
---            , ("transform", "scale(" ++ toString scale ++ ")")
---            , ("transform", "translate("++ toString posX ++ " "++ toString posY  ++ "")
-
-
-
---            , ("width",  (if (imageWidth < 48) then "48" else toString ( toFloat imageWidth * scale )) ++ "px")
---            , ("height",  (if (imageHeight < 48) then "48" else toString ( toFloat imageHeight * scale )) ++ "px")
---            --, ("transform", "scale(" ++ toString scale ++ ")")
-            -- , ("font-size", toString defaultSize ++ "px")
-            , ("background-image", "url(\"" ++ logoPath ++ "\")")
-            , ("background-repeat", "no-repeat")
-            , ("background-position", "center center")
-            , ("background-size", "contain")
-            ]
-        ]
-        [ --img [ HAttrs.src logoPath, HAttrs.attribute "crossorigin" "anonymous" ] []
-        ]
 
 
 
