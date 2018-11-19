@@ -535,8 +535,11 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         layerDef.model.renderMode = renderMode;
         config['renderMode' + index] = renderMode;
 
+        const facesMax = (mode !== 'prod') ? 100 : 50;
         const [ facesX, facesY ] =
-          [ Math.floor(Math.random() * 100), Math.floor(Math.random() * 100) ];
+          [ Math.floor(Math.random() * facesMax)
+          , Math.floor(Math.random() * facesMax)
+          ];
         layerDef.model.faces = [ facesX, facesY ];
         config['facesX' + index] = facesX;
         config['facesY' + index] = facesY;
@@ -556,14 +559,16 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         config['amplitudeY' + index] = amplitudeY;
         config['amplitudeZ' + index] = amplitudeZ;
 
-        const [ hue, saturation, brightness ] =
-          [ Math.random() * 2.0 - 1.0,
-            Math.random() * 2.0 - 1.0,
-            Math.random() * 2.0 - 1.0 ];
-        layerDef.model.colorShift = [ hue, saturation, brightness ];
-        config['hue' + index] = hue;
-        config['saturation' + index] = saturation;
-        config['brightness' + index] = brightness;
+        if (mode !== 'prod') {
+          const [ hue, saturation, brightness ] =
+            [ Math.random() * 2.0 - 1.0,
+              Math.random() * 2.0 - 1.0,
+              Math.random() * 2.0 - 1.0 ];
+          layerDef.model.colorShift = [ hue, saturation, brightness ];
+          config['hue' + index] = hue;
+          config['saturation' + index] = saturation;
+          config['brightness' + index] = brightness;
+        }
       }
 
       // comment this out to not randomize blends
