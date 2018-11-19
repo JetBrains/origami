@@ -198,7 +198,7 @@ const savePng = (hiddenLink, _, [ imageWidth, imageHeight ]) => {
             if (document.querySelector('.logo-layer')) {
                 const logoSrc = document.querySelector('.logo-layer');
                 const state = JSON.parse(logoSrc.getAttribute('data-stored'));
-                drawToCanvas.image(state.logoPath,
+                drawToCanvas.image(state.imagePath,
                     function(image, context) {
                         context.translate(state.posX, state.posY);
                         context.scale(state.scale, state.scale);
