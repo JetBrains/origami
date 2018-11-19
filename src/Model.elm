@@ -1,5 +1,6 @@
 module Model exposing
     ( init
+    , initEmpty
     , Model
     , UiMode(..)
     , Layer
@@ -12,7 +13,6 @@ module Model exposing
     , WebGLLayer_(..)
     , SVGLayer_(..)
     , CreateLayer
-    , GuiDefaults
     , Size
     , Pos
     , PortModel
@@ -49,6 +49,7 @@ type UiMode
     | Release
     | Ads
 
+
 type LayerKind
     = Lorenz
     | Fractal
@@ -56,8 +57,7 @@ type LayerKind
     | Voronoi
     | Fss
     | MirroredFss
-    | Text
-    | SvgImage
+    | Cover
     | Vignette
     | Empty
 
@@ -88,8 +88,7 @@ type WebGLLayer_
 
 
 type SVGLayer_
-    = TextLayer
-    | SvgImageLayer
+    = CoverLayer
     | NoContent
 
 
@@ -115,7 +114,7 @@ type alias LayerDef =
 --    ( Nothing, Nothing ) --> None
 --    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
 type alias PortBlend =
-    ( Maybe WGLBlend.Blend, Maybe SVGBlend.PortBlend )
+    ( Maybe WGLBlend.Blend, Maybe String )
 
 
 type alias Model =
@@ -159,21 +158,30 @@ type alias PortLayerDef =
     { kind : String
     , blend : PortBlend
     , webglOrSvg : String
-    , on : Bool
+    , isOn : Bool
     , name : String
+    , model : String
     }
 
 
-type alias GuiDefaults =
-    { mode : String
-    , product : String
-    , palette : List String
-    , layers : List PortLayerDef
-    , size : ( Int, Int )
-    , customSize : Maybe (Int, Int)
-    , omega : Float
-    , fss : FSS.PortModel
-    , vignette : Vignette.PortModel
+initEmpty : UiMode -> Model
+initEmpty mode =
+    { mode = mode
+    , gui = Gui.init
+    , paused = False
+    , autoRotate = False
+    , fps = 0
+    , theta = 0.1
+    , omega = 0.0
+    , layers = []
+    , size = ( 1200, 1200 )
+    , origin = ( 0, 0 )
+    , mouse = ( 0, 0 )
+    , now = 0.0
+    , timeShift = 0.0
+    --, range = ( 0.8, 1.0 )
+    , product = Product.JetBrains
+    , controlsVisible = True
     }
 
 
@@ -182,15 +190,12 @@ init
     -> List ( LayerKind, String, LayerModel )
     -> CreateLayer
     -> Model
-init mode initialLayers createLayer
-    = { mode = mode
-      , gui = Gui.init
-      , paused = False
-      , autoRotate = False
-      , fps = 0
-      , theta = 0.1
-      , omega = 0.0
-      , layers = initialLayers |> List.map
+init mode initialLayers createLayer =
+    let
+        initialModel = initEmpty mode
+    in
+        { initialModel
+        | layers = initialLayers |> List.map
             (\(kind, name, layerModel) ->
                 { kind = kind
                 , layer = layerModel |> createLayer kind
@@ -198,15 +203,7 @@ init mode initialLayers createLayer
                 , model = layerModel
                 , on = True
                 })
-      , size = ( 1200, 1200 )
-      , origin = ( 0, 0 )
-      , mouse = ( 0, 0 )
-      , now = 0.0
-      , timeShift = 0.0
-      --, range = ( 0.8, 1.0 )
-      , product = Product.JetBrains
-      , controlsVisible = True
-      }
+        }
 
 
 emptyLayer : Layer

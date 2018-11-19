@@ -24,7 +24,7 @@ import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 import Controls
-import ImportExport as IE exposing (EncodedState)
+import ImportExport as IE
 import Product exposing (Product)
 import Product as Product
 
@@ -33,8 +33,7 @@ import Layer.Fractal as Fractal
 import Layer.Voronoi as Voronoi
 import Layer.FSS as FSS
 import Layer.Template as Template
-import Layer.JbText as JbText
-import Layer.SVGImage as SVGImage
+import Layer.Cover as Cover
 import Layer.Vignette as Vignette
 
 
@@ -46,7 +45,7 @@ type Msg
     | ResizeFromPreset Window.Size
     | Locate Position
     | Rotate Float
-    | Import EncodedState
+    | Import String
     | Export
     | ExportZip
     | TimeTravel Float
@@ -71,6 +70,9 @@ type Msg
     | ChangeVignette LayerIndex FSS.Vignette
     | ChangeIris LayerIndex FSS.Iris
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
+    | ShiftColor LayerIndex FSS.ColorShiftPatch
+    | ApplyRandomizer PortModel
+    | SavePng
     | NoOp
 
 
@@ -79,7 +81,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Development
+initialMode = Production
 
 
 init : ( Model, Cmd Msg )
@@ -104,24 +106,12 @@ initialLayers =
             , shareMesh = True
             } |> FssModel
       )
-    , ( Text, "Title", NoModel )
+    , ( Cover, "Cover", NoModel )
     -- , ( Vignette, Vignette.init )
-    , ( SvgImage, "Logo", NoModel )
     ]
     |> List.filter (\(kind, _, _) ->
         case ( kind, initialMode ) of
-            ( Text, Development ) -> True
-            ( SvgImage, Development ) -> True
-
-            ( SvgImage, Production ) -> True
-            ( Text, Production ) -> False
-
-            ( Text, Release ) -> False
-            ( SvgImage, Release ) -> False
-
-            ( Text, Ads ) -> False
-            ( SvgImage, Ads ) -> False
-
+            ( Cover, Ads ) -> False
             _ -> True
     )
 
@@ -132,7 +122,7 @@ update msg model =
 
         Bang ->
             ( model
-            , model |> prepareGuiConfig |> startGui
+            , model |> IE.encodePortModel |> startGui
             )
 
         GuiMessage guiMsg ->
@@ -181,16 +171,7 @@ update msg model =
             encodedModel
                 |> IE.decodeModel initialMode createLayer
                 |> Maybe.withDefault model
-                |> Debug.log "import model"
                 |> rebuildAllFssLayersWith
-
-            -- ( encodedModel
-            --     |> IE.decodeModel initialMode createLayer
-            --     |> Maybe.withDefault model
-            --     |> Debug.log "import model"
-            --     -- |> rebuildAllFssLayersWith
-            -- , Cmd.none
-            -- )
 
         Export ->
             ( model
@@ -198,7 +179,7 @@ update msg model =
             )
 
         ExportZip ->
-            ( Debug.log "model" model
+            ( model
             , model |> IE.encodeModel |> exportZip_
             )
 
@@ -228,12 +209,16 @@ update msg model =
             )
 
         ResizeFromPreset { width, height } ->
-            ( { model
-              | size = adaptSize ( width, height )
-              , origin = getOrigin ( width, height )
-              }
-            , presetSizeChanged ( width, height )
-            )
+            let
+                newModel =
+                    { model
+                    | size = adaptSize ( width, height )
+                    , origin = getOrigin ( width, height )
+                    }
+            in
+                ( newModel
+                , newModel |> getSizeUpdate |> presetSizeChanged
+                )
 
         Locate pos ->
             ( { model | mouse = (pos.x, pos.y) }
@@ -435,7 +420,42 @@ update msg model =
                             }
                     )
 
+
+        ShiftColor index ( newHue, newSaturation, newBrightness ) ->
+            ( model |> updateFss index
+                (\fss ->
+                    let
+                        ( currentHue, currentSaturation, currentBrightness )
+                            = fss.colorShift
+                    in
+                        { fss | colorShift =
+                            ( Maybe.withDefault currentHue newHue
+                            , Maybe.withDefault currentSaturation newSaturation
+                            , Maybe.withDefault currentBrightness newBrightness
+                            )
+                        }
+                )
+            , Cmd.none
+            )
+
+        SavePng ->
+            ( model
+            , model |> getSizeUpdate |> triggerSavePng
+            )
+
+        ApplyRandomizer portModel ->
+            IE.decodePortModel createLayer portModel
+                |> rebuildAllFssLayersWith
+
         NoOp -> ( model, Cmd.none )
+
+
+getSizeUpdate : Model -> SizeUpdate
+getSizeUpdate model =
+    { size = model.size
+    , product = Product.encode model.product
+    , coverSize = Product.getCoverTextSize model.product
+    }
 
 
 getLayerModel : LayerIndex -> Model -> Maybe LayerModel
@@ -521,8 +541,7 @@ encodeLayerKind kind =
         Template -> "template"
         Voronoi -> "voronoi"
         Fractal -> "fractal"
-        Text -> "text"
-        SvgImage -> "svg"
+        Cover -> "cover"
         Vignette -> "vignette"
         Empty -> "empty"
 
@@ -580,13 +599,9 @@ createLayer kind layerModel =
                 (B.customAdd, B.one, B.oneMinusSrcAlpha) )
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
-        ( Text, _ ) ->
+        ( Cover, _ ) ->
             SVGLayer
-            TextLayer
-            SVGBlend.default
-        ( SvgImage, _ ) ->
-            SVGLayer
-            SvgImageLayer
+            CoverLayer
             SVGBlend.default
         _ ->
             Model.emptyLayer
@@ -595,29 +610,6 @@ createLayer kind layerModel =
 -- extractFssBuildOptions : Model -> FssBuildOptions
 -- extractFssBuildOptions = prepareGuiConfig
 
-
-prepareGuiConfig : Model -> GuiDefaults
-prepareGuiConfig model =
-    { mode = IE.encodeMode model.mode
-    , product = Product.encode model.product
-    , palette = Product.getPalette model.product
-    , size = ( Tuple.first model.size |> toFloat |> (*) 1.8 |> floor
-             , Tuple.second model.size |> toFloat |> (*) 1.8 |> floor
-             )
-    , layers =
-        model.layers |>
-            List.map (\{ kind, layer, on, name } ->
-                { kind = encodeLayerKind kind
-                , blend = getBlendForPort layer
-                , webglOrSvg = if isWebGLLayer layer then "webgl" else "svg"
-                , on = on
-                , name = name
-                })
-    , fss = IE.encodeFss FSS.init model.product
-    , vignette = Vignette.init
-    , customSize = Nothing
-    , omega = model.omega
-    }
 
 
 timeShiftRange : Float
@@ -742,6 +734,7 @@ subscriptions model =
           )
         , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
         , changeAmplitude (\{value, layer} -> ChangeAmplitude layer value)
+        , shiftColor (\{value, layer} -> ShiftColor layer value)
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , changeIris (\{value, layer} -> ChangeIris layer value)
         , setCustomSize
@@ -767,6 +760,7 @@ subscriptions model =
         , rebuildFss (\{ layer, value } ->
             RebuildFss layer value
           )
+        , applyRandomizer ApplyRandomizer
         , import_ Import
         , pause (\_ -> Pause)
         , continue (\_ -> Continue)
@@ -776,6 +770,7 @@ subscriptions model =
         , turnOff TurnOff
         , mirrorOn MirrorOn
         , mirrorOff MirrorOff
+        , savePng (\_ -> SavePng)
         ]
 
 
@@ -847,10 +842,8 @@ layerToHtml model index { layer } =
     case layer of
         SVGLayer svgLayer svgBlend ->
             case svgLayer of
-                TextLayer ->
-                    JbText.view model.product model.size model.origin svgBlend
-                SvgImageLayer ->
-                    SVGImage.view model.size model.origin model.product svgBlend
+                CoverLayer ->
+                    Cover.view initialMode model.product model.size model.origin svgBlend
                 NoContent -> div [] []
         _ -> div [] []
 
@@ -960,11 +953,16 @@ view model =
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-        [ if model.controlsVisible
+        [ mergeHtmlLayers model |> div [ H.class "svg-layers" ]
+        , if model.controlsVisible
             then ( div
                 [ H.class "overlay-panel import-export-panel hide-on-space" ]
-                [ input
+                [
+                  div [  H.class "timeline_holder" ] [
+                  span [ H.class "label past"] [text "past"]
+                , input
                     [ type_ "range"
+                    , class "timeline"
                     , H.min "0"
                     , H.max "100"
                     , extractTimeShift model.timeShift |> H.value
@@ -972,11 +970,17 @@ view model =
                     , onMouseUp BackToNow
                     ]
                     []
-                , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
-                , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
+                , span [ H.class "label future"] [text "future"]
+                  ]
+                -- , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
+                -- , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
                 , input
-                    [ type_ "button", onClick ExportZip, value "Export .zip" ]
-                    [ text "Export .zip" ]
+                    [ type_ "button", class "export_html5", onClick ExportZip, value "download html5.zip" ]
+                    [ text "Export to html5.zip" ]
+                , input
+                    [ type_ "button", class "export_png", onClick SavePng, value "save to png" ]
+                    [ text "Export to png" ]
+                , div [ H.class "spacebar_info" ] [ text "spacebar to hide controls" ]
                 ]
             ) else div [] []
         , mergeWebGLLayers model |>
@@ -984,7 +988,7 @@ view model =
                 [ WebGL.antialias
                 , WebGL.alpha True
                 , WebGL.clearColor 0.0 0.0 0.0 1.0
-                --, WebGL.depth 0.5
+                -- , WebGL.depth 0.5
                 ]
                 [ H.class "webgl-layers"
                 , width (Tuple.first model.size)
@@ -992,16 +996,16 @@ view model =
                 , style
                     [ ( "display", "block" )
                     --, ( "background-color", "#161616" )
-                    ,   ( "transform", "translate("
-                        ++ (Tuple.first model.origin |> toString)
-                        ++ "px, "
-                        ++ (Tuple.second model.origin |> toString)
-                        ++ "px)"
-                        )
+--                    ,   ( "transform", "translate("
+--                        ++ (Tuple.first model.origin |> toString)
+--                        ++ "px, "
+--                        ++ (Tuple.second model.origin |> toString)
+--                        ++ "px)"
+--                        )
                     ]
                 , onClick TriggerPause
                 ]
-        , mergeHtmlLayers model |> div [ H.class "svg-layers"]
+        -- , mergeHtmlLayers model |> div [ H.class "svg-layers"]
         , Gui.view model.gui |> Html.map GuiMessage
         ]
 
@@ -1066,7 +1070,13 @@ port changeIris : ({ value: FSS.Iris, layer: LayerIndex } -> msg) -> Sub msg
 
 port changeAmplitude : ({ value: FSS.AmplitudeChange, layer: LayerIndex } -> msg) -> Sub msg
 
+port shiftColor : ({ value: FSS.ColorShiftPatch, layer: LayerIndex } -> msg) -> Sub msg
+
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
+
+port applyRandomizer : (PortModel -> msg) -> Sub msg
+
+port savePng : (() -> msg) -> Sub msg
 
 port changeWGLBlend :
     ( { layer : Int
@@ -1076,21 +1086,33 @@ port changeWGLBlend :
 
 port changeSVGBlend :
     ( { layer : Int
-      , value : SVGBlend.PortBlend
+      , value : String
       }
     -> msg) -> Sub msg
 
 
 -- OUTGOING PORTS
 
-port startGui : GuiDefaults -> Cmd msg
+type alias SizeUpdate =
+    { size: Size
+    , product: String
+    , coverSize: Size
+    }
 
-port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: FSS.PortModel } -> Cmd msg
+port startGui : PortModel -> Cmd msg
 
-port presetSizeChanged : Size -> Cmd msg
+port requestFssRebuild :
+    { layer: LayerIndex
+    , model: PortModel
+    , value: FSS.PortModel
+    } -> Cmd msg
+
+port presetSizeChanged : SizeUpdate -> Cmd msg
 
 port export_ : String -> Cmd msg
 
 port exportZip_ : String -> Cmd msg
+
+port triggerSavePng : SizeUpdate -> Cmd msg
 
 -- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg
