@@ -7,6 +7,7 @@ module Product exposing
     , encode
     , getLogoPath
     , getTextLinePath
+    , getCoverTextSize
     )
 
 
@@ -188,3 +189,12 @@ getTextLinePath product =
         Mono -> Nothing
         product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ "-text.svg")
+
+
+getCoverTextSize : Product -> ( Int, Int )
+getCoverTextSize product =
+    case product of
+        IntelliJ -> ( 616, 90 )
+        PhpStorm -> ( 518, 108 )
+        PyCharm -> ( 479, 108 )
+        _ -> ( 90, 90 )
