@@ -27,9 +27,9 @@ type Product
     | CLion
     | DataGrip
     | AppCode
-    | GogLand
-    | Resharper
-    | ResharperCpp
+    | GoLand
+    | ReSharper
+    | ReSharperCpp
     | DotCover
     | DotMemory
     | DotPeek
@@ -65,9 +65,9 @@ getPalette product =
         CLion -> [ "#32d791", "#1a9edd", "#ea3a8c" ]
         DataGrip -> [ "#32d791", "#9779f5", "#fd5fe4" ]
         AppCode -> [ "#2b7fe3", "#30de95", "#25daee" ]
-        GogLand -> [ "#078efc", "#bb4efc", "#3bea62" ]
-        Resharper -> [ "#c21456", "#e14ce3", "#fdbc2c" ]
-        ResharperCpp ->  [ "#fdbc2c", "#e14ce3", "#c21456" ]
+        GoLand -> [ "#078efc", "#bb4efc", "#3bea62" ]
+        ReSharper -> [ "#c21456", "#e14ce3", "#fdbc2c" ]
+        ReSharperCpp ->  [ "#fdbc2c", "#e14ce3", "#c21456" ]
         DotCover -> [ "#fd7522", "#786bfb", "#e14ce3" ]
         DotMemory -> [ "#fdbc2c", "#786bfb", "#e14ce3" ]
         DotPeek -> [ "#23cbfc", "#786bfb", "#e14ce3" ]
@@ -95,9 +95,9 @@ getName product =
         CLion -> "CLion"
         DataGrip -> "DataGrip"
         AppCode -> "AppCode"
-        GogLand -> "GogLand"
-        Resharper -> "Resharper"
-        ResharperCpp -> "Resharper C++"
+        GoLand -> "GoLand"
+        ReSharper -> "ReSharper"
+        ReSharperCpp -> "ReSharper C++"
         DotCover -> "DotCover"
         DotMemory -> "DotMemory"
         DotPeek -> "DotPeek"
@@ -126,9 +126,9 @@ decode id =
         "clion" -> CLion
         "datagrip" -> DataGrip
         "appcode" -> AppCode
-        "gogland" -> GogLand
-        "resharper" -> Resharper
-        "resharper-cpp" -> ResharperCpp
+        "goland" -> GoLand
+        "resharper" -> ReSharper
+        "resharper-cpp" -> ReSharperCpp
         "dotcover" -> DotCover
         "dotmemory" -> DotMemory
         "dotpeek" -> DotPeek
@@ -155,9 +155,9 @@ encode product =
         CLion -> "clion"
         DataGrip -> "datagrip"
         AppCode -> "appcode"
-        GogLand -> "gogland"
-        Resharper -> "resharper"
-        ResharperCpp -> "resharper-cpp"
+        GoLand -> "goland"
+        ReSharper -> "resharper"
+        ReSharperCpp -> "resharper-cpp"
         DotCover -> "dotcover"
         DotMemory -> "dotmemory"
         DotPeek -> "dotpeek"
@@ -196,5 +196,20 @@ getCoverTextSize product =
     case product of
         IntelliJ -> ( 616, 90 )
         PhpStorm -> ( 518, 108 )
-        PyCharm -> ( 479, 108 )
+        PyCharm ->  ( 479, 108 )
+        RubyMine -> ( 502, 108 )
+        WebStorm -> ( 567, 90 )
+        CLion -> ( 567, 90 )
+        DataGrip -> ( 468, 108 )
+        AppCode -> ( 518, 108 )
+        GoLand -> ( 419, 90 )
+        ReSharper -> ( 546, 108 )
+        ReSharperCpp -> ( 763, 108 )
+        DotCover -> ( 490, 90 )
+        DotMemory -> ( 620, 108 )
+        DotPeek -> ( 444, 90 )
+        DotTrace -> ( 461, 90 )
+        Rider -> ( 273, 90 )
+        TeamCity -> ( 495, 108 )
         _ -> ( 90, 90 )
+

@@ -23,8 +23,8 @@ const PRODUCTS = [
     },  // // DG_
     { label: 'AC', id: 'appcode'
     },  // appcode // AC_
-    { label: 'GO', id: 'gogland'
-    },  // gogland // GO_
+    { label: 'GO', id: 'goland'
+    },  // goland // GO_
     { label: ' ', id: 'empty1'
     },  // separator
     { label: 'R#', id: 'resharper'
