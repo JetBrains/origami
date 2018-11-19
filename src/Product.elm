@@ -7,6 +7,7 @@ module Product exposing
     , encode
     , getLogoPath
     , getTextLinePath
+    , getCoverTextSize
     )
 
 
@@ -17,7 +18,6 @@ type alias Palette = List Color
 
 type Product
     = JetBrains
-    | Mono
     | IntelliJ
     | PhpStorm
     | PyCharm
@@ -26,9 +26,9 @@ type Product
     | CLion
     | DataGrip
     | AppCode
-    | GogLand
-    | Resharper
-    | ResharperCpp
+    | GoLand
+    | ReSharper
+    | ReSharperCpp
     | DotCover
     | DotMemory
     | DotPeek
@@ -55,7 +55,6 @@ getPalette : Product -> Palette
 getPalette product =
     case product of
         JetBrains -> [ "#ad3259",  "#aa489a", "#ffdb2e" ]
-        Mono -> [ "#ffffff",  "#aaaaaa", "#000000" ]
         IntelliJ -> [ "#003976",  "#fc31fe", "#ffd08d" ]
         PhpStorm ->  [ "#bb43e6", "#9034b1", "#f93394" ]
         PyCharm -> [ "#006137", "#fcf84a", "#f9ff93" ]
@@ -64,9 +63,9 @@ getPalette product =
         CLion -> [ "#32d791", "#1a9edd", "#ea3a8c" ]
         DataGrip -> [ "#32d791", "#9779f5", "#fd5fe4" ]
         AppCode -> [ "#2b7fe3", "#30de95", "#25daee" ]
-        GogLand -> [ "#078efc", "#bb4efc", "#3bea62" ]
-        Resharper -> [ "#c21456", "#e14ce3", "#fdbc2c" ]
-        ResharperCpp ->  [ "#fdbc2c", "#e14ce3", "#c21456" ]
+        GoLand -> [ "#078efc", "#bb4efc", "#3bea62" ]
+        ReSharper -> [ "#c21456", "#e14ce3", "#fdbc2c" ]
+        ReSharperCpp ->  [ "#fdbc2c", "#e14ce3", "#c21456" ]
         DotCover -> [ "#fd7522", "#786bfb", "#e14ce3" ]
         DotMemory -> [ "#fdbc2c", "#786bfb", "#e14ce3" ]
         DotPeek -> [ "#23cbfc", "#786bfb", "#e14ce3" ]
@@ -94,9 +93,9 @@ getName product =
         CLion -> "CLion"
         DataGrip -> "DataGrip"
         AppCode -> "AppCode"
-        GogLand -> "GogLand"
-        Resharper -> "Resharper"
-        ResharperCpp -> "Resharper C++"
+        GoLand -> "GoLand"
+        ReSharper -> "ReSharper"
+        ReSharperCpp -> "ReSharper C++"
         DotCover -> "DotCover"
         DotMemory -> "DotMemory"
         DotPeek -> "DotPeek"
@@ -108,7 +107,6 @@ getName product =
         Hub -> "Hub"
         Kotlin -> "Kotlin"
         MPS -> "MPS"
-        Mono -> "Mono"
         Unknown -> "Unknown"
 
 
@@ -116,7 +114,6 @@ decode : String -> Product
 decode id =
     case id of
         "jetbrains" -> JetBrains
-        "mono" -> Mono
         "intellij-idea" -> IntelliJ
         "phpstorm" -> PhpStorm
         "pycharm" -> PyCharm
@@ -125,9 +122,9 @@ decode id =
         "clion" -> CLion
         "datagrip" -> DataGrip
         "appcode" -> AppCode
-        "gogland" -> GogLand
-        "resharper" -> Resharper
-        "resharper-cpp" -> ResharperCpp
+        "goland" -> GoLand
+        "resharper" -> ReSharper
+        "resharper-cpp" -> ReSharperCpp
         "dotcover" -> DotCover
         "dotmemory" -> DotMemory
         "dotpeek" -> DotPeek
@@ -154,9 +151,9 @@ encode product =
         CLion -> "clion"
         DataGrip -> "datagrip"
         AppCode -> "appcode"
-        GogLand -> "gogland"
-        Resharper -> "resharper"
-        ResharperCpp -> "resharper-cpp"
+        GoLand -> "goland"
+        ReSharper -> "resharper"
+        ReSharperCpp -> "resharper-cpp"
         DotCover -> "dotcover"
         DotMemory -> "dotmemory"
         DotPeek -> "dotpeek"
@@ -168,7 +165,6 @@ encode product =
         Hub -> "hub"
         Kotlin -> "kotlin"
         MPS -> "mps"
-        Mono -> "mono"
         Unknown -> "unknown"
 
 
@@ -176,7 +172,6 @@ getLogoPath : Product -> Maybe String
 getLogoPath product =
     (case product of
         Unknown -> Nothing
-        Mono -> Nothing
         product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ ".svg")
 
@@ -185,6 +180,34 @@ getTextLinePath : Product -> Maybe String
 getTextLinePath product =
     (case product of
         Unknown -> Nothing
-        Mono -> Nothing
         product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ "-text.svg")
+
+
+getCoverTextSize : Product -> ( Int, Int )
+getCoverTextSize product =
+    case product of
+        IntelliJ -> ( 616, 90 )
+        PhpStorm -> ( 518, 108 )
+        PyCharm ->  ( 479, 108 )
+        RubyMine -> ( 502, 108 )
+        WebStorm -> ( 567, 90 )
+        CLion -> ( 567, 90 )
+        DataGrip -> ( 468, 108 )
+        AppCode -> ( 518, 108 )
+        GoLand -> ( 419, 90 )
+        ReSharper -> ( 546, 108 )
+        ReSharperCpp -> ( 763, 108 )
+        DotCover -> ( 490, 90 )
+        DotMemory -> ( 620, 108 )
+        DotPeek -> ( 444, 90 )
+        DotTrace -> ( 461, 90 )
+        Rider -> ( 273, 90 )
+        TeamCity -> ( 495, 108 )
+        YouTrack -> ( 485, 90 )
+        UpSource -> ( 490, 104 )
+        Hub -> ( 211, 90 )
+        Kotlin -> ( 323, 99 )
+        MPS -> ( 200, 77 )
+        _ -> ( 90, 90 )
+
