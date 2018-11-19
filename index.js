@@ -180,7 +180,7 @@ const prepareImportExport = () => {
 
 }
 
-const savePng = (hiddenLink, _, [ coverWidth, coverHeight ]) => {
+const savePng = (hiddenLink, _, [ imageWidth, imageHeight ]) => {
     const srcCanvas = document.querySelector('.webgl-layers');
     const trgCanvas = document.querySelector('#js-save-buffer');
     const [ width, height ] = [ srcCanvas.width, srcCanvas.height ];
@@ -202,11 +202,12 @@ const savePng = (hiddenLink, _, [ coverWidth, coverHeight ]) => {
                     function(image, context) {
                         context.translate(state.posX, state.posY);
                         context.scale(state.scale, state.scale);
+                        context.translate(-(imageWidth / 2), -(imageHeight / 2));
                         context.globalCompositeOperation = state.blend;
                         image.width = state.width;
                         image.height = state.height;
                     },
-                    trgCanvas, 0, 0, coverWidth, coverHeight,
+                    trgCanvas, 0, 0, imageWidth, imageHeight,
                     () => {
                         trgCanvas.toBlob(blob => {
                             const url = URL.createObjectURL(blob);
