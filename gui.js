@@ -23,8 +23,8 @@ const PRODUCTS = [
     },  // // DG_
     { label: 'AC', id: 'appcode'
     },  // appcode // AC_
-    { label: 'GO', id: 'gogland'
-    },  // gogland // GO_
+    { label: 'GO', id: 'goland'
+    },  // goland // GO_
     { label: ' ', id: 'empty1'
     },  // separator
     { label: 'R#', id: 'resharper'
@@ -57,9 +57,7 @@ const PRODUCTS = [
     { label: 'KT', id: 'kotlin'
     },   // kotlin // KT_
     { label: 'MPS', id: 'mps'
-    },  // mps // MPS_
-    { label: 'Mono', id: 'mono'
-  }  // mono
+    }  // mps // MPS_
 ];
 const PRODUCT_TO_ID = {};
 PRODUCTS.forEach((product) => {
@@ -71,21 +69,21 @@ PRODUCTS.forEach((product) => {
 });
 
 
-BLEND_FUNCS =
+const BLEND_FUNCS =
   { '+': 'customAdd'
   , '-': 'customSubtract'
   , 'R-': 'reverseSubtract'
   };
 
 
-BLEND_FUNCS_IDS =
+const BLEND_FUNCS_IDS =
   { 'customAdd': 0
   , 'customSubtract': 1
   , 'reverseSubtract': 2
   };
 
 
-BLEND_FACTORS =
+const BLEND_FACTORS =
   { '0': 'zero'
   , '1': 'one'
   , 'sC': 'srcColor'
@@ -104,7 +102,7 @@ BLEND_FACTORS =
 };
 
 
-BLEND_FACTORS_IDS =
+const BLEND_FACTORS_IDS =
   { 'zero': 0
   , 'one': 1
   , 'srcColor': 2
@@ -123,15 +121,15 @@ BLEND_FACTORS_IDS =
 };
 
 
-SVG_BLENDS =
+const SVG_BLENDS =
   [ 'normal', 'overlay' ];
 
 
-RENDER_MODES =
+const RENDER_MODES =
   [ 'triangles', 'lines' ] // disable ", 'partial-lines', 'points' modes"
 
 
-RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
+const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 { 'window': [ 0, 0 ]
 , '480x297 prodcard' : [ 480, 297 ] //product card
 , '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
@@ -149,18 +147,22 @@ RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 , '2850x1200 landg' : [ 2850, 1200 ] // Landing page
 };
 
-WALLPAPER_SIZES =
+
+const WALLPAPER_SIZES =
   { 'window': [0, 0]
   , '1920x1980': [ 1920, 1980 ]
   , '1366x768': [ 1366, 768 ]
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
   , '1680x1050': [ 1680, 1050 ]
-  , '640x400' : [ 640, 400 ] // for testing, in production delete
-  , '250x250' : [ 250, 250 ] // for testing, in production delete
   };
 
-PREDEFINED_SIZES = WALLPAPER_SIZES; // TODO: Switcher by mode needed
+
+const BLENDS_SETS =
+  { 'normal': [ [ '+', '1', '0' ], [ '+', '1', '0' ] ]
+  , 'lighten': [ [ '+', 'sC', '1-sC' ], [ '+', 'sC', '1-sC' ] ]
+  };
+
 
 const funcKeys = Object.keys(BLEND_FUNCS);
 const factorKeys = Object.keys(BLEND_FACTORS);
@@ -176,35 +178,49 @@ const update = (gui) => () => {
   }
 }
 
+const getSizesSet = (mode) =>
+  (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
+
 const Config = function(layers, defaults, funcs, randomize) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
 
+    const mode = defaults.mode;
     this.product = defaults.product;
     this.omega = defaults.omega;
 
+    const PREDEFINED_SIZES = getSizesSet(mode);
+
     layers.forEach((layer, index) => {
       if (layer.webglOrSvg == 'webgl') {
-        if (layer.blend[0]) {
-          const blend = layer.blend[0];
-          this['blendColor' + index] = blend.color || [ 1, 0, 0, 0 ]; // FIXME: get RGBA components
-          this['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[blend.colorEq[0]]];
-          this['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[1]]];
-          this['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[2]]];
-          this['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[blend.alphaEq[0]]];
-          this['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[1]]];
-          this['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[2]]];
-        } else {
-          this['blendColor' + index] = [ 0, 0, 0, 0 ];
-          this['blendColorEqFn' + index] = customAdd;
-          this['blendColorEqFactor0' + index] = one;
-          this['blendColorEqFactor1' + index] = zero;
-          this['blendAlphaEqFn' + index] = customAdd;
-          this['blendAlphaEqFactor0' + index] = one;
-          this['blendAlphaEqFactor1' + index] = zero;
+        if (mode !== 'prod') {
+
+          if (layer.blend[0]) {
+            const blend = layer.blend[0];
+            this['blendColor' + index] = blend.color || [ 1, 0, 0, 0 ]; // FIXME: get RGBA components
+            this['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[blend.colorEq[0]]];
+            this['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[1]]];
+            this['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[2]]];
+            this['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[blend.alphaEq[0]]];
+            this['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[1]]];
+            this['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[2]]];
+          } else {
+            this['blendColor' + index] = [ 0, 0, 0, 0 ];
+            this['blendColorEqFn' + index] = customAdd;
+            this['blendColorEqFactor0' + index] = one;
+            this['blendColorEqFactor1' + index] = zero;
+            this['blendAlphaEqFn' + index] = customAdd;
+            this['blendAlphaEqFactor0' + index] = one;
+            this['blendAlphaEqFactor1' + index] = zero;
+          }
+
+        } else { // mode == 'prod'
+          this['blendSet' + index] = BLENDS_SETS['normal'];
+          this['blendColor' + index] =
+              layer.blend[0].color || [ 1, 0, 0, 0 ]; // FIXME: get RGBA components
         }
-      } else {
+      } else { // webglOrSvg != 'webgl'
         this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
 
@@ -229,7 +245,7 @@ const Config = function(layers, defaults, funcs, randomize) {
 
     this.customSize = PREDEFINED_SIZES['window'];
 
-    this.savePng = funcs.savePng;
+    //this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
     this.randomize = randomize(this);
     // -------
@@ -242,6 +258,8 @@ const Config = function(layers, defaults, funcs, randomize) {
 function start(document, model, funcs) {
     const defaults = model;
     const { mode, layers } = model;
+
+    const PREDEFINED_SIZES = getSizesSet(mode);
 
     function updateProduct(id) {
       const product = PRODUCTS_BY_ID[id];
@@ -278,44 +296,83 @@ function start(document, model, funcs) {
     }
 
     function addWebGLBlend(folder, config, layer, index) {
-      const blendFolder = folder.addFolder('blend');
-      const color = blendFolder.addColor(config, 'blendColor' + index);
-      const colorEqFn = blendFolder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
-      const colorEqFactor0 = blendFolder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
-      const colorEqFactor1 = blendFolder.add(config, 'blendColorEqFactor1' + index, BLEND_FACTORS);
-      const alphaEqFn = blendFolder.add(config, 'blendAlphaEqFn' + index, BLEND_FUNCS);
-      const alphaEqFactor0 = blendFolder.add(config, 'blendAlphaEqFactor0' + index, BLEND_FACTORS);
-      const alphaEqFactor1 = blendFolder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
-      //folder.open();
+      if (mode !== 'prod') {
 
-      color.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
-        return blend;
-      }));
-      colorEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.colorEq[0] = BLEND_FUNCS_IDS[value];
-        return blend;
-      }));
-      colorEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.colorEq[1] = BLEND_FACTORS_IDS[value];
-        return blend;
-      }));
-      colorEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.colorEq[2] = BLEND_FACTORS_IDS[value];
-        return blend;
-      }));
-      alphaEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.alphaEq[0] = BLEND_FUNCS_IDS[value];
-        return blend;
-      }));
-      alphaEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.alphaEq[1] = BLEND_FACTORS_IDS[value];
-        return blend;
-      }));
-      alphaEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
-        return blend;
-      }));
+        const blendFolder = folder.addFolder('blend');
+        const color = blendFolder.addColor(config, 'blendColor' + index);
+        const colorEqFn = blendFolder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
+        const colorEqFactor0 =
+            blendFolder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
+        const colorEqFactor1 =
+            blendFolder.add(config, 'blendColorEqFactor1' + index, BLEND_FACTORS);
+        const alphaEqFn =
+            blendFolder.add(config, 'blendAlphaEqFn' + index, BLEND_FUNCS);
+        const alphaEqFactor0 =
+            blendFolder.add(config, 'blendAlphaEqFactor0' + index, BLEND_FACTORS);
+        const alphaEqFactor1 =
+            blendFolder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
+        //folder.open();
+
+        color.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
+          return blend;
+        }));
+        colorEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.colorEq[0] = BLEND_FUNCS_IDS[value];
+          return blend;
+        }));
+        colorEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.colorEq[1] = BLEND_FACTORS_IDS[value];
+          return blend;
+        }));
+        colorEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.colorEq[2] = BLEND_FACTORS_IDS[value];
+          return blend;
+        }));
+        alphaEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.alphaEq[0] = BLEND_FUNCS_IDS[value];
+          return blend;
+        }));
+        alphaEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.alphaEq[1] = BLEND_FACTORS_IDS[value];
+          return blend;
+        }));
+        alphaEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
+          return blend;
+        }));
+
+      } else { // mode == 'prod'
+
+        const blendSet = folder.add(config, 'blendSet' + index, BLENDS_SETS).name('blend');
+        const blendColor = folder.addColor(config, 'blendColor' + index).name('color');
+
+        blendColor.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
+          return blend;
+        }));
+
+        blendSet.onFinishChange((value) => {
+          blendConfig = value.split(',');
+
+          const color = config['blendColor'+index];
+          const newBlend =
+          { color: { r: color[0], g: color[1], b: color[2], a: color[3] }
+          , colorEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[0]]]
+                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[1]]]
+                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[2]]]
+                     ]
+          , alphaEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[3]]]
+                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[4]]]
+                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[5]]]
+                     ]
+          }
+        funcs.changeWGLBlend(index, newBlend);
+          // blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
+          //return blend;
+        });
+
+      }
     }
 
     function addSVGBlend(folder, config, layer, index) {
@@ -329,14 +386,14 @@ function start(document, model, funcs) {
       if (isFss(layer)) {
         const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
         const lightSpeed = folder.add(config, 'lightSpeed' + index).name('light pace')
-                                 .min(100).max(1140);
-        const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
-        const facesY = folder.add(config, 'facesY' + index).name('row').min(1).max(100).step(1);
+                                 .min(100).max(2000);
+        const facesX = folder.add(config, 'facesX' + index).name('columns').min(1).max(100).step(1);
+        const facesY = folder.add(config, 'facesY' + index).name('rows').min(1).max(100).step(1);
         const fogFolder = folder.addFolder('fog');
         const vignette = fogFolder.add(config, 'vignette' + index).name('shine').min(0).max(1).step(0.01);
         const iris = fogFolder.add(config, 'iris' + index).name('density').min(0).max(1).step(0.01);
         const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
-        
+
         const amplitudeFolder = folder.addFolder('ranges');
         const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('horizontal')
           .min(0.0).max(1.0);
@@ -388,7 +445,7 @@ function start(document, model, funcs) {
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
-    gui.add(config, 'savePng').name('save png');
+    // gui.add(config, 'savePng').name('save png');
     if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
     gui.add(config, 'randomize').name('i feel lucky');
     product.onFinishChange(funcs.changeProduct);
@@ -451,6 +508,7 @@ function start(document, model, funcs) {
 
 const randomize = (funcs, model, updateGui) => (config) => () => {
   const toSend = deepClone(model);
+  const mode = model.mode;
   const omega = Math.random() * 2 - 1;
   const productIdx = Math.floor(Math.random() * PRODUCTS.length);
   const product = PRODUCTS[productIdx].id;
@@ -510,34 +568,52 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
 
       // comment this out to not randomize blends
       if (layerDef.webglOrSvg == 'webgl') {
-        const blendFuncsCount = Object.values(BLEND_FUNCS_IDS).length;
-        const blendFactorsCount = Object.values(BLEND_FACTORS_IDS).length;
-        const colorEq =
-          [ Math.floor(Math.random() * blendFuncsCount)
-          , Math.floor(Math.random() * blendFactorsCount)
-          , Math.floor(Math.random() * blendFactorsCount)
-          ];
-        const alphaEq =
-          [ Math.floor(Math.random() * blendFuncsCount)
-          , Math.floor(Math.random() * blendFactorsCount)
-          , Math.floor(Math.random() * blendFactorsCount)
-          ];
+        if (mode !== 'prod') {
 
-        //config['blendColor' + index] = [ 0, 0, 0, 0 ];
-        config['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[colorEq[0]]];
-        config['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[colorEq[0]]];
-        config['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[colorEq[1]]];
-        config['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[alphaEq[0]]];;
-        config['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[alphaEq[0]]];
-        config['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[alphaEq[1]]];
-        // TODO: color { r: color[0], g: color[1], b: color[2], a: color[3] }
-        layerDef.blend =
-          [ { color: null
-            , colorEq: colorEq
-            , alphaEq: alphaEq
-            }
-          , null
-          ]
+          const blendFuncsCount = Object.values(BLEND_FUNCS_IDS).length;
+          const blendFactorsCount = Object.values(BLEND_FACTORS_IDS).length;
+          const colorEq =
+            [ Math.floor(Math.random() * blendFuncsCount)
+            , Math.floor(Math.random() * blendFactorsCount)
+            , Math.floor(Math.random() * blendFactorsCount)
+            ];
+          const alphaEq =
+            [ Math.floor(Math.random() * blendFuncsCount)
+            , Math.floor(Math.random() * blendFactorsCount)
+            , Math.floor(Math.random() * blendFactorsCount)
+            ];
+
+          //config['blendColor' + index] = [ 0, 0, 0, 0 ];
+          config['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[colorEq[0]]];
+          config['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[colorEq[0]]];
+          config['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[colorEq[1]]];
+          config['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[alphaEq[0]]];;
+          config['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[alphaEq[0]]];
+          config['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[alphaEq[1]]];
+          // TODO: color { r: color[0], g: color[1], b: color[2], a: color[3] }
+          layerDef.blend =
+            [ { color: null
+              , colorEq: colorEq
+              , alphaEq: alphaEq
+              }
+            , null
+            ];
+
+        } else {
+
+          const blendSetIndex = [ Math.floor(Math.random() * Object.values(BLENDS_SETS).length) ];
+          const blendSet = BLENDS_SETS[blendSetIndex];
+          config['blendSet' + index] = blendSet;
+          // TODO:
+          // layerDef.blend =
+          //   [ { color: null
+          //     , colorEq: []
+          //     , alphaEq: alphaEq
+          //     }
+          //   , null
+          //   ];
+
+        }
       } else {
 
       }

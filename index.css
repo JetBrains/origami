@@ -1,5 +1,6 @@
 body {
     margin: 0;
+    background-color: #333;
 }
 
 #patch-target {
@@ -108,15 +109,14 @@ svg.text-layer {
 }
 
 .timeline {
-    text-align: center;  
+    text-align: center;
     position: relative;
     top: 3px;
 }
 
 .overlay-panel .label {
-    color: #aaa !important;
-
-    font-size: 11px;
+    color: #fff !important;
+    font-size: 13px;
 }
 
 .overlay-panel .past {
@@ -126,7 +126,8 @@ svg.text-layer {
 .overlay-panel .future {
     padding-left: 10px;
 }
-.export_html5 {
+
+.export_html5, .export_png {
     position: relative;
     left: -5px;
     text-align: center;
@@ -134,6 +135,7 @@ svg.text-layer {
     height: 32px;
     padding: 0 16px;
     background: #167dff;
+    /* background: #000; */
     border: 0;
     font-size: 12px;
     color: #fff;
@@ -163,18 +165,29 @@ svg.text-layer {
     cursor: pointer;
     white-space: nowrap;
     text-decoration: none;
-    
+}
+
+.export_html5 {
+    margin-right: 5px;
 
 }
+
+.export_png {
+    margin-left: 5px;
+
+}
+
+.export_html5:hover, .export_png:hover {
+    background-color: #0887d7;
+}
+
 
 .spacebar_info {
-    color: #777;
+    color: #fff;
     margin-top: 30px;
-    font-size: 11px;
+    font-size: 13px;
 }
 
-
-  
 .text-layer--title, .text-layer--subtitle {
     font-family: 'Gotham', Helvetica, sans-serif;
     font-weight: 170;
@@ -196,3 +209,6 @@ svg.text-layer {
     /* border: 1px solid red; */
 }
 
+.dg.ac {
+    z-index: 30 !important;
+}

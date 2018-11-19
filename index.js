@@ -153,34 +153,34 @@ const prepareImportExport = () => {
             alert('Failed to create .zip');
         }
     });
-    document.getElementById('close-export').addEventListener('click', () => {
-        document.getElementById('export-target').className = '';
-    });
-    document.getElementById('close-import').addEventListener('click', () => {
-        document.getElementById('import-target').className = '';
-    });
-    setTimeout(() => {
-        document.getElementById('import-button').addEventListener('click', () => {
-            document.getElementById('import-target').className = 'shown';
-        });
-    }, 100);
-    document.getElementById('import').addEventListener('click', () => {
-        try {
-            if (document.getElementById('import-code').value) {
-                const importedScene = JSON.parse(document.getElementById('import-code').value);
-                import_(app, importedScene);
-            } else {
-                alert('Nothing to import');
-            }
-        } catch(e) {
-            console.error(e);
-            alert('Failed to parse or send, incorrect format?');
-        }
-    });
+    // document.getElementById('close-export').addEventListener('click', () => {
+    //     document.getElementById('export-target').className = '';
+    // });
+    // document.getElementById('close-import').addEventListener('click', () => {
+    //     document.getElementById('import-target').className = '';
+    // });
+    // setTimeout(() => {
+    //     document.getElementById('import-button').addEventListener('click', () => {
+    //         document.getElementById('import-target').className = 'shown';
+    //     });
+    // }, 100);
+    // document.getElementById('import').addEventListener('click', () => {
+    //     try {
+    //         if (document.getElementById('import-code').value) {
+    //             const importedScene = JSON.parse(document.getElementById('import-code').value);
+    //             import_(app, importedScene);
+    //         } else {
+    //             alert('Nothing to import');
+    //         }
+    //     } catch(e) {
+    //         console.error(e);
+    //         alert('Failed to parse or send, incorrect format?');
+    //     }
+    // });
 
 }
 
-const savePng = (hiddenLink) => {
+const savePng = (hiddenLink, _, [ imageWidth, imageHeight ]) => {
     const srcCanvas = document.querySelector('.webgl-layers');
     const trgCanvas = document.querySelector('#js-save-buffer');
     const [ width, height ] = [ srcCanvas.width, srcCanvas.height ];
@@ -192,40 +192,24 @@ const savePng = (hiddenLink) => {
         const trgContext = trgCanvas.getContext('2d');
         trgContext.drawImage(srcCanvas, 0, 0);
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
-        // FIXME: a temporary hack to draw a logo on the canvas,
-        // use product image itself instead
-        hiddenLink.download = width + 'x'+ height + '-jetbrains.png';
-            if (document.querySelector('.logo-layer')) {
-                const logoSrc = document.querySelector('.logo-layer');
-                const state = JSON.parse(logoSrc.getAttribute('data-stored'));
-                drawToCanvas.image(state.logoPath,
-                    function(image, context) {
-                        context.translate(state.posX, state.posY);
-                        context.scale(state.scale, state.scale);
-                        context.globalCompositeOperation = state.blend;
-                        image.width = state.width;
-                        image.height = state.height;
-                    },
-                    trgCanvas, 0, 0, 120, 120,
-                    () => {
-                        trgCanvas.toBlob(blob => {
-                            const url = URL.createObjectURL(blob);
-                            hiddenLink.href = url;
-                            hiddenLink.click();
-                            URL.revokeObjectURL(url);
-                            trgCanvas.style.display = 'none';
-                        });
-                    }
-                );
-            } else {
-                trgCanvas.toBlob(blob => {
-                    const url = URL.createObjectURL(blob);
-                    hiddenLink.href = url;
-                    hiddenLink.click();
-                    URL.revokeObjectURL(url);
-                    trgCanvas.style.display = 'none';
+
+            // FIXME: a temporary hack to draw a logo on the canvas,
+            // use product image itself instead
+            hiddenLink.download = width + 'x'+ height + '-jetbrains.png';
+            drawToCanvas.selector('.product-name-layer', trgCanvas, () => {
+                drawToCanvas.selector('.logo-layer', trgCanvas, () => {
+
+                    trgCanvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        hiddenLink.href = url;
+                        hiddenLink.click();
+                        URL.revokeObjectURL(url);
+                        trgCanvas.style.display = 'none';
+                    });
+
                 });
-            }
+            });
+
         });
     });
 }
@@ -238,11 +222,15 @@ setTimeout(() => {
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
-    app.ports.presetSizeChanged.subscribe(size => {
+    app.ports.presetSizeChanged.subscribe(({ size, coverSize }) => {
         if (savingBatch) {
             // console.log('saving ', size);
-            savePng(hiddenLink, size);
+            savePng(hiddenLink, size, coverSize);
         };
+    });
+
+    app.ports.triggerSavePng.subscribe(({ size, coverSize }) => {
+        savePng(hiddenLink, size, coverSize);
     });
 
     app.ports.startGui.subscribe((model) => {
@@ -281,7 +269,8 @@ setTimeout(() => {
                     app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
                 }
             }
-            , savePng : () => savePng(hiddenLink)
+            , savePng : () =>
+                { app.ports.savePng.send(null); }
             , saveBatch : sizes_ => {
                 let sizes = sizes_.concat([[0, 0]]);
                 let sizeIndex = 0;
