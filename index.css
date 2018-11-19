@@ -1,5 +1,6 @@
 body {
     margin: 0;
+    background-color: #333;
 }
 
 #patch-target {
@@ -115,7 +116,7 @@ svg.text-layer {
 
 .overlay-panel .label {
     color: #fff !important;
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .overlay-panel .past {
@@ -168,17 +169,23 @@ svg.text-layer {
 
 .export_html5 {
     margin-right: 5px;
+
 }
 
 .export_png {
     margin-left: 5px;
+
+}
+
+.export_html5:hover, .export_png:hover {
+    background-color: #0887d7;
 }
 
 
 .spacebar_info {
     color: #fff;
     margin-top: 30px;
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .text-layer--title, .text-layer--subtitle {

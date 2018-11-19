@@ -976,12 +976,12 @@ view model =
                 -- , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
                 -- , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
                 , input
-                    [ type_ "button", class "export_html5", onClick ExportZip, value "export to html5.zip" ]
+                    [ type_ "button", class "export_html5", onClick ExportZip, value "download html5.zip" ]
                     [ text "Export to html5.zip" ]
                 , input
-                    [ type_ "button", class "export_png", onClick SavePng, value "export to png" ]
+                    [ type_ "button", class "export_png", onClick SavePng, value "save to png" ]
                     [ text "Export to png" ]
-                , div [ H.class "spacebar_info" ] [ text "to hide controls press spacebar" ]
+                , div [ H.class "spacebar_info" ] [ text "spacebar to hide controls" ]
                 ]
             ) else div [] []
         , mergeWebGLLayers model |>
