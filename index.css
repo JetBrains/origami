@@ -127,7 +127,7 @@ svg.text-layer {
     padding-left: 10px;
 }
 
-.export_html5 {
+.export_html5, .export_png {
     position: relative;
     left: -5px;
     text-align: center;
@@ -164,6 +164,14 @@ svg.text-layer {
     cursor: pointer;
     white-space: nowrap;
     text-decoration: none;
+}
+
+.export_html5 {
+    margin-right: 5px;
+}
+
+.export_png {
+    margin-left: 5px;
 }
 
 .spacebar_info {
