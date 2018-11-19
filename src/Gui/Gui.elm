@@ -19,22 +19,80 @@ view = Gui.View.view
 init : Model -- ( UI, Cmd Msg )
 init =
     let
-        webglBlendGrid = noChildren
+        productsGrid =
+            ( ( 4, 3 )
+            ,
+                [ "jetbrains"
+                , "intellij"
+                , "phpstorm"
+                , "pycharm"
+                , "rubymine"
+                , "webstorm"
+                , "clion"
+                , "datagrip"
+                , "appcode"
+                , "goland"
+                , "resharper"
+                , "resharper-cpp"
+                --, "dotcover"
+                -- TODO
+                ] |> List.map ChoiceItem
+            )
+        sizeGrid =
+            ( ( 2, 3 )
+            ,
+                [ "window"
+                , "1920x1980"
+                , "1366x768"
+                , "1440x900"
+                , "1536x864"
+                , "1680x1050"
+                ] |> List.map ChoiceItem
+            )
+        webglBlendGrid =
+            let
+                funcGrid =
+                    ( ( 3, 1 )
+                    , [ "+", "-", "R-" ]
+                        |> List.map ChoiceItem
+                    )
+                factorGrid =
+                    ( ( 8, 2 )
+                    , [ "0", "1"
+                      , "sC", "1-sC"
+                      , "dC", "1-dC"
+                      , "sA", "1-sA"
+                      , "dA", "1-dA"
+                      , "AS"
+                      , "CC", "1-CC"
+                      , "CA", "1-CA"
+                      ] |> List.map ChoiceItem
+                    )
+            in
+                ( ( 3, 2 )
+                -- TODO color
+                , [ Choice "colorFn" Collapsed 0 funcGrid
+                  , Choice "colorFt1" Collapsed 1 factorGrid
+                  , Choice "colorFt2" Collapsed 0 factorGrid
+                  , Choice "alphaFn" Collapsed 0 funcGrid
+                  , Choice "alphaFt1" Collapsed 1 factorGrid
+                  , Choice "alphaFt2" Collapsed 0 factorGrid
+                  ]
+                )
         svgBlendGrid =
             ( ( 3, 3 )
             ,
-                [ ChoiceItem "normal"
-                , ChoiceItem "overlay"
-                , ChoiceItem "multiply"
-                , ChoiceItem "darken"
-                , ChoiceItem "lighten"
-                , ChoiceItem "multiply"
-                , ChoiceItem "multiply"
-                , ChoiceItem "multiply"
-                , ChoiceItem "multiply"
-                ]
+                [ "normal"
+                , "overlay"
+                , "multiply"
+                , "darken"
+                , "lighten"
+                , "multiply"
+                , "multiply"
+                , "multiply"
+                , "multiply"
+                ] |> List.map ChoiceItem
             )
-
         amplitudeGrid = noChildren
         fssControls =
             oneLine
@@ -42,10 +100,33 @@ init =
                 , Toggle "mirror" TurnedOff
                 , Knob "lights" 0
                 , Knob "col" 0
-                , Knob "vignette" 0
-                , Knob "iris" 0
-                , Choice "mesh" Collapsed 0 noChildren
-                , Nested "amplitude" Collapsed amplitudeGrid
+                , Knob "row" 0
+                , Nested "fog" Collapsed <|
+                    ( ( 2, 1 )
+                    , [ Knob "shine" 0
+                      , Knob "density" 0
+                      ]
+                    )
+                , Choice "mesh" Collapsed 0 <|
+                    ( ( 2, 1 )
+                    , [ ChoiceItem "triangles"
+                      , ChoiceItem "lines"
+                      ]
+                    )
+                , Nested "ranges" Collapsed <|
+                    ( ( 3, 1 )
+                    , [ Knob "horizontal" 0
+                      , Knob "vertical" 0
+                      , Knob "depth" 0
+                      ]
+                    )
+                , Nested "hsb" Collapsed <|
+                    ( ( 3, 1 )
+                    , [ Knob "hue" 0
+                      , Knob "saturation" 0
+                      , Knob "brightness" 0
+                      ]
+                    )
                 , Nested "blend" Collapsed webglBlendGrid
                 ]
         svgControls =
@@ -55,11 +136,11 @@ init =
                 ]
     in
         oneLine
-            [ Choice "product" Collapsed 0 noChildren
+            [ Choice "product" Collapsed 0 productsGrid
             , Knob "rotation" 0
-            , Choice "size" Collapsed 0 noChildren
+            , Choice "size" Collapsed 0 sizeGrid
             , Button "save png" <| always ()
-            , Button "save batch" <| always ()
+            , Button "lucky" <| always ()
             , Nested "logo" Collapsed svgControls
             , Nested "title" Collapsed svgControls
             , Nested "net" Collapsed fssControls
