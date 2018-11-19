@@ -503,7 +503,6 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
   const omega = Math.random() * 2 - 1;
   const productIdx = Math.floor(Math.random() * PRODUCTS.length);
   const product = PRODUCTS[productIdx].id;
-  console.log(productIdx, product);
 
   config.product = product;
   config.omega = omega;
@@ -614,7 +613,7 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
 
       }
   });
-  console.log(toSend);
+  // console.log(toSend);
 
   // toSend.layers = model.layers.reverse().map((layerDef, index) => {
   //     return layerDef;

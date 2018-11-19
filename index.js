@@ -74,7 +74,7 @@ const export_ = (app, exportedState) => {
             ? exportScene(fssScenes[index]) || exportScene(buildFSS(model, layer.model))
             : null;
     })
-    console.log(stateObj);
+    // console.log(stateObj);
     return {
         source: stateObj,
         json: JSON.stringify(stateObj, null, 2)

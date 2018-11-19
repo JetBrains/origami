@@ -44,7 +44,7 @@ encodePairAsArray f ( v1, v2 ) =
 
 encodeTripleAsArray : (a -> E.Value) -> ( a, a, a ) -> E.Value
 encodeTripleAsArray f ( v1, v2, v3 ) =
-   [ v1, v2, v2 ]
+   [ v1, v2, v3 ]
         |> List.map f
         |> Array.fromList
         |> E.array
