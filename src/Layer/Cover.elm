@@ -12,8 +12,9 @@ import Model exposing (UiMode(..))
 import Product 
 
 
-shiftX = 320 -- half of the text width
-shiftY = 40 -- half of the text height
+
+shiftX = 0 -- half of the text width
+shiftY = 0 -- half of the text height
 defaultSize = 110
 defaultWidth = 1500.0
 imageWidth : Int
@@ -24,12 +25,16 @@ scaleFactor : Float
 scaleFactor = 0.1
 
 
+
 view : UiMode -> Product -> (Int, Int) -> (Int, Int) -> Blend.Blend -> Html a
 view mode product ( w, h ) ( x, y ) blend =
     let
+
         scale = toFloat w / defaultWidth
-        posX = (toFloat w / 2) - toFloat x - shiftX
-        posY = (toFloat h / 2) - toFloat y - shiftY
+        centerX = (toFloat w / 2) - toFloat x
+        centerY = (toFloat h / 2) - toFloat y
+        logoX = toFloat w - toFloat x
+        logoY = toFloat h - toFloat y
         logoPath = case Product.getLogoPath Product.JetBrains of
             Just fileName -> "./assets/" ++ fileName
             Nothing -> ""   
@@ -38,13 +43,12 @@ view mode product ( w, h ) ( x, y ) blend =
             Nothing -> ""                    
     in
         div
-            [ HAttrs.class "text-layer"
+            [ HAttrs.class "cover-layer"
             , HAttrs.style
                 [ ("mix-blend-mode", Blend.encode blend)
-                , ("position", "absolute")
-                , ("top", toString posY ++ "px")
-                , ("left", toString posX ++ "px")
-                , ("transform", "scale(" ++ toString scale ++ ")")
+                 , ("position", "absolute")
+                 , ("top", "0px")
+                 , ("left", "0px")
                 , ("font-size", toString defaultSize ++ "px")
                 , ("font-family", "'Gotham', Helvetica, sans-serif")
                 , ("font-weight", "170")
@@ -52,23 +56,26 @@ view mode product ( w, h ) ( x, y ) blend =
                 , ("color", "white")
                 ]
             ]
-            ( if mode == Production then 
-                [ productName product posX posY textPath blend scale
-                , logo product posX posY logoPath blend scale 
-                ] 
-              else 
-                [ title product
-                , logo product posX posY logoPath blend scale 
-                ] 
-            )
+        ( if mode == Production then
+            [ 
+                -- productName product centerX centerY textPath blend scale
+--            , 
+            productName JetBrains (logoX -  0.1 * toFloat w) (logoY -  0.1 * toFloat w) logoPath blend scale
+            ]
+          else
+            [ 
+                -- title product
+--            , logo product posX posY logoPath blend scale
+            ]
+        )
 
 
-productName : Product -> Float -> Float -> String -> Blend.Blend -> Float -> Html a
+productName : Product -> Float -> Float  -> String -> Blend.Blend -> Float -> Html a
 productName product posX posY logoPath blend scale =
     let
         ( imageWidth, imageHeight ) = case product of 
-            IntelliJ -> ( 300, 50 )
-            _ -> ( 120, 120 )
+            IntelliJ -> ( 600, 88 )
+            _ -> ( 90, 90 )
     in
         div
             [ HAttrs.class ("logo-layer logo-layer--" ++ Product.encode product)
@@ -83,17 +90,17 @@ productName product posX posY logoPath blend scale =
             |> encodeStoredData
             |> E.encode 0
             |> HAttrs.attribute "data-stored"
-            , HAttrs.style
+            , HAttrs.style 
                 [ ("mix-blend-mode", Blend.encode blend)
-                , ("position", "absolute")
+                -- , ("position", "absolute")
                 -- , ("transform", "scale(" ++ toString scale ++ ")")
-                , ("top", "0")
-                , ("left", "0")            
-                -- , ("top", toString posY ++ "px")
+                -- , ("top",  toString  posY ++ "px")
                 -- , ("left", toString posX ++ "px")
-                , ("width",  (if (imageWidth < 48) then "48" else toString ( toFloat imageWidth * scale )) ++ "px")
-                , ("height",  (if (imageHeight < 48) then "48" else toString ( toFloat imageHeight * scale )) ++ "px")
-                --, ("transform", "scale(" ++ toString scale ++ ")")
+                , ("width",  toString ( toFloat imageWidth * scale ) ++ "px")
+                , ("height",  toString ( toFloat imageHeight * scale ) ++ "px")
+                , ("transform", "translate(" ++ toString (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, " ++ toString (posY - (toFloat imageWidth * scale) / 2.0) ++ "px)")
+                -- , ("width",  (if (imageWidth < 48) then "48" else toString ( toFloat imageWidth * scale )) ++ "px")
+
                 -- , ("font-size", toString defaultSize ++ "px")
                 , ("background-image", "url(\"" ++ logoPath ++ "\")")
                 , ("background-repeat", "no-repeat")
@@ -111,16 +118,27 @@ title product =
         [ HAttrs.class
             ("text-layer--title text-layer--" ++ Product.encode product)
         ,  HAttrs.style
-            [ ("max-width", "800px") ]
+            [ ("max-width", "800px")
+--            ,("mix-blend-mode", Blend.encode blend)
+--                , ("position", "absolute")
+--                , ("top", toString posY ++ "px")
+--                , ("left", toString posX ++ "px")
+--                , ("transform", "scale(" ++ toString scale ++ ")")
+              , ("font-size", toString defaultSize ++ "px")
+              , ("font-family", "'Gotham', Helvetica, sans-serif")
+              , ("font-weight", "170")
+              -- , ("text-transform", "uppercase")
+              , ("color", "white")
+              ]
         , HAttrs.contenteditable True
         ]
         [ text <| getName product ]
 
-
+--JetBrains logo
 logo : Product -> Float -> Float -> String -> Blend.Blend -> Float -> Html a
 logo product posX posY logoPath blend scale =
     div
-        [ HAttrs.class ("logo-layer logo-layer--" ++ Product.encode product)
+        [ HAttrs.class ("logo-layer logo-layer--jetbrains")
         , { blend = Blend.encode blend
         , posX = posX
         , posY = posY
@@ -132,15 +150,25 @@ logo product posX posY logoPath blend scale =
         |> encodeStoredData
         |> E.encode 0
         |> HAttrs.attribute "data-stored"
+--        , widthcc (Tuple.first model.size)
+--        , heightcc (Tuple.second model.size)
         , HAttrs.style
             [ ("mix-blend-mode", Blend.encode blend)
+            , ("width", toString imageWidth ++ "px")
+            , ("height", toString imageHeight ++ "px")
             , ("position", "absolute")
-            -- , ("transform", "scale(" ++ toString scale ++ ")")
-            , ("top", toString posY ++ "px")
-            , ("left", toString posX ++ "px")
-            , ("width",  (if (imageWidth < 48) then "48" else toString ( toFloat imageWidth * scale )) ++ "px")
-            , ("height",  (if (imageHeight < 48) then "48" else toString ( toFloat imageHeight * scale )) ++ "px")
-            --, ("transform", "scale(" ++ toString scale ++ ")")
+            , ("top", toString posY ++" px")
+            , ("left", toString posX ++" px")
+--            , ("transform", "translate(" ++ toString posX ++ "px , " ++ toString posY  ++ ")")
+
+--            , ("transform", "scale(" ++ toString scale ++ ")")
+--            , ("transform", "translate("++ toString posX ++ " "++ toString posY  ++ "")
+
+
+
+--            , ("width",  (if (imageWidth < 48) then "48" else toString ( toFloat imageWidth * scale )) ++ "px")
+--            , ("height",  (if (imageHeight < 48) then "48" else toString ( toFloat imageHeight * scale )) ++ "px")
+--            --, ("transform", "scale(" ++ toString scale ++ ")")
             -- , ("font-size", toString defaultSize ++ "px")
             , ("background-image", "url(\"" ++ logoPath ++ "\")")
             , ("background-repeat", "no-repeat")

@@ -935,7 +935,9 @@ view model =
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-        [ if model.controlsVisible
+        [mergeHtmlLayers model |> div [ H.class "svg-layers"]
+
+       , if model.controlsVisible
             then ( div
                 [ H.class "overlay-panel import-export-panel hide-on-space" ]
                 [ input
@@ -967,16 +969,15 @@ view model =
                 , style
                     [ ( "display", "block" )
                     --, ( "background-color", "#161616" )
-                    ,   ( "transform", "translate("
-                        ++ (Tuple.first model.origin |> toString)
-                        ++ "px, "
-                        ++ (Tuple.second model.origin |> toString)
-                        ++ "px)"
-                        )
+--                    ,   ( "transform", "translate("
+--                        ++ (Tuple.first model.origin |> toString)
+--                        ++ "px, "
+--                        ++ (Tuple.second model.origin |> toString)
+--                        ++ "px)"
+--                        )
                     ]
                 , onClick TriggerPause
                 ]
-        , mergeHtmlLayers model |> div [ H.class "svg-layers"]
         ]
 
 

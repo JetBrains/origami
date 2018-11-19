@@ -118,7 +118,19 @@ svg.text-layer {
 
 /* Logo */
 
-.logo-layer {
-    max-width: 96px !important;
-    max-height:96px !important;
+.svg-layers {
+
+
+
 }
+
+.logo-layer {
+
+    /*text-align: center;*/
+
+}
+
+/* .logo-layer--jetbrains {
+    max-width: 30px !important;
+    min-height:30px !important;
+} */
