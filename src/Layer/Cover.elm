@@ -9,7 +9,7 @@ import Product exposing (..)
 import Json.Encode as E
 
 import Model exposing (UiMode(..))
-import Product 
+import Product
 
 
 
@@ -35,10 +35,10 @@ view mode product ( w, h ) ( x, y ) blend =
         logoY = toFloat h - toFloat y
         logoPath = case Product.getLogoPath Product.JetBrains of
             Just fileName -> "./assets/" ++ fileName
-            Nothing -> ""   
+            Nothing -> ""
         textPath = case Product.getTextLinePath product of
             Just fileName -> "./assets/" ++ fileName
-            Nothing -> ""                    
+            Nothing -> ""
     in
         div
             [ HAttrs.class "cover-layer"
@@ -55,13 +55,13 @@ view mode product ( w, h ) ( x, y ) blend =
                 ]
             ]
         ( if mode == Production then
-            [ 
+            [
             productName product centerX centerY textPath blend scale
-            , 
+            ,
             productName JetBrains (logoX -  0.1 * toFloat w) (logoY -  0.1 * toFloat w) logoPath blend scale
             ]
           else
-            [ 
+            [
                 -- title product
 --            , logo product posX posY logoPath blend scale
             ]
@@ -71,11 +71,7 @@ view mode product ( w, h ) ( x, y ) blend =
 productName : Product -> Float -> Float  -> String -> Blend.Blend -> Float -> Html a
 productName product posX posY logoPath blend scale =
     let
-        ( imageWidth, imageHeight) = case product of 
-            IntelliJ -> ( 616, 90)
-            PhpStorm -> ( 518, 108)
-            PyCharm -> ( 479, 108)
-            _ -> ( 90, 90)
+        ( imageWidth, imageHeight ) = Product.getCoverTextSize product
     in
         div
             [ HAttrs.class ("logo-layer logo-layer--" ++ Product.encode product)
@@ -90,7 +86,7 @@ productName product posX posY logoPath blend scale =
             |> encodeStoredData
             |> E.encode 0
             |> HAttrs.attribute "data-stored"
-            , HAttrs.style 
+            , HAttrs.style
                 [ ("mix-blend-mode", Blend.encode blend)
                 , ("position", "absolute")
                 , ("top", "0px")
@@ -108,8 +104,8 @@ productName product posX posY logoPath blend scale =
             ]
 
 
-title : Product -> Html a 
-title product = 
+title : Product -> Html a
+title product =
     div
         [ HAttrs.class
             ("text-layer--title text-layer--" ++ Product.encode product)
@@ -154,4 +150,4 @@ encodeStoredData s =
         , ( "logoPath", E.string s.logoPath )
         , ( "width", E.int s.width )
         , ( "height", E.int s.height )
-        ]            
+        ]
