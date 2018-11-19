@@ -51,6 +51,7 @@ const selectorToCanvas = (selector, trgCanvas, whenDone) => {
         const state = JSON.parse(selectedNode.getAttribute('data-stored'));
         imageToCanvas(state.imagePath,
             function(image, context) {
+                context.resetTransform();
                 context.translate(state.posX, state.posY);
                 context.scale(state.scale, state.scale);
                 context.translate(-(state.width / 2), -(state.height / 2));
