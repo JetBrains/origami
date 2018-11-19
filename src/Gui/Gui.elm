@@ -14,7 +14,7 @@ import Html.Events as H
 
 
 type GridPos = GridPos Int Int
-type ModelPos = ModelPos Int Int
+type ModelPos = ModelPos Int Int -- nest + index
 type alias Shape = ( Int, Int )
 
 type alias Cells = List Cell
@@ -76,7 +76,6 @@ type Msg
     | ExpandChoice ModelPos
     | CollapseChoice ModelPos
     | Select ModelPos ModelPos
-    | Deselect ModelPos ModelPos
     | Move ModelPos Int
 
 
@@ -247,7 +246,7 @@ findClickMessage { cell, modelPos, parentPos, isSelected } =
         Choice _ state _ _ ->
             Just <| if state == Expanded then CollapseChoice modelPos else ExpandChoice modelPos
         _ -> case ( parentPos, isSelected ) of
-            ( Just parentPos, Just Selected ) -> Deselect parentPos modelPos |> Just
+            -- ( Just parentPos, Just Selected ) -> Deselect parentPos modelPos |> Just
             ( Just parentPos, Just NotSelected ) -> Select parentPos modelPos |> Just
             _ -> Nothing
 
@@ -255,24 +254,21 @@ findClickMessage { cell, modelPos, parentPos, isSelected } =
 viewCell_ : GridPos -> GridCell -> Html Msg
 viewCell_ ((GridPos row col) as gridPos) { cell, modelPos, isSelected } =
     let
-        attrs =  case isSelected of
-            Just Selected -> [ H.class "selected" ]
-            _ -> []
         posStr = showGridPos gridPos ++ " " ++ showModelPos modelPos
     in case cell of
         Knob label val ->
-            span attrs
+            span []
                 [ text <| posStr ++ " knob: " ++ label ++ " " ++ toString val ]
         Toggle label val ->
-            span attrs
+            span []
                 [ text <| posStr ++ " toggle: " ++ label ++ " "
                     ++ (if val == TurnedOn then "on" else "off")
                 ]
         Button label _ ->
-            span attrs
+            span []
                 [ text <| posStr ++ " button: " ++ label ]
         Nested label state _ ->
-            span attrs
+            span []
                 [ text <| posStr ++ " nested: " ++ label ++ " "
                     ++ (if state == Expanded then "expanded" else "collapsed")
                 ]
@@ -282,7 +278,7 @@ viewCell_ ((GridPos row col) as gridPos) { cell, modelPos, isSelected } =
         --         , viewCell_ pos cell
         --         ]
         Choice label selected id _ ->
-            span attrs
+            span []
                 [ text <| posStr ++ " choice: " ++ label ++ " "
                     ++ toString id
                 ]
@@ -300,7 +296,10 @@ viewCell gridPos maybeGridCell =
     let
         className =
             case maybeGridCell of
-                Just _ -> "cell"
+                Just { isSelected } ->
+                    case isSelected of
+                        Just Selected -> "cell selected"
+                        _ -> "cell"
                 _ -> "cell hole"
         handlers =
             maybeGridCell
@@ -669,6 +668,15 @@ update msg ui =
                         case cell of
                             Choice label _ selection cells ->
                                 Choice label Collapsed selection cells
+                            _ -> cell
+                    )
+        Select parentPos (ModelPos  _ index) ->
+            ui |>
+                updateCell parentPos
+                    (\cell ->
+                        case cell of
+                            Choice label expanded selection cells ->
+                                Choice label expanded index cells
                             _ -> cell
                     )
         _ -> ui
