@@ -1,5 +1,6 @@
 body {
     margin: 0;
+    background-color: #333;
 }
 
 #patch-target {
@@ -83,16 +84,108 @@ svg.text-layer {
 
 .overlay-panel {
     position: absolute;
-    background-color: rgba(0, 0, 0, 0.6);
+    bottom: 5px !important;
+    left: 0;
+	right: 0;
+	margin-left: auto;
+ 	margin-right: auto;
+    /* left: 35.5%; */
+    /* background-color: rgba(0, 0, 0, 0.6); */
     padding: 5px;
     border-radius: 5px;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif !important;
 }
 
 
 .import-export-panel {
-    top: 10px;
-    left: 10px;
+    /* top: 10px;
+    left: 10px; */
     z-index: 20;
+}
+
+.timeline_holder {
+    margin-bottom: 20px;
+}
+
+.timeline {
+    text-align: center;
+    position: relative;
+    top: 3px;
+}
+
+.overlay-panel .label {
+    color: #fff !important;
+    font-size: 13px;
+}
+
+.overlay-panel .past {
+    padding-right: 10px;
+}
+
+.overlay-panel .future {
+    padding-left: 10px;
+}
+
+.export_html5, .export_png {
+    position: relative;
+    left: -5px;
+    text-align: center;
+    display: block;
+    height: 32px;
+    padding: 0 16px;
+    background: #167dff;
+    /* background: #000; */
+    border: 0;
+    font-size: 12px;
+    color: #fff;
+    margin: 0 auto;
+    font-weight: 400;
+    line-height: 24px;
+    position: relative;
+    z-index: 1;
+    display: -webkit-inline-box;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: row;
+    flex-direction: row;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 25px;
+    outline: none;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.export_html5 {
+    margin-right: 5px;
+
+}
+
+.export_png {
+    margin-left: 5px;
+
+}
+
+.export_html5:hover, .export_png:hover {
+    background-color: #0887d7;
+}
+
+
+.spacebar_info {
+    color: #fff;
+    margin-top: 30px;
+    font-size: 13px;
 }
 
 .text-layer--title, .text-layer--subtitle {
@@ -116,9 +209,6 @@ svg.text-layer {
     /* border: 1px solid red; */
 }
 
-/* Logo */
-
-.logo-layer {
-    max-width: 96px !important;
-    max-height:96px !important;
+.dg.ac {
+    z-index: 30 !important;
 }

@@ -60,9 +60,9 @@ var PRODUCTS = [
     { label: 'AC', id: 'appcode',
       palette: [ '#2b7fe3', '#25daee', '#30de95' ]
     },  // appcode // AC_
-    { label: 'GO', id: 'gogland',
+    { label: 'GO', id: 'goland',
       palette: [ '#078efc', '#bb4efc', '#3bea62' ]
-    },  // gogland // GO_
+    },  // goland // GO_
     { label: ' ', id: 'empty1', palette: [ ]
     },  // separator
     { label: 'R#', id: 'resharper',
