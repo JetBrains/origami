@@ -90,9 +90,7 @@ logo ( logoX, logoY ) blend scale =
     in image
             logoPath
             ("logo-layer logo-layer-" ++ Product.encode JetBrains)
-            ( (logoX - 0.1 * toFloat logoWidth)
-            , (logoY - 0.1 * toFloat logoHeight)
-            )
+            ( logoX, logoY )
             ( logoWidth, logoHeight )
             blend
             scale
@@ -119,9 +117,12 @@ image imagePath class ( posX, posY ) ( imageWidth, imageHeight ) blend scale =
             , ("position", "absolute")
             , ("top", "0px")
             , ("left", "0px")
-            , ("width",  toString ( toFloat imageWidth * scale ) ++ "px")
-            , ("height",  toString ( toFloat imageHeight * scale ) ++ "px")
-            , ("transform", "translate(" ++ toString (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, " ++ toString (posY - (toFloat imageHeight * scale) / 2.0) ++ "px)")
+            , ("width", toString ( toFloat imageWidth * scale ) ++ "px")
+            , ("height", toString ( toFloat imageHeight * scale ) ++ "px")
+            , ("transform", "translate("
+                ++ toString (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, "
+                ++ toString (posY - (toFloat imageHeight * scale) / 2.0) ++ "px)"
+              )
             , ("background-image", "url(\"" ++ imagePath ++ "\")")
             , ("background-repeat", "no-repeat")
             , ("background-position", "center center")
@@ -153,8 +154,6 @@ title product =
         , HAttrs.contenteditable True
         ]
         [ text <| getName product ]
-
-
 
 
 type alias StoredData =

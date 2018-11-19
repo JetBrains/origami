@@ -843,7 +843,6 @@ layerToHtml model index { layer } =
         SVGLayer svgLayer svgBlend ->
             case svgLayer of
                 CoverLayer ->
-                    -- Cover.view model.size model.origin model.product svgBlend
                     Cover.view initialMode model.product model.size model.origin svgBlend
                 NoContent -> div [] []
         _ -> div [] []
