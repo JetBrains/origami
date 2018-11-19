@@ -157,6 +157,7 @@ const BLENDS_SETS =
 
 const funcKeys = Object.keys(BLEND_FUNCS);
 const factorKeys = Object.keys(BLEND_FACTORS);
+const setsKeys = Object.keys(BLENDS_SETS);
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
@@ -597,7 +598,8 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         } else {
 
           const blendSetIndex = [ Math.floor(Math.random() * Object.values(BLENDS_SETS).length) ];
-          const blendSet = BLENDS_SETS[blendSetIndex];
+          const blendSet = BLENDS_SETS[setsKeys[blendSetIndex]];
+          console.log(config['blendSet' + index], blendSet);
           config['blendSet' + index] = blendSet;
           // TODO:
           // layerDef.blend =
