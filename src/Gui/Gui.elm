@@ -64,6 +64,7 @@ type Cell
     | Button Label Handler
     | Nested Label ExpandState (Shape, Cells)
     | Choice Label ExpandState ItemChosen (Shape, Cells)
+    | ChoiceItem Label SelectionState
     -- | Color
 
 
@@ -174,15 +175,15 @@ init =
         svgBlendGrid =
             ( ( 3, 3 )
             ,
-                [ Toggle "normal" TurnedOn
-                , Toggle "overlay" TurnedOn
-                , Toggle "multiply" TurnedOn
-                , Toggle "darken" TurnedOn
-                , Toggle "lighten" TurnedOn
-                , Toggle "multiply" TurnedOn
-                , Toggle "multiply" TurnedOn
-                , Toggle "multiply" TurnedOn
-                , Toggle "multiply" TurnedOn
+                [ ChoiceItem "normal" Selected
+                , ChoiceItem "overlay" NotSelected
+                , ChoiceItem "multiply" NotSelected
+                , ChoiceItem "darken" NotSelected
+                , ChoiceItem "lighten" NotSelected
+                , ChoiceItem "multiply" NotSelected
+                , ChoiceItem "multiply" NotSelected
+                , ChoiceItem "multiply" NotSelected
+                , ChoiceItem "multiply" NotSelected
                 ]
             )
 
@@ -282,12 +283,11 @@ viewCell_ ((GridPos row col) as gridPos) { cell, modelPos, isSelected } =
                 [ text <| posStr ++ " choice: " ++ label ++ " "
                     ++ toString id
                 ]
-        -- ChoiceItem level state cell ->
-        --     span []
-        --         [ text <| (if state == Selected then "selected" else "not selected")
-        --             ++ toString level
-        --         , viewCell_ pos cell
-        --         ]
+        ChoiceItem label state ->
+            span []
+                [ text <| posStr ++ " choiceitem: " ++ label ++ " "
+                    ++ (if state == Selected then "selected" else "not-selected")
+                ]
 
 
 
@@ -538,10 +538,23 @@ view model =
 
 
 
+deselectAllWith : ModelPos -> Model -> Model
+deselectAllWith parentPos model =
+    model |> traverseModel
+        (\cell _ maybeParentPos ->
+            case ( cell, maybeParentPos ) of
+                ( ChoiceItem label _, Just actualParentPos )
+                    -> if parentPos == actualParentPos
+                       then ChoiceItem label NotSelected
+                       else cell
+                _ -> cell
+        )
+
+
 collapseAllAbove : ModelPos -> Model -> Model
 collapseAllAbove  (ModelPos srcNest _) model =
     model |> traverseModel
-        (\cell  (ModelPos nest index) ->
+        (\cell (ModelPos nest index) _ ->
             if (nest >= srcNest) then
                 case cell of
                     Nested label _ nestedCells ->
@@ -560,22 +573,23 @@ collapseAllAbove  (ModelPos srcNest _) model =
         )
 
 
-traverseModel : (Cell -> ModelPos -> Cell) -> Model -> Model
+traverseModel : (Cell -> ModelPos -> Maybe ModelPos -> Cell) -> Model -> Model
 traverseModel f ( shape, cells ) =
     ( shape, traverseCells f cells )
 
 
-traverseCells : (Cell -> ModelPos -> Cell) -> Cells -> Cells
+traverseCells : (Cell -> ModelPos -> Maybe ModelPos -> Cell) -> Cells -> Cells
 traverseCells f cells =
     let
-        scanCell nest index cell =
-            case f cell (ModelPos nest index) of
+        scanCell maybeParentPos nest index cell =
+            let modelPos = (ModelPos nest index)
+            in case f cell modelPos maybeParentPos of
                 Nested label state ( shape, nestedCells ) ->
                     Nested
                         label
                         state
                         ( shape
-                        , List.indexedMap (scanCell (nest + 1)) nestedCells
+                        , List.indexedMap (scanCell (Just modelPos) (nest + 1)) nestedCells
                         )
                 Choice label state selected ( shape, nestedCells ) ->
                     Choice
@@ -583,18 +597,18 @@ traverseCells f cells =
                         state
                         selected
                         ( shape
-                        , List.indexedMap (scanCell (nest + 1)) nestedCells
+                        , List.indexedMap (scanCell (Just modelPos) (nest + 1)) nestedCells
                         )
                 newCell -> newCell
 
     in
-        List.indexedMap (scanCell 0) cells
+        List.indexedMap (scanCell Nothing 0) cells
 
 
 updateCell : ModelPos -> (Cell -> Cell) -> Model -> Model
 updateCell ((ModelPos expectedNest expectedIndex) as modelPos) f model =
     traverseModel
-        (\cell (ModelPos nest index) ->
+        (\cell (ModelPos nest index) _ ->
             if (expectedNest == nest) && (expectedIndex == index) then
                 f cell
             else cell)
@@ -670,9 +684,17 @@ update msg ui =
                                 Choice label Collapsed selection cells
                             _ -> cell
                     )
-        Select parentPos (ModelPos  _ index) ->
-            ui |>
-                updateCell parentPos
+        Select parentPos ((ModelPos  _ index) as pos) ->
+            ui
+                |> deselectAllWith parentPos
+                |> updateCell pos
+                    (\cell ->
+                        case cell of
+                            ChoiceItem label _ ->
+                                ChoiceItem label Selected
+                            _ -> cell
+                    )
+                |> updateCell parentPos
                     (\cell ->
                         case cell of
                             Choice label expanded selection cells ->
