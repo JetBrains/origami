@@ -940,8 +940,12 @@ view model =
        , if model.controlsVisible
             then ( div
                 [ H.class "overlay-panel import-export-panel hide-on-space" ]
-                [ input
+                [ 
+                  div [  H.class "timeline_holder" ] [  
+                  span [ H.class "label past"] [text "past"]
+                , input
                     [ type_ "range"
+                    , class "timeline"
                     , H.min "0"
                     , H.max "100"
                     , extractTimeShift model.timeShift |> H.value
@@ -949,11 +953,14 @@ view model =
                     , onMouseUp BackToNow
                     ]
                     []
-                , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
-                , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
+                , span [ H.class "label future"] [text "future"] 
+                  ]  
+                -- , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
+                -- , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
                 , input
-                    [ type_ "button", onClick ExportZip, value "Export.zip" ]
-                    [ text "Export.zip" ]
+                    [ type_ "button", class "export_html5", onClick ExportZip, value "export to html5.zip" ]
+                    [ text "Export to html5.zip" ]
+                , div [  H.class "spacebar_info" ] [text "to hide controls press spacebar"]    
                 ]
             ) else div [] []
         , mergeWebGLLayers model |>
