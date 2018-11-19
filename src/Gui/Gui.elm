@@ -14,7 +14,7 @@ import Html.Events as H
 
 
 type GridPos = GridPos Int Int
-type ModelPos = ModelPos Int Int -- nest + index
+type ModelPos = ModelPos Int Int Int -- parent index + nest + index
 type alias Shape = ( Int, Int )
 
 type alias Cells = List Cell
@@ -225,8 +225,8 @@ showGridPos (GridPos row col) =
 
 
 showModelPos : ModelPos -> String
-showModelPos (ModelPos nest index) =
-    "<" ++ toString nest ++ "," ++ toString index ++ ">"
+showModelPos (ModelPos parent nest index) =
+    "<" ++ toString parent ++ "," ++ toString nest ++ "," ++ toString index ++ ">"
 
 
 findHoverMessage : GridCell -> Maybe Msg
@@ -356,11 +356,21 @@ viewGrid (Grid _ grid) =
 
 putAtRoot : Int -> GridPos -> Shape -> List Cell -> Grid -> Grid
 putAtRoot nest gridPos shape cells grid =
-    put nest gridPos shape Nothing Nothing cells grid
+    put -1 nest gridPos shape Nothing Nothing cells grid
 
 
-put : Int -> GridPos -> Shape -> Maybe ItemChosen -> Maybe ModelPos -> List Cell -> Grid -> Grid
 put
+    :  Int
+    -> Int
+    -> GridPos
+    -> Shape
+    -> Maybe ItemChosen
+    -> Maybe ModelPos
+    -> List Cell
+    -> Grid
+    -> Grid
+put
+    parentIndex
     nest
     (GridPos row col)
     shape
@@ -375,7 +385,7 @@ put
             |> Array.indexedMap
                 (\cellIndex cell ->
                     { cell = cell
-                    , modelPos = ModelPos nest cellIndex
+                    , modelPos = ModelPos parentIndex nest cellIndex
                     , isSelected = case maybeChosenItem of
                         Just chosenIndex ->
                             Just <|
@@ -411,11 +421,12 @@ put
             ( col + 1
             , case maybeCell of
                 Just { cell, modelPos } ->
-                    let  (ModelPos cellNest _) = modelPos
+                    let (ModelPos _ cellNest cellIndex) = modelPos
                     in if (cellNest == nest) then
                         case cell of
                             Nested _ Expanded ( shape, cells ) ->
                                 put
+                                    cellIndex
                                     (nest + 1)
                                     (findNextPos row col shape)
                                     shape
@@ -425,6 +436,7 @@ put
                                     grid
                             Choice _ Expanded selectedItem ( shape, cells ) ->
                                 put
+                                    cellIndex
                                     (nest + 1)
                                     (findNextPos row col shape)
                                     shape
@@ -538,9 +550,9 @@ view model =
 
 
 collapseAllAbove : ModelPos -> Model -> Model
-collapseAllAbove  (ModelPos srcNest _) model =
+collapseAllAbove  (ModelPos _ srcNest _) model =
     model |> traverseModel
-        (\cell (ModelPos nest index) _ ->
+        (\cell (ModelPos _ nest _) _ ->
             if (nest >= srcNest) then
                 case cell of
                     Nested label _ nestedCells ->
@@ -567,15 +579,15 @@ traverseModel f ( shape, cells ) =
 traverseCells : (Cell -> ModelPos -> Maybe ModelPos -> Cell) -> Cells -> Cells
 traverseCells f cells =
     let
-        scanCell maybeParentPos nest index cell =
-            let modelPos = (ModelPos nest index)
+        scanCell maybeParentPos parentIndex nest index cell =
+            let modelPos = (ModelPos parentIndex nest index)
             in case f cell modelPos maybeParentPos of
                 Nested label state ( shape, nestedCells ) ->
                     Nested
                         label
                         state
                         ( shape
-                        , List.indexedMap (scanCell (Just modelPos) (nest + 1)) nestedCells
+                        , List.indexedMap (scanCell (Just modelPos) index (nest + 1)) nestedCells
                         )
                 Choice label state selected ( shape, nestedCells ) ->
                     Choice
@@ -583,19 +595,24 @@ traverseCells f cells =
                         state
                         selected
                         ( shape
-                        , List.indexedMap (scanCell (Just modelPos) (nest + 1)) nestedCells
+                        , List.indexedMap (scanCell (Just modelPos) index (nest + 1)) nestedCells
                         )
                 newCell -> newCell
 
     in
-        List.indexedMap (scanCell Nothing 0) cells
+        List.indexedMap (scanCell Nothing -1 0) cells
+
+
+isSamePos : ModelPos -> ModelPos -> Bool
+isSamePos (ModelPos lParent lNest lIndex) (ModelPos rParent rNest rIndex) =
+    lParent == rParent && lNest == rNest && lIndex == rIndex
 
 
 updateCell : ModelPos -> (Cell -> Cell) -> Model -> Model
-updateCell ((ModelPos expectedNest expectedIndex) as modelPos) f model =
+updateCell expectedPos f model =
     traverseModel
-        (\cell (ModelPos nest index) _ ->
-            if (expectedNest == nest) && (expectedIndex == index) then
+        (\cell modelPos _ ->
+            if isSamePos modelPos expectedPos then
                 f cell
             else cell)
         model
@@ -670,9 +687,8 @@ update msg ui =
                                 Choice label Collapsed selection cells
                             _ -> cell
                     )
-        Select parentPos ((ModelPos  _ index) as pos) ->
-            ui
-                |> updateCell parentPos
+        Select parentPos ((ModelPos _ _ index) as pos) ->
+            ui |> updateCell parentPos
                     (\cell ->
                         case cell of
                             Choice label expanded selection cells ->
