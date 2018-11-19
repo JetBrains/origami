@@ -602,7 +602,7 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         } else {
 
           const blendSetIndex = [ Math.floor(Math.random() * Object.values(BLENDS_SETS).length) ];
-          const blendSet = BLENDS_SETS[blendSet];
+          const blendSet = BLENDS_SETS[blendSetIndex];
           config['blendSet' + index] = blendSet;
           // TODO:
           // layerDef.blend =
