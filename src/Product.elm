@@ -6,6 +6,7 @@ module Product exposing
     , decode
     , encode
     , getLogoPath
+    , getTextLinePath
     )
 
 
@@ -178,3 +179,12 @@ getLogoPath product =
         Mono -> Nothing
         product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ ".svg")
+
+
+getTextLinePath : Product -> Maybe String
+getTextLinePath product =
+    (case product of
+        Unknown -> Nothing
+        Mono -> Nothing
+        product -> Just (encode product))
+            |> Maybe.map (\fileName -> fileName ++ "-text.svg")
