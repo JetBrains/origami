@@ -345,17 +345,17 @@ function start(document, model, funcs) {
       } else { // mode == 'prod'
 
         const blendSet = folder.add(config, 'blendSet' + index, BLENDS_SETS).name('blend');
-        const blendColor = folder.addColor(config, 'blendColor' + index).name('color');
+        // const blendColor = folder.addColor(config, 'blendColor' + index).name('color');
 
-        blendColor.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-          blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
-          return blend;
-        }));
+        // blendColor.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+        //   blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
+        //   return blend;
+        // }));
 
         blendSet.onFinishChange((value) => {
           blendConfig = value.split(',');
 
-          const color = config['blendColor'+index];
+          const color = config['blendColor'+index] || [ 0, 0, 0, 1 ];
           const newBlend =
           { color: { r: color[0], g: color[1], b: color[2], a: color[3] }
           , colorEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[0]]]
