@@ -5,8 +5,6 @@ const dat = require('dat.gui');
 const PRODUCTS = [
     { label: 'JB', id: 'jetbrains'
     },  // jetbrains-1
-    { label: ' ',  id: 'empty0'
-    },  // separator
     { label: 'IJ', id: 'intellij-idea'
     },  // idea // IJ_
     { label: 'PS', id: 'phpstorm'
@@ -25,8 +23,6 @@ const PRODUCTS = [
     },  // appcode // AC_
     { label: 'GO', id: 'goland'
     },  // goland // GO_
-    { label: ' ', id: 'empty1'
-    },  // separator
     { label: 'R#', id: 'resharper'
     },  // resharper // R#_
     { label: 'R++', id: 'resharper-cpp'
@@ -41,9 +37,6 @@ const PRODUCTS = [
     },  // dottrace // DT_
     { label: 'RD', id: 'rider'
     },  // rider // RD_
-    { label: ' ', id: 'empty2',
-      palette: [ ]
-    },  // separator
     { label: 'TC', id: 'teamcity'
     },  // teamcity // TC_
     { label: 'YT', id: 'youtrack'
@@ -52,8 +45,6 @@ const PRODUCTS = [
     },  // upsource // UP_
     { label: 'HB', id: 'hub'
     },  // hub // HB_
-    { label: ' ', id: 'empty3'
-    },  // separator
     { label: 'KT', id: 'kotlin'
     },   // kotlin // KT_
     { label: 'MPS', id: 'mps'
