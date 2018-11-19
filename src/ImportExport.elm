@@ -1,8 +1,9 @@
 module ImportExport exposing
     ( encodeModel
     , decodeModel
-    , EncodedState
     , encodePortModel
+    , encodePortLayer
+    , decodePortModel
     , encodeFss
     , fromFssPortModel
     , encodeFssRenderMode
@@ -24,8 +25,6 @@ import Product exposing (..)
 
 import Model as M
 
-type alias EncodedState = String
-
 
 encodeIntPair : ( Int, Int ) -> E.Value
 encodeIntPair ( v1, v2 ) =
@@ -45,7 +44,7 @@ encodePairAsArray f ( v1, v2 ) =
 
 encodeTripleAsArray : (a -> E.Value) -> ( a, a, a ) -> E.Value
 encodeTripleAsArray f ( v1, v2, v3 ) =
-   [ v1, v2, v2 ]
+   [ v1, v2, v3 ]
         |> List.map f
         |> Array.fromList
         |> E.array
@@ -60,8 +59,7 @@ encodeKind_ kind =
         M.Fractal -> "fractal"
         M.Template -> "template"
         M.Voronoi -> "voronoi"
-        M.Text -> "text"
-        M.SvgImage -> "logo"
+        M.Cover -> "cover"
         M.Vignette -> "vignette"
         M.Empty -> "empty"
 
@@ -106,6 +104,7 @@ encodeLayerModel layerModel =
                 , ( "faces", encodePairAsArray E.int fssModel.faces )
                 , ( "lightSpeed", E.int fssModel.lightSpeed )
                 , ( "amplitude", encodeTripleAsArray E.float fssModel.amplitude )
+                , ( "colorShift", encodeTripleAsArray E.float fssModel.colorShift )
                 , ( "mirror", E.bool fssModel.mirror )
                 , ( "clip",
                         Maybe.withDefault FSS.noClip fssModel.clip
@@ -115,20 +114,24 @@ encodeLayerModel layerModel =
                 , ( "vignette", E.float fssModel.vignette )
                 , ( "iris", E.float fssModel.iris )
                 ]
+            M.VignetteModel vignetteModel ->
+                [ ( "opacity", E.float vignetteModel.opacity )
+                , ( "color", encodeTripleAsArray E.float vignetteModel.color )
+                ]
             _ -> []
-
 
 
 encodeModel_ : M.Model -> E.Value
 encodeModel_ model =
     E.object
-        [ ( "theta", E.float model.theta )
+        [ ( "mode", E.string <| encodeMode model.mode )
+        , ( "theta", E.float model.theta )
         , ( "omega", E.float model.omega )
         , ( "layers", E.list (List.map encodeLayerDef model.layers) )
         -- , ( "layers", E.list (List.filterMap
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
         , ( "size", encodeIntPair model.size )
-        , ( "origin", encodeIntPair model.size )
+        , ( "origin", encodeIntPair model.origin )
         , ( "mouse", encodeIntPair model.mouse )
         , ( "now", E.float model.now )
         , ( "palette",
@@ -141,7 +144,7 @@ encodeModel_ model =
         ]
 
 
-encodeModel : M.Model -> EncodedState
+encodeModel : M.Model -> String
 encodeModel model = model |> encodeModel_ |> E.encode 2
 
 
@@ -160,10 +163,29 @@ encodePortModel model =
     }
 
 
+decodePortModel : M.CreateLayer -> M.PortModel -> M.Model
+decodePortModel createLayer portModel =
+    let
+        mode = decodeMode portModel.mode
+        initialModel = M.initEmpty mode
+    in
+        { initialModel
+        | mode = mode
+        , now = portModel.now
+        , theta = portModel.theta
+        , omega = portModel.omega
+        , layers = List.map (decodePortLayer createLayer) portModel.layers
+        , size = portModel.size
+        , origin = portModel.origin
+        , mouse = portModel.mouse
+        , product = portModel.product |> Product.decode
+        }
+
+
 encodePortLayer : M.LayerDef -> M.PortLayerDef
 encodePortLayer layerDef =
     { kind = encodeKind_ layerDef.kind
-    , on = layerDef.on
+    , isOn = layerDef.on
     , webglOrSvg =
         case layerDef.layer of
             M.WebGLLayer _ _ -> "webgl"
@@ -175,7 +197,41 @@ encodePortLayer layerDef =
             M.SVGLayer _ svgBlend ->
                 ( Nothing, SVGBlend.encode svgBlend |> Just )
     , name = layerDef.name
+    , model = layerDef.model
+        |> encodeLayerModel
+        |> E.encode 2
     }
+
+
+decodePortLayer : M.CreateLayer -> M.PortLayerDef -> M.LayerDef
+decodePortLayer createLayer portLayerDef =
+    let
+        kind = decodeKind portLayerDef.kind
+        layerModel = portLayerDef.model
+                |> D.decodeString (layerModelDecoder kind)
+                -- |> Debug.log "Layer Model Decode Result: "
+                |> Result.toMaybe
+                |> Maybe.withDefault M.NoModel
+        layerNoBlend = createLayer kind layerModel
+        layer = case layerNoBlend of
+            M.WebGLLayer webglLayer _ ->
+                portLayerDef.blend
+                    |> Tuple.first
+                    |> Maybe.withDefault WGLBlend.default
+                    |> M.WebGLLayer webglLayer
+            M.SVGLayer svgLayer _ ->
+                portLayerDef.blend
+                    |> Tuple.second
+                    |> Maybe.map SVGBlend.decode
+                    |> Maybe.withDefault SVGBlend.default
+                    |> M.SVGLayer svgLayer
+    in
+        { kind = kind
+        , on = portLayerDef.isOn
+        , layer = layer
+        , model = layerModel
+        , name = portLayerDef.name
+        }
 
 
 decodeKind : String -> M.LayerKind
@@ -187,8 +243,7 @@ decodeKind layerTypeStr =
         "fractal" -> M.Fractal
         "template" -> M.Template
         "voronoi" -> M.Voronoi
-        "text" -> M.Text
-        "logo" -> M.SvgImage
+        "cover" -> M.Cover
         "vignette" -> M.Vignette
         _ -> M.Empty
 
@@ -222,18 +277,27 @@ intPairDecoder =
 layerDefDecoder : M.CreateLayer -> D.Decoder M.LayerDef
 layerDefDecoder createLayer =
     let
-        createLayerDef kindStr layerModelStr name isOn =
+        createLayerDef kindStr layerModelStr name isOn blendStr =
             let
                 kind = decodeKind kindStr
                 layerModel = layerModelStr
                         |> D.decodeString (layerModelDecoder kind)
-                        |> Debug.log "Layer Model Decode Result: "
+                        -- |> Debug.log "Layer Model Decode Result: "
                         |> Result.toMaybe
                         |> Maybe.withDefault M.NoModel
+                layerNoBlend = createLayer kind layerModel
+                layer = case layerNoBlend of
+                    M.WebGLLayer webglLayer _ ->
+                        WGLBlend.decodeOne blendStr
+                            |> Maybe.withDefault WGLBlend.default
+                            |> M.WebGLLayer webglLayer
+                    M.SVGLayer svgLayer _ ->
+                        SVGBlend.decode blendStr |>
+                            M.SVGLayer svgLayer
             in
                 { kind = kind
                 , on = isOn
-                , layer = createLayer kind layerModel
+                , layer = layer
                 , model = layerModel
                 , name = name
                 }
@@ -243,6 +307,7 @@ layerDefDecoder createLayer =
             |> D.required "model" D.string
             |> D.required "name" D.string
             |> D.required "isOn" D.bool
+            |> D.required "blend" D.string
 
 
 -- layerDecoder : M.LayerKind -> D.Decoder M.Layer
@@ -273,21 +338,24 @@ layerModelDecoder kind =
                     renderModeStr
                     faces
                     amplitude
+                    colorShift
                     mirror
                     clip
                     lightSpeed
                     shareMesh
                     vignette
                     iris =
-                case ( faces, amplitude, clip ) of
+                case ( faces, amplitude, colorShift, clip ) of
                     ( [facesX, facesY]
                     , [amplitudeX, amplitudeY, amplitudeZ]
+                    , [hue, saturation, brightness]
                     , [clipX, clipY]
                     ) ->
                         M.FssModel
                             { renderMode = decodeFssRenderMode renderModeStr
                             , faces = ( facesX, facesY )
                             , amplitude = ( amplitudeX, amplitudeY, amplitudeZ )
+                            , colorShift = ( hue, saturation, brightness )
                             , mirror = mirror
                             , clip = Just ( clipX, clipY )
                             , lightSpeed = lightSpeed
@@ -295,12 +363,14 @@ layerModelDecoder kind =
                             , vignette = vignette
                             , iris = iris
                             }
-                    _ -> Debug.log "failed to parse model" M.NoModel
+                    _ -> M.NoModel
+                    -- _ -> Debug.log "failed to parse model" M.NoModel
             in
                 D.decode createFssModel
                     |> D.required "renderMode" D.string
                     |> D.required "faces" (D.list D.int)
                     |> D.required "amplitude" (D.list D.float)
+                    |> D.required "colorShift" (D.list D.float)
                     |> D.required "mirror" D.bool
                     |> D.required "clip" (D.list D.float)
                     |> D.required "lightSpeed" D.int
@@ -346,16 +416,17 @@ modelDecoder mode createLayer =
             |> D.required "product" D.string
 
 
-decodeModel : M.UiMode -> M.CreateLayer -> EncodedState -> Maybe M.Model
+decodeModel : M.UiMode -> M.CreateLayer -> String -> Maybe M.Model
 decodeModel mode createLayer modelStr =
     D.decodeString (modelDecoder mode createLayer) modelStr
-        |> Debug.log "Decode Result: "
+        -- |> Debug.log "Decode Result: "
         |> Result.toMaybe
 
 
 encodeFss : FSS.Model -> Product -> FSS.PortModel
 encodeFss m product =
     { amplitude = m.amplitude
+    , colorShift = m.colorShift
     , faces = m.faces
     , lightSpeed = m.lightSpeed
     , renderMode = encodeFssRenderMode m.renderMode
@@ -401,3 +472,13 @@ encodeMode mode =
         M.Production -> "prod"
         M.Release -> "release"
         M.Ads -> "ads"
+
+
+decodeMode : String -> M.UiMode
+decodeMode mode =
+    case mode of
+        "dev" -> M.Development
+        "prod" -> M.Production
+        "release" -> M.Release
+        "ads" -> M.Ads
+        _ -> M.Production

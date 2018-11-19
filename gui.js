@@ -5,8 +5,6 @@ const dat = require('dat.gui');
 const PRODUCTS = [
     { label: 'JB', id: 'jetbrains'
     },  // jetbrains-1
-    { label: ' ',  id: 'empty0'
-    },  // separator
     { label: 'IJ', id: 'intellij-idea'
     },  // idea // IJ_
     { label: 'PS', id: 'phpstorm'
@@ -23,10 +21,8 @@ const PRODUCTS = [
     },  // // DG_
     { label: 'AC', id: 'appcode'
     },  // appcode // AC_
-    { label: 'GO', id: 'gogland'
-    },  // gogland // GO_
-    { label: ' ', id: 'empty1'
-    },  // separator
+    { label: 'GO', id: 'goland'
+    },  // goland // GO_
     { label: 'R#', id: 'resharper'
     },  // resharper // R#_
     { label: 'R++', id: 'resharper-cpp'
@@ -41,9 +37,6 @@ const PRODUCTS = [
     },  // dottrace // DT_
     { label: 'RD', id: 'rider'
     },  // rider // RD_
-    { label: ' ', id: 'empty2',
-      palette: [ ]
-    },  // separator
     { label: 'TC', id: 'teamcity'
     },  // teamcity // TC_
     { label: 'YT', id: 'youtrack'
@@ -52,14 +45,10 @@ const PRODUCTS = [
     },  // upsource // UP_
     { label: 'HB', id: 'hub'
     },  // hub // HB_
-    { label: ' ', id: 'empty3'
-    },  // separator
     { label: 'KT', id: 'kotlin'
     },   // kotlin // KT_
     { label: 'MPS', id: 'mps'
-    },  // mps // MPS_
-    { label: 'Mono', id: 'mono'
-  }  // mono
+    }  // mps // MPS_
 ];
 const PRODUCT_TO_ID = {};
 PRODUCTS.forEach((product) => {
@@ -71,21 +60,21 @@ PRODUCTS.forEach((product) => {
 });
 
 
-BLEND_FUNCS =
+const BLEND_FUNCS =
   { '+': 'customAdd'
   , '-': 'customSubtract'
   , 'R-': 'reverseSubtract'
   };
 
 
-BLEND_FUNCS_IDS =
+const BLEND_FUNCS_IDS =
   { 'customAdd': 0
   , 'customSubtract': 1
   , 'reverseSubtract': 2
   };
 
 
-BLEND_FACTORS =
+const BLEND_FACTORS =
   { '0': 'zero'
   , '1': 'one'
   , 'sC': 'srcColor'
@@ -104,7 +93,7 @@ BLEND_FACTORS =
 };
 
 
-BLEND_FACTORS_IDS =
+const BLEND_FACTORS_IDS =
   { 'zero': 0
   , 'one': 1
   , 'srcColor': 2
@@ -123,16 +112,18 @@ BLEND_FACTORS_IDS =
 };
 
 
-SVG_BLENDS =
+const SVG_BLENDS =
   [ 'normal', 'overlay' ];
 
 
-RENDER_MODES =
-  [ 'triangles', 'lines', 'partial-lines', 'points' ]
+const RENDER_MODES =
+  [ 'triangles', 'lines' ] // disable ", 'partial-lines', 'points' modes"
 
 
-RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
-{ 'window': [0, 0]
+const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
+{ 'window': [ 0, 0 ]
+, '480x297 prodcard' : [ 480, 297 ] //product card
+, '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
 , '640x400 spl' : [ 640, 400 ] // product splash background
 , '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
 , '650x170 nwlt' : [ 650, 170 ] // newsletter
@@ -144,79 +135,111 @@ RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 , '1600x800 blog@2x' : [ 1600, 800 ] // @2x Blog
 , '800x155 bfoot' : [ 800, 155 ] // Blog footer
 , '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
-, '2850x1200 landg' : [ 2850, 1200] // Landing page
+, '2850x1200 landg' : [ 2850, 1200 ] // Landing page
 };
 
-ALL_SIZES =
+
+const WALLPAPER_SIZES =
   { 'window': [0, 0]
   , '1920x1980': [ 1920, 1980 ]
   , '1366x768': [ 1366, 768 ]
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
   , '1680x1050': [ 1680, 1050 ]
-  , '800x418': [ 800, 418 ]
-  , '640x400': [ 640, 400 ] // product splash background
-  , '1280x800': [ 1280, 800 ] // @2x splash background
-  , '480x360': [ 480, 360 ]
   };
 
-PREDEFINED_SIZES = RELEASE_SIZES; // TODO: Switcher by mode needed
+
+const BLENDS_SETS =
+  { 'normal': [ [ '+', '1', '0' ], [ '+', '1', '0' ] ]
+  , 'lighten': [ [ '+', 'sC', '1-sC' ], [ '+', 'sC', '1-sC' ] ]
+  };
+
+
+const funcKeys = Object.keys(BLEND_FUNCS);
+const factorKeys = Object.keys(BLEND_FACTORS);
+const setsKeys = Object.keys(BLENDS_SETS);
 
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
-const Config = function(layers, defaults, funcs) {
+const update = (gui) => () => {
+  for (var i in gui.__controllers) {
+    gui.__controllers[i].updateDisplay();
+  }
+  for (var i in gui.__folders) {
+    update(gui.__folders[i])();
+  }
+}
+
+const getSizesSet = (mode) =>
+  (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
+
+const Config = function(layers, defaults, funcs, randomize) {
     const customAdd = BLEND_FUNCS['+'];
     const one = BLEND_FACTORS['1'];
     const zero = BLEND_FACTORS['0'];
 
+    const mode = defaults.mode;
     this.product = defaults.product;
     this.omega = defaults.omega;
 
-    const funcKeys = Object.keys(BLEND_FUNCS);
-    const factorKeys = Object.keys(BLEND_FACTORS);
+    const PREDEFINED_SIZES = getSizesSet(mode);
+
     layers.forEach((layer, index) => {
       if (layer.webglOrSvg == 'webgl') {
-        if (layer.blend[0]) {
-          const blend = layer.blend[0];
-          this['blendColor' + index] = blend.color || [ 1, 0, 0, 0 ]; // FIXME: get RGBA components
-          this['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[blend.colorEq[0]]];
-          this['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[1]]];
-          this['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[2]]];
-          this['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[blend.alphaEq[0]]];
-          this['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[1]]];
-          this['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[2]]];
-        } else {
-          this['blendColor' + index] = [ 0, 0, 0, 0 ];
-          this['blendColorEqFn' + index] = customAdd;
-          this['blendColorEqFactor0' + index] = one;
-          this['blendColorEqFactor1' + index] = zero;
-          this['blendAlphaEqFn' + index] = customAdd;
-          this['blendAlphaEqFactor0' + index] = one;
-          this['blendAlphaEqFactor1' + index] = zero;
+        if (mode !== 'prod') {
+
+          if (layer.blend[0]) {
+            const blend = layer.blend[0];
+            this['blendColor' + index] = blend.color || [ 1, 0, 0, 0 ]; // FIXME: get RGBA components
+            this['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[blend.colorEq[0]]];
+            this['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[1]]];
+            this['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.colorEq[2]]];
+            this['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[blend.alphaEq[0]]];
+            this['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[1]]];
+            this['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[blend.alphaEq[2]]];
+          } else {
+            this['blendColor' + index] = [ 0, 0, 0, 0 ];
+            this['blendColorEqFn' + index] = customAdd;
+            this['blendColorEqFactor0' + index] = one;
+            this['blendColorEqFactor1' + index] = zero;
+            this['blendAlphaEqFn' + index] = customAdd;
+            this['blendAlphaEqFactor0' + index] = one;
+            this['blendAlphaEqFactor1' + index] = zero;
+          }
+
+        } else { // mode == 'prod'
+          this['blendSet' + index] = BLENDS_SETS['normal'];
+          this['blendColor' + index] =
+              layer.blend[0].color || [ 1, 0, 0, 0 ]; // FIXME: get RGBA components
         }
-      } else {
+      } else { // webglOrSvg != 'webgl'
         this['layer' + index + 'Blend'] = layer.blend[1] || 'normal';
       }
+
       this['visible' + index] = true;
-      this['mirror' + index] = true;
-      this['renderMode' + index] = 'triangles';
 
       if (isFss(layer)) {
-        this['lightSpeed' + index] = defaults.fss.lightSpeed;
-        this['facesX' + index] = defaults.fss.faces[0];
-        this['facesY' + index] = defaults.fss.faces[1];
-        this['vignette' + index] = defaults.fss.vignette;
-        this['iris' + index] = defaults.fss.iris;
-        this['amplitudeX' + index] = defaults.fss.amplitude[0];
-        this['amplitudeY' + index] = defaults.fss.amplitude[1];
-        this['amplitudeZ' + index] = defaults.fss.amplitude[2];
+        this['mirror' + index] = true;
+        this['renderMode' + index] = 'triangles';
+        this['lightSpeed' + index] = layer.model.lightSpeed;
+        this['facesX' + index] = layer.model.faces[0];
+        this['facesY' + index] = layer.model.faces[1];
+        this['vignette' + index] = layer.model.vignette;
+        this['iris' + index] = layer.model.iris;
+        this['amplitudeX' + index] = layer.model.amplitude[0];
+        this['amplitudeY' + index] = layer.model.amplitude[1];
+        this['amplitudeZ' + index] = layer.model.amplitude[2];
+        this['hue' + index] = layer.model.colorShift[0];
+        this['saturation' + index] = layer.model.colorShift[1];
+        this['brightness' + index] = layer.model.colorShift[2];
       }
     });
 
-    this.customSize = defaults.customSize || PREDEFINED_SIZES['window'];
+    this.customSize = PREDEFINED_SIZES['window'];
 
-    this.savePng = funcs.savePng;
+    //this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
+    this.randomize = randomize(this);
     // -------
     //this.timeShift = 0;
     // this.getSceneJson = funcs.getSceneJson;
@@ -227,6 +250,8 @@ const Config = function(layers, defaults, funcs) {
 function start(document, model, funcs) {
     const defaults = model;
     const { mode, layers } = model;
+
+    const PREDEFINED_SIZES = getSizesSet(mode);
 
     function updateProduct(id) {
       const product = PRODUCTS_BY_ID[id];
@@ -263,44 +288,83 @@ function start(document, model, funcs) {
     }
 
     function addWebGLBlend(folder, config, layer, index) {
-      const blendFolder = folder.addFolder('blend');
-      const color = blendFolder.addColor(config, 'blendColor' + index);
-      const colorEqFn = blendFolder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
-      const colorEqFactor0 = blendFolder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
-      const colorEqFactor1 = blendFolder.add(config, 'blendColorEqFactor1' + index, BLEND_FACTORS);
-      const alphaEqFn = blendFolder.add(config, 'blendAlphaEqFn' + index, BLEND_FUNCS);
-      const alphaEqFactor0 = blendFolder.add(config, 'blendAlphaEqFactor0' + index, BLEND_FACTORS);
-      const alphaEqFactor1 = blendFolder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
-      //folder.open();
+      if (mode !== 'prod') {
 
-      color.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
-        return blend;
-      }));
-      colorEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.colorEq[0] = BLEND_FUNCS_IDS[value];
-        return blend;
-      }));
-      colorEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.colorEq[1] = BLEND_FACTORS_IDS[value];
-        return blend;
-      }));
-      colorEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.colorEq[2] = BLEND_FACTORS_IDS[value];
-        return blend;
-      }));
-      alphaEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.alphaEq[0] = BLEND_FUNCS_IDS[value];
-        return blend;
-      }));
-      alphaEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.alphaEq[1] = BLEND_FACTORS_IDS[value];
-        return blend;
-      }));
-      alphaEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
-        blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
-        return blend;
-      }));
+        const blendFolder = folder.addFolder('blend');
+        const color = blendFolder.addColor(config, 'blendColor' + index);
+        const colorEqFn = blendFolder.add(config, 'blendColorEqFn' + index, BLEND_FUNCS);
+        const colorEqFactor0 =
+            blendFolder.add(config, 'blendColorEqFactor0' + index, BLEND_FACTORS);
+        const colorEqFactor1 =
+            blendFolder.add(config, 'blendColorEqFactor1' + index, BLEND_FACTORS);
+        const alphaEqFn =
+            blendFolder.add(config, 'blendAlphaEqFn' + index, BLEND_FUNCS);
+        const alphaEqFactor0 =
+            blendFolder.add(config, 'blendAlphaEqFactor0' + index, BLEND_FACTORS);
+        const alphaEqFactor1 =
+            blendFolder.add(config, 'blendAlphaEqFactor1' + index, BLEND_FACTORS);
+        //folder.open();
+
+        color.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
+          return blend;
+        }));
+        colorEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.colorEq[0] = BLEND_FUNCS_IDS[value];
+          return blend;
+        }));
+        colorEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.colorEq[1] = BLEND_FACTORS_IDS[value];
+          return blend;
+        }));
+        colorEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.colorEq[2] = BLEND_FACTORS_IDS[value];
+          return blend;
+        }));
+        alphaEqFn.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.alphaEq[0] = BLEND_FUNCS_IDS[value];
+          return blend;
+        }));
+        alphaEqFactor0.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.alphaEq[1] = BLEND_FACTORS_IDS[value];
+          return blend;
+        }));
+        alphaEqFactor1.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+          blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
+          return blend;
+        }));
+
+      } else { // mode == 'prod'
+
+        const blendSet = folder.add(config, 'blendSet' + index, BLENDS_SETS).name('blend');
+        // const blendColor = folder.addColor(config, 'blendColor' + index).name('color');
+
+        // blendColor.onFinishChange(updateWebGLBlend(index, (blend, value) => {
+        //   blend.color = { r: value[0], g: value[1], b: value[2], a: value[3] }
+        //   return blend;
+        // }));
+
+        blendSet.onFinishChange((value) => {
+          blendConfig = value.split(',');
+
+          const color = config['blendColor'+index] || [ 0, 0, 0, 1 ];
+          const newBlend =
+          { color: { r: color[0], g: color[1], b: color[2], a: color[3] }
+          , colorEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[0]]]
+                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[1]]]
+                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[2]]]
+                     ]
+          , alphaEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[3]]]
+                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[4]]]
+                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[5]]]
+                     ]
+          }
+          funcs.changeWGLBlend(index, newBlend);
+          // blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
+          //return blend;
+        });
+
+      }
     }
 
     function addSVGBlend(folder, config, layer, index) {
@@ -313,20 +377,30 @@ function start(document, model, funcs) {
     function addLayerProps(folder, config, layer, index) {
       if (isFss(layer)) {
         const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
-        const lightSpeed = folder.add(config, 'lightSpeed' + index).name('lights agile')
-                                 .min(100).max(1140);
-        const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
-        const facesY = folder.add(config, 'facesY' + index).name('row').min(1).max(100).step(1);
-        const vignette = folder.add(config, 'vignette' + index).name('vignette').min(0.0).max(1.0);
-        const iris = folder.add(config, 'iris' + index).name('iris').min(0.0).max(1.0);
+        const lightSpeed = folder.add(config, 'lightSpeed' + index).name('light pace')
+                                 .min(100).max(2000);
+        const facesX = folder.add(config, 'facesX' + index).name('columns').min(1).max(100).step(1);
+        const facesY = folder.add(config, 'facesY' + index).name('rows').min(1).max(100).step(1);
+        const fogFolder = folder.addFolder('fog');
+        const vignette = fogFolder.add(config, 'vignette' + index).name('shine').min(0).max(1).step(0.01);
+        const iris = fogFolder.add(config, 'iris' + index).name('density').min(0).max(1).step(0.01);
         const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
-        const amplitudeFolder = folder.addFolder('amplitude');
-        const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('amplitudeX')
+
+        const amplitudeFolder = folder.addFolder('ranges');
+        const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('horizontal')
           .min(0.0).max(1.0);
-        const amplitudeY = amplitudeFolder.add(config, 'amplitudeY' + index).name('amplitudeY')
+        const amplitudeY = amplitudeFolder.add(config, 'amplitudeY' + index).name('vertical')
           .min(0.0).max(1.0);
-        const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('amplitudeZ')
+        const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('depth')
           .min(0.0).max(1.0);
+
+        const colorShiftFolder = folder.addFolder('hsb');
+        const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
+          .min(-1.0).max(1.0).step(0.01);
+        const saturation = colorShiftFolder.add(config, 'saturation' + index).name('saturation')
+          .min(-1.0).max(1.0).step(0.01);
+        const brightness = colorShiftFolder.add(config, 'brightness' + index).name('brightness')
+          .min(-1.0).max(1.0).step(0.01);
 
         mirrorSwitch.onFinishChange(val => switchMirror(index, val));
         lightSpeed.onFinishChange(funcs.changeLightSpeed(index));
@@ -335,6 +409,7 @@ function start(document, model, funcs) {
         vignette.onFinishChange(funcs.changeVignette(index));
         iris.onFinishChange(funcs.changeIris(index));
         renderMode.onFinishChange(funcs.changeRenderMode(index));
+
         amplitudeX.onFinishChange(value => {
           funcs.changeAmplitude(index)(value, null, null);
         });
@@ -344,22 +419,33 @@ function start(document, model, funcs) {
         amplitudeZ.onFinishChange(value => {
           funcs.changeAmplitude(index)(null, null, value);
         });
+
+        hue.onFinishChange(value => {
+          funcs.shiftColor(index)(value, null, null);
+        });
+        saturation.onFinishChange(value => {
+          funcs.shiftColor(index)(null, value, null);
+        });
+        brightness.onFinishChange(value => {
+          funcs.shiftColor(index)(null, null, value);
+        });
       }
     }
 
-    const config = new Config(layers, defaults, funcs);
     const gui = new dat.GUI(/*{ load: JSON }*/);
+    const config = new Config(layers, defaults, funcs, randomize(funcs, model, update(gui)));
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
-    gui.add(config, 'savePng').name('save png');
-    if (mode !== 'prod' ) gui.add(config, 'saveBatch').name('save batch');
+    // gui.add(config, 'savePng').name('save png');
+    if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
+    gui.add(config, 'randomize').name('i feel lucky');
     product.onFinishChange(funcs.changeProduct);
     omega.onFinishChange(funcs.rotate);
     customSize.onFinishChange(funcs.setCustomSize);
 
-    layers.reverse().forEach((layer, revIndex) => {
-      if ((mode == 'prod') && (layer.name == 'Logo')) return;
+    layers.concat([]).reverse().forEach((layer, revIndex) => {
+      if ((mode == 'prod') && (layer.name == 'Cover')) return;
 
       const index = layers.length - 1 - revIndex;
       //const folder = gui.addFolder('Layer ' + index + ' (' + layer.kind + ')');
@@ -377,6 +463,8 @@ function start(document, model, funcs) {
     });
 
     let guiHidden = false;
+
+    //update(gui);
 
     document.addEventListener('keydown', (event) => {
         if (event.keyCode == 32) {
@@ -403,11 +491,138 @@ function start(document, model, funcs) {
     // });
 
 
-    updateProduct('jetbrains');
+    //updateProduct('jetbrains');
 
     // layers.map((layer, index) => {
     //     gui.addFolder()
     // });
+}
+
+const randomize = (funcs, model, updateGui) => (config) => () => {
+  const toSend = deepClone(model);
+  const mode = model.mode;
+  const omega = Math.random() * 2 - 1;
+  const productIdx = Math.floor(Math.random() * PRODUCTS.length);
+  const product = PRODUCTS[productIdx].id;
+
+  config.product = product;
+  config.omega = omega;
+
+  toSend.product = product;
+  toSend.omega = omega;
+
+  toSend.layers.forEach((layerDef, index) => {
+      // .visible
+      if (isFss(layerDef)) {
+        const mirror = Math.random() > 0.5 ? true : false;
+        layerDef.model.mirror = mirror;
+        config['mirror' + index] = mirror;
+
+        const lightSpeed = Math.floor(Math.random() * 1040 + 100);
+        layerDef.model.lightSpeed = lightSpeed;
+        config['lightSpeed' + index] = lightSpeed;
+
+        const renderModeIdx = Math.floor(Math.random() * RENDER_MODES.length);
+        const renderMode = RENDER_MODES[renderModeIdx];
+        layerDef.model.renderMode = renderMode;
+        config['renderMode' + index] = renderMode;
+
+        const facesMax = (mode !== 'prod') ? 100 : 50;
+        const [ facesX, facesY ] =
+          [ Math.floor(Math.random() * facesMax)
+          , Math.floor(Math.random() * facesMax)
+          ];
+        layerDef.model.faces = [ facesX, facesY ];
+        config['facesX' + index] = facesX;
+        config['facesY' + index] = facesY;
+
+        const iris = Math.random();
+        layerDef.model.iris = iris;
+        config['iris' + index] = iris;
+
+        const vignette = Math.random();
+        layerDef.model.vignette = vignette;
+        config['vignette' + index] = vignette;
+
+        const [ amplitudeX, amplitudeY, amplitudeZ ] =
+          [ Math.random(), Math.random(), Math.random() ];
+        layerDef.model.amplitude = [ amplitudeX, amplitudeY, amplitudeZ ];
+        config['amplitudeX' + index] = amplitudeX;
+        config['amplitudeY' + index] = amplitudeY;
+        config['amplitudeZ' + index] = amplitudeZ;
+
+
+        const [ hue, saturation, brightness ] =
+          [ (mode !== 'prod') ? Math.random() * 2.0 - 1.0 : 0.0,
+            Math.random() * 2.0 - 1.0,
+            Math.random() * 2.0 - 1.0 ];
+        layerDef.model.colorShift = [ hue, saturation, brightness ];
+        config['hue' + index] = hue;
+        config['saturation' + index] = saturation;
+        config['brightness' + index] = brightness;
+      }
+
+      // comment this out to not randomize blends
+      if (layerDef.webglOrSvg == 'webgl') {
+        if (mode !== 'prod') {
+
+          const blendFuncsCount = Object.values(BLEND_FUNCS_IDS).length;
+          const blendFactorsCount = Object.values(BLEND_FACTORS_IDS).length;
+          const colorEq =
+            [ Math.floor(Math.random() * blendFuncsCount)
+            , Math.floor(Math.random() * blendFactorsCount)
+            , Math.floor(Math.random() * blendFactorsCount)
+            ];
+          const alphaEq =
+            [ Math.floor(Math.random() * blendFuncsCount)
+            , Math.floor(Math.random() * blendFactorsCount)
+            , Math.floor(Math.random() * blendFactorsCount)
+            ];
+
+          //config['blendColor' + index] = [ 0, 0, 0, 0 ];
+          config['blendColorEqFn' + index] = BLEND_FUNCS[funcKeys[colorEq[0]]];
+          config['blendColorEqFactor0' + index] = BLEND_FACTORS[factorKeys[colorEq[0]]];
+          config['blendColorEqFactor1' + index] = BLEND_FACTORS[factorKeys[colorEq[1]]];
+          config['blendAlphaEqFn' + index] = BLEND_FUNCS[funcKeys[alphaEq[0]]];;
+          config['blendAlphaEqFactor0' + index] = BLEND_FACTORS[factorKeys[alphaEq[0]]];
+          config['blendAlphaEqFactor1' + index] = BLEND_FACTORS[factorKeys[alphaEq[1]]];
+          // TODO: color { r: color[0], g: color[1], b: color[2], a: color[3] }
+          layerDef.blend =
+            [ { color: null
+              , colorEq: colorEq
+              , alphaEq: alphaEq
+              }
+            , null
+            ];
+
+        } else {
+
+          const blendSetIndex = [ Math.floor(Math.random() * Object.values(BLENDS_SETS).length) ];
+          const blendSet = BLENDS_SETS[setsKeys[blendSetIndex]];
+          console.log(config['blendSet' + index], blendSet);
+          config['blendSet' + index] = blendSet;
+          // TODO:
+          // layerDef.blend =
+          //   [ { color: null
+          //     , colorEq: []
+          //     , alphaEq: alphaEq
+          //     }
+          //   , null
+          //   ];
+
+        }
+      } else {
+
+      }
+  });
+  // console.log(toSend);
+
+  // toSend.layers = model.layers.reverse().map((layerDef, index) => {
+  //     return layerDef;
+  // });
+  updateGui();
+  // });
+  funcs.applyRandomizer(toSend);
 }
 
 module.exports = start;

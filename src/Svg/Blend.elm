@@ -1,6 +1,5 @@
 module Svg.Blend exposing
     ( Blend(..)
-    , PortBlend
     , default
     , encode
     , decode
@@ -26,11 +25,8 @@ type Blend
     | Unset
 
 
-type alias PortBlend = String
-
-
 -- TODO: use Map Blend PortBlend
-encode : Blend -> PortBlend
+encode : Blend -> String
 encode blend =
     case blend of
         Normal -> "normal"
@@ -53,7 +49,7 @@ encode blend =
 
 
 -- TODO: use Map PortBlend Blend
-decode : PortBlend -> Blend
+decode : String -> Blend
 decode portBlend =
     case portBlend of
         "normal" -> Normal

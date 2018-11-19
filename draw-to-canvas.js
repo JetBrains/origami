@@ -1,5 +1,5 @@
-function htmlToCanvas(node, canvas, width, height, whenDone) {
-    const context = canvas.getContext("2d");
+const htmlToCanvas = (node, canvas, width, height, whenDone) => {
+    const context = canvas.getContext('2d');
     const data =
         '<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'px" height="'+height+'px">' +
               '<foreignObject width="100%" height="100%">' +
@@ -28,7 +28,7 @@ function htmlToCanvas(node, canvas, width, height, whenDone) {
     // context.canvas.height = height;
 }
 
-function imageToCanvas(src, transform, canvas, x, y, width, height, whenDone) {
+const imageToCanvas = (src, transform, canvas, x, y, width, height, whenDone) => {
     const context = canvas.getContext('2d');
     const image = new Image();
     //image.style.cssText = document.defaultView.getComputedStyle(cloneFrom, '').cssText;
@@ -45,7 +45,30 @@ function imageToCanvas(src, transform, canvas, x, y, width, height, whenDone) {
     //document.body.appendChild(image);
 }
 
+const selectorToCanvas = (selector, trgCanvas, whenDone) => {
+    const selectedNode = document.querySelector(selector);
+    if (selectedNode) {
+        const state = JSON.parse(selectedNode.getAttribute('data-stored'));
+        imageToCanvas(state.imagePath,
+            function(image, context) {
+                context.resetTransform();
+                context.translate(state.posX, state.posY);
+                context.scale(state.scale, state.scale);
+                context.translate(-(state.width / 2), -(state.height / 2));
+                context.globalCompositeOperation = state.blend;
+                image.width = state.width;
+                image.height = state.height;
+            },
+            trgCanvas, 0, 0, state.width, state.height,
+            whenDone
+        );
+    } else {
+        whenDone(trgCanvas);
+    }
+}
+
 module.exports = {
     html: htmlToCanvas,
-    image: imageToCanvas
+    image: imageToCanvas,
+    selector: selectorToCanvas
 };
