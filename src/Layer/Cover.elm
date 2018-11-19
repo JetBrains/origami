@@ -28,80 +28,109 @@ view : UiMode -> Product -> (Int, Int) -> (Int, Int) -> Blend.Blend -> Html a
 view mode product ( w, h ) ( x, y ) blend =
     let
         scale = toFloat w / defaultWidth
-
         centerX = (toFloat w / 2) - toFloat x
         centerY = (toFloat h / 2) - toFloat y
-        logoX = toFloat w - toFloat x
-        logoY = toFloat h - toFloat y
-        logoPath = case Product.getLogoPath Product.JetBrains of
-            Just fileName -> "./assets/" ++ fileName
-            Nothing -> ""
-        textPath = case Product.getTextLinePath product of
-            Just fileName -> "./assets/" ++ fileName
-            Nothing -> ""
+        logoX = toFloat w - toFloat x - 0.1 * toFloat h
+        logoY = toFloat h - toFloat y - 0.1 * toFloat h
     in
         div
             [ HAttrs.class "cover-layer"
             , HAttrs.style
-                [ ("mix-blend-mode", Blend.encode blend)
-                 , ("position", "absolute")
-                 , ("top", "0px")
-                 , ("left", "0px")
-                , ("font-size", toString defaultSize ++ "px")
-                , ("font-family", "'Gotham', Helvetica, sans-serif")
-                , ("font-weight", "170")
+                [ ( "mix-blend-mode", Blend.encode blend )
+                , ( "position", "absolute" )
+                , ( "top", "0px" )
+                , ( "left", "0px" )
+                , ( "font-size", toString defaultSize ++ "px" )
+                , ( "font-family", "'Gotham', Helvetica, sans-serif" )
+                , ( "font-weight", "170" )
                 -- , ("text-transform", "uppercase")
-                , ("color", "white")
+                , ( "color", "white" )
                 ]
             ]
         ( if mode == Production then
-            [
-            productName product centerX centerY textPath blend scale
-            ,
-            productName JetBrains (logoX -  0.1 * toFloat w) (logoY -  0.1 * toFloat w) logoPath blend scale
+            [ productName product ( centerX, centerY ) blend scale
+            , logo ( logoX, logoY ) blend scale
             ]
           else
             [
-                -- title product
---            , logo product posX posY logoPath blend scale
+            -- title product
+            --, logo product posX posY logoPath blend scale
             ]
         )
 
 
-productName : Product -> Float -> Float  -> String -> Blend.Blend -> Float -> Html a
-productName product posX posY logoPath blend scale =
+
+productName : Product -> ( Float, Float ) -> Blend.Blend -> Float -> Html a
+productName product pos blend scale =
     let
-        ( imageWidth, imageHeight ) = Product.getCoverTextSize product
+        textPath =
+            case Product.getTextLinePath product of
+                Just fileName -> "./assets/" ++ fileName
+                Nothing -> ""
+        textSize = Product.getCoverTextSize product
     in
-        div
-            [ HAttrs.class ("logo-layer logo-layer--" ++ Product.encode product)
-            , { blend = Blend.encode blend
+        image
+            textPath
+            ("product-name-layer product-name-layer-" ++ Product.encode product)
+            pos
+            textSize
+            blend
+            scale
+
+
+
+logo : ( Float, Float ) -> Blend.Blend -> Float -> Html a
+logo ( logoX, logoY ) blend scale =
+    let
+        logoPath =
+            case Product.getLogoPath Product.JetBrains of
+                Just fileName -> "./assets/" ++ fileName
+                Nothing -> ""
+        ( logoWidth, logoHeight ) = ( 90, 90 )
+    in image
+            logoPath
+            ("logo-layer logo-layer-" ++ Product.encode JetBrains)
+            ( logoX, logoY )
+            ( logoWidth, logoHeight )
+            blend
+            scale
+
+
+image : String -> String -> ( Float, Float ) -> ( Int, Int ) -> Blend.Blend -> Float -> Html a
+image imagePath class ( posX, posY ) ( imageWidth, imageHeight ) blend scale =
+    div
+        [ HAttrs.class class
+        ,
+            { blend = Blend.encode blend
             , posX = posX
             , posY = posY
             , width = imageWidth
             , height = imageHeight
-            , logoPath = logoPath
+            , imagePath = imagePath
             , scale = scale
             }
             |> encodeStoredData
             |> E.encode 0
             |> HAttrs.attribute "data-stored"
-            , HAttrs.style
-                [ ("mix-blend-mode", Blend.encode blend)
-                , ("position", "absolute")
-                , ("top", "0px")
-                , ("left", "0px")
-                , ("width",  toString ( toFloat imageWidth * scale ) ++ "px")
-                , ("height",  toString ( toFloat imageHeight * scale ) ++ "px")
-                , ("transform", "translate(" ++ toString (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, " ++ toString (posY - (toFloat imageHeight * scale) / 2.0) ++ "px)")
-                , ("background-image", "url(\"" ++ logoPath ++ "\")")
-                , ("background-repeat", "no-repeat")
-                , ("background-position", "center center")
-                , ("background-size", "contain")
-                ]
+        , HAttrs.style
+            [ ("mix-blend-mode", Blend.encode blend)
+            , ("position", "absolute")
+            , ("top", "0px")
+            , ("left", "0px")
+            , ("width", toString ( toFloat imageWidth * scale ) ++ "px")
+            , ("height", toString ( toFloat imageHeight * scale ) ++ "px")
+            , ("transform", "translate("
+                ++ toString (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, "
+                ++ toString (posY - (toFloat imageHeight * scale) / 2.0) ++ "px)"
+              )
+            , ("background-image", "url(\"" ++ imagePath ++ "\")")
+            , ("background-repeat", "no-repeat")
+            , ("background-position", "center center")
+            , ("background-size", "contain")
             ]
-            [ --img [ HAttrs.src logoPath, HAttrs.attribute "crossorigin" "anonymous" ] []
-            ]
+        ]
+        [ --img [ HAttrs.src logoPath, HAttrs.attribute "crossorigin" "anonymous" ] []
+        ]
 
 
 title : Product -> Html a
@@ -127,14 +156,12 @@ title product =
         [ text <| getName product ]
 
 
-
-
 type alias StoredData =
     { scale : Float
     , posX : Float
     , posY : Float
     , blend : String
-    , logoPath : String
+    , imagePath : String
     , width : Int
     , height : Int
     }
@@ -147,7 +174,7 @@ encodeStoredData s =
         , ( "posX", E.float s.posX )
         , ( "posY", E.float s.posY )
         , ( "blend", E.string s.blend )
-        , ( "logoPath", E.string s.logoPath )
+        , ( "imagePath", E.string s.imagePath )
         , ( "width", E.int s.width )
         , ( "height", E.int s.height )
         ]

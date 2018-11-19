@@ -192,41 +192,24 @@ const savePng = (hiddenLink, _, [ imageWidth, imageHeight ]) => {
         const trgContext = trgCanvas.getContext('2d');
         trgContext.drawImage(srcCanvas, 0, 0);
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
-        // FIXME: a temporary hack to draw a logo on the canvas,
-        // use product image itself instead
-        hiddenLink.download = width + 'x'+ height + '-jetbrains.png';
-            if (document.querySelector('.logo-layer')) {
-                const logoSrc = document.querySelector('.logo-layer');
-                const state = JSON.parse(logoSrc.getAttribute('data-stored'));
-                drawToCanvas.image(state.logoPath,
-                    function(image, context) {
-                        context.translate(state.posX, state.posY);
-                        context.scale(state.scale, state.scale);
-                        context.translate(-(imageWidth / 2), -(imageHeight / 2));
-                        context.globalCompositeOperation = state.blend;
-                        image.width = state.width;
-                        image.height = state.height;
-                    },
-                    trgCanvas, 0, 0, imageWidth, imageHeight,
-                    () => {
-                        trgCanvas.toBlob(blob => {
-                            const url = URL.createObjectURL(blob);
-                            hiddenLink.href = url;
-                            hiddenLink.click();
-                            URL.revokeObjectURL(url);
-                            trgCanvas.style.display = 'none';
-                        });
-                    }
-                );
-            } else {
-                trgCanvas.toBlob(blob => {
-                    const url = URL.createObjectURL(blob);
-                    hiddenLink.href = url;
-                    hiddenLink.click();
-                    URL.revokeObjectURL(url);
-                    trgCanvas.style.display = 'none';
+
+            // FIXME: a temporary hack to draw a logo on the canvas,
+            // use product image itself instead
+            hiddenLink.download = width + 'x'+ height + '-jetbrains.png';
+            drawToCanvas.selector('.product-name-layer', trgCanvas, () => {
+                drawToCanvas.selector('.logo-layer', trgCanvas, () => {
+
+                    trgCanvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        hiddenLink.href = url;
+                        hiddenLink.click();
+                        URL.revokeObjectURL(url);
+                        trgCanvas.style.display = 'none';
+                    });
+
                 });
-            }
+            });
+
         });
     });
 }
