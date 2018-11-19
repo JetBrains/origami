@@ -20,7 +20,12 @@ type alias Shape = ( Int, Int )
 type alias Cells = List Cell
 type alias Model = ( Shape, Cells )
 
-type alias GridCell = (Cell, ModelPos, SelectionState)
+type alias GridCell =
+    { cell: Cell
+    , modelPos: ModelPos
+    , parentPos: Maybe ModelPos -- if it has parent, then there is its position
+    , isSelected: Maybe SelectionState -- if it's under Choice item, then it has selection state
+    }
 type alias Row = Array (Maybe GridCell)
 type alias Rows = Array Row
 type Grid = Grid Shape Rows
@@ -70,7 +75,8 @@ type Msg
     | CollapseNested ModelPos
     | ExpandChoice ModelPos
     | CollapseChoice ModelPos
-    | Choose ModelPos ModelPos
+    | Select ModelPos ModelPos
+    | Deselect ModelPos ModelPos
     | Move ModelPos Int
 
 
@@ -223,16 +229,16 @@ showModelPos (ModelPos nest index) =
     "<" ++ toString nest ++ "," ++ toString index ++ ">"
 
 
-findHoverMessage : ModelPos -> Cell -> Maybe Msg
-findHoverMessage modelPos cell =
+findHoverMessage : GridCell -> Maybe Msg
+findHoverMessage { cell, modelPos }  =
     case cell of
         Knob label value ->
             Tune modelPos (value + 1) |> Just
         _ -> Nothing
 
 
-findClickMessage : ModelPos -> Cell -> Maybe Msg
-findClickMessage modelPos cell =
+findClickMessage : GridCell -> Maybe Msg
+findClickMessage { cell, modelPos, parentPos, isSelected } =
     case cell of
         Toggle _ val ->
             Just <| if val == TurnedOn then Off modelPos else On modelPos
@@ -240,15 +246,18 @@ findClickMessage modelPos cell =
             Just <| if state == Expanded then CollapseNested modelPos else ExpandNested modelPos
         Choice _ state _ _ ->
             Just <| if state == Expanded then CollapseChoice modelPos else ExpandChoice modelPos
-        _ -> Nothing
+        _ -> case ( parentPos, isSelected ) of
+            ( Just parentPos, Just Selected ) -> Deselect parentPos modelPos |> Just
+            ( Just parentPos, Just NotSelected ) -> Select parentPos modelPos |> Just
+            _ -> Nothing
 
 
 viewCell_ : GridPos -> GridCell -> Html Msg
-viewCell_ ((GridPos row col) as gridPos) ( cell, modelPos, selectedState ) =
+viewCell_ ((GridPos row col) as gridPos) { cell, modelPos, isSelected } =
     let
-        attrs =  case selectedState of
-            Selected -> [ H.class "selected" ]
-            NotSelected -> []
+        attrs =  case isSelected of
+            Just Selected -> [ H.class "selected" ]
+            _ -> []
         posStr = showGridPos gridPos ++ " " ++ showModelPos modelPos
     in case cell of
         Knob label val ->
@@ -287,28 +296,28 @@ viewCell_ ((GridPos row col) as gridPos) ( cell, modelPos, selectedState ) =
 
 
 viewCell : GridPos -> Maybe GridCell -> Html Msg
-viewCell gridPos maybeCellPair =
+viewCell gridPos maybeGridCell =
     let
         className =
-            case maybeCellPair of
+            case maybeGridCell of
                 Just _ -> "cell"
                 _ -> "cell hole"
         handlers =
-            maybeCellPair
+            maybeGridCell
                 |> Maybe.map
-                    (\(cell, modelPos, isSelected) ->
-                        (findClickMessage modelPos cell
+                    (\gridCell ->
+                        (findClickMessage gridCell
                             |> Maybe.map (\msg -> [ H.onClick msg ])
                             |> Maybe.withDefault []
                         ) ++
-                        (findHoverMessage modelPos cell
+                        (findHoverMessage gridCell
                             |> Maybe.map (\msg -> [ H.onMouseOver msg ])
                             |> Maybe.withDefault []
                         )
                     )
                 |> Maybe.withDefault []
         attributes = [ H.class className ] ++ handlers
-        children = maybeCellPair
+        children = maybeGridCell
             |> Maybe.map (\cell -> [ viewCell_ gridPos cell ])
             |> Maybe.withDefault []
     in
@@ -346,17 +355,18 @@ viewGrid (Grid _ grid) =
 
 
 
-put : Int -> GridPos -> Shape -> List Cell -> Grid -> Grid
-put nest gridPos shape cells grid =
-    put_ nest gridPos shape Nothing cells grid
+putAtRoot : Int -> GridPos -> Shape -> List Cell -> Grid -> Grid
+putAtRoot nest gridPos shape cells grid =
+    put nest gridPos shape Nothing Nothing cells grid
 
 
-put_ : Int -> GridPos -> Shape -> Maybe ItemChosen -> List Cell -> Grid -> Grid
-put_
+put : Int -> GridPos -> Shape -> Maybe ItemChosen -> Maybe ModelPos -> List Cell -> Grid -> Grid
+put
     nest
     (GridPos row col)
     shape
     maybeChosenItem
+    maybeParent
     cellsList
     (Grid gridShape rows) =
     let
@@ -365,14 +375,16 @@ put_
         cells = Array.fromList cellsList
             |> Array.indexedMap
                 (\cellIndex cell ->
-                    ( cell
-                    , ModelPos nest cellIndex
-                    , case maybeChosenItem of
+                    { cell = cell
+                    , modelPos = ModelPos nest cellIndex
+                    , isSelected = case maybeChosenItem of
                         Just chosenIndex ->
-                            if cellIndex == chosenIndex
-                            then Selected else NotSelected
-                        _ -> NotSelected
-                    )
+                            Just <|
+                                if cellIndex == chosenIndex
+                                then Selected else NotSelected
+                        _ -> Nothing
+                    , parentPos = maybeParent
+                    }
                 )
         -- hasNesting = Debug.log "nests" <| Array.map (\(_, (ModelPos nest _)) -> nest) cells
         fits ( row, col ) ( width, height ) =
@@ -399,17 +411,26 @@ put_
         applyColExpands maybeCell ( col, grid ) =
             ( col + 1
             , case maybeCell of
-                Just ( cell, (ModelPos cellNest _), _ ) ->
-                    if (cellNest == nest) then
+                Just { cell, modelPos } ->
+                    let  (ModelPos cellNest _) = modelPos
+                    in if (cellNest == nest) then
                         case cell of
                             Nested _ Expanded ( shape, cells ) ->
-                                put (nest + 1) (findNextPos row col shape) shape cells grid
+                                put
+                                    (nest + 1)
+                                    (findNextPos row col shape)
+                                    shape
+                                    Nothing
+                                    (Just modelPos)
+                                    cells
+                                    grid
                             Choice _ Expanded selectedItem ( shape, cells ) ->
-                                put_
+                                put
                                     (nest + 1)
                                     (findNextPos row col shape)
                                     shape
                                     (Just selectedItem)
+                                    (Just modelPos)
                                     cells
                                     grid
                             _ -> grid
@@ -461,7 +482,7 @@ set (GridPos row col) cell ((Grid shape rows) as grid) =
 layout : Model -> Grid
 layout ( shape, cells ) =
     emptyGrid (10, 6)
-        |> put 0 (GridPos 0 0) shape cells
+        |> putAtRoot 0 (GridPos 0 0) shape cells
         |> flip
 
 
