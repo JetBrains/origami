@@ -229,7 +229,7 @@ const Config = function(layers, defaults, funcs, randomize) {
 
     this.customSize = PREDEFINED_SIZES['window'];
 
-    this.savePng = funcs.savePng;
+    //this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
     this.randomize = randomize(this);
     // -------
@@ -388,7 +388,7 @@ function start(document, model, funcs) {
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
-    gui.add(config, 'savePng').name('save png');
+    // gui.add(config, 'savePng').name('save png');
     if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
     gui.add(config, 'randomize').name('i feel lucky');
     product.onFinishChange(funcs.changeProduct);

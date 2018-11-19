@@ -979,7 +979,10 @@ view model =
                 , input
                     [ type_ "button", class "export_html5", onClick ExportZip, value "export to html5.zip" ]
                     [ text "Export to html5.zip" ]
-                , div [  H.class "spacebar_info" ] [text "to hide controls press spacebar"]
+                , input
+                    [ type_ "button", class "export_png", onClick SavePng, value "export to png" ]
+                    [ text "Export to png" ]
+                , div [ H.class "spacebar_info" ] [ text "to hide controls press spacebar" ]
                 ]
             ) else div [] []
         , mergeWebGLLayers model |>
