@@ -57,9 +57,7 @@ const PRODUCTS = [
     { label: 'KT', id: 'kotlin'
     },   // kotlin // KT_
     { label: 'MPS', id: 'mps'
-    },  // mps // MPS_
-    { label: 'Mono', id: 'mono'
-  }  // mono
+    }  // mps // MPS_
 ];
 const PRODUCT_TO_ID = {};
 PRODUCTS.forEach((product) => {
@@ -157,14 +155,12 @@ const WALLPAPER_SIZES =
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
   , '1680x1050': [ 1680, 1050 ]
-  , '640x400' : [ 640, 400 ] // for testing, in production delete
-  , '250x250' : [ 250, 250 ] // for testing, in production delete
   };
 
 
 const BLENDS_SETS =
-  { 'usual': [ [ '+', '1', '0' ], [ '+', '1', '0' ] ]
-  , 'unusual': [ [ '+', 'sC', '1-sC' ], [ '+', 'sC', '1-sC' ] ]
+  { 'normal': [ [ '+', '1', '0' ], [ '+', '1', '0' ] ]
+  , 'lighten': [ [ '+', 'sC', '1-sC' ], [ '+', 'sC', '1-sC' ] ]
   };
 
 
@@ -220,7 +216,7 @@ const Config = function(layers, defaults, funcs, randomize) {
           }
 
         } else { // mode == 'prod'
-          this['blendSet' + index] = BLENDS_SETS['usual'];
+          this['blendSet' + index] = BLENDS_SETS['normal'];
           this['blendColor' + index] =
               layer.blend[0].color || [ 1, 0, 0, 0 ]; // FIXME: get RGBA components
         }
@@ -390,9 +386,9 @@ function start(document, model, funcs) {
       if (isFss(layer)) {
         const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
         const lightSpeed = folder.add(config, 'lightSpeed' + index).name('light pace')
-                                 .min(100).max(1140);
-        const facesX = folder.add(config, 'facesX' + index).name('col').min(1).max(100).step(1);
-        const facesY = folder.add(config, 'facesY' + index).name('row').min(1).max(100).step(1);
+                                 .min(100).max(2000);
+        const facesX = folder.add(config, 'facesX' + index).name('columns').min(1).max(100).step(1);
+        const facesY = folder.add(config, 'facesY' + index).name('rows').min(1).max(100).step(1);
         const fogFolder = folder.addFolder('fog');
         const vignette = fogFolder.add(config, 'vignette' + index).name('shine').min(0).max(1).step(0.01);
         const iris = fogFolder.add(config, 'iris' + index).name('density').min(0).max(1).step(0.01);

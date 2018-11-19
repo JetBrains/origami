@@ -183,7 +183,7 @@ defaultFaces = ( 17, 17 )
 
 
 defaultLightSpeed : Int
-defaultLightSpeed = 1600
+defaultLightSpeed = 1000
 
 
 noClip : Clip
