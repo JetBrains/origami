@@ -18,7 +18,6 @@ type alias Palette = List Color
 
 type Product
     = JetBrains
-    | Mono
     | IntelliJ
     | PhpStorm
     | PyCharm
@@ -56,7 +55,6 @@ getPalette : Product -> Palette
 getPalette product =
     case product of
         JetBrains -> [ "#ad3259",  "#aa489a", "#ffdb2e" ]
-        Mono -> [ "#ffffff",  "#aaaaaa", "#000000" ]
         IntelliJ -> [ "#003976",  "#fc31fe", "#ffd08d" ]
         PhpStorm ->  [ "#bb43e6", "#9034b1", "#f93394" ]
         PyCharm -> [ "#006137", "#fcf84a", "#f9ff93" ]
@@ -109,7 +107,6 @@ getName product =
         Hub -> "Hub"
         Kotlin -> "Kotlin"
         MPS -> "MPS"
-        Mono -> "Mono"
         Unknown -> "Unknown"
 
 
@@ -117,7 +114,6 @@ decode : String -> Product
 decode id =
     case id of
         "jetbrains" -> JetBrains
-        "mono" -> Mono
         "intellij-idea" -> IntelliJ
         "phpstorm" -> PhpStorm
         "pycharm" -> PyCharm
@@ -169,7 +165,6 @@ encode product =
         Hub -> "hub"
         Kotlin -> "kotlin"
         MPS -> "mps"
-        Mono -> "mono"
         Unknown -> "unknown"
 
 
@@ -177,7 +172,6 @@ getLogoPath : Product -> Maybe String
 getLogoPath product =
     (case product of
         Unknown -> Nothing
-        Mono -> Nothing
         product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ ".svg")
 
@@ -186,7 +180,6 @@ getTextLinePath : Product -> Maybe String
 getTextLinePath product =
     (case product of
         Unknown -> Nothing
-        Mono -> Nothing
         product -> Just (encode product))
             |> Maybe.map (\fileName -> fileName ++ "-text.svg")
 
@@ -211,5 +204,10 @@ getCoverTextSize product =
         DotTrace -> ( 461, 90 )
         Rider -> ( 273, 90 )
         TeamCity -> ( 495, 108 )
+        YouTrack -> ( 485, 90 )
+        UpSource -> ( 490, 104 )
+        Hub -> ( 211, 90 )
+        Kotlin -> ( 323, 99 )
+        MPS -> ( 200, 77 )
         _ -> ( 90, 90 )
 
