@@ -180,7 +180,7 @@ const prepareImportExport = () => {
 
 }
 
-const savePng = (hiddenLink) => {
+const savePng = (hiddenLink, _, [ coverWidth, coverHeight ]) => {
     const srcCanvas = document.querySelector('.webgl-layers');
     const trgCanvas = document.querySelector('#js-save-buffer');
     const [ width, height ] = [ srcCanvas.width, srcCanvas.height ];
@@ -206,7 +206,7 @@ const savePng = (hiddenLink) => {
                         image.width = state.width;
                         image.height = state.height;
                     },
-                    trgCanvas, 0, 0, 120, 120,
+                    trgCanvas, 0, 0, coverWidth, coverHeight,
                     () => {
                         trgCanvas.toBlob(blob => {
                             const url = URL.createObjectURL(blob);
@@ -238,11 +238,15 @@ setTimeout(() => {
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
-    app.ports.presetSizeChanged.subscribe(size => {
+    app.ports.presetSizeChanged.subscribe(({ size, coverSize }) => {
         if (savingBatch) {
             // console.log('saving ', size);
-            savePng(hiddenLink, size);
+            savePng(hiddenLink, size, coverSize);
         };
+    });
+
+    app.ports.triggerSavePng.subscribe(({ size, coverSize }) => {
+        savePng(hiddenLink, size, coverSize);
     });
 
     app.ports.startGui.subscribe((model) => {
@@ -281,7 +285,8 @@ setTimeout(() => {
                     app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
                 }
             }
-            , savePng : () => savePng(hiddenLink)
+            , savePng : () =>
+                { app.ports.savePng.send(null); }
             , saveBatch : sizes_ => {
                 let sizes = sizes_.concat([[0, 0]]);
                 let sizeIndex = 0;
