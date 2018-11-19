@@ -108,7 +108,7 @@ svg.text-layer {
 }
 
 .timeline {
-    text-align: center;  
+    text-align: center;
     position: relative;
     top: 3px;
 }
@@ -126,7 +126,8 @@ svg.text-layer {
 .overlay-panel .future {
     padding-left: 10px;
 }
-.export_html5 {
+
+.export_html5, .export_png {
     position: relative;
     left: -5px;
     text-align: center;
@@ -163,8 +164,14 @@ svg.text-layer {
     cursor: pointer;
     white-space: nowrap;
     text-decoration: none;
-    
+}
 
+.export_html5 {
+    margin-right: 5px;
+}
+
+.export_png {
+    margin-left: 5px;
 }
 
 .spacebar_info {
@@ -173,8 +180,6 @@ svg.text-layer {
     font-size: 11px;
 }
 
-
-  
 .text-layer--title, .text-layer--subtitle {
     font-family: 'Gotham', Helvetica, sans-serif;
     font-weight: 170;
@@ -196,3 +201,6 @@ svg.text-layer {
     /* border: 1px solid red; */
 }
 
+.dg.ac {
+    z-index: 30 !important;
+}

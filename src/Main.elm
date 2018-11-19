@@ -69,6 +69,7 @@ type Msg
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
     | ApplyRandomizer PortModel
+    | SavePng
     | NoOp
 
 
@@ -207,12 +208,16 @@ update msg model =
             )
 
         ResizeFromPreset { width, height } ->
-            ( { model
-              | size = adaptSize ( width, height )
-              , origin = getOrigin ( width, height )
-              }
-            , presetSizeChanged ( width, height )
-            )
+            let
+                newModel =
+                    { model
+                    | size = adaptSize ( width, height )
+                    , origin = getOrigin ( width, height )
+                    }
+            in
+                ( newModel
+                , newModel |> getSizeUpdate |> presetSizeChanged
+                )
 
         Locate pos ->
             ( { model | mouse = (pos.x, pos.y) }
@@ -432,12 +437,25 @@ update msg model =
             , Cmd.none
             )
 
+        SavePng ->
+            ( model
+            , model |> getSizeUpdate |> triggerSavePng
+            )
+
         ApplyRandomizer portModel ->
             IE.decodePortModel createLayer portModel
                 -- |> Debug.log "decoded model"
                 |> rebuildAllFssLayersWith
 
         NoOp -> ( model, Cmd.none )
+
+
+getSizeUpdate : Model -> SizeUpdate
+getSizeUpdate model =
+    { size = model.size
+    , product = Product.encode model.product
+    , coverSize = Product.getCoverTextSize model.product
+    }
 
 
 getLayerModel : LayerIndex -> Model -> Maybe LayerModel
@@ -752,6 +770,7 @@ subscriptions model =
         , turnOff TurnOff
         , mirrorOn MirrorOn
         , mirrorOff MirrorOff
+        , savePng (\_ -> SavePng)
         ]
 
 
@@ -940,8 +959,8 @@ view model =
        , if model.controlsVisible
             then ( div
                 [ H.class "overlay-panel import-export-panel hide-on-space" ]
-                [ 
-                  div [  H.class "timeline_holder" ] [  
+                [
+                  div [  H.class "timeline_holder" ] [
                   span [ H.class "label past"] [text "past"]
                 , input
                     [ type_ "range"
@@ -953,14 +972,17 @@ view model =
                     , onMouseUp BackToNow
                     ]
                     []
-                , span [ H.class "label future"] [text "future"] 
-                  ]  
+                , span [ H.class "label future"] [text "future"]
+                  ]
                 -- , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
                 -- , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
                 , input
                     [ type_ "button", class "export_html5", onClick ExportZip, value "export to html5.zip" ]
                     [ text "Export to html5.zip" ]
-                , div [  H.class "spacebar_info" ] [text "to hide controls press spacebar"]    
+                , input
+                    [ type_ "button", class "export_png", onClick SavePng, value "export to png" ]
+                    [ text "Export to png" ]
+                , div [ H.class "spacebar_info" ] [ text "to hide controls press spacebar" ]
                 ]
             ) else div [] []
         , mergeWebGLLayers model |>
@@ -1054,6 +1076,8 @@ port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
 port applyRandomizer : (PortModel -> msg) -> Sub msg
 
+port savePng : (() -> msg) -> Sub msg
+
 port changeWGLBlend :
     ( { layer : Int
       , value : WGLBlend.Blend
@@ -1069,14 +1093,26 @@ port changeSVGBlend :
 
 -- OUTGOING PORTS
 
+type alias SizeUpdate =
+    { size: Size
+    , product: String
+    , coverSize: Size
+    }
+
 port startGui : PortModel -> Cmd msg
 
-port requestFssRebuild : { layer: LayerIndex, model: PortModel, value: FSS.PortModel } -> Cmd msg
+port requestFssRebuild :
+    { layer: LayerIndex
+    , model: PortModel
+    , value: FSS.PortModel
+    } -> Cmd msg
 
-port presetSizeChanged : Size -> Cmd msg
+port presetSizeChanged : SizeUpdate -> Cmd msg
 
 port export_ : String -> Cmd msg
 
 port exportZip_ : String -> Cmd msg
+
+port triggerSavePng : SizeUpdate -> Cmd msg
 
 -- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg
