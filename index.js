@@ -192,11 +192,13 @@ const savePng = (hiddenLink, _, [ imageWidth, imageHeight ]) => {
         const trgContext = trgCanvas.getContext('2d');
         trgContext.drawImage(srcCanvas, 0, 0);
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
+
             // FIXME: a temporary hack to draw a logo on the canvas,
             // use product image itself instead
             hiddenLink.download = width + 'x'+ height + '-jetbrains.png';
             drawToCanvas.selector('.product-name-layer', trgCanvas, () => {
                 drawToCanvas.selector('.logo-layer', trgCanvas, () => {
+
                     trgCanvas.toBlob(blob => {
                         const url = URL.createObjectURL(blob);
                         hiddenLink.href = url;
@@ -204,8 +206,10 @@ const savePng = (hiddenLink, _, [ imageWidth, imageHeight ]) => {
                         URL.revokeObjectURL(url);
                         trgCanvas.style.display = 'none';
                     });
+
                 });
             });
+
         });
     });
 }
