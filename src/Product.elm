@@ -192,7 +192,7 @@ getCoverTextSize product =
         PyCharm ->  ( 479, 108 )
         RubyMine -> ( 502, 108 )
         WebStorm -> ( 567, 90 )
-        CLion -> ( 567, 90 )
+        CLion -> ( 299, 90 )
         DataGrip -> ( 468, 108 )
         AppCode -> ( 518, 108 )
         GoLand -> ( 419, 90 )
