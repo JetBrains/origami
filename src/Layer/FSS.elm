@@ -60,7 +60,7 @@ type alias PortModel =
     , amplitude : Amplitude
     , colorShift : ColorShift
     , vignette : Vignette
-    , iris : Iris 
+    , iris : Iris
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
@@ -74,7 +74,7 @@ type alias Model =
     , amplitude : Amplitude
     , colorShift : ColorShift
     , vignette : Vignette
-    , iris : Iris 
+    , iris : Iris
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
@@ -337,7 +337,6 @@ convertTriangles material side src =
                         , b |> convertVertex (vec4 b.gradient b.gradient b.gradient 1) material sTriangle side
                         , c |> convertVertex (vec4  c.gradient c.gradient c.gradient 1) material sTriangle side
                         )
-
                     _ ->
                         ( defaultVertex
                         , defaultVertex
@@ -451,7 +450,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
         , uColorShift = vec3 hue saturation brightness
         , uVignette = model.vignette
-        , uIris = model.iris 
+        , uIris = model.iris
         , paused = v.paused
         , rotation = v.rotation
         , perspective = v.perspective
@@ -573,7 +572,7 @@ vertexShader =
         // Precision
         precision mediump float;
         precision mediump int;
- 
+
         // Attributes
         attribute float aSide;
         attribute vec3 aPosition;
@@ -632,7 +631,7 @@ vertexShader =
        //     return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
        // }
 
- 
+
 
        vec3 vertexOscillators(vec3 arg) {
             return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
@@ -667,7 +666,7 @@ vertexShader =
                     changedColor[2] = clamp(changedColor[2] + deltaBrightness, 0.0, 1.0); // brightness shift
 
                     return vec4(vec3(hsv2rgb(changedColor)), 1.0);
-         }   
+         }
 
 
         // Main
@@ -676,7 +675,7 @@ vertexShader =
            if ( uLayerIndex == 0 ) {
 
                background = true;
-  
+
            }
 
             if ( uLayerIndex == 1 ) {
@@ -833,7 +832,7 @@ fragmentShader =
         changedColor[2] = clamp(changedColor[2] + deltaBrightness, 0.0, 1.0); // brightness shift
 
         return vec4(vec3(hsv2rgb(changedColor)), 1.0);
-        }   
+        }
 
 
 
