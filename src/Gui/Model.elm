@@ -14,7 +14,13 @@ type alias Label = String
 
 type alias ItemChosen = Int
 
-type alias Model = ( Shape, Cells )
+type alias Nest =
+    { focus: Int
+    , shape: Shape
+    , cells: Cells
+    }
+
+type alias Model = Nest
 
 
 type Msg
@@ -50,28 +56,47 @@ type SelectionState
     | NotSelected
 
 
+type FocusState
+    = Focused
+    | NotFocused
+
+
 type Cell
     = Knob Label Float
     | Toggle Label ToggleState
     | Button Label Handler
-    | Nested Label ExpandState (Shape, Cells)
-    | Choice Label ExpandState ItemChosen (Shape, Cells)
+    | Nested Label ExpandState Nest
+    | Choice Label ExpandState ItemChosen Nest
     | ChoiceItem Label
 
 
-noChildren : ( Shape, Cells )
+noChildren : Nest
 noChildren =
-    ( ( 0, 0 ), [] )
+    { focus = -1
+    , shape = ( 0, 0 )
+    , cells = []
+    }
 
 
-oneLine : Cells -> ( Shape, Cells )
+oneLine : Cells -> Nest
 oneLine cells =
-    ( ( List.length cells, 1 ), cells )
+    { focus = 0
+    , shape = ( List.length cells, 1 )
+    , cells = cells
+    }
 
 
-collapseAllAbove : ModelPos -> Model -> Model
+nest : Shape -> Cells -> Nest
+nest shape cells =
+    { focus = 0
+    , shape = shape
+    , cells = cells
+    }
+
+
+collapseAllAbove : ModelPos -> Nest -> Nest
 collapseAllAbove  (ModelPos _ srcNest _) model =
-    model |> traverseModel
+    model |> traverseNest
         (\cell (ModelPos _ nest _) _ ->
             if (nest >= srcNest) then
                 case cell of
@@ -91,32 +116,38 @@ collapseAllAbove  (ModelPos _ srcNest _) model =
         )
 
 
-traverseModel : (Cell -> ModelPos -> Maybe ModelPos -> Cell) -> Model -> Model
-traverseModel f ( shape, cells ) =
-    ( shape, traverseCells f cells )
+traverseNest : (Cell -> ModelPos -> Maybe ModelPos -> Cell) -> Nest -> Nest
+traverseNest f nest =
+    { nest
+    | cells = nest.cells |> traverseCells f
+    }
 
 
 traverseCells : (Cell -> ModelPos -> Maybe ModelPos -> Cell) -> Cells -> Cells
 traverseCells f cells =
     let
-        scanCell maybeParentPos parentIndex nest index cell =
-            let modelPos = (ModelPos parentIndex nest index)
+        scanCell maybeParentPos parentIndex nestLevel index cell =
+            let modelPos = (ModelPos parentIndex nestLevel index)
             in case f cell modelPos maybeParentPos of
-                Nested label state ( shape, nestedCells ) ->
+                Nested label state nest ->
                     Nested
                         label
                         state
-                        ( shape
-                        , List.indexedMap (scanCell (Just modelPos) index (nest + 1)) nestedCells
-                        )
-                Choice label state selected ( shape, nestedCells ) ->
+                        { nest
+                        | cells =
+                            nest.cells
+                                |> List.indexedMap (scanCell (Just modelPos) index (nestLevel + 1))
+                        }
+                Choice label state selected nest ->
                     Choice
                         label
                         state
                         selected
-                        ( shape
-                        , List.indexedMap (scanCell (Just modelPos) index (nest + 1)) nestedCells
-                        )
+                        { nest
+                        | cells =
+                            nest.cells |>
+                                List.indexedMap (scanCell (Just modelPos) index (nestLevel + 1))
+                        }
                 newCell -> newCell
 
     in
@@ -128,13 +159,13 @@ isSamePos (ModelPos lParent lNest lIndex) (ModelPos rParent rNest rIndex) =
     lParent == rParent && lNest == rNest && lIndex == rIndex
 
 
-updateCell : ModelPos -> (Cell -> Cell) -> Model -> Model
-updateCell expectedPos f model =
-    traverseModel
+updateCell : ModelPos -> (Cell -> Cell) -> Nest -> Nest
+updateCell expectedPos f nest =
+    traverseNest
         (\cell modelPos _ ->
             if isSamePos modelPos expectedPos then
                 f cell
             else cell)
-        model
+        nest
 
 

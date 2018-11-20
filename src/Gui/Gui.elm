@@ -20,79 +20,74 @@ init : Model -- ( UI, Cmd Msg )
 init =
     let
         productsGrid =
-            ( ( 4, 3 )
-            ,
-                [ "jetbrains"
-                , "intellij"
-                , "phpstorm"
-                , "pycharm"
-                , "rubymine"
-                , "webstorm"
-                , "clion"
-                , "datagrip"
-                , "appcode"
-                , "goland"
-                , "resharper"
-                , "resharper-cpp"
-                --, "dotcover"
-                -- TODO
-                ] |> List.map ChoiceItem
-            )
+            [ "jetbrains"
+            , "intellij"
+            , "phpstorm"
+            , "pycharm"
+            , "rubymine"
+            , "webstorm"
+            , "clion"
+            , "datagrip"
+            , "appcode"
+            , "goland"
+            , "resharper"
+            , "resharper-cpp"
+            --, "dotcover"
+            -- TODO
+            ]
+                |> List.map ChoiceItem
+                |> nest ( 4, 3 )
         sizeGrid =
-            ( ( 2, 3 )
-            ,
-                [ "window"
-                , "1920x1980"
-                , "1366x768"
-                , "1440x900"
-                , "1536x864"
-                , "1680x1050"
-                ] |> List.map ChoiceItem
-            )
+            [ "window"
+            , "1920x1980"
+            , "1366x768"
+            , "1440x900"
+            , "1536x864"
+            , "1680x1050"
+            ]
+                |> List.map ChoiceItem
+                |> nest ( 2, 3 )
         webglBlendGrid =
             let
                 funcGrid =
-                    ( ( 3, 1 )
-                    , [ "+", "-", "R-" ]
+                    [ "+", "-", "R-" ]
                         |> List.map ChoiceItem
-                    )
+                        |> nest ( 3, 1 )
                 factorGrid =
-                    ( ( 8, 2 )
-                    , [ "0", "1"
-                      , "sC", "1-sC"
-                      , "dC", "1-dC"
-                      , "sA", "1-sA"
-                      , "dA", "1-dA"
-                      , "AS"
-                      , "CC", "1-CC"
-                      , "CA", "1-CA"
-                      ] |> List.map ChoiceItem
-                    )
+                    [ "0", "1"
+                    , "sC", "1-sC"
+                    , "dC", "1-dC"
+                    , "sA", "1-sA"
+                    , "dA", "1-dA"
+                    , "AS"
+                    , "CC", "1-CC"
+                    , "CA", "1-CA"
+                    ]
+                        |> List.map ChoiceItem
+                        |> nest (8, 2)
             in
-                ( ( 3, 2 )
+                nest ( 3, 2 )
                 -- TODO color
-                , [ Choice "colorFn" Collapsed 0 funcGrid
-                  , Choice "colorFt1" Collapsed 1 factorGrid
-                  , Choice "colorFt2" Collapsed 0 factorGrid
-                  , Choice "alphaFn" Collapsed 0 funcGrid
-                  , Choice "alphaFt1" Collapsed 1 factorGrid
-                  , Choice "alphaFt2" Collapsed 0 factorGrid
-                  ]
-                )
+                    [ Choice "colorFn" Collapsed 0 funcGrid
+                    , Choice "colorFt1" Collapsed 1 factorGrid
+                    , Choice "colorFt2" Collapsed 0 factorGrid
+                    , Choice "alphaFn" Collapsed 0 funcGrid
+                    , Choice "alphaFt1" Collapsed 1 factorGrid
+                    , Choice "alphaFt2" Collapsed 0 factorGrid
+                    ]
         svgBlendGrid =
-            ( ( 3, 3 )
-            ,
-                [ "normal"
-                , "overlay"
-                , "multiply"
-                , "darken"
-                , "lighten"
-                , "multiply"
-                , "multiply"
-                , "multiply"
-                , "multiply"
-                ] |> List.map ChoiceItem
-            )
+            [ "normal"
+            , "overlay"
+            , "multiply"
+            , "darken"
+            , "lighten"
+            , "multiply"
+            , "multiply"
+            , "multiply"
+            , "multiply"
+            ]
+                |> List.map ChoiceItem
+                |> nest ( 3, 3 )
         amplitudeGrid = noChildren
         fssControls =
             oneLine
@@ -102,31 +97,27 @@ init =
                 , Knob "col" 0
                 , Knob "row" 0
                 , Nested "fog" Collapsed <|
-                    ( ( 2, 1 )
-                    , [ Knob "shine" 0
-                      , Knob "density" 0
-                      ]
-                    )
+                    nest ( 2, 1 )
+                        [ Knob "shine" 0
+                        , Knob "density" 0
+                        ]
                 , Choice "mesh" Collapsed 0 <|
-                    ( ( 2, 1 )
-                    , [ ChoiceItem "triangles"
-                      , ChoiceItem "lines"
-                      ]
-                    )
+                    nest ( 2, 1 )
+                        [ ChoiceItem "triangles"
+                        , ChoiceItem "lines"
+                        ]
                 , Nested "ranges" Collapsed <|
-                    ( ( 3, 1 )
-                    , [ Knob "horizontal" 0
-                      , Knob "vertical" 0
-                      , Knob "depth" 0
-                      ]
-                    )
+                        nest ( 3, 1 )
+                            [ Knob "horizontal" 0
+                            , Knob "vertical" 0
+                            , Knob "depth" 0
+                            ]
                 , Nested "hsb" Collapsed <|
-                    ( ( 3, 1 )
-                    , [ Knob "hue" 0
-                      , Knob "saturation" 0
-                      , Knob "brightness" 0
-                      ]
-                    )
+                    nest ( 3, 1 )
+                        [ Knob "hue" 0
+                        , Knob "saturation" 0
+                        , Knob "brightness" 0
+                        ]
                 , Nested "blend" Collapsed webglBlendGrid
                 ]
         svgControls =
