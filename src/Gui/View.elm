@@ -231,7 +231,7 @@ put
                     let (ModelPos _ cellNest cellIndex) = modelPos
                     in if (cellNest == nest) then
                         case cell of
-                            Nested _ Expanded ( shape, cells ) ->
+                            Nested _ Expanded { shape, cells } ->
                                 put
                                     cellIndex
                                     (nest + 1)
@@ -241,7 +241,7 @@ put
                                     (Just modelPos)
                                     cells
                                     grid
-                            Choice _ Expanded selectedItem ( shape, cells ) ->
+                            Choice _ Expanded selectedItem { shape, cells } ->
                                 put
                                     cellIndex
                                     (nest + 1)
@@ -281,7 +281,7 @@ set (GridPos row col) cell ((Grid shape rows) as grid) =
 
 
 layout : Model -> Grid
-layout ( shape, cells ) =
+layout { shape, cells } =
     emptyGrid (10, 6)
         |> putAtRoot 0 (GridPos 0 0) shape cells
         |> flip
