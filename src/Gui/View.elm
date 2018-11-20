@@ -180,7 +180,7 @@ put
     parentIndex
     nest
     (GridPos row col)
-    shape
+    currentShape
     maybeChosenItem
     maybeParent
     cellsList
@@ -212,18 +212,18 @@ put
                 let
                     localPos = (row_ - row, col_ - col)
                 in
-                    if fits localPos shape then
-                        case Array.get (indexOf localPos shape) cells of
+                    if fits localPos currentShape then
+                        case Array.get (indexOf localPos currentShape) cells of
                             Just newCell -> Just newCell
                             Nothing -> prevCell
                     else prevCell
             else prevCell
         updateRow row_ row =
             row |> Array.indexedMap (updateCell row_)
-        findNextPos row_ col_ ( width, height ) =
-            if (col_ + width < gridWidth) then
-                GridPos (row_ + 1) col_
-            else GridPos (row_ + 1) (gridWidth - width)
+        findNextPos row_ col_ ( curWidth, curHeight ) ( nestedWidth, nestedHeight ) =
+            if (col_ + nestedWidth < gridWidth) then
+                GridPos (row_ + curHeight) col_
+            else GridPos (row_ + curHeight) (gridWidth - nestedWidth)
         applyColExpands maybeCell ( col, grid ) =
             ( col + 1
             , case maybeCell of
@@ -235,7 +235,7 @@ put
                                 put
                                     cellIndex
                                     (nest + 1)
-                                    (findNextPos row col shape)
+                                    (findNextPos row col currentShape shape)
                                     shape
                                     Nothing
                                     (Just modelPos)
@@ -245,7 +245,7 @@ put
                                 put
                                     cellIndex
                                     (nest + 1)
-                                    (findNextPos row col shape)
+                                    (findNextPos row col currentShape shape)
                                     shape
                                     (Just selectedItem)
                                     (Just modelPos)
