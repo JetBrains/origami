@@ -16,6 +16,7 @@ type alias GridCell =
     , modelPos: ModelPos
     , parentPos: Maybe ModelPos -- if it has parent, then there is its position
     , isSelected: Maybe SelectionState -- if it's under Choice item, then it has selection state
+    , isFocused: FocusState
     }
 
 type alias Row = Array (Maybe GridCell)
@@ -161,44 +162,47 @@ viewGrid (Grid _ grid) =
 
 
 
-putAtRoot : Int -> GridPos -> Shape -> List Cell -> Grid -> Grid
-putAtRoot nest gridPos shape cells grid =
-    put -1 nest gridPos shape Nothing Nothing cells grid
+putAtRoot : Int -> GridPos -> Nest -> Grid -> Grid
+putAtRoot nestLevel gridPos nest grid =
+    put -1 nestLevel gridPos Nothing Nothing nest grid
 
 
 put
     :  Int
     -> Int
     -> GridPos
-    -> Shape
     -> Maybe ItemChosen
     -> Maybe ModelPos
-    -> List Cell
+    -> Nest
     -> Grid
     -> Grid
 put
     parentIndex
-    nest
+    nestLevel
     (GridPos row col)
-    currentShape
     maybeChosenItem
     maybeParent
-    cellsList
+    nest
     (Grid gridShape rows) =
     let
         --a = Debug.log "gPos" (GridPos row col)
         ( gridWidth, _ ) = gridShape
+        currentShape = nest.shape
+        cellsList = nest.cells
         cells = Array.fromList cellsList
             |> Array.indexedMap
                 (\cellIndex cell ->
                     { cell = cell
-                    , modelPos = ModelPos parentIndex nest cellIndex
+                    , modelPos = ModelPos parentIndex nestLevel cellIndex
                     , isSelected = case maybeChosenItem of
                         Just chosenIndex ->
                             Just <|
                                 if cellIndex == chosenIndex
                                 then Selected else NotSelected
                         _ -> Nothing
+                    , isFocused = if nest.focus == cellIndex
+                        then Focused
+                        else NotFocused
                     , parentPos = maybeParent
                     }
                 )
@@ -228,28 +232,26 @@ put
             ( col + 1
             , case maybeCell of
                 Just { cell, modelPos } ->
-                    let (ModelPos _ cellNest cellIndex) = modelPos
-                    in if (cellNest == nest) then
+                    let (ModelPos _ cellNestLevel cellIndex) = modelPos
+                    in if (cellNestLevel == nestLevel) then
                         case cell of
-                            Nested _ Expanded { shape, cells } ->
+                            Nested _ Expanded ({ shape } as nest) ->
                                 put
                                     cellIndex
-                                    (nest + 1)
+                                    (nestLevel + 1)
                                     (findNextPos row col currentShape shape)
-                                    shape
                                     Nothing
                                     (Just modelPos)
-                                    cells
+                                    nest
                                     grid
-                            Choice _ Expanded selectedItem { shape, cells } ->
+                            Choice _ Expanded selectedItem ({ shape } as nest) ->
                                 put
                                     cellIndex
-                                    (nest + 1)
+                                    (nestLevel + 1)
                                     (findNextPos row col currentShape shape)
-                                    shape
                                     (Just selectedItem)
                                     (Just modelPos)
-                                    cells
+                                    nest
                                     grid
                             _ -> grid
                     else grid
@@ -281,9 +283,9 @@ set (GridPos row col) cell ((Grid shape rows) as grid) =
 
 
 layout : Model -> Grid
-layout { shape, cells } =
+layout model =
     emptyGrid (10, 6)
-        |> putAtRoot 0 (GridPos 0 0) shape cells
+        |> putAtRoot 0 (GridPos 0 0) model
         |> flip
 
 
