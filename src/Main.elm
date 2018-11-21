@@ -6,6 +6,8 @@ import Time exposing (Time)
 import Window
 import Mouse exposing (clicks, moves, Position)
 import Task exposing (Task)
+import Task
+import Process
 
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H
@@ -70,6 +72,7 @@ type Msg
     | ShiftColor LayerIndex FSS.ColorShiftPatch
     | ApplyRandomizer PortModel
     | SavePng
+    | SaveBatch (List Window.Size)
     | NoOp
 
 
@@ -430,6 +433,25 @@ update msg model =
         SavePng ->
             ( model
             , model |> getSizeUpdate |> triggerSavePng
+            )
+
+        SaveBatch sizes ->
+            ( model
+            , sizes
+                |> List.foldl
+                    (\size tasks ->
+                        let
+                            modelWithSize = update (ResizeFromPreset size) model
+                            sizeUpdate = getSizeUpdate model
+                        in
+                            ( Process.sleep 1000
+                                |> Task.map (always sizeUpdate)
+                            ) :: tasks
+                    )
+                    []
+                |> Task.sequence
+                |> Task.perform (List.map triggerSavePng >> Cmd.batch)
+                -- model |> getSizeUpdate |> triggerSavePng
             )
 
         ApplyRandomizer portModel ->
@@ -1065,6 +1087,8 @@ port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 port applyRandomizer : (PortModel -> msg) -> Sub msg
 
 port savePng : (() -> msg) -> Sub msg
+
+port saveBatch : (List Window.Size -> msg) -> Sub msg
 
 port changeWGLBlend :
     ( { layer : Int

@@ -180,7 +180,7 @@ const prepareImportExport = () => {
 
 }
 
-const savePng = (hiddenLink, _, [ imageWidth, imageHeight ], product) => {
+const savePng = (hiddenLink, _, [ imageWidth, imageHeight ], product, whenDone) => {
     const srcCanvas = document.querySelector('.webgl-layers');
     const trgCanvas = document.querySelector('#js-save-buffer');
     const [ width, height ] = [ srcCanvas.width, srcCanvas.height ];
@@ -205,6 +205,8 @@ const savePng = (hiddenLink, _, [ imageWidth, imageHeight ], product) => {
                         hiddenLink.click();
                         URL.revokeObjectURL(url);
                         trgCanvas.style.display = 'none';
+
+                        if (whenDone) whenDone();
                     });
 
                 });

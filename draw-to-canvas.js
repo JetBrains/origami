@@ -11,6 +11,7 @@ const htmlToCanvas = (node, canvas, width, height, whenDone) => {
     const image = new Image();
     // image.crossOrigin = 'Anonymous';
     image.addEventListener('error', (err) => {
+        if (whenDone) whenDone(canvas, err);
         throw err;
     });
     image.setAttribute('crossOrigin', 'anonymous');
@@ -34,6 +35,7 @@ const imageToCanvas = (src, transform, canvas, x, y, width, height, whenDone) =>
     //image.style.cssText = document.defaultView.getComputedStyle(cloneFrom, '').cssText;
     image.setAttribute('crossOrigin', 'anonymous');
     image.addEventListener('error', (err) => {
+        if (whenDone) whenDone(canvas, err);
         throw err;
     });
     image.addEventListener('load', () => {
@@ -63,7 +65,7 @@ const selectorToCanvas = (selector, trgCanvas, whenDone) => {
             whenDone
         );
     } else {
-        whenDone(trgCanvas);
+        whenDone(trgCanvas, new Error('node not found'));
     }
 }
 

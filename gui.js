@@ -350,16 +350,16 @@ function start(document, model, funcs) {
 
           const color = config['blendColor'+index] || [ 0, 0, 0, 1 ];
           const newBlend =
-          { color: { r: color[0], g: color[1], b: color[2], a: color[3] }
-          , colorEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[0]]]
-                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[1]]]
-                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[2]]]
-                     ]
-          , alphaEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[3]]]
-                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[4]]]
-                     , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[5]]]
-                     ]
-          }
+            { color: { r: color[0], g: color[1], b: color[2], a: color[3] }
+            , colorEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[0]]]
+                      , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[1]]]
+                      , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[2]]]
+                      ]
+            , alphaEq: [ BLEND_FUNCS_IDS[BLEND_FUNCS[blendConfig[3]]]
+                      , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[4]]]
+                      , BLEND_FACTORS_IDS[BLEND_FACTORS[blendConfig[5]]]
+                      ]
+            }
           funcs.changeWGLBlend(index, newBlend);
           // blend.alphaEq[2] = BLEND_FACTORS_IDS[value];
           //return blend;
