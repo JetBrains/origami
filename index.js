@@ -180,7 +180,7 @@ const prepareImportExport = () => {
 
 }
 
-const savePng = (hiddenLink, _, [ imageWidth, imageHeight ]) => {
+const savePng = (hiddenLink, _, [ imageWidth, imageHeight ], product) => {
     const srcCanvas = document.querySelector('.webgl-layers');
     const trgCanvas = document.querySelector('#js-save-buffer');
     const [ width, height ] = [ srcCanvas.width, srcCanvas.height ];
@@ -195,7 +195,7 @@ const savePng = (hiddenLink, _, [ imageWidth, imageHeight ]) => {
 
             // FIXME: a temporary hack to draw a logo on the canvas,
             // use product image itself instead
-            hiddenLink.download = width + 'x'+ height + '-jetbrains.png';
+            hiddenLink.download = width + 'x'+ height + '-' + product + '.png';
             drawToCanvas.selector('.product-name-layer', trgCanvas, () => {
                 drawToCanvas.selector('.logo-layer', trgCanvas, () => {
 
@@ -222,15 +222,15 @@ setTimeout(() => {
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
-    app.ports.presetSizeChanged.subscribe(({ size, coverSize }) => {
+    app.ports.presetSizeChanged.subscribe(({ size, coverSize, product }) => {
         if (savingBatch) {
             // console.log('saving ', size);
-            savePng(hiddenLink, size, coverSize);
+            savePng(hiddenLink, size, coverSize, product);
         };
     });
 
-    app.ports.triggerSavePng.subscribe(({ size, coverSize }) => {
-        savePng(hiddenLink, size, coverSize);
+    app.ports.triggerSavePng.subscribe(({ size, coverSize, product }) => {
+        savePng(hiddenLink, size, coverSize, product);
     });
 
     app.ports.startGui.subscribe((model) => {
