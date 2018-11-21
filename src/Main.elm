@@ -965,7 +965,7 @@ view model =
                 -- , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
                 -- , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
                 , input
-                    [ type_ "button", class "export_html5", onClick ExportZip, value "wrap to html5" ]
+                    [ type_ "button", class "export_html5", onClick ExportZip, value "warp in html5" ]
                     [ text "Export to html5.zip" ]
                 , input
                     [ type_ "button", class "export_png", onClick SavePng, value "blast to png" ]

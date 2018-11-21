@@ -121,7 +121,7 @@ const RENDER_MODES =
 
 
 const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
-{ 'window': [ 0, 0 ]
+{ 'browser window': [ 0, 0 ]
 , '480x297 prodcard' : [ 480, 297 ] //product card
 , '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
 , '640x400 spl' : [ 640, 400 ] // product splash background
@@ -140,7 +140,7 @@ const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 
 
 const WALLPAPER_SIZES =
-  { 'window': [0, 0]
+  { 'browser window': [ 0, 0 ]
   , '1920x1980': [ 1920, 1080 ]
   , '1920x1200': [ 1920, 1200 ]
   , '1366x768': [ 1366, 768 ]
@@ -171,8 +171,14 @@ const update = (gui) => () => {
   }
 }
 
-const getSizesSet = (mode) =>
-  (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
+const getSizesSet = (mode) => {
+  const predefinedSizes = (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
+  predefinedSizes['your screen'] = [
+    window.screen.width * window.devicePixelRatio,
+    window.screen.height * window.devicePixelRatio
+  ];
+  return predefinedSizes;
+}
 
 const Config = function(layers, defaults, funcs, randomize) {
     const customAdd = BLEND_FUNCS['+'];
@@ -236,7 +242,7 @@ const Config = function(layers, defaults, funcs, randomize) {
       }
     });
 
-    this.customSize = PREDEFINED_SIZES['window'];
+    this.customSize = PREDEFINED_SIZES['browser window'];
 
     //this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
@@ -396,7 +402,7 @@ function start(document, model, funcs) {
           .min(0.0).max(1.0);
 
         const colorShiftFolder = folder.addFolder('coloring');
-        const hue = colorShiftFolder.add(config, 'hue' + index).name('color')
+        const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
           .min(-1.0).max(1.0).step(0.01);
         const saturation = colorShiftFolder.add(config, 'saturation' + index).name('saturation')
           .min(-1.0).max(1.0).step(0.01);
