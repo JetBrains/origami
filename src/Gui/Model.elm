@@ -30,7 +30,7 @@ type Msg
     | CollapseNested ModelPos
     | ExpandChoice ModelPos
     | CollapseChoice ModelPos
-    | Select ModelPos Int
+    | Select ModelPos
     | Move ModelPos Int
     -- | Color
 
@@ -156,6 +156,10 @@ traverseCells f cells =
         List.indexedMap (scanCell Nothing) cells
 
 
+nowhere : ModelPos
+nowhere = ModelPos []
+
+
 root : Int -> ModelPos
 root index =
     ModelPos [ index ]
@@ -181,6 +185,11 @@ getNestLevel (ModelPos path) =
 getTopIndex : ModelPos -> Maybe Int
 getTopIndex (ModelPos path) =
     List.head path
+
+
+getParentPos : ModelPos -> Maybe ModelPos
+getParentPos (ModelPos path) =
+    List.tail path |> Maybe.map ModelPos
 
 
 isSamePos : ModelPos -> ModelPos -> Bool
