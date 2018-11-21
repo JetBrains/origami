@@ -92,9 +92,9 @@ init =
 
 initialLayers : List ( LayerKind, String, LayerModel )
 initialLayers =
-    [ ( MirroredFss, "Background", FssModel FSS.init )
-    , ( MirroredFss, "Low-Poly", FssModel FSS.init )
-    , ( MirroredFss, "Net"
+    [ ( MirroredFss, "Lower Layer", FssModel FSS.init )
+    , ( MirroredFss, "Mid Layer", FssModel FSS.init )
+    , ( MirroredFss, "Top layer"
       , let
             fssModel = FSS.init
         in
@@ -965,12 +965,12 @@ view model =
                 -- , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
                 -- , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
                 , input
-                    [ type_ "button", class "export_html5", onClick ExportZip, value "download html5.zip" ]
+                    [ type_ "button", class "export_html5", onClick ExportZip, value "wrap to html5" ]
                     [ text "Export to html5.zip" ]
                 , input
-                    [ type_ "button", class "export_png", onClick SavePng, value "save to png" ]
+                    [ type_ "button", class "export_png", onClick SavePng, value "blast to png" ]
                     [ text "Export to png" ]
-                , div [ H.class "spacebar_info" ] [ text "spacebar to hide controls" ]
+                , div [ H.class "spacebar_info" ] [ text "spacebar to hide controls, click to pause" ]
                 ]
             ) else div [] []
         , mergeWebGLLayers model |>
