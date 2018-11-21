@@ -56,7 +56,8 @@ findClickMessage { cell, modelPos, parentPos, isSelected } =
             Just <| if state == Expanded then CollapseChoice modelPos else ExpandChoice modelPos
         _ -> case ( parentPos, isSelected ) of
             -- ( Just parentPos, Just Selected ) -> Deselect parentPos modelPos |> Just
-            ( Just parentPos, Just NotSelected ) -> Select parentPos modelPos |> Just
+            ( Just parentPos, Just NotSelected ) ->
+                Select parentPos (getTopIndex modelPos |> Maybe.withDefault -1) |> Just
             _ -> Nothing
 
 
@@ -162,23 +163,19 @@ viewGrid (Grid _ grid) =
 
 
 
-putAtRoot : Int -> GridPos -> Nest -> Grid -> Grid
-putAtRoot nestLevel gridPos nest grid =
-    put -1 nestLevel gridPos Nothing Nothing nest grid
+putAtRoot : GridPos -> Nest -> Grid -> Grid
+putAtRoot gridPos nest grid =
+    put gridPos Nothing Nothing nest grid
 
 
 put
-    :  Int
-    -> Int
-    -> GridPos
+    :  GridPos
     -> Maybe ItemChosen
     -> Maybe ModelPos
     -> Nest
     -> Grid
     -> Grid
 put
-    parentIndex
-    nestLevel
     (GridPos row col)
     maybeChosenItem
     maybeParent
@@ -187,13 +184,16 @@ put
     let
         --a = Debug.log "gPos" (GridPos row col)
         ( gridWidth, _ ) = gridShape
+        nestLevel = maybeParent
+            |> Maybe.map getNestLevel
+            |> Maybe.withDefault -1
         currentShape = nest.shape
         cellsList = nest.cells
         cells = Array.fromList cellsList
             |> Array.indexedMap
                 (\cellIndex cell ->
                     { cell = cell
-                    , modelPos = ModelPos parentIndex nestLevel cellIndex
+                    , modelPos = maybeParent |> deeperOrRoot cellIndex
                     , isSelected = case maybeChosenItem of
                         Just chosenIndex ->
                             Just <|
@@ -232,13 +232,13 @@ put
             ( col + 1
             , case maybeCell of
                 Just { cell, modelPos } ->
-                    let (ModelPos _ cellNestLevel cellIndex) = modelPos
+                    let ( cellNestLevel, cellIndex ) =
+                        ( getNestLevel modelPos
+                        , getTopIndex modelPos |> Maybe.withDefault -1)
                     in if (cellNestLevel == nestLevel) then
                         case cell of
                             Nested _ Expanded ({ shape } as nest) ->
                                 put
-                                    cellIndex
-                                    (nestLevel + 1)
                                     (findNextPos row col currentShape shape)
                                     Nothing
                                     (Just modelPos)
@@ -246,8 +246,6 @@ put
                                     grid
                             Choice _ Expanded selectedItem ({ shape } as nest) ->
                                 put
-                                    cellIndex
-                                    (nestLevel + 1)
                                     (findNextPos row col currentShape shape)
                                     (Just selectedItem)
                                     (Just modelPos)
@@ -285,7 +283,7 @@ set (GridPos row col) cell ((Grid shape rows) as grid) =
 layout : Model -> Grid
 layout model =
     emptyGrid (10, 6)
-        |> putAtRoot 0 (GridPos 0 0) model
+        |> putAtRoot (GridPos 0 0) model
         |> flip
 
 
@@ -304,8 +302,8 @@ showGridPos (GridPos row col) =
 
 
 showModelPos : ModelPos -> String
-showModelPos (ModelPos parent nest index) =
-    "<" ++ toString parent ++ "," ++ toString nest ++ "," ++ toString index ++ ">"
+showModelPos (ModelPos path) =
+    "<" ++ (path |> List.reverse |> List.map toString |> String.join ",") ++ ">"
 
 
 view : Model -> Html Msg

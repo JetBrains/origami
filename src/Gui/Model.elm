@@ -1,8 +1,7 @@
 module Gui.Model exposing (..)
 
 
-type ModelPos = ModelPos Int Int Int -- parent index + nest + index
---TODO: type ModelPos = ModelPos (List Int) -- just path by indices
+type ModelPos = ModelPos (List Int) -- just path by indices
 
 type alias Shape = ( Int, Int )
 
@@ -31,7 +30,7 @@ type Msg
     | CollapseNested ModelPos
     | ExpandChoice ModelPos
     | CollapseChoice ModelPos
-    | Select ModelPos ModelPos
+    | Select ModelPos Int
     | Move ModelPos Int
     -- | Color
 
@@ -95,10 +94,10 @@ nest shape cells =
 
 
 collapseAllAbove : ModelPos -> Nest -> Nest
-collapseAllAbove  (ModelPos _ srcNest _) model =
+collapseAllAbove position model =
     model |> traverseNest
-        (\cell (ModelPos _ nest _) _ ->
-            if (nest >= srcNest) then
+        (\cell cellPosition ->
+            if (getNestLevel cellPosition >= getNestLevel position) then
                 case cell of
                     Nested label _ nestedCells ->
                         Nested
@@ -116,19 +115,22 @@ collapseAllAbove  (ModelPos _ srcNest _) model =
         )
 
 
-traverseNest : (Cell -> ModelPos -> Maybe ModelPos -> Cell) -> Nest -> Nest
+traverseNest : (Cell -> ModelPos -> Cell) -> Nest -> Nest
 traverseNest f nest =
     { nest
     | cells = nest.cells |> traverseCells f
     }
 
 
-traverseCells : (Cell -> ModelPos -> Maybe ModelPos -> Cell) -> Cells -> Cells
+traverseCells : (Cell -> ModelPos -> Cell) -> Cells -> Cells
 traverseCells f cells =
     let
-        scanCell maybeParentPos parentIndex nestLevel index cell =
-            let modelPos = (ModelPos parentIndex nestLevel index)
-            in case f cell modelPos maybeParentPos of
+        scanCell maybeParentPos index cell =
+            let modelPos =
+                case  maybeParentPos of
+                    Just parentPos -> parentPos |> deeper index
+                    Nothing -> root index
+            in case f cell modelPos of
                 Nested label state nest ->
                     Nested
                         label
@@ -136,7 +138,7 @@ traverseCells f cells =
                         { nest
                         | cells =
                             nest.cells
-                                |> List.indexedMap (scanCell (Just modelPos) index (nestLevel + 1))
+                                |> List.indexedMap (scanCell (Just modelPos))
                         }
                 Choice label state selected nest ->
                     Choice
@@ -146,23 +148,49 @@ traverseCells f cells =
                         { nest
                         | cells =
                             nest.cells |>
-                                List.indexedMap (scanCell (Just modelPos) index (nestLevel + 1))
+                                List.indexedMap (scanCell (Just modelPos))
                         }
                 newCell -> newCell
 
     in
-        List.indexedMap (scanCell Nothing -1 0) cells
+        List.indexedMap (scanCell Nothing) cells
+
+
+root : Int -> ModelPos
+root index =
+    ModelPos [ index ]
+
+
+deeper : Int -> ModelPos -> ModelPos
+deeper index (ModelPos path) =
+    ModelPos (index :: path)
+
+
+deeperOrRoot : Int -> Maybe ModelPos -> ModelPos
+deeperOrRoot index maybePos =
+    maybePos
+        |> Maybe.map (deeper index)
+        |> Maybe.withDefault (root index)
+
+
+getNestLevel : ModelPos -> Int
+getNestLevel (ModelPos path) =
+    List.length path
+
+
+getTopIndex : ModelPos -> Maybe Int
+getTopIndex (ModelPos path) =
+    List.head path
 
 
 isSamePos : ModelPos -> ModelPos -> Bool
-isSamePos (ModelPos lParent lNest lIndex) (ModelPos rParent rNest rIndex) =
-    lParent == rParent && lNest == rNest && lIndex == rIndex
+isSamePos (ModelPos lPath) (ModelPos rPath) = lPath == rPath
 
 
 updateCell : ModelPos -> (Cell -> Cell) -> Nest -> Nest
 updateCell expectedPos f nest =
     traverseNest
-        (\cell modelPos _ ->
+        (\cell modelPos ->
             if isSamePos modelPos expectedPos then
                 f cell
             else cell)
