@@ -14,7 +14,6 @@ type GridPos = GridPos Int Int
 type alias GridCell =
     { cell: Cell
     , modelPos: ModelPos
-    , parentPos: Maybe ModelPos -- if it has parent, then there is its position
     , isSelected: Maybe SelectionState -- if it's under Choice item, then it has selection state
     , isFocused: FocusState
     }
@@ -46,7 +45,7 @@ findHoverMessage { cell, modelPos }  =
 
 
 findClickMessage : GridCell -> Maybe Msg
-findClickMessage { cell, modelPos, parentPos, isSelected } =
+findClickMessage { cell, modelPos, isSelected } =
     case cell of
         Toggle _ val ->
             Just <| if val == TurnedOn then Off modelPos else On modelPos
@@ -54,10 +53,9 @@ findClickMessage { cell, modelPos, parentPos, isSelected } =
             Just <| if state == Expanded then CollapseNested modelPos else ExpandNested modelPos
         Choice _ state _ _ ->
             Just <| if state == Expanded then CollapseChoice modelPos else ExpandChoice modelPos
-        _ -> case ( parentPos, isSelected ) of
+        _ -> case isSelected of
             -- ( Just parentPos, Just Selected ) -> Deselect parentPos modelPos |> Just
-            ( Just parentPos, Just NotSelected ) ->
-                Select parentPos (getTopIndex modelPos |> Maybe.withDefault -1) |> Just
+            Just NotSelected -> Just <| Select modelPos
             _ -> Nothing
 
 
@@ -203,7 +201,6 @@ put
                     , isFocused = if nest.focus == cellIndex
                         then Focused
                         else NotFocused
-                    , parentPos = maybeParent
                     }
                 )
         -- hasNesting = Debug.log "nests" <| Array.map (\(_, (ModelPos nest _)) -> nest) cells

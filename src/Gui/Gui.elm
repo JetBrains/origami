@@ -208,12 +208,16 @@ update msg ui =
                                 Choice label Collapsed selection cells
                             _ -> cell
                     )
-        Select parentPos index ->
-            ui |> updateCell parentPos
-                    (\cell ->
-                        case cell of
-                            Choice label expanded selection cells ->
-                                Choice label expanded index cells
-                            _ -> cell
-                    )
+        Select pos ->
+            let
+                parentPos = getParentPos pos |> Maybe.withDefault nowhere
+                index = getTopIndex pos |> Maybe.withDefault -1
+            in
+                ui |> updateCell parentPos
+                        (\cell ->
+                            case cell of
+                                Choice label expanded selection cells ->
+                                    Choice label expanded index cells
+                                _ -> cell
+                        )
         _ -> ui
