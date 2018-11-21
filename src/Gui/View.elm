@@ -182,9 +182,9 @@ put
     let
         --a = Debug.log "gPos" (GridPos row col)
         ( gridWidth, _ ) = gridShape
-        nestLevel = maybeParent
+        parentNestLevel = maybeParent
             |> Maybe.map getNestLevel
-            |> Maybe.withDefault -1
+            |> Maybe.withDefault 0
         currentShape = nest.shape
         cellsList = nest.cells
         cells = Array.fromList cellsList
@@ -231,8 +231,9 @@ put
                 Just { cell, modelPos } ->
                     let ( cellNestLevel, cellIndex ) =
                         ( getNestLevel modelPos
-                        , getTopIndex modelPos |> Maybe.withDefault -1)
-                    in if (cellNestLevel == nestLevel) then
+                        , getTopIndex modelPos |> Maybe.withDefault -1
+                        )
+                    in if (cellNestLevel == parentNestLevel + 1) then
                         case cell of
                             Nested _ Expanded ({ shape } as nest) ->
                                 put
