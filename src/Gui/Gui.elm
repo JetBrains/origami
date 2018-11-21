@@ -208,7 +208,7 @@ update msg ui =
                                 Choice label Collapsed selection cells
                             _ -> cell
                     )
-        Select parentPos ((ModelPos _ _ index) as pos) ->
+        Select parentPos index ->
             ui |> updateCell parentPos
                     (\cell ->
                         case cell of
