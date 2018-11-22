@@ -240,6 +240,16 @@ isSamePos : ModelPos -> ModelPos -> Bool
 isSamePos (ModelPos lPath) (ModelPos rPath) = lPath == rPath
 
 
+findCell : ModelPos -> Nest -> Maybe Cell
+findCell pos nest =
+    nest |>
+        foldCells (\cell cellPos maybeFound ->
+            case ( maybeFound, isSamePos cellPos pos ) of
+                ( Nothing, True ) -> Just cell
+                _ -> Nothing
+        ) Nothing
+
+
 updateCell : ModelPos -> (Cell -> Cell) -> Nest -> Nest
 updateCell expectedPos f nest =
     traverseNest
@@ -348,10 +358,3 @@ findFocus nest =
         if isSamePos innerFocus nowhere then
             nowhere |> deeper nest.focus
         else innerFocus
-    -- nest |>
-    --     foldNests (\{ focus } pos prevFocus ->
-    --         let focusPos = pos |> deeper focus
-    --         in if isDeeper focusPos prevFocus
-    --             then focusPos
-    --             else prevFocus
-    --     ) nowhere
