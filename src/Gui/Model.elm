@@ -31,7 +31,9 @@ type Msg
     | ExpandChoice ModelPos
     | CollapseChoice ModelPos
     | Select ModelPos
-    | Move ModelPos Int
+    -- | Move ModelPos Int
+    | ShiftFocusLeftAt ModelPos
+    | ShiftFocusRightAt ModelPos
     -- | Color
 
 
@@ -134,6 +136,21 @@ traverseCells f cells =
         List.indexedMap (scanCell Nothing) cells
 
 
+traverseAllNests : (Nest -> ModelPos -> Nest) -> Nest -> Nest
+traverseAllNests f nest =
+    { nest
+    | cells = f nest nowhere |> .cells |> traverseCells
+        (\cell cellPosition ->
+            case cell of
+                Nested label state nest ->
+                    f nest cellPosition |> Nested label state
+                Choice label state selected nest ->
+                    f nest cellPosition |> Choice label state selected
+                _ -> cell
+        )
+    }
+
+
 nowhere : ModelPos
 nowhere = ModelPos []
 
@@ -222,27 +239,13 @@ shiftFocusTo position nest =
     in
         case maybeParentPos of
             Just parentPos ->
-                nest |> traverseNest
-                    (\cell cellPosition ->
+                nest |> traverseAllNests
+                    (\deeperNest cellPosition ->
                         if (isSamePos cellPosition parentPos) then
-                            case cell of
-                                Nested label state parentNest ->
-                                    Nested
-                                        label
-                                        state
-                                        { parentNest
-                                        | focus = focusOn
-                                        }
-                                Choice label state selected parentNest ->
-                                    Choice
-                                        label
-                                        state
-                                        selected
-                                        { parentNest
-                                        | focus = focusOn
-                                        }
-                                _ -> cell
-                        else cell
+                            { deeperNest
+                            | focus = focusOn
+                            }
+                        else deeperNest
                     )
             Nothing ->
                 { nest
@@ -251,3 +254,27 @@ shiftFocusTo position nest =
 
 
 
+shiftFocusBy : Int -> ModelPos -> Nest -> Nest
+shiftFocusBy amount position nest =
+    let
+        index = getIndexOf position |> Maybe.withDefault 0
+        maybeParentPos = getParentPos position
+        ensureFits { cells } =
+            if ((index + amount) > 0) && (index + amount < List.length cells) then
+                index + amount
+            else index
+    in
+        case maybeParentPos of
+            Just parentPos ->
+                nest |> traverseAllNests
+                    (\deeperNest cellPosition ->
+                        if (isSamePos cellPosition parentPos) then
+                            { deeperNest
+                            | focus = ensureFits deeperNest
+                            }
+                        else deeperNest
+                    )
+            Nothing ->
+                { nest
+                | focus = ensureFits nest
+                }
