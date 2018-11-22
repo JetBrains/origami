@@ -5,6 +5,7 @@ import Array exposing (..)
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H
 import Html.Events as H
+import Json.Decode as Json
 
 import Gui.Model exposing (..)
 
@@ -36,16 +37,8 @@ bottomLeft : GridPos
 bottomLeft = (GridPos 0 0)
 
 
-findHoverMessage : GridCell -> Maybe Msg
-findHoverMessage { cell, modelPos }  =
-    case cell of
-        Knob label value ->
-            Tune modelPos (value + 1) |> Just
-        _ -> Nothing
-
-
-findClickMessage : GridCell -> Maybe Msg
-findClickMessage { cell, modelPos, isSelected } =
+doCellPurpose : GridCell -> Maybe Msg
+doCellPurpose { cell, modelPos, isSelected } =
     case cell of
         Toggle _ val ->
             Just <| if val == TurnedOn then Off modelPos else On modelPos
@@ -57,6 +50,33 @@ findClickMessage { cell, modelPos, isSelected } =
             -- ( Just parentPos, Just Selected ) -> Deselect parentPos modelPos |> Just
             Just NotSelected -> Just <| Select modelPos
             _ -> Nothing
+
+
+findHoverMessage : GridCell -> Maybe Msg
+findHoverMessage { cell, modelPos }  =
+    case cell of
+        Knob label value ->
+            Tune modelPos (value + 1) |> Just
+        _ -> Nothing
+
+
+findClickMessage : GridCell -> Maybe Msg
+findClickMessage = doCellPurpose
+
+
+findKeydownMessage : GridCell -> Int -> Msg
+findKeydownMessage ({ cell, modelPos, isSelected } as gridCell) keyCode =
+    case Debug.log "keyCode" keyCode of
+        -- left arrow
+        37 -> ShiftFocusLeftAt modelPos
+        -- right arrow
+        39 -> ShiftFocusRightAt modelPos
+        -- space
+        33 -> doCellPurpose gridCell |> Maybe.withDefault NoOp
+        -- enter
+        13 -> doCellPurpose gridCell |> Maybe.withDefault NoOp
+        -- else
+        _ -> NoOp
 
 
 viewCell_ : GridPos -> GridCell -> Html Msg
@@ -122,6 +142,12 @@ viewCell gridPos maybeGridCell =
                         (findHoverMessage gridCell
                             |> Maybe.map (\msg -> [ H.onMouseOver msg ])
                             |> Maybe.withDefault []
+                        ) ++
+                        (findKeydownMessage gridCell
+                            |> (\tagger ->
+                                [ H.on "keyup" (Json.map tagger H.keyCode)
+                                ]
+                              )
                         )
                     )
                 |> Maybe.withDefault []

@@ -229,4 +229,11 @@ update msg ui =
                                     Choice label expanded index cells
                                 _ -> cell
                         )
+
+        ShiftFocusLeftAt pos ->
+            ui |> shiftFocusBy -1 pos
+
+        ShiftFocusRightAt pos ->
+            ui |> shiftFocusBy 1 pos
+
         _ -> ui
