@@ -3,49 +3,49 @@ const dat = require('dat.gui');
 
 
 const PRODUCTS = [
-    { label: 'JB', id: 'jetbrains'
+    { label: 'JetBrains', id: 'jetbrains'
     },  // jetbrains-1
-    { label: 'IJ', id: 'intellij-idea'
+    { label: 'IntelliJ IDEA', id: 'intellij-idea'
     },  // idea // IJ_
-    { label: 'PS', id: 'phpstorm'
+    { label: 'PhpStorm', id: 'phpstorm'
     },  // phpstorm // PS_
-    { label: 'PC', id: 'pycharm'
+    { label: 'PyCharm', id: 'pycharm'
     },  // pycharm // PC_
-    { label: 'RM', id: 'rubymine'
+    { label: 'RubyMine', id: 'rubymine'
     },  // rubymine // RM_
-    { label: 'WS', id: 'webstorm'
+    { label: 'WebStorm', id: 'webstorm'
     },  // webstorm // WS_
-    { label: 'CL', id: 'clion'
+    { label: 'CLion', id: 'clion'
     },  // clion // CL_
-    { label: 'DG', id: 'datagrip'
+    { label: 'DataGrip', id: 'datagrip'
     },  // // DG_
-    { label: 'AC', id: 'appcode'
+    { label: 'AppCode', id: 'appcode'
     },  // appcode // AC_
-    { label: 'GO', id: 'goland'
+    { label: 'GoLand', id: 'goland'
     },  // goland // GO_
-    { label: 'R#', id: 'resharper'
+    { label: 'ReSharper', id: 'resharper'
     },  // resharper // R#_
-    { label: 'R++', id: 'resharper-cpp'
+    { label: 'ReSharper C++', id: 'resharper-cpp'
     },  // // R++_
-    { label: 'DC', id: 'dotcover'
+    { label: 'dotCover', id: 'dotcover'
     },  // dotcover // DC_
-    { label: 'DM', id: 'dotmemory'
+    { label: 'dotMemory', id: 'dotmemory'
     },  // // DM_
-    { label: 'DP', id: 'dotpeek'
+    { label: 'dotPeek', id: 'dotpeek'
     },  // // DP_
-    { label: 'DT', id: 'dottrace'
+    { label: 'dotTrace', id: 'dottrace'
     },  // dottrace // DT_
-    { label: 'RD', id: 'rider'
+    { label: 'Rider', id: 'rider'
     },  // rider // RD_
-    { label: 'TC', id: 'teamcity'
+    { label: 'TeamCity', id: 'teamcity'
     },  // teamcity // TC_
-    { label: 'YT', id: 'youtrack'
+    { label: 'YouTrack', id: 'youtrack'
     },  // youtrack // YT_
-    { label: 'UP', id: 'upsource'
+    { label: 'Upsource', id: 'upsource'
     },  // upsource // UP_
-    { label: 'HB', id: 'hub'
+    { label: 'Hub', id: 'hub'
     },  // hub // HB_
-    { label: 'KT', id: 'kotlin'
+    { label: 'Kotlin', id: 'kotlin'
     },   // kotlin // KT_
     { label: 'MPS', id: 'mps'
     }  // mps // MPS_
@@ -121,7 +121,7 @@ const RENDER_MODES =
 
 
 const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
-{ 'window': [ 0, 0 ]
+{ 'browser window': [ 0, 0 ]
 , '480x297 prodcard' : [ 480, 297 ] //product card
 , '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
 , '640x400 spl' : [ 640, 400 ] // product splash background
@@ -140,8 +140,9 @@ const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
 
 
 const WALLPAPER_SIZES =
-  { 'window': [0, 0]
-  , '1920x1980': [ 1920, 1980 ]
+  { 'browser window': [ 0, 0 ]
+  , '1920x1980': [ 1920, 1080 ]
+  , '1920x1200': [ 1920, 1200 ]
   , '1366x768': [ 1366, 768 ]
   , '1440x900': [ 1440, 900 ]
   , '1536x864': [ 1536, 864 ]
@@ -170,8 +171,14 @@ const update = (gui) => () => {
   }
 }
 
-const getSizesSet = (mode) =>
-  (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
+const getSizesSet = (mode) => {
+  const predefinedSizes = (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
+  predefinedSizes['your screen'] = [
+    window.screen.width * window.devicePixelRatio,
+    window.screen.height * window.devicePixelRatio
+  ];
+  return predefinedSizes;
+}
 
 const Config = function(layers, defaults, funcs, randomize) {
     const customAdd = BLEND_FUNCS['+'];
@@ -235,7 +242,7 @@ const Config = function(layers, defaults, funcs, randomize) {
       }
     });
 
-    this.customSize = PREDEFINED_SIZES['window'];
+    this.customSize = PREDEFINED_SIZES['browser window'];
 
     //this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
@@ -376,7 +383,7 @@ function start(document, model, funcs) {
 
     function addLayerProps(folder, config, layer, index) {
       if (isFss(layer)) {
-        const mirrorSwitch = folder.add(config, 'mirror' + index).name('mirror');
+        const mirrorSwitch = folder.add(config, 'mirror' + index).name('rorschach');
         const lightSpeed = folder.add(config, 'lightSpeed' + index).name('light pace')
                                  .min(100).max(2000);
         const facesX = folder.add(config, 'facesX' + index).name('columns').min(1).max(100).step(1);
@@ -384,7 +391,7 @@ function start(document, model, funcs) {
         const fogFolder = folder.addFolder('fog');
         const vignette = fogFolder.add(config, 'vignette' + index).name('shine').min(0).max(1).step(0.01);
         const iris = fogFolder.add(config, 'iris' + index).name('density').min(0).max(1).step(0.01);
-        const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('mesh');
+        const renderMode = folder.add(config, 'renderMode' + index, RENDER_MODES).name('structure');
 
         const amplitudeFolder = folder.addFolder('ranges');
         const amplitudeX = amplitudeFolder.add(config, 'amplitudeX' + index).name('horizontal')
@@ -394,7 +401,7 @@ function start(document, model, funcs) {
         const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('depth')
           .min(0.0).max(1.0);
 
-        const colorShiftFolder = folder.addFolder('hsb');
+        const colorShiftFolder = folder.addFolder('coloring');
         const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
           .min(-1.0).max(1.0).step(0.01);
         const saturation = colorShiftFolder.add(config, 'saturation' + index).name('saturation')
@@ -435,7 +442,7 @@ function start(document, model, funcs) {
     const gui = new dat.GUI(/*{ load: JSON }*/);
     const config = new Config(layers, defaults, funcs, randomize(funcs, model, update(gui)));
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
-    const omega = gui.add(config, 'omega').name('rotation').min(-1.0).max(1.0).step(0.1);
+    const omega = gui.add(config, 'omega').name('vertigo ').min(-1.0).max(1.0).step(0.1);
     const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
     // gui.add(config, 'savePng').name('save png');
     if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
