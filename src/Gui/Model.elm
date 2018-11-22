@@ -23,7 +23,8 @@ type alias Model = Nest
 
 
 type Msg
-    = Tune ModelPos Float
+    = NoOp
+    | Tune ModelPos Float
     | On ModelPos
     | Off ModelPos
     | ExpandNested ModelPos
