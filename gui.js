@@ -226,7 +226,7 @@ const Config = function(layers, defaults, funcs, randomize) {
       this['visible' + index] = true;
 
       if (isFss(layer)) {
-        this['mirror' + index] = true;
+        this['mirror' + index] =  layer.model.mirror;
         this['renderMode' + index] = 'triangles';
         this['lightSpeed' + index] = layer.model.lightSpeed;
         this['facesX' + index] = layer.model.faces[0];
