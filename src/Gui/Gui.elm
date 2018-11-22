@@ -147,24 +147,27 @@ update : Msg -> Model -> Model -- ( UI, Cmd Msg )
 update msg ui =
     case msg of
         Tune pos value ->
-            ui |>
-                updateCell pos
+            ui
+                |> shiftFocusTo pos
+                |> updateCell pos
                     (\cell ->
                         case cell of
                             Knob label _ -> Knob label value
                             _ -> cell
                     )
         On pos ->
-            ui |>
-                updateCell pos
+            ui
+                |> shiftFocusTo pos
+                |> updateCell pos
                     (\cell ->
                         case cell of
                             Toggle label _ -> Toggle label TurnedOn
                             _ -> cell
                     )
         Off pos ->
-            ui |>
-                updateCell pos
+            ui
+                |> shiftFocusTo pos
+                |> updateCell pos
                     (\cell ->
                         case cell of
                             Toggle label _ -> Toggle label TurnedOff
@@ -172,6 +175,7 @@ update msg ui =
                     )
         ExpandNested pos ->
             ui
+                |> shiftFocusTo pos
                 |> collapseAllAbove pos
                 |> updateCell pos
                     (\cell ->
@@ -181,8 +185,9 @@ update msg ui =
                             _ -> cell
                     )
         CollapseNested pos ->
-            ui |>
-                updateCell pos
+            ui
+                |> shiftFocusTo pos
+                |> updateCell pos
                     (\cell ->
                         case cell of
                             Nested label _ cells ->
@@ -192,6 +197,7 @@ update msg ui =
         ExpandChoice pos ->
             ui
                 |> collapseAllAbove pos
+                |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
                         case cell of
@@ -200,8 +206,9 @@ update msg ui =
                             _ -> cell
                     )
         CollapseChoice pos ->
-            ui |>
-                updateCell pos
+            ui
+                |> shiftFocusTo pos
+                |> updateCell pos
                     (\cell ->
                         case cell of
                             Choice label _ selection cells ->
@@ -211,9 +218,11 @@ update msg ui =
         Select pos ->
             let
                 parentPos = getParentPos pos |> Maybe.withDefault nowhere
-                index = getTopIndex pos |> Maybe.withDefault -1
+                index = getIndexOf pos |> Maybe.withDefault -1
             in
-                ui |> updateCell parentPos
+                ui
+                    |> shiftFocusTo pos
+                    |> updateCell parentPos
                         (\cell ->
                             case cell of
                                 Choice label expanded selection cells ->
