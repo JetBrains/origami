@@ -93,28 +93,6 @@ nest shape cells =
     }
 
 
-collapseAllAbove : ModelPos -> Nest -> Nest
-collapseAllAbove position model =
-    model |> traverseNest
-        (\cell cellPosition ->
-            if (getNestLevel cellPosition >= getNestLevel position) then
-                case cell of
-                    Nested label _ nestedCells ->
-                        Nested
-                            label
-                            Collapsed
-                            nestedCells
-                    Choice label _ selected nestedCells ->
-                        Choice
-                            label
-                            Collapsed
-                            selected
-                            nestedCells
-                    _ -> cell
-            else cell
-        )
-
-
 traverseNest : (Cell -> ModelPos -> Cell) -> Nest -> Nest
 traverseNest f nest =
     { nest
@@ -182,14 +160,21 @@ getNestLevel (ModelPos path) =
     List.length path
 
 
-getTopIndex : ModelPos -> Maybe Int
-getTopIndex (ModelPos path) =
+getIndexOf : ModelPos -> Maybe Int
+getIndexOf (ModelPos path) =
     List.head path
 
 
 getParentPos : ModelPos -> Maybe ModelPos
 getParentPos (ModelPos path) =
-    List.tail path |> Maybe.map ModelPos
+    List.tail path
+        |> Maybe.andThen
+            (\parentPath ->
+                case parentPath of
+                    [] -> Nothing
+                    _ -> Just parentPath
+            )
+        |> Maybe.map ModelPos
 
 
 isSamePos : ModelPos -> ModelPos -> Bool
@@ -204,5 +189,65 @@ updateCell expectedPos f nest =
                 f cell
             else cell)
         nest
+
+
+collapseAllAbove : ModelPos -> Nest -> Nest
+collapseAllAbove position nest =
+    nest |> traverseNest
+        (\cell cellPosition ->
+            if (getNestLevel cellPosition >= getNestLevel position) then
+                case cell of
+                    Nested label _ nestedCells ->
+                        Nested
+                            label
+                            Collapsed
+                            nestedCells
+                    Choice label _ selected nestedCells ->
+                        Choice
+                            label
+                            Collapsed
+                            selected
+                            nestedCells
+                    _ -> cell
+            else cell
+        )
+
+
+shiftFocusTo : ModelPos -> Nest -> Nest
+shiftFocusTo position nest =
+    let
+        maybeParentPos = getParentPos position
+        focusOn = getIndexOf position
+                    |> Maybe.withDefault -1
+    in
+        case maybeParentPos of
+            Just parentPos ->
+                nest |> traverseNest
+                    (\cell cellPosition ->
+                        if (isSamePos cellPosition parentPos) then
+                            case cell of
+                                Nested label state parentNest ->
+                                    Nested
+                                        label
+                                        state
+                                        { parentNest
+                                        | focus = focusOn
+                                        }
+                                Choice label state selected parentNest ->
+                                    Choice
+                                        label
+                                        state
+                                        selected
+                                        { parentNest
+                                        | focus = focusOn
+                                        }
+                                _ -> cell
+                        else cell
+                    )
+            Nothing ->
+                { nest
+                | focus = focusOn
+                }
+
 
 

@@ -103,9 +103,12 @@ viewCell gridPos maybeGridCell =
     let
         className =
             case maybeGridCell of
-                Just { isSelected } ->
-                    case isSelected of
-                        Just Selected -> "cell selected"
+                Just { isSelected, isFocused } ->
+                    case ( isSelected, isFocused ) of
+                        ( Just Selected, Focused ) -> "cell selected focused"
+                        ( Just Selected, NotFocused ) -> "cell selected"
+                        ( Just NotSelected, Focused ) -> "cell focused"
+                        ( Nothing, Focused ) -> "cell focused"
                         _ -> "cell"
                 _ -> "cell hole"
         handlers =
@@ -231,7 +234,7 @@ put
                 Just { cell, modelPos } ->
                     let ( cellNestLevel, cellIndex ) =
                         ( getNestLevel modelPos
-                        , getTopIndex modelPos |> Maybe.withDefault -1
+                        , getIndexOf modelPos |> Maybe.withDefault -1
                         )
                     in if (cellNestLevel == parentNestLevel + 1) then
                         case cell of
