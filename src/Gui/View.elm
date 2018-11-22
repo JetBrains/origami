@@ -342,7 +342,8 @@ view model =
             (\keyCode ->
                 let
                     keyCode_ = Debug.log "keyCode" keyCode
-                    currentFocus = Debug.log "currentFocus" findFocus model
+                    currentFocus = case findFocus model of
+                        (ModelPos path) -> Debug.log "currentFocus" path
                 -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
                 in NoOp)
             H.keyCode

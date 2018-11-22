@@ -328,10 +328,30 @@ shiftFocusBy amount position nest =
 
 findFocus: Nest -> ModelPos
 findFocus nest =
-    nest |>
-        foldNests (\{ focus } pos prevFocus ->
-            let focusPos = pos |> deeper focus
-            in if isDeeper focusPos prevFocus
-                then focusPos
-                else prevFocus
-        ) nowhere
+    let
+        innerFocus = nest |>
+            foldCells (\cell pos prevFocus ->
+                case cell of
+                    Nested _ Expanded { focus } ->
+                        let focusPos = pos |> deeper focus
+                        in if isDeeper focusPos prevFocus
+                            then focusPos
+                            else prevFocus
+                    Choice _ Expanded _ { focus } ->
+                        let focusPos = pos |> deeper focus
+                        in if isDeeper focusPos prevFocus
+                            then focusPos
+                            else prevFocus
+                    _ -> prevFocus
+            ) nowhere
+    in
+        if isSamePos innerFocus nowhere then
+            nowhere |> deeper nest.focus
+        else innerFocus
+    -- nest |>
+    --     foldNests (\{ focus } pos prevFocus ->
+    --         let focusPos = pos |> deeper focus
+    --         in if isDeeper focusPos prevFocus
+    --             then focusPos
+    --             else prevFocus
+    --     ) nowhere
