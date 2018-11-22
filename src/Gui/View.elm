@@ -142,13 +142,14 @@ viewCell gridPos maybeGridCell =
                         (findHoverMessage gridCell
                             |> Maybe.map (\msg -> [ H.onMouseOver msg ])
                             |> Maybe.withDefault []
-                        ) ++
-                        (findKeydownMessage gridCell
-                            |> (\tagger ->
-                                [ H.on "keyup" (Json.map tagger H.keyCode)
-                                ]
-                              )
                         )
+                        -- ) ++
+                        -- (findKeydownMessage gridCell
+                        --     |> (\tagger ->
+                        --         [ H.on "keyup" (Json.map tagger H.keyCode)
+                        --         ]
+                        --       )
+                        -- )
                     )
                 |> Maybe.withDefault []
         attributes = [ H.class className ] ++ handlers
