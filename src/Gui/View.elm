@@ -334,18 +334,53 @@ showModelPos (ModelPos path) =
     "<" ++ (path |> List.reverse |> List.map toString |> String.join ",") ++ ">"
 
 
+findGridCell : ModelPos -> Grid -> Maybe GridCell
+findGridCell searchFor (Grid _ rows) =
+    rows |> Array.foldl
+        (\row foundCell ->
+            row |> Array.foldl
+                (\maybeGridCell foundCell ->
+                    case ( foundCell, maybeGridCell ) of
+                        ( Nothing, Just ({ modelPos } as gridCell) ) ->
+                            if (isSamePos searchFor modelPos) then
+                                Just gridCell
+                            else Nothing
+                        _ -> foundCell
+                ) foundCell
+        ) Nothing
+
+
 view : Model -> Html Msg
 view model =
-    div [ H.class "gui"
-        , H.tabindex -1
-        , H.on "keyup" <| Json.map
-            (\keyCode ->
-                let
-                    keyCode_ = Debug.log "keyCode" keyCode
-                    currentFocus = case findFocus model of
-                        (ModelPos path) -> Debug.log "currentFocus" path
-                -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
-                in NoOp)
-            H.keyCode
-        ]
-        [ layout model |> viewGrid ]
+    let grid = layout model
+    in
+        div [ H.class "gui"
+            , H.tabindex -1
+            , H.on "keyup" <| Json.map
+                (\keyCode ->
+                    let
+                        currentFocus = findFocus model
+                        currentFocus_ = case currentFocus of
+                            (ModelPos path) -> Debug.log "currentFocus" path
+                        maybeCurrentCell = Debug.log "currentCell" <| findGridCell currentFocus grid
+                    -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
+                    in
+                        case Debug.log "keyCode" keyCode of
+                            -- left arrow
+                            37 -> ShiftFocusLeftAt currentFocus
+                            -- right arrow
+                            39 -> ShiftFocusRightAt currentFocus
+                            -- space
+                            33 -> maybeCurrentCell
+                                |> Maybe.andThen doCellPurpose
+                                |> Maybe.withDefault NoOp
+                            -- enter
+                            13 -> maybeCurrentCell
+                                |> Maybe.andThen doCellPurpose
+                                |> Maybe.withDefault NoOp
+                            -- else
+                            _ -> NoOp
+                    )
+                H.keyCode
+            ]
+            [ grid |> viewGrid ]
