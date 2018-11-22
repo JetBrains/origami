@@ -296,6 +296,10 @@ setTimeout(() => {
             , shiftColor : index => (h, s, b) => {
                 app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]});
             }
+            
+            , changeOpacity : index => value =>
+            { app.ports.changeOpacity.send({ layer: index, value: value }) }
+
             , turnOn : index =>
                 { app.ports.turnOn.send(index); }
             , turnOff : index =>

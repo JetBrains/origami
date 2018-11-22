@@ -68,6 +68,7 @@ type Msg
     | ChangeIris LayerIndex FSS.Iris
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
+    | ChangeOpacity LayerIndex FSS.Opacity
     | ApplyRandomizer PortModel
     | SavePng
     | NoOp
@@ -427,6 +428,13 @@ update msg model =
             , Cmd.none
             )
 
+
+        ChangeOpacity index newOpacity ->
+            ( model |> updateFss index
+                (\fssModel -> { fssModel | opacity = newOpacity })
+            , Cmd.none
+            )
+
         SavePng ->
             ( model
             , model |> getSizeUpdate |> triggerSavePng
@@ -724,6 +732,7 @@ subscriptions model =
         , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
         , changeAmplitude (\{value, layer} -> ChangeAmplitude layer value)
         , shiftColor (\{value, layer} -> ShiftColor layer value)
+        , changeOpacity (\{value, layer} -> ChangeOpacity layer value)
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , changeIris (\{value, layer} -> ChangeIris layer value)
         , setCustomSize
@@ -1059,6 +1068,8 @@ port changeIris : ({ value: FSS.Iris, layer: LayerIndex } -> msg) -> Sub msg
 port changeAmplitude : ({ value: FSS.AmplitudeChange, layer: LayerIndex } -> msg) -> Sub msg
 
 port shiftColor : ({ value: FSS.ColorShiftPatch, layer: LayerIndex } -> msg) -> Sub msg
+
+port changeOpacity : ({ value: FSS.Opacity, layer: LayerIndex } -> msg) -> Sub msg
 
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
