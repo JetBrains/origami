@@ -152,6 +152,47 @@ traverseAllNests f nest =
     }
 
 
+foldCells : (Cell -> ModelPos -> a -> a) -> a -> Nest -> a
+foldCells = foldCells_ Nothing
+
+
+foldCells_ : Maybe ModelPos -> (Cell -> ModelPos -> a -> a) -> a -> Nest -> a
+foldCells_ maybeParentPos f default { cells } =
+    let
+        foldingF maybeParentPos cell ( index, v ) =
+            ( index + 1
+            ,   let
+                    modelPos =
+                        case maybeParentPos of
+                            Just parentPos -> parentPos |> deeper index
+                            Nothing -> root index
+                in case cell of
+                    Nested _ _ nest ->
+                        foldCells_ (Just modelPos) f (f cell modelPos v) nest
+                        -- f cell modelPos <| foldCells_ (Just modelPos) f v nest
+                    Choice _ _ _ nest ->
+                        foldCells_ (Just modelPos) f (f cell modelPos v) nest
+                        -- f cell modelPos <| foldCells_ (Just modelPos) f v nest
+                    _ -> f cell modelPos v
+            )
+    in
+        List.foldl (foldingF maybeParentPos) (0, default) cells
+            |> Tuple.second
+
+
+foldNests : (Nest -> ModelPos -> a -> a) -> a -> Nest -> a
+foldNests f default nest =
+    nest |>
+        foldCells (\cell modelPos v ->
+            case cell of
+                Nested _ _ nest ->
+                    f nest modelPos v
+                Choice _ _ _ nest ->
+                    f nest modelPos v
+                _ -> v
+        ) (f nest nowhere default)
+
+
 nowhere : ModelPos
 nowhere = ModelPos []
 
@@ -254,6 +295,10 @@ shiftFocusTo position nest =
                 }
 
 
+isDeeper : ModelPos -> ModelPos -> Bool
+isDeeper (ModelPos lPath) (ModelPos rPath) =
+    List.length lPath > List.length rPath
+
 
 shiftFocusBy : Int -> ModelPos -> Nest -> Nest
 shiftFocusBy amount position nest =
@@ -279,3 +324,14 @@ shiftFocusBy amount position nest =
                 { nest
                 | focus = ensureFits nest
                 }
+
+
+findFocus: Nest -> ModelPos
+findFocus nest =
+    nest |>
+        foldNests (\{ focus } pos prevFocus ->
+            let focusPos = pos |> deeper focus
+            in if isDeeper focusPos prevFocus
+                then focusPos
+                else prevFocus
+        ) nowhere

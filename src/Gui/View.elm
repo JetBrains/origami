@@ -64,19 +64,19 @@ findClickMessage : GridCell -> Maybe Msg
 findClickMessage = doCellPurpose
 
 
-findKeydownMessage : GridCell -> Int -> Msg
-findKeydownMessage ({ cell, modelPos, isSelected } as gridCell) keyCode =
-    case Debug.log "keyCode" keyCode of
-        -- left arrow
-        37 -> ShiftFocusLeftAt modelPos
-        -- right arrow
-        39 -> ShiftFocusRightAt modelPos
-        -- space
-        33 -> doCellPurpose gridCell |> Maybe.withDefault NoOp
-        -- enter
-        13 -> doCellPurpose gridCell |> Maybe.withDefault NoOp
-        -- else
-        _ -> NoOp
+-- findKeydownMessage : GridCell -> Int -> Msg
+-- findKeydownMessage ({ cell, modelPos, isSelected } as gridCell) keyCode =
+--     case Debug.log "keyCode" keyCode of
+--         -- left arrow
+--         37 -> ShiftFocusLeftAt modelPos
+--         -- right arrow
+--         39 -> ShiftFocusRightAt modelPos
+--         -- space
+--         33 -> doCellPurpose gridCell |> Maybe.withDefault NoOp
+--         -- enter
+--         13 -> doCellPurpose gridCell |> Maybe.withDefault NoOp
+--         -- else
+--         _ -> NoOp
 
 
 viewCell_ : GridPos -> GridCell -> Html Msg
@@ -336,5 +336,15 @@ showModelPos (ModelPos path) =
 
 view : Model -> Html Msg
 view model =
-    div [ H.class "gui" ]
+    div [ H.class "gui"
+        , H.tabindex -1
+        , H.on "keyup" <| Json.map
+            (\keyCode ->
+                let
+                    keyCode_ = Debug.log "keyCode" keyCode
+                    currentFocus = Debug.log "currentFocus" findFocus model
+                -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
+                in NoOp)
+            H.keyCode
+        ]
         [ layout model |> viewGrid ]
