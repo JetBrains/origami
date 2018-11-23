@@ -125,7 +125,8 @@ encodeLayerModel layerModel =
 encodeModel_ : M.Model -> E.Value
 encodeModel_ model =
     E.object
-        [ ( "mode", E.string <| encodeMode model.mode )
+        [ ( "background", E.string model.background )
+        , ( "mode", E.string <| encodeMode model.mode )
         , ( "theta", E.float model.theta )
         , ( "omega", E.float model.omega )
         , ( "layers", E.list (List.map encodeLayerDef model.layers) )
@@ -151,7 +152,8 @@ encodeModel model = model |> encodeModel_ |> E.encode 2
 
 encodePortModel : M.Model -> M.PortModel
 encodePortModel model =
-    { mode = encodeMode model.mode
+    { background = model.background
+    , mode = encodeMode model.mode
     , now = model.now
     , theta = model.theta
     , omega = model.omega
@@ -171,7 +173,8 @@ decodePortModel createLayer portModel =
         initialModel = M.initEmpty mode
     in
         { initialModel
-        | mode = mode
+        | background = portModel.background
+        , mode = mode
         , now = portModel.now
         , theta = portModel.theta
         , omega = portModel.omega
@@ -393,13 +396,14 @@ layerModelDecoder kind =
 modelDecoder : M.UiMode -> M.CreateLayer -> D.Decoder M.Model
 modelDecoder mode createLayer =
     let
-        createModel theta omega layers size origin mouse now productStr =
+        createModel background theta omega layers size origin mouse now productStr =
             let
                 initialModel = M.init mode [] createLayer
                 product = Product.decode productStr
             in
                 { initialModel
-                | theta = theta
+                | background = background
+                , theta = theta
                 , omega = omega
                 , layers = layers
                 , size = size
@@ -411,6 +415,7 @@ modelDecoder mode createLayer =
                 }
     in
         D.decode createModel
+            |> D.required "background" D.string
             |> D.required "theta" D.float
             |> D.required "omega" D.float
             |> D.required "layers" (layerDefDecoder createLayer |> D.list)

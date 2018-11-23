@@ -234,6 +234,8 @@ setTimeout(() => {
     });
 
     app.ports.startGui.subscribe((model) => {
+        document.body.style.backgroundColor = model.background;
+
         // console.log('startGui', model);
         model.layers.forEach(layer => {
             layer.model = JSON.parse(layer.model) || {};
@@ -296,7 +298,7 @@ setTimeout(() => {
             , shiftColor : index => (h, s, b) => {
                 app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]});
             }
-            
+
             , changeOpacity : index => value =>
             { app.ports.changeOpacity.send({ layer: index, value: value }) }
 
