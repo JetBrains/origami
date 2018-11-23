@@ -1,47 +1,7 @@
 module Gui.Nest exposing (..)
 
 
-type NestPos = NestPos (List Int) -- just path by indices
-
-type alias Shape = ( Int, Int )
-
-type alias Cells = List Cell
-
-type alias Handler = (() -> ())
-
-type alias Label = String
-
-type alias ItemChosen = Int
-
-type alias Nest =
-    { focus: Int
-    , shape: Shape
-    , cells: Cells
-    }
-
-
-type ExpandState
-    = Expanded
-    | Collapsed
-
-
--- type ExpandDirection
---     = Up
---     | Down
-
-
-type ToggleState
-    = TurnedOn
-    | TurnedOff
-
-
-type Cell
-    = Knob Label Float
-    | Toggle Label ToggleState
-    | Button Label Handler
-    | Nested Label ExpandState Nest
-    | Choice Label ExpandState ItemChosen Nest
-    | ChoiceItem Label
+import Gui.Cell exposing (..)
 
 
 noChildren : Nest
