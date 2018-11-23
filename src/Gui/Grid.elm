@@ -372,12 +372,27 @@ keyDownHandler nest grid keyCode =
             -- down arrow
             -- 40 -> ShiftFocusDownAt currentFocus
             -- up arrow
-            38 -> ExpandNested currentFocus -- execute as well?
+            38 -> maybeCurrentCell
+                |> Maybe.map (\{ cell } ->
+                        case cell of
+                            Nested _ Collapsed _ -> ExpandNested currentFocus
+                            Choice _ Collapsed _ _ -> ExpandChoice currentFocus
+                            _ -> NoOp
+                    )
+                |> Maybe.withDefault NoOp -- execute as well?
             -- down arrow
             40 -> let parentFocus = currentFocus |> shallower in
                 if (isSamePos parentFocus nowhere)
                     then NoOp
-                    else CollapseNested parentFocus
+                    else
+                        findGridCell parentFocus grid
+                            |> Maybe.map (\{ cell } ->
+                                    case cell of
+                                        Nested _ Expanded _ -> CollapseNested parentFocus
+                                        Choice _ Expanded _ _ -> CollapseChoice parentFocus
+                                        _ -> NoOp
+                                )
+                            |> Maybe.withDefault NoOp
             -- space
             33 -> executeCell
             -- enter
