@@ -214,6 +214,13 @@ deeperOrRoot index maybePos =
         |> Maybe.withDefault (root index)
 
 
+shallower : ModelPos -> ModelPos
+shallower (ModelPos path) =
+    List.tail path
+        |> Maybe.withDefault []
+        |> ModelPos
+
+
 getNestLevel : ModelPos -> Int
 getNestLevel (ModelPos path) =
     List.length path
@@ -316,7 +323,7 @@ shiftFocusBy amount position nest =
         index = getIndexOf position |> Maybe.withDefault 0
         maybeParentPos = getParentPos position
         ensureFits { cells } =
-            if ((index + amount) > 0) && (index + amount < List.length cells) then
+            if ((index + amount) >= 0) && (index + amount < List.length cells) then
                 index + amount
             else index
     in
