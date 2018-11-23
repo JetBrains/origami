@@ -403,7 +403,7 @@ function start(document, model, funcs) {
           .min(0.0).max(1.0);
 
         const opacity = folder.add(config, 'opacity' + index).name('opacity').min(0).max(1).step(0.01);
-        
+
         const colorShiftFolder = folder.addFolder('coloring');
         const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
           .min(-1.0).max(1.0).step(0.01);
@@ -435,8 +435,6 @@ function start(document, model, funcs) {
         hue.onFinishChange(value => {
           funcs.shiftColor(index)(value, null, null);
         });
-
-
         saturation.onFinishChange(value => {
           funcs.shiftColor(index)(null, value, null);
         });
@@ -564,7 +562,7 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         config['amplitudeX' + index] = amplitudeX;
         config['amplitudeY' + index] = amplitudeY;
         config['amplitudeZ' + index] = amplitudeZ;
-        
+
         const opacity = Math.random();
         layerDef.model.opacity = opacity;
         config['opacity' + index] = opacity;
