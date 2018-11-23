@@ -7,13 +7,15 @@ module Gui.Gui exposing
     )
 
 
-import Gui.Model exposing (..)
-import Gui.View exposing (..)
+import Gui.Nest exposing (..)
+import Gui.Grid exposing (..)
+import Gui.Msg exposing (..)
 
 
-type alias Msg = Gui.Model.Msg
-type alias Model = Gui.Model.Model
-view = Gui.View.view
+type alias Model = Nest
+type alias View = Grid
+type alias Msg = Gui.Msg.Msg
+view = Gui.Grid.view
 
 
 init : Model -- ( UI, Cmd Msg )
