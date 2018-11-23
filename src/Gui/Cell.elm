@@ -3,6 +3,8 @@ module Gui.Cell exposing (..)
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H
 import Html.Events as H
+import Svg exposing (..)
+import Svg.Attributes as S exposing (..)
 
 type alias Label = String
 
@@ -70,4 +72,19 @@ type Msg
 
 
 renderCell : NestPos -> Maybe SelectionState -> Cell -> Html Msg
-renderCell position isSelected cell = div [] []
+renderCell position isSelected cell =
+    let cellBody =
+            case cell of
+                Knob label value ->
+                    circle [ cx "50", cy "50", r "15", stroke "aqua", fill "none" ] []
+                _ -> Svg.text "?"
+        cellLabel =
+            case cell of
+                Knob label _ -> label
+                _ -> "?"
+    in svg []
+        [ cellBody
+        , text_
+            [ fill "white", x "10", y "60", fontSize "12", S.style "font-family: sans-serif;" ]
+            [ Svg.text <| cellLabel ]
+        ]
