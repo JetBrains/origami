@@ -180,7 +180,8 @@ const prepareImportExport = () => {
 
 }
 
-const savePng = (hiddenLink, _, [ imageWidth, imageHeight ], product) => {
+const savePng = (hiddenLink, { size, coverSize, product, background }) => {
+    const [ imageWidth, imageHeight ] = size;
     const srcCanvas = document.querySelector('.webgl-layers');
     const trgCanvas = document.querySelector('#js-save-buffer');
     const [ width, height ] = [ srcCanvas.width, srcCanvas.height ];
@@ -188,8 +189,11 @@ const savePng = (hiddenLink, _, [ imageWidth, imageHeight ], product) => {
     trgCanvas.height = height;
     if (!srcCanvas || !trgCanvas) return;
     trgCanvas.style.display = 'block';
+    trgCanvas.style.backgroundColor = background;
     requestAnimationFrame(() => { // without that, image buffer will be empty
         const trgContext = trgCanvas.getContext('2d');
+        trgContext.fillStyle = background;
+        trgContext.fillRect(0, 0, width, height);
         trgContext.drawImage(srcCanvas, 0, 0);
         drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
 
@@ -222,15 +226,15 @@ setTimeout(() => {
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
-    app.ports.presetSizeChanged.subscribe(({ size, coverSize, product }) => {
+    app.ports.presetSizeChanged.subscribe((update) => {
         if (savingBatch) {
             // console.log('saving ', size);
-            savePng(hiddenLink, size, coverSize, product);
+            savePng(hiddenLink, update);
         };
     });
 
-    app.ports.triggerSavePng.subscribe(({ size, coverSize, product }) => {
-        savePng(hiddenLink, size, coverSize, product);
+    app.ports.triggerSavePng.subscribe((update) => {
+        savePng(hiddenLink, update);
     });
 
     app.ports.startGui.subscribe((model) => {
