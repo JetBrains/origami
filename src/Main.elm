@@ -452,6 +452,7 @@ getSizeUpdate model =
     { size = model.size
     , product = Product.encode model.product
     , coverSize = Product.getCoverTextSize model.product
+    , background = model.background
     }
 
 
@@ -1096,6 +1097,7 @@ type alias SizeUpdate =
     { size: Size
     , product: String
     , coverSize: Size
+    , background: String
     }
 
 port startGui : PortModel -> Cmd msg
