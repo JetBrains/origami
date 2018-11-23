@@ -350,37 +350,49 @@ findGridCell searchFor (Grid _ rows) =
         ) Nothing
 
 
+keyDownHandler : Nest -> Grid -> Int -> Msg
+keyDownHandler model grid keyCode =
+    let
+        currentFocus = findFocus model
+        currentFocus_ = case currentFocus of
+            (ModelPos path) -> Debug.log "currentFocus" path
+        maybeCurrentCell = Debug.log "currentCell" <| findGridCell currentFocus grid
+        executeCell = maybeCurrentCell
+            |> Maybe.andThen doCellPurpose
+            |> Maybe.withDefault NoOp
+    -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
+    in
+        case Debug.log "keyCode" keyCode of
+            -- left arrow
+            37 -> ShiftFocusLeftAt currentFocus
+            -- right arrow
+            39 -> ShiftFocusRightAt currentFocus
+            -- up arrow
+            -- 38 -> ShiftFocusUpAt currentFocus
+            -- down arrow
+            -- 40 -> ShiftFocusDownAt currentFocus
+            -- up arrow
+            38 -> ExpandNested currentFocus -- execute as well?
+            -- down arrow
+            40 -> let parentFocus = currentFocus |> shallower in
+                if (isSamePos parentFocus nowhere)
+                    then NoOp
+                    else CollapseNested parentFocus
+            -- space
+            33 -> executeCell
+            -- enter
+            13 -> executeCell
+            -- else
+            _ -> NoOp
+
+
 view : Model -> Html Msg
 view model =
     let grid = layout model
     in
         div [ H.class "gui"
             , H.tabindex -1
-            , H.on "keyup" <| Json.map
-                (\keyCode ->
-                    let
-                        currentFocus = findFocus model
-                        currentFocus_ = case currentFocus of
-                            (ModelPos path) -> Debug.log "currentFocus" path
-                        maybeCurrentCell = Debug.log "currentCell" <| findGridCell currentFocus grid
-                    -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
-                    in
-                        case Debug.log "keyCode" keyCode of
-                            -- left arrow
-                            37 -> ShiftFocusLeftAt currentFocus
-                            -- right arrow
-                            39 -> ShiftFocusRightAt currentFocus
-                            -- space
-                            33 -> maybeCurrentCell
-                                |> Maybe.andThen doCellPurpose
-                                |> Maybe.withDefault NoOp
-                            -- enter
-                            13 -> maybeCurrentCell
-                                |> Maybe.andThen doCellPurpose
-                                |> Maybe.withDefault NoOp
-                            -- else
-                            _ -> NoOp
-                    )
-                H.keyCode
+            , H.on "keydown"
+                <| Json.map (keyDownHandler model grid) H.keyCode
             ]
             [ grid |> viewGrid ]
