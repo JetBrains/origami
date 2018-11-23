@@ -71,20 +71,35 @@ type Msg
     -- | Color
 
 
+textAttrs xPos yPos =
+    [ fill "white"
+    , x <| toString xPos, y <| toString yPos
+    , fontSize "12"
+    , S.style "font-family: sans-serif;"
+    ]
+
+
 renderCell : NestPos -> Maybe SelectionState -> Cell -> Html Msg
 renderCell position isSelected cell =
     let cellBody =
             case cell of
                 Knob label value ->
-                    circle [ cx "50", cy "50", r "15", stroke "aqua", fill "none" ] []
+                    g []
+                        [ text_ (textAttrs 35 35) [ Svg.text <| toString value ]
+                        , circle [ cx "35", cy "35", r "20", stroke "aqua", fill "none" ] []
+                        ]
                 _ -> Svg.text "?"
         cellLabel =
             case cell of
                 Knob label _ -> label
-                _ -> "?"
+                Toggle label state -> label ++ " " ++ (if state == TurnedOn then "on" else "off")
+                Button label _ -> label
+                Nested label _ _ -> label ++ " ^"
+                Choice label _ itemChosen _ -> label ++ " ^ (" ++ toString itemChosen ++ ")"
+                ChoiceItem label -> label
     in svg []
         [ cellBody
         , text_
-            [ fill "white", x "10", y "60", fontSize "12", S.style "font-family: sans-serif;" ]
+            (textAttrs 10 60)
             [ Svg.text <| cellLabel ]
         ]
