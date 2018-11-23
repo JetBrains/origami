@@ -1,7 +1,7 @@
-module Gui.Model exposing (..)
+module Gui.Nest exposing (..)
 
 
-type ModelPos = ModelPos (List Int) -- just path by indices
+type NestPos = NestPos (List Int) -- just path by indices
 
 type alias Shape = ( Int, Int )
 
@@ -18,24 +18,6 @@ type alias Nest =
     , shape: Shape
     , cells: Cells
     }
-
-type alias Model = Nest
-
-
-type Msg
-    = NoOp
-    | Tune ModelPos Float
-    | On ModelPos
-    | Off ModelPos
-    | ExpandNested ModelPos
-    | CollapseNested ModelPos
-    | ExpandChoice ModelPos
-    | CollapseChoice ModelPos
-    | Select ModelPos
-    -- | Move ModelPos Int
-    | ShiftFocusLeftAt ModelPos
-    | ShiftFocusRightAt ModelPos
-    -- | Color
 
 
 type ExpandState
@@ -96,22 +78,22 @@ nest shape cells =
     }
 
 
-traverseNest : (Cell -> ModelPos -> Cell) -> Nest -> Nest
+traverseNest : (Cell -> NestPos -> Cell) -> Nest -> Nest
 traverseNest f nest =
     { nest
     | cells = nest.cells |> traverseCells f
     }
 
 
-traverseCells : (Cell -> ModelPos -> Cell) -> Cells -> Cells
+traverseCells : (Cell -> NestPos -> Cell) -> Cells -> Cells
 traverseCells f cells =
     let
         scanCell maybeParentPos index cell =
-            let modelPos =
+            let nestPos =
                 case  maybeParentPos of
                     Just parentPos -> parentPos |> deeper index
                     Nothing -> root index
-            in case f cell modelPos of
+            in case f cell nestPos of
                 Nested label state nest ->
                     Nested
                         label
@@ -119,7 +101,7 @@ traverseCells f cells =
                         { nest
                         | cells =
                             nest.cells
-                                |> List.indexedMap (scanCell (Just modelPos))
+                                |> List.indexedMap (scanCell (Just nestPos))
                         }
                 Choice label state selected nest ->
                     Choice
@@ -129,7 +111,7 @@ traverseCells f cells =
                         { nest
                         | cells =
                             nest.cells |>
-                                List.indexedMap (scanCell (Just modelPos))
+                                List.indexedMap (scanCell (Just nestPos))
                         }
                 newCell -> newCell
 
@@ -137,7 +119,7 @@ traverseCells f cells =
         List.indexedMap (scanCell Nothing) cells
 
 
-traverseAllNests : (Nest -> ModelPos -> Nest) -> Nest -> Nest
+traverseAllNests : (Nest -> NestPos -> Nest) -> Nest -> Nest
 traverseAllNests f nest =
     { nest
     | cells = f nest nowhere |> .cells |> traverseCells
@@ -152,87 +134,87 @@ traverseAllNests f nest =
     }
 
 
-foldCells : (Cell -> ModelPos -> a -> a) -> a -> Nest -> a
+foldCells : (Cell -> NestPos -> a -> a) -> a -> Nest -> a
 foldCells = foldCells_ Nothing
 
 
-foldCells_ : Maybe ModelPos -> (Cell -> ModelPos -> a -> a) -> a -> Nest -> a
+foldCells_ : Maybe NestPos -> (Cell -> NestPos -> a -> a) -> a -> Nest -> a
 foldCells_ maybeParentPos f default { cells } =
     let
         foldingF maybeParentPos cell ( index, v ) =
             ( index + 1
             ,   let
-                    modelPos =
+                    nestPos =
                         case maybeParentPos of
                             Just parentPos -> parentPos |> deeper index
                             Nothing -> root index
                 in case cell of
                     Nested _ _ nest ->
-                        foldCells_ (Just modelPos) f (f cell modelPos v) nest
-                        -- f cell modelPos <| foldCells_ (Just modelPos) f v nest
+                        foldCells_ (Just nestPos) f (f cell nestPos v) nest
+                        -- f cell nestPos <| foldCells_ (Just nestPos) f v nest
                     Choice _ _ _ nest ->
-                        foldCells_ (Just modelPos) f (f cell modelPos v) nest
-                        -- f cell modelPos <| foldCells_ (Just modelPos) f v nest
-                    _ -> f cell modelPos v
+                        foldCells_ (Just nestPos) f (f cell nestPos v) nest
+                        -- f cell nestPos <| foldCells_ (Just nestPos) f v nest
+                    _ -> f cell nestPos v
             )
     in
         List.foldl (foldingF maybeParentPos) (0, default) cells
             |> Tuple.second
 
 
-foldNests : (Nest -> ModelPos -> a -> a) -> a -> Nest -> a
+foldNests : (Nest -> NestPos -> a -> a) -> a -> Nest -> a
 foldNests f default nest =
     nest |>
-        foldCells (\cell modelPos v ->
+        foldCells (\cell nestPos v ->
             case cell of
                 Nested _ _ nest ->
-                    f nest modelPos v
+                    f nest nestPos v
                 Choice _ _ _ nest ->
-                    f nest modelPos v
+                    f nest nestPos v
                 _ -> v
         ) (f nest nowhere default)
 
 
-nowhere : ModelPos
-nowhere = ModelPos []
+nowhere : NestPos
+nowhere = NestPos []
 
 
-root : Int -> ModelPos
+root : Int -> NestPos
 root index =
-    ModelPos [ index ]
+    NestPos [ index ]
 
 
-deeper : Int -> ModelPos -> ModelPos
-deeper index (ModelPos path) =
-    ModelPos (index :: path)
+deeper : Int -> NestPos -> NestPos
+deeper index (NestPos path) =
+    NestPos (index :: path)
 
 
-deeperOrRoot : Int -> Maybe ModelPos -> ModelPos
+deeperOrRoot : Int -> Maybe NestPos -> NestPos
 deeperOrRoot index maybePos =
     maybePos
         |> Maybe.map (deeper index)
         |> Maybe.withDefault (root index)
 
 
-shallower : ModelPos -> ModelPos
-shallower (ModelPos path) =
+shallower : NestPos -> NestPos
+shallower (NestPos path) =
     List.tail path
         |> Maybe.withDefault []
-        |> ModelPos
+        |> NestPos
 
 
-getNestLevel : ModelPos -> Int
-getNestLevel (ModelPos path) =
+getNestLevel : NestPos -> Int
+getNestLevel (NestPos path) =
     List.length path
 
 
-getIndexOf : ModelPos -> Maybe Int
-getIndexOf (ModelPos path) =
+getIndexOf : NestPos -> Maybe Int
+getIndexOf (NestPos path) =
     List.head path
 
 
-getParentPos : ModelPos -> Maybe ModelPos
-getParentPos (ModelPos path) =
+getParentPos : NestPos -> Maybe NestPos
+getParentPos (NestPos path) =
     List.tail path
         |> Maybe.andThen
             (\parentPath ->
@@ -240,14 +222,14 @@ getParentPos (ModelPos path) =
                     [] -> Nothing
                     _ -> Just parentPath
             )
-        |> Maybe.map ModelPos
+        |> Maybe.map NestPos
 
 
-isSamePos : ModelPos -> ModelPos -> Bool
-isSamePos (ModelPos lPath) (ModelPos rPath) = lPath == rPath
+isSamePos : NestPos -> NestPos -> Bool
+isSamePos (NestPos lPath) (NestPos rPath) = lPath == rPath
 
 
-findCell : ModelPos -> Nest -> Maybe Cell
+findCell : NestPos -> Nest -> Maybe Cell
 findCell pos nest =
     nest |>
         foldCells (\cell cellPos maybeFound ->
@@ -257,17 +239,17 @@ findCell pos nest =
         ) Nothing
 
 
-updateCell : ModelPos -> (Cell -> Cell) -> Nest -> Nest
+updateCell : NestPos -> (Cell -> Cell) -> Nest -> Nest
 updateCell expectedPos f nest =
     traverseNest
-        (\cell modelPos ->
-            if isSamePos modelPos expectedPos then
+        (\cell nestPos ->
+            if isSamePos nestPos expectedPos then
                 f cell
             else cell)
         nest
 
 
-collapseAllAbove : ModelPos -> Nest -> Nest
+collapseAllAbove : NestPos -> Nest -> Nest
 collapseAllAbove position nest =
     nest |> traverseNest
         (\cell cellPosition ->
@@ -289,7 +271,7 @@ collapseAllAbove position nest =
         )
 
 
-shiftFocusTo : ModelPos -> Nest -> Nest
+shiftFocusTo : NestPos -> Nest -> Nest
 shiftFocusTo position nest =
     let
         maybeParentPos = getParentPos position
@@ -312,12 +294,12 @@ shiftFocusTo position nest =
                 }
 
 
-isDeeper : ModelPos -> ModelPos -> Bool
-isDeeper (ModelPos lPath) (ModelPos rPath) =
+isDeeper : NestPos -> NestPos -> Bool
+isDeeper (NestPos lPath) (NestPos rPath) =
     List.length lPath > List.length rPath
 
 
-shiftFocusBy : Int -> ModelPos -> Nest -> Nest
+shiftFocusBy : Int -> NestPos -> Nest -> Nest
 shiftFocusBy amount position nest =
     let
         index = getIndexOf position |> Maybe.withDefault 0
@@ -343,7 +325,7 @@ shiftFocusBy amount position nest =
                 }
 
 
-findFocus: Nest -> ModelPos
+findFocus: Nest -> NestPos
 findFocus nest =
     let
         innerFocus = nest |>
