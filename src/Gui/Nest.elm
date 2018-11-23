@@ -35,16 +35,6 @@ type ToggleState
     | TurnedOff
 
 
-type SelectionState
-    = Selected
-    | NotSelected
-
-
-type FocusState
-    = Focused
-    | NotFocused
-
-
 type Cell
     = Knob Label Float
     | Toggle Label ToggleState
