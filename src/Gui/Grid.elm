@@ -7,9 +7,9 @@ import Html.Attributes as H
 import Html.Events as H
 import Json.Decode as Json
 
+
 import Gui.Nest exposing (..)
 import Gui.Cell exposing (..)
-import Gui.Msg exposing (..)
 
 
 type GridPos = GridPos Int Int
@@ -28,14 +28,18 @@ type alias Rows = Array Row
 type Grid = Grid Shape Rows
 
 
-type SelectionState
-    = Selected
-    | NotSelected
+type Mode
+    = DebugInfo
+    | Fancy
 
 
 type FocusState
     = Focused Int -- nest level
     | NotFocused
+
+
+mode : Mode
+mode = DebugInfo
 
 
 emptyGrid : Shape -> Grid
@@ -89,8 +93,8 @@ findClickMessage = doCellPurpose
 --         _ -> NoOp
 
 
-viewCell_ : GridPos -> GridCell -> Html Msg
-viewCell_ ((GridPos row col) as gridPos) { cell, nestPos, isSelected } =
+viewCellContentDebug : GridPos -> GridCell -> Html Msg
+viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected } =
     let
         posStr = showGridPos gridPos ++ " " ++ showNestPos nestPos
     in case cell of
@@ -126,6 +130,15 @@ viewCell_ ((GridPos row col) as gridPos) { cell, nestPos, isSelected } =
                     ++ (if isSelected == Just Selected then "selected" else "not-selected")
                 ]
 
+
+viewCellContent : GridPos -> GridCell -> Html Msg
+viewCellContent gridPos gridCell =
+    case mode of
+        DebugInfo -> viewCellContentDebug gridPos gridCell
+        Fancy ->
+            case gridCell of
+                { cell, nestPos, isSelected }
+                    -> renderCell nestPos isSelected cell
 
 
 viewCell : NestPos -> GridPos -> Maybe GridCell -> Html Msg
@@ -175,7 +188,7 @@ viewCell focus gridPos maybeGridCell =
                 |> Maybe.withDefault []
         attributes = [ H.class className ] ++ handlers
         children = maybeGridCell
-            |> Maybe.map (\cell -> [ viewCell_ gridPos cell ])
+            |> Maybe.map (\cell -> [ viewCellContent gridPos cell ])
             |> Maybe.withDefault []
     in
         div attributes children

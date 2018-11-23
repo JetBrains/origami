@@ -26,12 +26,14 @@
     height: 70px;
     min-width: 70px;
     min-height: 70px;
-    background-color: rgba(0, 0, 0, 0.7);
-    border: 1px solid #fff;
+    background:
+        linear-gradient(0deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.2) 100%);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     cursor: pointer;
     margin: 5px;
     color: white;
+    /* transition: background 0.3s ease-in; */
 }
 
 .selected {
@@ -68,6 +70,8 @@
 }
 
 .hole {
-    border-color: #333;
-    background-color: rgba(0, 0, 0, 0.3);
+    /* border-color: #333;
+    background-color: rgba(0, 0, 0, 0.3); */
+    border-color: transparent;
+    background: none;
 }

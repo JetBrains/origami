@@ -7,14 +7,14 @@ module Gui.Gui exposing
     )
 
 
+import Gui.Cell exposing (..)
 import Gui.Nest exposing (..)
 import Gui.Grid exposing (..)
-import Gui.Msg exposing (..)
 
 
 type alias Model = Nest
 type alias View = Grid
-type alias Msg = Gui.Msg.Msg
+type alias Msg = Gui.Cell.Msg
 view = Gui.Grid.view
 
 
