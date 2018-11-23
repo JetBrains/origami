@@ -28,6 +28,16 @@ type alias Rows = Array Row
 type Grid = Grid Shape Rows
 
 
+type SelectionState
+    = Selected
+    | NotSelected
+
+
+type FocusState
+    = Focused Int -- nest level
+    | NotFocused
+
+
 emptyGrid : Shape -> Grid
 emptyGrid (( width, height ) as shape)
     = Grid shape <| Array.repeat height (Array.repeat width Nothing)
@@ -118,17 +128,28 @@ viewCell_ ((GridPos row col) as gridPos) { cell, nestPos, isSelected } =
 
 
 
-viewCell : GridPos -> Maybe GridCell -> Html Msg
-viewCell gridPos maybeGridCell =
+viewCell : NestPos -> GridPos -> Maybe GridCell -> Html Msg
+viewCell focus gridPos maybeGridCell =
     let
+        findFocusIntensity cellNestLevel focusNestLevel =
+            focusNestLevel - cellNestLevel
+        getFocusIntensityClass cellNestLevel focus =
+            "focused--" ++ toString
+                (findFocusIntensity cellNestLevel <| getNestLevel focus)
         className =
             case maybeGridCell of
                 Just { isSelected, isFocused } ->
                     case ( isSelected, isFocused ) of
-                        ( Just Selected, Focused ) -> "cell selected focused"
+                        ( Just Selected, Focused nestLevel ) ->
+                            "cell selected focused " ++
+                                getFocusIntensityClass nestLevel focus
                         ( Just Selected, NotFocused ) -> "cell selected"
-                        ( Just NotSelected, Focused ) -> "cell focused"
-                        ( Nothing, Focused ) -> "cell focused"
+                        ( Just NotSelected, Focused nestLevel ) ->
+                            "cell focused " ++
+                                getFocusIntensityClass nestLevel focus
+                        ( Nothing, Focused nestLevel ) ->
+                            "cell focused " ++
+                                getFocusIntensityClass nestLevel focus
                         _ -> "cell"
                 _ -> "cell hole"
         handlers =
@@ -160,34 +181,34 @@ viewCell gridPos maybeGridCell =
         div attributes children
 
 
-viewRow : GridPos -> Row -> Html Msg
-viewRow (GridPos row col) cols =
+viewRow : NestPos -> GridPos -> Row -> Html Msg
+viewRow focus (GridPos row col) cols =
     Array.indexedMap
-        (\subCol -> viewCell (GridPos row (col + subCol)))
+        (\subCol -> viewCell focus (GridPos row (col + subCol)))
         cols
         |> Array.toList
         |> div [ H.class "row" ]
 
 
-viewRows : Rows -> Html Msg
-viewRows rows =
+viewRows : NestPos -> Rows -> Html Msg
+viewRows focus rows =
     let
         origin  = bottomLeft
         (GridPos row col) = origin
         topRows =
             rows
                 |> Array.indexedMap
-                    (\subRow -> viewRow (GridPos (row + subRow) col))
+                    (\subRow -> viewRow focus (GridPos (row + subRow) col))
                 |> Array.toList
     in
         topRows |> div [ H.class "cells" ]
 
 
 
-viewGrid : Grid -> Html Msg
-viewGrid (Grid _ grid) =
+viewGrid : NestPos -> Grid -> Html Msg
+viewGrid focus (Grid _ grid) =
     div [ H.class "grid" ]
-        [ viewRows grid ]
+        [ grid |> viewRows focus ]
 
 
 
@@ -220,18 +241,19 @@ put
         cells = Array.fromList cellsList
             |> Array.indexedMap
                 (\cellIndex cell ->
-                    { cell = cell
-                    , nestPos = maybeParent |> deeperOrRoot cellIndex
-                    , isSelected = case maybeChosenItem of
-                        Just chosenIndex ->
-                            Just <|
-                                if cellIndex == chosenIndex
-                                then Selected else NotSelected
-                        _ -> Nothing
-                    , isFocused = if nest.focus == cellIndex
-                        then Focused
-                        else NotFocused
-                    }
+                    let nestPos = maybeParent |> deeperOrRoot cellIndex
+                    in  { cell = cell
+                        , nestPos = nestPos
+                        , isSelected = case maybeChosenItem of
+                            Just chosenIndex ->
+                                Just <|
+                                    if cellIndex == chosenIndex
+                                    then Selected else NotSelected
+                            _ -> Nothing
+                        , isFocused = if nest.focus == cellIndex
+                            then Focused <| getNestLevel nestPos
+                            else NotFocused
+                        }
                 )
         -- hasNesting = Debug.log "nests" <| Array.map (\(_, (NestPos nest _)) -> nest) cells
         fits ( row, col ) ( width, height ) =
@@ -403,11 +425,14 @@ keyDownHandler nest grid keyCode =
 
 view : Nest -> Html Msg
 view nest =
-    let grid = layout nest
+    let
+        grid = layout nest
+        focus = findFocus nest
     in
-        div [ H.class "gui"
+        div [ H.id "grid-gui"
+            , H.class "gui"
             , H.tabindex -1
             , H.on "keydown"
                 <| Json.map (keyDownHandler nest grid) H.keyCode
             ]
-            [ grid |> viewGrid ]
+            [ grid |> viewGrid focus ]

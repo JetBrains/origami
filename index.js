@@ -235,6 +235,8 @@ setTimeout(() => {
     });
 
     app.ports.startGui.subscribe((model) => {
+        document.getElementById('grid-gui').focus();
+
         // console.log('startGui', model);
         model.layers.forEach(layer => {
             layer.model = JSON.parse(layer.model) || {};
