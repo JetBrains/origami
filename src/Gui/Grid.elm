@@ -39,7 +39,7 @@ type FocusState
 
 
 mode : Mode
-mode = DebugInfo
+mode = Fancy
 
 
 emptyGrid : Shape -> Grid

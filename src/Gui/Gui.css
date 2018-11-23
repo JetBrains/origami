@@ -26,23 +26,27 @@
     height: 70px;
     min-width: 70px;
     min-height: 70px;
-    background:
-        linear-gradient(0deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.2) 100%);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    /* background:
+        linear-gradient(0deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 75%, rgba(0,0,0,0.2) 100%); */
+    background-color: rgba(0,0,0,0.2);
+    border: 1px solid transparent;
     border-radius: 8px;
     cursor: pointer;
     margin: 5px;
     color: white;
-    /* transition: background 0.3s ease-in; */
+    transition: background-color 0.3s ease-in;
 }
 
 .selected {
-    border: 1px solid aqua;
+    background-color: rgba(0,200,200,0.2);
 }
 
 .focused {
-    color: aqua;
-    transition: color 0.3s ease-in;
+    background-color: rgba(200,0,200,0.2);
+}
+
+.focused.selected {
+    background-color: rgba(0,200,0,0.2);
 }
 
 .focused--0 {
