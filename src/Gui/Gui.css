@@ -51,27 +51,33 @@
 
 .focused--0 {
     /* TODO */
-    color: rgba(0, 255, 255, 1);
+    background-color: rgba(200,0,200,0.5);
+    /* color: rgba(0, 255, 255, 1); */
 }
 
 .focused--1 {
-    color: rgba(0, 255, 255, .8);
+    background-color: rgba(200,0,200,0.4);
+    /* color: rgba(0, 255, 255, .8); */
 }
 
 .focused--2 {
-    color: rgba(0, 255, 255, .6);
+    background-color: rgba(200,0,200,0.3);
+    /* color: rgba(0, 255, 255, .6); */
 }
 
 .focused--3 {
-    color: rgba(0, 255, 255, .4);
+    background-color: rgba(200,0,200,0.2);
+    /* color: rgba(0, 255, 255, .4); */
 }
 
 .focused--4 {
-    color: rgba(0, 255, 255, .2);
+    background-color: rgba(200,0,200,0.1);
+    /* color: rgba(0, 255, 255, .2); */
 }
 
 .focused--5 {
-    color: rgba(0, 255, 255, 0);
+    background-color: rgba(200,0,200,0);
+    /* color: rgba(0, 255, 255, 0); */
 }
 
 .hole {
