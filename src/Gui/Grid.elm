@@ -131,28 +131,31 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
                 ]
 
 
-viewCellContent : GridPos -> GridCell -> Html Msg
-viewCellContent gridPos gridCell =
+viewCellContent : Focus -> GridPos -> GridCell -> Html Msg
+viewCellContent focus gridPos gridCell =
     case mode of
         DebugInfo -> viewCellContentDebug gridPos gridCell
         Fancy ->
             case gridCell of
                 { cell, nestPos, isSelected }
-                    -> renderCell nestPos isSelected cell
+                    -> renderCell nestPos focus isSelected cell
 
 
-viewCell : NestPos -> GridPos -> Maybe GridCell -> Html Msg
+viewCell : Focus -> GridPos -> Maybe GridCell -> Html Msg
 viewCell focus gridPos maybeGridCell =
     let
         findFocusIntensity cellNestLevel focusNestLevel =
             focusNestLevel - cellNestLevel
-        getFocusIntensityClass cellNestLevel focus =
+        getFocusIntensityClass cellNestLevel (Focus focus) =
             "focused--" ++ toString
+                (findFocusIntensity cellNestLevel <| getNestLevel focus)
+        getLevelIntensityClass cellNestLevel (Focus focus) =
+            "level--" ++ toString
                 (findFocusIntensity cellNestLevel <| getNestLevel focus)
         className =
             case maybeGridCell of
-                Just { isSelected, isFocused } ->
-                    case ( isSelected, isFocused ) of
+                Just { isSelected, isFocused, nestPos } ->
+                    (case ( isSelected, isFocused ) of
                         ( Just Selected, Focused nestLevel ) ->
                             "cell selected focused " ++
                                 getFocusIntensityClass nestLevel focus
@@ -163,7 +166,9 @@ viewCell focus gridPos maybeGridCell =
                         ( Nothing, Focused nestLevel ) ->
                             "cell focused " ++
                                 getFocusIntensityClass nestLevel focus
-                        _ -> "cell"
+                        _ -> "cell")
+                            ++ " " ++ getLevelIntensityClass
+                                        (getNestLevel nestPos) focus
                 _ -> "cell hole"
         handlers =
             maybeGridCell
@@ -188,13 +193,13 @@ viewCell focus gridPos maybeGridCell =
                 |> Maybe.withDefault []
         attributes = [ H.class className ] ++ handlers
         children = maybeGridCell
-            |> Maybe.map (\cell -> [ viewCellContent gridPos cell ])
+            |> Maybe.map (\cell -> [ viewCellContent focus gridPos cell ])
             |> Maybe.withDefault []
     in
         div attributes children
 
 
-viewRow : NestPos -> GridPos -> Row -> Html Msg
+viewRow : Focus -> GridPos -> Row -> Html Msg
 viewRow focus (GridPos row col) cols =
     Array.indexedMap
         (\subCol -> viewCell focus (GridPos row (col + subCol)))
@@ -203,7 +208,7 @@ viewRow focus (GridPos row col) cols =
         |> div [ H.class "row" ]
 
 
-viewRows : NestPos -> Rows -> Html Msg
+viewRows : Focus -> Rows -> Html Msg
 viewRows focus rows =
     let
         origin  = bottomLeft
@@ -218,7 +223,7 @@ viewRows focus rows =
 
 
 
-viewGrid : NestPos -> Grid -> Html Msg
+viewGrid : Focus -> Grid -> Html Msg
 viewGrid focus (Grid _ grid) =
     div [ H.class "grid" ]
         [ grid |> viewRows focus ]
@@ -388,9 +393,7 @@ findGridCell searchFor (Grid _ rows) =
 keyDownHandler : Nest -> Grid -> Int -> Msg
 keyDownHandler nest grid keyCode =
     let
-        currentFocus = findFocus nest
-        currentFocus_ = case currentFocus of
-            (NestPos path) -> Debug.log "currentFocus" path
+        (Focus currentFocus) = findFocus nest
         maybeCurrentCell = Debug.log "currentCell" <| findGridCell currentFocus grid
         executeCell = maybeCurrentCell
             |> Maybe.andThen doCellPurpose

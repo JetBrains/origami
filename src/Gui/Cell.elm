@@ -13,6 +13,8 @@ type alias ItemChosen = Int
 
 type NestPos = NestPos (List Int) -- just path by indices
 
+type Focus = Focus NestPos
+
 type alias Shape = ( Int, Int )
 
 type alias Cells = List Cell
@@ -128,8 +130,8 @@ downArrow xPos yPos color =
 
 
 
-renderCell : NestPos -> Maybe SelectionState -> Cell -> Html Msg
-renderCell position isSelected cell =
+renderCell : NestPos -> Focus -> Maybe SelectionState -> Cell -> Html Msg
+renderCell position (Focus focus) isSelected cell =
     let cellBody =
             case cell of
                 Knob _ value ->
