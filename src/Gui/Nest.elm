@@ -275,10 +275,10 @@ shiftFocusBy amount position nest =
                 }
 
 
-findFocus: Nest -> NestPos
+findFocus: Nest -> Focus
 findFocus nest =
     let
-        innerFocus = nest |>
+        (Focus innerFocus) = nest |>
             foldCells (\cell pos prevFocus ->
                 case cell of
                     Nested _ Expanded { focus } ->
@@ -292,8 +292,8 @@ findFocus nest =
                             then focusPos
                             else prevFocus
                     _ -> prevFocus
-            ) nowhere
+            ) nowhere |> Focus
     in
         if isSamePos innerFocus nowhere then
-            nowhere |> deeper nest.focus
-        else innerFocus
+            nowhere |> deeper nest.focus |> Focus
+        else Focus innerFocus
