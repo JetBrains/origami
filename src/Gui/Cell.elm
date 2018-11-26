@@ -78,6 +78,13 @@ cellWidth = 70
 cellHeight = 70
 
 
+labelColor = "white"
+baseColor = "aqua"
+onColor = "green"
+offColor = "red"
+nothingColor = "darkgray"
+
+
 textAttrs : Float -> Float -> String -> List (Attribute Msg)
 textAttrs xPos yPos color =
     [ fill color
@@ -93,7 +100,7 @@ circleAttrs : Float -> Float -> String -> List (Attribute Msg)
 circleAttrs xPos yPos color =
     [ cx <| toString <| xPos
     , cy <| toString <| yPos
-    , r "20"
+    , r "15"
     , stroke color, fill "none"
     , strokeWidth "5"
     ]
@@ -137,26 +144,26 @@ renderCell position (Focus focus) isSelected cell =
                 Knob _ value ->
                     g []
                         [ text_
-                            (textAttrs (cellWidth / 2) (cellHeight / 2) "aqua")
+                            (textAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
                             [ Svg.text <| toString value ]
                         , circle
-                            (circleAttrs (cellWidth / 2) (cellHeight / 2) "aqua")
+                            (circleAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
                             []
                         ]
                 Toggle _ state ->
                     g []
                         [ text_
-                            (textAttrs (cellWidth / 2) (cellHeight / 2) "aqua")
+                            (textAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
                             [ Svg.text <| if state == TurnedOn then "on" else "off" ]
                         , circle
                             (circleAttrs (cellWidth / 2) (cellHeight / 2) <|
-                                if state == TurnedOn then "green" else "red")
+                                if state == TurnedOn then onColor else offColor)
                             []
                         ]
                 Choice _ state itemChosen { cells } ->
                     g []
                         [ text_
-                            (textAttrs (cellWidth / 2) (cellHeight / 2) "aqua")
+                            (textAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
                             [ cells
                                 |> Array.fromList |> Array.get itemChosen
                                 |> Maybe.map cellLabel |> Maybe.withDefault "" |> Svg.text ]
@@ -164,8 +171,8 @@ renderCell position (Focus focus) isSelected cell =
                             [ transform
                                 <| "translate(" ++ (toString <| cellWidth / 2 - 10) ++ ",10)" ]
                             [ if state == Expanded
-                                then downArrow (cellWidth / 2) 10 "aqua"
-                                else upArrow (cellWidth / 2) 10 "aqua" ]
+                                then downArrow (cellWidth / 2) 10 baseColor
+                                else upArrow (cellWidth / 2) 10 baseColor ]
                         ]
                 Nested _ state { cells } ->
                     g []
@@ -173,8 +180,8 @@ renderCell position (Focus focus) isSelected cell =
                             [ transform
                                 <| "translate(" ++ (toString <| cellWidth / 2 - 10) ++ ",10)" ]
                             [ if state == Expanded
-                                then downArrow (cellWidth / 2) 10 "aqua"
-                                else upArrow (cellWidth / 2) 10 "aqua"  ]
+                                then downArrow (cellWidth / 2) 10 baseColor
+                                else upArrow (cellWidth / 2) 10 baseColor  ]
                         ]
                 ChoiceItem _ ->
                     g []
@@ -182,13 +189,13 @@ renderCell position (Focus focus) isSelected cell =
                             [ transform
                                 <| "translate(" ++ (toString <| cellWidth / 2 - 10) ++ ",10)" ]
                             [ case isSelected of
-                                (Just Selected) -> downArrow (cellWidth / 2) 10 "green"
-                                _ -> downArrow (cellWidth / 2) 10 "darkgray" ]
+                                (Just Selected) -> downArrow (cellWidth / 2) 10 offColor
+                                _ -> downArrow (cellWidth / 2) 10 nothingColor ]
                         ]
                 Button _ _ ->
                     g []
                         [ circle
-                            (circleAttrs (cellWidth / 2) (cellHeight / 2) "darkgray")
+                            (circleAttrs (cellWidth / 2) (cellHeight / 2) nothingColor)
                             []
                         ]
         cellLabel cell =
@@ -206,12 +213,12 @@ renderCell position (Focus focus) isSelected cell =
         , height <| toString cellHeight
         ]
         [ cellBody
-        , rect
-            [ x <| toString <| (cellWidth / 2) - (labelBackWidth / 2)
-            , y <| toString <| cellHeight - labelBackHeight
-            , rx "5", ry "5"
-            , width <| toString <| labelBackWidth, height <| toString <| labelBackHeight
-            , fill "rgba(120,0,0,0.4)" ] []
+--        , rect
+--            [ x <| toString <| (cellWidth / 2) - (labelBackWidth / 2)
+--            , y <| toString <| cellHeight - labelBackHeight
+--            , rx "5", ry "5"
+--            , width <| toString <| labelBackWidth, height <| toString <| labelBackHeight
+--            , fill "rgba(120,0,0,0.4)" ] []
         , text_
             (textAttrs (cellWidth / 2) (cellHeight - 10) "white")
             [ Svg.text <| cellLabel cell ]
