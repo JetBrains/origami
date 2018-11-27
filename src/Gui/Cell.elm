@@ -83,6 +83,7 @@ baseColor = "aqua"
 onColor = "green"
 offColor = "red"
 nothingColor = "darkgray"
+lineWidth = "2"
 
 
 textAttrs : Float -> Float -> String -> List (Attribute Msg)
@@ -102,21 +103,22 @@ circleAttrs xPos yPos color =
     , cy <| toString <| yPos
     , r "15"
     , stroke color, fill "none"
-    , strokeWidth "5"
+    , strokeWidth lineWidth
     ]
 
 
 upArrow : Float -> Float -> String -> Svg Msg
 upArrow xPos yPos color =
     g
-        [ transform "rotate(-180.000000) translate(-20, -15.000000)" ]
+        [ transform "rotate(-180.000000) translate(-30, -12)" ]
         [
-            Svg.polygon
-                [ transform "scale(0.25, 0.25)"
-                , x <| toString <| xPos, y <| toString <| yPos
+            Svg.path
+                [ x <| toString <| xPos, y <| toString <| yPos
                 --transform "translate(-37.125,-290.25)"
-                , points "83.5312 0 41.7656 61.875 0 0 16.1719 0 41.7656 37.4062 67.3594 0 83.5312 0"
-                , fill color ]
+                , d "m 0 0 l 20 20 l 20 -20"
+                , stroke color, fill "none"
+                , strokeWidth lineWidth
+                , S.strokeLinecap "round" ]
                 []
         ]
 
@@ -124,14 +126,15 @@ upArrow xPos yPos color =
 downArrow : Float -> Float -> String -> Svg Msg
 downArrow xPos yPos color =
     g
-        [ transform "translate(0, 0)" ]
+        [ transform "rotate(-180.000000) translate(-30, -12)" ]
         [
-            Svg.polygon
-                [ transform "scale(0.25, 0.25)"
-                , x <| toString <| xPos, y <| toString <| yPos
+            Svg.path
+                [ x <| toString <| xPos, y <| toString <| yPos
                 --transform "translate(-37.125,-290.25)"
-                , points "83.5312 0 41.7656 61.875 0 0 16.1719 0 41.7656 37.4062 67.3594 0 83.5312 0"
-                , fill color ]
+                , d "m 0 20 l 20 -20 l 20 20"
+                , stroke color, fill "none"
+                , strokeWidth lineWidth
+                , S.strokeLinecap "round" ]
                 []
         ]
 
