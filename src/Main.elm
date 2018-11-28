@@ -95,9 +95,9 @@ init =
 
 initialLayers : List ( LayerKind, String, LayerModel )
 initialLayers =
-    [ ( MirroredFss, "Lower Layer", FssModel FSS.init )
-    , ( MirroredFss, "Mid Layer", FssModel FSS.init )
-    , ( MirroredFss, "Top layer"
+    [ ( Fss, "Lower Layer", FssModel FSS.init )
+    , ( Fss, "Mid Layer", FssModel FSS.init )
+    , ( Fss, "Top layer"
       , let
             fssModel = FSS.init
         in
