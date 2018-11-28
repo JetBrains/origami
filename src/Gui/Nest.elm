@@ -4,7 +4,7 @@ module Gui.Nest exposing (..)
 import Gui.Cell exposing (..)
 
 
-noChildren : Nest
+noChildren : Nest umsg
 noChildren =
     { focus = -1
     , shape = ( 0, 0 )
@@ -12,7 +12,7 @@ noChildren =
     }
 
 
-oneLine : Cells -> Nest
+oneLine : Cells umsg -> Nest umsg
 oneLine cells =
     { focus = 0
     , shape = ( List.length cells, 1 )
@@ -20,7 +20,7 @@ oneLine cells =
     }
 
 
-nest : Shape -> Cells -> Nest
+nest : Shape -> Cells umsg -> Nest umsg
 nest shape cells =
     { focus = 0
     , shape = shape
@@ -28,14 +28,14 @@ nest shape cells =
     }
 
 
-traverseNest : (Cell -> NestPos -> Cell) -> Nest -> Nest
+traverseNest : (Cell umsg -> NestPos -> Cell umsg) -> Nest umsg -> Nest umsg
 traverseNest f nest =
     { nest
     | cells = nest.cells |> traverseCells f
     }
 
 
-traverseCells : (Cell -> NestPos -> Cell) -> Cells -> Cells
+traverseCells : (Cell umsg -> NestPos -> Cell umsg) -> Cells umsg -> Cells umsg
 traverseCells f cells =
     let
         scanCell maybeParentPos index cell =
@@ -69,7 +69,7 @@ traverseCells f cells =
         List.indexedMap (scanCell Nothing) cells
 
 
-traverseAllNests : (Nest -> NestPos -> Nest) -> Nest -> Nest
+traverseAllNests : (Nest umsg -> NestPos -> Nest umsg) -> Nest umsg -> Nest umsg
 traverseAllNests f nest =
     { nest
     | cells = f nest nowhere |> .cells |> traverseCells
@@ -84,11 +84,11 @@ traverseAllNests f nest =
     }
 
 
-foldCells : (Cell -> NestPos -> a -> a) -> a -> Nest -> a
+foldCells : (Cell umsg -> NestPos -> a -> a) -> a -> Nest umsg -> a
 foldCells = foldCells_ Nothing
 
 
-foldCells_ : Maybe NestPos -> (Cell -> NestPos -> a -> a) -> a -> Nest -> a
+foldCells_ : Maybe NestPos -> (Cell umsg -> NestPos -> a -> a) -> a -> Nest umsg -> a
 foldCells_ maybeParentPos f default { cells } =
     let
         foldingF maybeParentPos cell ( index, v ) =
@@ -112,7 +112,7 @@ foldCells_ maybeParentPos f default { cells } =
             |> Tuple.second
 
 
-foldNests : (Nest -> NestPos -> a -> a) -> a -> Nest -> a
+foldNests : (Nest umsg -> NestPos -> a -> a) -> a -> Nest umsg -> a
 foldNests f default nest =
     nest |>
         foldCells (\cell nestPos v ->
@@ -179,7 +179,7 @@ isSamePos : NestPos -> NestPos -> Bool
 isSamePos (NestPos lPath) (NestPos rPath) = lPath == rPath
 
 
-findCell : NestPos -> Nest -> Maybe Cell
+findCell : NestPos -> Nest umsg -> Maybe (Cell umsg)
 findCell pos nest =
     nest |>
         foldCells (\cell cellPos maybeFound ->
@@ -189,7 +189,7 @@ findCell pos nest =
         ) Nothing
 
 
-updateCell : NestPos -> (Cell -> Cell) -> Nest -> Nest
+updateCell : NestPos -> (Cell umsg -> Cell umsg) -> Nest umsg -> Nest umsg
 updateCell expectedPos f nest =
     traverseNest
         (\cell nestPos ->
@@ -199,7 +199,7 @@ updateCell expectedPos f nest =
         nest
 
 
-collapseAllAbove : NestPos -> Nest -> Nest
+collapseAllAbove : NestPos -> Nest umsg -> Nest umsg
 collapseAllAbove position nest =
     nest |> traverseNest
         (\cell cellPosition ->
@@ -221,7 +221,7 @@ collapseAllAbove position nest =
         )
 
 
-shiftFocusTo : NestPos -> Nest -> Nest
+shiftFocusTo : NestPos -> Nest umsg -> Nest umsg
 shiftFocusTo position nest =
     let
         maybeParentPos = getParentPos position
@@ -249,7 +249,7 @@ isDeeper (NestPos lPath) (NestPos rPath) =
     List.length lPath > List.length rPath
 
 
-shiftFocusBy : Int -> NestPos -> Nest -> Nest
+shiftFocusBy : Int -> NestPos -> Nest umsg -> Nest umsg
 shiftFocusBy amount position nest =
     let
         index = getIndexOf position |> Maybe.withDefault 0
@@ -275,7 +275,7 @@ shiftFocusBy amount position nest =
                 }
 
 
-findFocus: Nest -> Focus
+findFocus: Nest umsg -> Focus
 findFocus nest =
     let
         (Focus innerFocus) = nest |>
