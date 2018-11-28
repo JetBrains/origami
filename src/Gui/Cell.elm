@@ -110,7 +110,8 @@ circleAttrs xPos yPos color =
 upArrow : Float -> Float -> String -> Svg Msg
 upArrow xPos yPos color =
     g
-        [ transform "rotate(-180.000000) translate(-30, -12)" ]
+        [ class "gui-arrow"
+        , transform "rotate(-180.000000) translate(-30, -12)" ]
         [
             Svg.path
                 [ x <| toString <| xPos, y <| toString <| yPos
@@ -126,7 +127,8 @@ upArrow xPos yPos color =
 downArrow : Float -> Float -> String -> Svg Msg
 downArrow xPos yPos color =
     g
-        [ transform "rotate(-180.000000) translate(-30, -12)" ]
+        [ class "gui-arrow"
+        , transform "rotate(-180.000000) translate(-30, -12)" ]
         [
             Svg.path
                 [ x <| toString <| xPos, y <| toString <| yPos
@@ -145,26 +147,26 @@ renderCell position (Focus focus) isSelected cell =
     let cellBody =
             case cell of
                 Knob _ value ->
-                    g []
+                    g [ class "gui-knob" ]
                         [ text_
-                            (textAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
+                            (textAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
                             [ Svg.text <| toString value ]
                         , circle
-                            (circleAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
+                            (circleAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
                             []
                         ]
                 Toggle _ state ->
-                    g []
+                    g [ class "gui-toggle" ]
                         [ text_
-                            (textAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
+                            (textAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
                             [ Svg.text <| if state == TurnedOn then "on" else "off" ]
                         , circle
-                            (circleAttrs (cellWidth / 2) (cellHeight / 2) <|
+                            (circleAttrs (cellWidth / 2) (cellHeight / 3) <|
                                 if state == TurnedOn then onColor else offColor)
                             []
                         ]
                 Choice _ state itemChosen { cells } ->
-                    g []
+                    g [ class "gui-choice" ]
                         [ text_
                             (textAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
                             [ cells
@@ -178,7 +180,7 @@ renderCell position (Focus focus) isSelected cell =
                                 else upArrow (cellWidth / 2) 10 baseColor ]
                         ]
                 Nested _ state { cells } ->
-                    g []
+                    g [ class "gui-nested" ]
                         [ g
                             [ transform
                                 <| "translate(" ++ (toString <| cellWidth / 2 - 10) ++ ",10)" ]
@@ -187,18 +189,18 @@ renderCell position (Focus focus) isSelected cell =
                                 else upArrow (cellWidth / 2) 10 baseColor  ]
                         ]
                 ChoiceItem _ ->
-                    g []
+                    g [ class "gui-choice-item" ]
                         [ g
                             [ transform
                                 <| "translate(" ++ (toString <| cellWidth / 2 - 10) ++ ",10)" ]
                             [ case isSelected of
-                                (Just Selected) -> downArrow (cellWidth / 2) 10 offColor
+                                (Just Selected) -> downArrow (cellWidth / 2) 10 onColor
                                 _ -> downArrow (cellWidth / 2) 10 nothingColor ]
                         ]
                 Button _ _ ->
                     g []
                         [ circle
-                            (circleAttrs (cellWidth / 2) (cellHeight / 2) nothingColor)
+                            (circleAttrs (cellWidth / 2) (cellHeight / 3) nothingColor)
                             []
                         ]
         cellLabel cell =
