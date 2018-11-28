@@ -17,15 +17,15 @@ type Focus = Focus NestPos
 
 type alias Shape = ( Int, Int )
 
-type alias Cells = List Cell
+type alias Cells umsg = List (Cell umsg)
 
-type alias Handler = (() -> ())
--- TODO: type alias Handler a = (() -> a)
+type alias Handler umsg = (() -> umsg)
 
-type alias Nest =
+
+type alias Nest umsg =
     { focus: Int
     , shape: Shape
-    , cells: Cells
+    , cells: Cells umsg
     }
 
 
@@ -49,16 +49,16 @@ type SelectionState
     | NotSelected
 
 
-type Cell
+type Cell umsg
     = Knob Label Float
     | Toggle Label ToggleState
-    | Button Label Handler
-    | Nested Label ExpandState Nest
-    | Choice Label ExpandState ItemChosen Nest
+    | Button Label (Handler umsg)
+    | Nested Label ExpandState (Nest umsg)
+    | Choice Label ExpandState ItemChosen (Nest umsg)
     | ChoiceItem Label
 
 
-type Msg
+type Msg umsg
     = NoOp
     | Tune NestPos Float
     | On NestPos
@@ -71,6 +71,7 @@ type Msg
     -- | Move NestPos Int
     | ShiftFocusLeftAt NestPos
     | ShiftFocusRightAt NestPos
+    | UserMsg umsg
     -- | Color
 
 
@@ -86,7 +87,7 @@ nothingColor = "darkgray"
 lineWidth = "2"
 
 
-textAttrs : Float -> Float -> String -> List (Attribute Msg)
+textAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
 textAttrs xPos yPos color =
     [ fill color
     , x <| toString xPos, y <| toString yPos
@@ -97,7 +98,7 @@ textAttrs xPos yPos color =
     ]
 
 
-circleAttrs : Float -> Float -> String -> List (Attribute Msg)
+circleAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
 circleAttrs xPos yPos color =
     [ cx <| toString <| xPos
     , cy <| toString <| yPos
@@ -107,7 +108,7 @@ circleAttrs xPos yPos color =
     ]
 
 
-upArrow : Float -> Float -> String -> Svg Msg
+upArrow : Float -> Float -> String -> Svg (Msg umsg)
 upArrow xPos yPos color =
     g
         [ class "gui-arrow"
@@ -124,7 +125,7 @@ upArrow xPos yPos color =
         ]
 
 
-downArrow : Float -> Float -> String -> Svg Msg
+downArrow : Float -> Float -> String -> Svg (Msg umsg)
 downArrow xPos yPos color =
     g
         [ class "gui-arrow"
@@ -142,7 +143,7 @@ downArrow xPos yPos color =
 
 
 
-renderCell : NestPos -> Focus -> Maybe SelectionState -> Cell -> Html Msg
+renderCell : NestPos -> Focus -> Maybe SelectionState -> Cell umsg -> Html (Msg umsg)
 renderCell position (Focus focus) isSelected cell =
     let cellBody =
             case cell of

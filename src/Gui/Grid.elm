@@ -14,18 +14,18 @@ import Gui.Cell exposing (..)
 
 type GridPos = GridPos Int Int
 
-type alias GridCell =
-    { cell: Cell
+type alias GridCell umsg =
+    { cell: Cell umsg
     , nestPos: NestPos
     , isSelected: Maybe SelectionState -- if it's under Choice item, then it has selection state
     , isFocused: FocusState
     }
 
-type alias Row = Array (Maybe GridCell)
+type alias Row umsg = Array (Maybe (GridCell umsg))
 
-type alias Rows = Array Row
+type alias Rows umsg = Array (Row umsg)
 
-type Grid = Grid Shape Rows
+type Grid umsg = Grid Shape (Rows umsg)
 
 
 type Mode
@@ -42,7 +42,7 @@ mode : Mode
 mode = Fancy
 
 
-emptyGrid : Shape -> Grid
+emptyGrid : Shape -> Grid umsg
 emptyGrid (( width, height ) as shape)
     = Grid shape <| Array.repeat height (Array.repeat width Nothing)
 
@@ -51,30 +51,30 @@ bottomLeft : GridPos
 bottomLeft = (GridPos 0 0)
 
 
-doCellPurpose : GridCell -> Maybe Msg
+doCellPurpose : GridCell umsg -> List (Msg umsg)
 doCellPurpose { cell, nestPos, isSelected } =
     case cell of
         Toggle _ val ->
-            Just <| if val == TurnedOn then Off nestPos else On nestPos
+            [ if val == TurnedOn then Off nestPos else On nestPos ]
         Nested _ state _ ->
-            Just <| if state == Expanded then CollapseNested nestPos else ExpandNested nestPos
+            [ if state == Expanded then CollapseNested nestPos else ExpandNested nestPos ]
         Choice _ state _ _ ->
-            Just <| if state == Expanded then CollapseChoice nestPos else ExpandChoice nestPos
+            [ if state == Expanded then CollapseChoice nestPos else ExpandChoice nestPos ]
         _ -> case isSelected of
             -- ( Just parentPos, Just Selected ) -> Deselect parentPos nestPos |> Just
-            Just NotSelected -> Just <| Select nestPos
-            _ -> Nothing
+            Just NotSelected -> [ Select nestPos ]
+            _ -> []
 
 
-findHoverMessage : GridCell -> Maybe Msg
+findHoverMessage : GridCell umsg -> List (Msg umsg)
 findHoverMessage { cell, nestPos }  =
     case cell of
         Knob label value ->
-            Tune nestPos (value + 1) |> Just
-        _ -> Nothing
+            [ Tune nestPos (value + 1) ]
+        _ -> []
 
 
-findClickMessage : GridCell -> Maybe Msg
+findClickMessage : GridCell umsg -> List (Msg umsg)
 findClickMessage = doCellPurpose
 
 
@@ -93,7 +93,7 @@ findClickMessage = doCellPurpose
 --         _ -> NoOp
 
 
-viewCellContentDebug : GridPos -> GridCell -> Html Msg
+viewCellContentDebug : GridPos -> GridCell umsg -> Html (Msg umsg)
 viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected } =
     let
         posStr = showGridPos gridPos ++ " " ++ showNestPos nestPos
@@ -131,7 +131,7 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
                 ]
 
 
-viewCellContent : Focus -> GridPos -> GridCell -> Html Msg
+viewCellContent : Focus -> GridPos -> GridCell umsg -> Html (Msg umsg)
 viewCellContent focus gridPos gridCell =
     case mode of
         DebugInfo -> viewCellContentDebug gridPos gridCell
@@ -141,7 +141,7 @@ viewCellContent focus gridPos gridCell =
                     -> renderCell nestPos focus isSelected cell
 
 
-viewCell : Focus -> GridPos -> Maybe GridCell -> Html Msg
+viewCell : Focus -> GridPos -> Maybe (GridCell umsg) -> Html (Msg umsg)
 viewCell focus gridPos maybeGridCell =
     let
         findFocusIntensity cellNestLevel focusNestLevel =
@@ -175,12 +175,10 @@ viewCell focus gridPos maybeGridCell =
                 |> Maybe.map
                     (\gridCell ->
                         (findClickMessage gridCell
-                            |> Maybe.map (\msg -> [ H.onClick msg ])
-                            |> Maybe.withDefault []
+                            |> List.map H.onClick
                         ) ++
                         (findHoverMessage gridCell
-                            |> Maybe.map (\msg -> [ H.onMouseOver msg ])
-                            |> Maybe.withDefault []
+                            |> List.map H.onMouseOver
                         )
                         -- ) ++
                         -- (findKeydownMessage gridCell
@@ -199,7 +197,7 @@ viewCell focus gridPos maybeGridCell =
         div attributes children
 
 
-viewRow : Focus -> GridPos -> Row -> Html Msg
+viewRow : Focus -> GridPos -> Row umsg -> Html (Msg umsg)
 viewRow focus (GridPos row col) cols =
     Array.indexedMap
         (\subCol -> viewCell focus (GridPos row (col + subCol)))
@@ -208,7 +206,7 @@ viewRow focus (GridPos row col) cols =
         |> div [ H.class "row" ]
 
 
-viewRows : Focus -> Rows -> Html Msg
+viewRows : Focus -> Rows umsg -> Html (Msg umsg)
 viewRows focus rows =
     let
         origin  = bottomLeft
@@ -223,14 +221,14 @@ viewRows focus rows =
 
 
 
-viewGrid : Focus -> Grid -> Html Msg
+viewGrid : Focus -> Grid umsg -> Html (Msg umsg)
 viewGrid focus (Grid _ grid) =
     div [ H.class "grid" ]
         [ grid |> viewRows focus ]
 
 
 
-putAtRoot : GridPos -> Nest -> Grid -> Grid
+putAtRoot : GridPos -> Nest umsg -> Grid umsg -> Grid umsg
 putAtRoot gridPos nest grid =
     put gridPos Nothing Nothing nest grid
 
@@ -239,9 +237,9 @@ put
     :  GridPos
     -> Maybe ItemChosen
     -> Maybe NestPos
-    -> Nest
-    -> Grid
-    -> Grid
+    -> Nest umsg
+    -> Grid umsg
+    -> Grid umsg
 put
     (GridPos row col)
     maybeChosenItem
@@ -334,7 +332,7 @@ put
                 )
 
 
-set : GridPos -> GridCell -> Grid -> Grid
+set : GridPos -> GridCell umsg -> Grid umsg -> Grid umsg
 set (GridPos row col) cell ((Grid shape rows) as grid) =
     Array.get row rows
         |> Maybe.map
@@ -348,14 +346,14 @@ set (GridPos row col) cell ((Grid shape rows) as grid) =
         |> Maybe.withDefault grid
 
 
-layout : Nest -> Grid
+layout : Nest umsg -> Grid umsg
 layout nest =
     emptyGrid (10, 6)
         |> putAtRoot (GridPos 0 0) nest
         |> flip
 
 
-flip : Grid -> Grid
+flip : Grid umsg -> Grid umsg
 flip (Grid shape rows) =
     rows
         |> Array.toList
@@ -374,7 +372,7 @@ showNestPos (NestPos path) =
     "<" ++ (path |> List.reverse |> List.map toString |> String.join ",") ++ ">"
 
 
-findGridCell : NestPos -> Grid -> Maybe GridCell
+findGridCell : NestPos -> Grid umsg -> Maybe (GridCell umsg)
 findGridCell searchFor (Grid _ rows) =
     rows |> Array.foldl
         (\row foundCell ->
@@ -390,21 +388,21 @@ findGridCell searchFor (Grid _ rows) =
         ) Nothing
 
 
-keyDownHandler : Nest -> Grid -> Int -> Msg
+keyDownHandler : Nest umsg -> Grid umsg -> Int -> List (Msg umsg)
 keyDownHandler nest grid keyCode =
     let
         (Focus currentFocus) = findFocus nest
         maybeCurrentCell = Debug.log "currentCell" <| findGridCell currentFocus grid
         executeCell = maybeCurrentCell
-            |> Maybe.andThen doCellPurpose
-            |> Maybe.withDefault NoOp
+            |> Maybe.map doCellPurpose
+            |> Maybe.withDefault []
     -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
     in
         case Debug.log "keyCode" keyCode of
             -- left arrow
-            37 -> ShiftFocusLeftAt currentFocus
+            37 -> [ ShiftFocusLeftAt currentFocus ]
             -- right arrow
-            39 -> ShiftFocusRightAt currentFocus
+            39 -> [ ShiftFocusRightAt currentFocus ]
             -- up arrow
             -- 38 -> ShiftFocusUpAt currentFocus
             -- down arrow
@@ -413,33 +411,33 @@ keyDownHandler nest grid keyCode =
             38 -> maybeCurrentCell
                 |> Maybe.map (\{ cell } ->
                         case cell of
-                            Nested _ Collapsed _ -> ExpandNested currentFocus
-                            Choice _ Collapsed _ _ -> ExpandChoice currentFocus
-                            _ -> NoOp
+                            Nested _ Collapsed _ -> [ ExpandNested currentFocus ]
+                            Choice _ Collapsed _ _ -> [ ExpandChoice currentFocus ]
+                            _ -> []
                     )
-                |> Maybe.withDefault NoOp -- execute as well?
+                |> Maybe.withDefault [] -- execute as well?
             -- down arrow
             40 -> let parentFocus = currentFocus |> shallower in
                 if (isSamePos parentFocus nowhere)
-                    then NoOp
+                    then []
                     else
                         findGridCell parentFocus grid
                             |> Maybe.map (\{ cell } ->
                                     case cell of
-                                        Nested _ Expanded _ -> CollapseNested parentFocus
-                                        Choice _ Expanded _ _ -> CollapseChoice parentFocus
-                                        _ -> NoOp
+                                        Nested _ Expanded _ -> [ CollapseNested parentFocus ]
+                                        Choice _ Expanded _ _ -> [ CollapseChoice parentFocus ]
+                                        _ -> []
                                 )
-                            |> Maybe.withDefault NoOp
+                            |> Maybe.withDefault []
             -- space
             33 -> executeCell
             -- enter
             13 -> executeCell
             -- else
-            _ -> NoOp
+            _ -> []
 
 
-view : Nest -> Html Msg
+view : Nest umsg -> Html (Msg umsg)
 view nest =
     let
         grid = layout nest
@@ -448,7 +446,7 @@ view nest =
         div [ H.id "grid-gui"
             , H.class "gui"
             , H.tabindex -1
-            , H.on "keydown"
-                <| Json.map (keyDownHandler nest grid) H.keyCode
+            -- , H.on "keydown"
+            --     <| Json.map (keyDownHandler nest grid) H.keyCode
             ]
             [ grid |> viewGrid focus ]
