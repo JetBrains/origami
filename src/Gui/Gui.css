@@ -1,9 +1,16 @@
 .gui {
     position: absolute;
-    top: 0;
-    left: 0;
+    /* top: 0; */
+    /* left: 0; */
+    bottom: 160px;
+    width: 100%;
+    /* height: 60%; */
+    margin: 0 auto;
+}
+
+.grid {
     width: 60%;
-    height: 60%;
+    margin: 0 auto;
 }
 
 .gui:focus {
@@ -35,6 +42,14 @@
     margin: 5px;
     color: white;
     transition: background-color 0.3s ease-in, opacity 0.3s ease-in;
+}
+
+.gui-arrow {
+    transition: transform 0.3s ease-in;
+}
+
+.gui-toggle circle {
+    transition: stroke 0.3s ease-in;
 }
 
 .selected {
