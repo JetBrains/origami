@@ -137,7 +137,7 @@ svg.text-layer {
     /* background: #167dff; */
     /* background: #000; */
     background: #fc2c99;
-    border: 0;
+
     font-size: 12px;
     color: #fff;
     margin: 0 auto;
@@ -160,12 +160,14 @@ svg.text-layer {
     align-items: center;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-    border: none;
     border-radius: 25px;
     outline: none;
     cursor: pointer;
     white-space: nowrap;
     text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: #000;
+    
 }
 
 
@@ -185,7 +187,7 @@ svg.text-layer {
 } */
 
 .export_html5:hover, .export_png:hover {
-    background: #ca237b;
+    background-color: rgba(0, 0, 0, 0.3);
 }
 
 
