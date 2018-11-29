@@ -416,8 +416,8 @@ type alias Uniforms =
 type alias Varyings =
     { vColor : Vec4
     , vPosition : Vec3
-    , vColorI : Vec4
-    , vColorII : Vec4
+    , vColor1 : Vec4
+    , vColor2 : Vec4
     --, vMirror : Vec3
     }
 
@@ -630,8 +630,8 @@ vertexShader =
 
         // Varyings
         varying vec4 vColor;
-        varying vec4 vColorI;
-        varying vec4 vColorII;
+        varying vec4 vColor1;
+        varying vec4 vColor2;
         varying vec3 vPosition;
         //varying vec3 vMirror;
 
@@ -701,8 +701,8 @@ vertexShader =
             vec3 speed = normalize(aV0) * 0.0008;
 
             // Create color
-             vColorI = materialAmbient;
-             vColorII = materialDiffuse;
+             vColor1 = materialAmbient;
+             vColor2 = materialDiffuse;
              vColor = vec4(1.0);
 
             // Calculate the vertex position
@@ -710,8 +710,8 @@ vertexShader =
             vec3 amplitudes = uAmplitude * uSegment;
 
             // Light geometry and magnitudes
-            vec3 orbitFactor = vec3(2.5, 2.5, 2.0);
-            vec3 lightsSpeed = vec3(uLightSpeed * 10.0, uLightSpeed  * 10.0, 100.0);
+            vec3 orbitFactor = !background ? vec3(2.5, 2.5, 2.0) : vec3(-2.5, 1.5, 0.2) ;
+            vec3 lightsSpeed = !background ? vec3(uLightSpeed * 10.0, uLightSpeed  * 10.0, 100.0) : vec3(uLightSpeed, uLightSpeed  * 5.0, 150.0) ;
 
 
 
@@ -720,8 +720,8 @@ vertexShader =
             position /= uResolution * vec3(uScale, 1.0);
             position *= 4.0;
 
-            vec4 lightAmbient = vec4(0.0);
-            vec4 lightDiffuse = vec4(0.0);
+            vec4 light1 = vec4(0.0);
+            vec4 light2 = vec4(0.0);
 
 
             // Iterate through lights
@@ -731,14 +731,12 @@ vertexShader =
           //  if(uLayerIndex != 0) {
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * lightOscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
 
-                if ( low_poly ) {
-
-                    lightAmbient =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
-                    lightDiffuse =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
-
+                if ( background ) {
+                    light2 =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    light1 =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
                 } else {
-                    lightAmbient =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
-                    lightDiffuse =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    light1 =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    light2 =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
                 }
 
                 vec3 ray = normalize(lightPosition - aCentroid);
@@ -747,10 +745,10 @@ vertexShader =
 
 
                 // Calculate ambient light
-                  vColor *=  lightAmbient;
+                  vColor *=  light1;
 
                 // Calculate diffuse light
-                  vColor +=  lightDiffuse * illuminance;
+                  vColor +=  light2 * illuminance;
 
             }
 
@@ -793,8 +791,8 @@ fragmentShader =
 
         // Varyings
         varying vec4 vColor;
-        varying vec4 vColorI;
-        varying vec4 vColorII;
+        varying vec4 vColor1;
+        varying vec4 vColor2;
         varying vec3 vPosition;
         //varying vec3 vMirror;
 
@@ -842,7 +840,7 @@ fragmentShader =
         vec4 adjustColor(vec4 origColor, float deltaHue, float deltaSaturation, float deltaBrightness) {
 
         vec3 changedColor  = rgb2hsv(origColor.rgb);
-        changedColor[0] = clamp(changedColor[0] + deltaHue, 0.0, 1.0); // hue shift
+        changedColor[0] = mod(changedColor[0] + deltaHue, 1.0); // hue shift
         changedColor[1] = clamp(changedColor[1] + deltaSaturation, 0.0, 1.0); // saturation shift
         changedColor[2] = clamp(changedColor[2] + deltaBrightness, 0.0, 1.0); // brightness shift
 
@@ -881,7 +879,7 @@ fragmentShader =
 
 
             // fog
-                vec3 shadowHSV = rgb2hsv(vColorI.rgb);
+                vec3 shadowHSV = rgb2hsv(vColor1.rgb);
                 shadowHSV[2] *=  uVignette + 0.1;
                 vec3 shadowRGB = hsv2rgb(shadowHSV);
              gl_FragColor.rgb =  mix(vColor.rgb, shadowRGB, smoothstep(0.0, 1.3 - uIris, distance(actPos, vec2(0.5))));
@@ -891,7 +889,7 @@ fragmentShader =
                gl_FragColor.a = uOpacity;
 
 
-            // gl_FragColor.rgb *= gl_FragColor.a;
+             //gl_FragColor.rgb *= gl_FragColor.a;
 
 
 
