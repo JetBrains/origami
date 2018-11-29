@@ -54,7 +54,7 @@ type Product
 getPalette : Product -> Palette
 getPalette product =
     case product of
-        JetBrains -> [ "#ad3259",  "#aa489a", "#ffdb2e" ]
+        JetBrains -> [ "#ad3259",  "#aa48ff", "#ffdb00" ]
         IntelliJ -> [ "#003976",  "#fc31fe", "#ffd08d" ]
         PhpStorm ->  [ "#bb43e6", "#9034b1", "#f93394" ]
         PyCharm -> [ "#006137", "#fcf84a", "#f9ff93" ]
