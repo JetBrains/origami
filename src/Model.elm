@@ -270,7 +270,7 @@ gui =
     let
         productsGrid =
             [ "jetbrains"
-            , "intellij"
+            , "intellij idea"
             , "phpstorm"
             , "pycharm"
             , "rubymine"
@@ -280,7 +280,7 @@ gui =
             , "appcode"
             , "goland"
             , "resharper"
-            , "resharper-cpp"
+            , "resharper c++"
             --, "dotcover"
             -- TODO
             ]
@@ -380,7 +380,11 @@ gui =
         chooseMesh index label _ =
             logMsg_ "mesh" index label <| NoOp
         chooseProduct index label _ =
-            logMsg_ "product" index label <| NoOp
+            logMsg_ "product" index label
+                <| case label of
+                    "resharper c++" -> ChangeProduct Product.ReSharperCpp
+                    "intellij idea" -> ChangeProduct Product.IntelliJ
+                    _ -> ChangeProduct <| Product.decode label
         chooseSize index label _ =
             logMsg_ "size" index label <| NoOp
         chooseWebGlBlend index label _ =
