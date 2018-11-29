@@ -18,6 +18,7 @@ module Model exposing
     , PortModel
     , PortLayerDef
     , PortBlend
+    , Msg(..)
     )
 
 
@@ -212,8 +213,8 @@ type alias PortLayerDef =
     }
 
 
-initEmpty : UiMode -> Gui.Model Msg -> Model
-initEmpty mode gui =
+initEmpty : UiMode -> Model
+initEmpty mode =
     { mode = mode
     , gui = gui
     , paused = False
@@ -235,13 +236,12 @@ initEmpty mode gui =
 
 init
     :  UiMode
-    -> Gui.Model Msg
     -> List ( LayerKind, String, LayerModel )
     -> CreateLayer
     -> Model
-init mode gui initialLayers createLayer =
+init mode initialLayers createLayer =
     let
-        initialModel = initEmpty mode gui
+        initialModel = initEmpty mode
     in
         { initialModel
         | layers = initialLayers |> List.map
@@ -374,8 +374,8 @@ gui =
             [ Choice "product" Collapsed 0 productsGrid
             , Knob "rotation" 0
             , Choice "size" Collapsed 0 sizeGrid
-            , Button "save png" <| always ()
-            , Button "lucky" <| always ()
+            , Button "save png" <| always Bang
+            , Button "lucky" <| always Bang
             , Nested "logo" Collapsed svgControls
             , Nested "title" Collapsed svgControls
             , Nested "net" Collapsed fssControls

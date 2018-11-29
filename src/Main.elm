@@ -974,7 +974,7 @@ view model =
         ]
 
 
-main : Program Never Model
+main : Program Never Model Msg
 main =
     Html.program
         { init = init
