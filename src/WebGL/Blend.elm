@@ -61,7 +61,7 @@ default : Blend
 default =
     { color = Nothing
     , colorEq = ( 0, 1, 0 ) -- add one zero
-    , alphaEq = ( 0, 1, 0 ) -- add one zero
+    , alphaEq = ( 0, 6, 7 ) -- add srcAlpha oneMinusSrcAlpha
     }
 
 
