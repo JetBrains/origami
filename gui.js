@@ -578,7 +578,7 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         config['amplitudeY' + index] = amplitudeY;
         config['amplitudeZ' + index] = amplitudeZ;
 
-        const opacity = Math.random();
+        const opacity =  (mode !== 'prod') ? Math.random() : 1.0;
         layerDef.model.opacity = opacity;
         config['opacity' + index] = opacity;
 
