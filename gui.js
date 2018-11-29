@@ -121,38 +121,53 @@ const RENDER_MODES =
 
 
 const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
-{ 'browser window': [ 0, 0 ]
-, '480x297 prodcard' : [ 480, 297 ] //product card
-, '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
-, '640x400 spl' : [ 640, 400 ] // product splash background
-, '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
-, '650x170 nwlt' : [ 650, 170 ] // newsletter
-, '1300x340 nwlt@2x' : [ 1300, 340 ] // @2x newsletter
-, '800x418 tw' : [ 800, 418 ] // Twitter
-, '1200x628 fb' : [ 1200, 628 ] // Facebook
-, '1280x800 wprev' : [ 1280, 800 ] // Webpage Preview
-, '800x400 blog' : [ 800, 400 ] // Blog
-, '1600x800 blog@2x' : [ 1600, 800 ] // @2x Blog
-, '800x155 bfoot' : [ 800, 155 ] // Blog footer
-, '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
-, '2850x1200 landg' : [ 2850, 1200 ] // Landing page
+ {'480x297 prodcard' : [ 480, 297 ] //product card
+    , '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
+    , '640x400 spl' : [ 640, 400 ] // product splash background
+    , '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
+    , '650x170 nwlt' : [ 650, 170 ] // newsletter
+    , '1300x340 nwlt@2x' : [ 1300, 340 ] // @2x newsletter
+    , '800x418 tw' : [ 800, 418 ] // Twitter
+    , '1200x628 fb' : [ 1200, 628 ] // Facebook
+    , '1280x800 wprev' : [ 1280, 800 ] // Webpage Preview
+    , '800x400 blog' : [ 800, 400 ] // Blog
+    , '1600x800 blog@2x' : [ 1600, 800 ] // @2x Blog
+    , '800x155 bfoot' : [ 800, 155 ] // Blog footer
+    , '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
+    , '2850x1200 landg' : [ 2850, 1200 ] // Landing page
+    , 'browser': [ 0, 0 ]
+
 };
 
 
 const WALLPAPER_SIZES =
-  { 'browser window': [ 0, 0 ]
-  , '1920x1980': [ 1920, 1080 ]
-  , '1920x1200': [ 1920, 1200 ]
-  , '1366x768': [ 1366, 768 ]
-  , '1440x900': [ 1440, 900 ]
-  , '1536x864': [ 1536, 864 ]
-  , '1680x1050': [ 1680, 1050 ]
+  {
+     '2560x1440': [ 2560, 1440 ]
+    , '1920x1200': [ 1920, 1200 ]
+    , '1920x1080': [ 1920, 1080 ]
+    , '1680x1050': [ 1680, 1050 ]
+    , '1536x864': [ 1536, 864 ]
+    , '1440x900': [ 1440, 900 ]
+    , '1366x768': [ 1366, 768 ]
+    , 'browser': [ 0, 0 ]
   };
 
 
 const BLENDS_SETS =
   { 'normal': [ [ '+', '1', '0' ], [ '+', '1', '0' ] ]
-  , 'lighten': [ [ '+', 'sC', '1-sC' ], [ '+', 'sC', '1-sC' ] ]
+  , 'soft': [ [ '+', 'sC', '1-sC' ], [ '+', 'sC', '1-sC' ] ]
+  , 'caustic': [ [ '+', 'sC', '1' ], [ '+', '1', '0' ] ]
+  , 'kobold': [ [ '+', 'sC', '0' ], [ '+', '1', '0' ] ]
+  , 'crystal': [ [ '+', 'sC', 'sC' ], [ '+', '1', '0' ] ]
+  , 'dark swan': [ [ '+', '0', 'sC' ], [ '+', '1', '0' ] ]
+  , 'chromatic': [ [ '+', '1', '1-CC' ], [ '+', '1', '0' ] ]
+  , 'opalescent': [ [ '+', 'sC', '1-CC' ], [ '+', '1', '0' ] ]
+  , 'plastic': [ [ '+', 'sC', 'AS' ], [ '+', '1', '0' ] ]
+  , 'oz': [ [ '-', '1', '1' ], [ '+', '1', '0' ] ]
+  , 'smokey': [ [ '-', '1', 'sC' ], [ '+', '1', '0' ] ]
+  , 'shining': [ [ '-', '1', 'CC' ], [ '+', '1', '0' ] ]
+  , 'mist': [ [ '-', '1-sC', '1-dA' ], [ '+', '1', '0' ] ]
+  , 'elmo': [ [ 'R-', 'sC', 'sA' ], [ '+', '1', '0' ] ]
   };
 
 
@@ -173,7 +188,7 @@ const update = (gui) => () => {
 
 const getSizesSet = (mode) => {
   const predefinedSizes = (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
-  predefinedSizes['your screen'] = [
+  predefinedSizes['monitor'] = [
     window.screen.width * window.devicePixelRatio,
     window.screen.height * window.devicePixelRatio
   ];
@@ -236,13 +251,14 @@ const Config = function(layers, defaults, funcs, randomize) {
         this['amplitudeX' + index] = layer.model.amplitude[0];
         this['amplitudeY' + index] = layer.model.amplitude[1];
         this['amplitudeZ' + index] = layer.model.amplitude[2];
+        this['opacity' + index] = layer.model.opacity;
         this['hue' + index] = layer.model.colorShift[0];
         this['saturation' + index] = layer.model.colorShift[1];
         this['brightness' + index] = layer.model.colorShift[2];
       }
     });
 
-    this.customSize = PREDEFINED_SIZES['browser window'];
+    this.customSize = PREDEFINED_SIZES['browser'];
 
     //this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
@@ -401,6 +417,8 @@ function start(document, model, funcs) {
         const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('depth')
           .min(0.0).max(1.0);
 
+        const opacity = folder.add(config, 'opacity' + index).name('opacity').min(0).max(1).step(0.01);
+
         const colorShiftFolder = folder.addFolder('coloring');
         const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
           .min(-1.0).max(1.0).step(0.01);
@@ -427,6 +445,8 @@ function start(document, model, funcs) {
           funcs.changeAmplitude(index)(null, null, value);
         });
 
+        opacity.onFinishChange(funcs.changeOpacity(index));
+
         hue.onFinishChange(value => {
           funcs.shiftColor(index)(value, null, null);
         });
@@ -443,7 +463,7 @@ function start(document, model, funcs) {
     const config = new Config(layers, defaults, funcs, randomize(funcs, model, update(gui)));
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('vertigo ').min(-1.0).max(1.0).step(0.1);
-    const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
+    const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size');
     // gui.add(config, 'savePng').name('save png');
     if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
     gui.add(config, 'randomize').name('i feel lucky');
@@ -557,6 +577,11 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         config['amplitudeX' + index] = amplitudeX;
         config['amplitudeY' + index] = amplitudeY;
         config['amplitudeZ' + index] = amplitudeZ;
+
+
+        const opacity =  (mode !== 'prod') ? Math.random() : 1.0;
+        layerDef.model.opacity = opacity;
+        config['opacity' + index] = opacity;
 
 
         const [ hue, saturation, brightness ] =

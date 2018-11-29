@@ -5,6 +5,7 @@ module Layer.FSS exposing
     , SerializedScene
     , Amplitude, AmplitudeChange
     , ColorShift, ColorShiftPatch
+    , Opacity
     , Vignette, Iris
     , Clip
     , makeEntity
@@ -38,6 +39,7 @@ type alias Clip = ( Float, Float )
 type alias Mirror = Float
 type alias Amplitude = ( Float, Float, Float )
 type alias ColorShift = ( Float, Float, Float )
+type alias Opacity = Float
 type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
 type alias ColorShiftPatch = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
@@ -59,6 +61,7 @@ type alias PortModel =
     { renderMode : String
     , amplitude : Amplitude
     , colorShift : ColorShift
+    , opacity : Opacity
     , vignette : Vignette
     , iris : Iris
     , faces : Faces
@@ -73,6 +76,7 @@ type alias Model =
     { renderMode : RenderMode
     , amplitude : Amplitude
     , colorShift : ColorShift
+    , opacity : Opacity
     , vignette : Vignette
     , iris : Iris
     , faces : Faces
@@ -174,6 +178,10 @@ defaultIris : Iris
 defaultIris = 0.07
 
 
+defaultOpacity : Opacity
+defaultOpacity = 1.0
+
+
 defaultMirror : Float
 defaultMirror = 0.50001
 
@@ -196,6 +204,7 @@ init =
     , renderMode = Triangles
     , amplitude = defaultAmplitude
     , colorShift = defaultColorShift
+    , opacity = defaultOpacity
     , vignette = defaultVignette
     , iris = defaultIris
     , mirror = False
@@ -393,6 +402,7 @@ type alias Uniforms =
         , uMousePosition : Vec2
         , uAmplitude : Vec3
         , uColorShift : Vec3
+        , uOpacity : Float
         , uVignette : Float
         , uIris : Float
         , uSegment : Vec3
@@ -433,6 +443,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         clip =  model.clip |> Maybe.withDefault noClip
         ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
         ( hue, saturation, brightness ) = model.colorShift
+        opacity = model.opacity
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -449,6 +460,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
         , uColorShift = vec3 hue saturation brightness
+        , uOpacity = model.opacity
         , uVignette = model.vignette
         , uIris = model.iris
         , paused = v.paused
@@ -609,6 +621,7 @@ vertexShader =
 
         uniform vec3 uAmplitude;
         uniform vec3 uColorShift;
+        uniform float uOpacity;
 
         uniform vec2 uMousePosition;
         uniform float uMirror;
@@ -790,6 +803,7 @@ fragmentShader =
         uniform vec2 uScale;
         uniform float uVignette;
         uniform float uIris;
+        uniform float uOpacity;
         uniform int uLayerIndex;
 
 
@@ -872,12 +886,11 @@ fragmentShader =
              gl_FragColor.rgb =  mix(vColor.rgb, shadowRGB, smoothstep(0.0, 1.3 - uIris, distance(actPos, vec2(0.5))));
 
 
-            // opacity
-         //    if(low_poly) {
-           //    gl_FragColor.a = 0.6;
-          // }
 
-         //  gl_FragColor.rgb *= gl_FragColor.a;
+               gl_FragColor.a = uOpacity;
+
+
+            // gl_FragColor.rgb *= gl_FragColor.a;
 
 
 
