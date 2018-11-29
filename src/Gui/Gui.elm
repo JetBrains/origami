@@ -21,11 +21,17 @@ subscriptions : Model umsg -> Sub (Msg umsg)
 subscriptions model = Sub.batch []
 
 
-update : Msg umsg -> Model umsg -> Model umsg -- ( UI, Cmd Msg )
-update msg ui =
+update
+    : (umsg -> umodel -> ( umodel, Cmd umsg ))
+    -> umodel
+    -> Msg umsg
+    -> Model umsg
+    -> ( ( umodel, Cmd umsg ), Model umsg )
+update userUpdate userModel msg ui =
     case msg of
         Tune pos value ->
-            ui
+            ( userModel ! []
+            , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -33,8 +39,10 @@ update msg ui =
                             Knob label _ -> Knob label value
                             _ -> cell
                     )
+            )
         On pos ->
-            ui
+            ( userModel ! []
+            , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -42,8 +50,10 @@ update msg ui =
                             Toggle label _ -> Toggle label TurnedOn
                             _ -> cell
                     )
+            )
         Off pos ->
-            ui
+            ( userModel ! []
+            , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -51,8 +61,10 @@ update msg ui =
                             Toggle label _ -> Toggle label TurnedOff
                             _ -> cell
                     )
+            )
         ExpandNested pos ->
-            ui
+            ( userModel ! []
+            , ui
                 |> shiftFocusTo pos
                 |> collapseAllAbove pos
                 |> updateCell pos
@@ -62,8 +74,10 @@ update msg ui =
                                 Nested label Expanded cells
                             _ -> cell
                     )
+            )
         CollapseNested pos ->
-            ui
+            ( userModel ! []
+            , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -73,9 +87,10 @@ update msg ui =
                             _ -> cell
 
                   )
-
+            )
         ExpandChoice pos ->
-            ui
+            ( userModel ! []
+            , ui
                 |> collapseAllAbove pos
                 |> shiftFocusTo pos
                 |> updateCell pos
@@ -85,8 +100,10 @@ update msg ui =
                                 Choice label Expanded selection handler cells
                             _ -> cell
                     )
+            )
         CollapseChoice pos ->
-            ui
+            ( userModel ! []
+            , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -95,8 +112,10 @@ update msg ui =
                                 Choice label Collapsed selection handler cells
                             _ -> cell
                     )
+            )
         Select pos ->
-            let
+            ( userModel ! []
+            , let
                 parentPos = getParentPos pos |> Maybe.withDefault nowhere
                 index = getIndexOf pos |> Maybe.withDefault -1
             in
@@ -109,11 +128,17 @@ update msg ui =
                                     Choice label expanded index handler cells
                                 _ -> cell
                         )
+            )
+
+        SendToUser userMsg -> ( userUpdate userMsg userModel, ui )
+
+        SelectAndSendToUser pos _ ->
+            update userUpdate userModel (Select pos) ui
 
         ShiftFocusLeftAt pos ->
-            ui |> shiftFocusBy -1 pos
+            ( userModel ! [], ui |> shiftFocusBy -1 pos )
 
         ShiftFocusRightAt pos ->
-            ui |> shiftFocusBy 1 pos
+            ( userModel ! [], ui |> shiftFocusBy 1 pos )
 
-        _ -> ui
+        NoOp -> ( userModel ! [], ui )

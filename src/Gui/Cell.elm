@@ -21,7 +21,7 @@ type alias Cells umsg = List (Cell umsg)
 
 type alias Handler umsg = (() -> umsg)
 
-type alias ChoiceHandler umsg = (Int -> String -> umsg)
+type alias ChoiceHandler umsg = (Int -> String -> () -> umsg)
 
 
 type alias Nest umsg =
@@ -74,7 +74,8 @@ type Msg umsg
     -- | Move NestPos Int
     | ShiftFocusLeftAt NestPos
     | ShiftFocusRightAt NestPos
-    | UserMsg umsg
+    | SendToUser umsg
+    | SelectAndSendToUser NestPos umsg
     -- | Color
 
 
