@@ -53,11 +53,12 @@ traverseCells f cells =
                             nest.cells
                                 |> List.indexedMap (scanCell (Just nestPos))
                         }
-                Choice label state selected nest ->
+                Choice label state selected handler nest ->
                     Choice
                         label
                         state
                         selected
+                        handler
                         { nest
                         | cells =
                             nest.cells |>
@@ -77,8 +78,8 @@ traverseAllNests f nest =
             case cell of
                 Nested label state nest ->
                     f nest cellPosition |> Nested label state
-                Choice label state selected nest ->
-                    f nest cellPosition |> Choice label state selected
+                Choice label state selected handler nest ->
+                    f nest cellPosition |> Choice label state selected handler
                 _ -> cell
         )
     }
@@ -102,7 +103,7 @@ foldCells_ maybeParentPos f default { cells } =
                     Nested _ _ nest ->
                         foldCells_ (Just nestPos) f (f cell nestPos v) nest
                         -- f cell nestPos <| foldCells_ (Just nestPos) f v nest
-                    Choice _ _ _ nest ->
+                    Choice _ _ _ _ nest ->
                         foldCells_ (Just nestPos) f (f cell nestPos v) nest
                         -- f cell nestPos <| foldCells_ (Just nestPos) f v nest
                     _ -> f cell nestPos v
@@ -119,7 +120,7 @@ foldNests f default nest =
             case cell of
                 Nested _ _ nest ->
                     f nest nestPos v
-                Choice _ _ _ nest ->
+                Choice _ _ _ _ nest ->
                     f nest nestPos v
                 _ -> v
         ) (f nest nowhere default)
@@ -210,11 +211,12 @@ collapseAllAbove position nest =
                             label
                             Collapsed
                             nestedCells
-                    Choice label _ selected nestedCells ->
+                    Choice label _ selected handler nestedCells ->
                         Choice
                             label
                             Collapsed
                             selected
+                            handler
                             nestedCells
                     _ -> cell
             else cell
@@ -286,7 +288,7 @@ findFocus nest =
                         in if isDeeper focusPos prevFocus
                             then focusPos
                             else prevFocus
-                    Choice _ Expanded _ { focus } ->
+                    Choice _ Expanded _ _ { focus } ->
                         let focusPos = pos |> deeper focus
                         in if isDeeper focusPos prevFocus
                             then focusPos

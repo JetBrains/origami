@@ -19,6 +19,7 @@ module Model exposing
     , PortLayerDef
     , PortBlend
     , Msg(..)
+    , mapGui
     )
 
 
@@ -88,6 +89,7 @@ type Msg
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
     | ChangeOpacity LayerIndex FSS.Opacity
+    | Randomize
     | ApplyRandomizer PortModel
     | SavePng
     | NoOp
@@ -316,12 +318,12 @@ gui =
             in
                 nest ( 3, 2 )
                 -- TODO color
-                    [ Choice "colorFn" Collapsed 0 funcGrid
-                    , Choice "colorFt1" Collapsed 1 factorGrid
-                    , Choice "colorFt2" Collapsed 0 factorGrid
-                    , Choice "alphaFn" Collapsed 0 funcGrid
-                    , Choice "alphaFt1" Collapsed 1 factorGrid
-                    , Choice "alphaFt2" Collapsed 0 factorGrid
+                    [ Choice "colorFn" Collapsed 0 chooseBlendColorFn funcGrid
+                    , Choice "colorFt1" Collapsed 1 chooseBlendColorFact1 factorGrid
+                    , Choice "colorFt2" Collapsed 0 chooseBlendColorFact2 factorGrid
+                    , Choice "alphaFn" Collapsed 0 chooseBlendAlphaFn funcGrid
+                    , Choice "alphaFt1" Collapsed 1 chooseBlendAlphaFact1 factorGrid
+                    , Choice "alphaFt2" Collapsed 0 chooseBlendAlphaFact2 factorGrid
                     ]
         svgBlendGrid =
             [ "normal"
@@ -349,7 +351,7 @@ gui =
                         [ Knob "shine" 0
                         , Knob "density" 0
                         ]
-                , Choice "mesh" Collapsed 0 <|
+                , Choice "mesh" Collapsed 0 chooseMesh <|
                     nest ( 2, 1 )
                         [ ChoiceItem "triangles"
                         , ChoiceItem "lines"
@@ -371,17 +373,46 @@ gui =
         svgControls =
             oneLine
                 [ Toggle "visible" TurnedOn
-                , Choice "blend" Collapsed 0 svgBlendGrid
+                , Choice "blend" Collapsed 0 chooseSvgBlend svgBlendGrid
                 ]
+        chooseMesh index label =
+            Bang
+        chooseProduct index label =
+            Bang
+        chooseSize index label =
+            Bang
+        chooseWebGlBlend index label =
+            Bang
+        chooseSvgBlend index label =
+            Bang
+        chooseBlendColorFn index label =
+            Bang
+        chooseBlendColorFact1 index label =
+            Bang
+        chooseBlendColorFact2 index label =
+            Bang
+        chooseBlendAlphaFn index label =
+            Bang
+        chooseBlendAlphaFact1 index label =
+            Bang
+        chooseBlendAlphaFact2 index label =
+            Bang
     in
         oneLine
-            [ Choice "product" Collapsed 0 productsGrid
+            [ Choice "product" Collapsed 0 chooseProduct productsGrid
             , Knob "rotation" 0
-            , Choice "size" Collapsed 0 sizeGrid
-            , Button "save png" <| always Bang
+            , Choice "size" Collapsed 0 chooseSize sizeGrid
+            , Button "save png" <| always SavePng
             , Button "lucky" <| always Bang
             , Nested "logo" Collapsed svgControls
             , Nested "title" Collapsed svgControls
             , Nested "net" Collapsed fssControls
             , Nested "low-poly" Collapsed fssControls
             ]
+
+
+mapGui : Model -> Gui.Msg Msg -> Msg
+mapGui model guiMsg  =
+    case guiMsg of
+        UserMsg msg -> msg
+        _ -> GuiMessage guiMsg

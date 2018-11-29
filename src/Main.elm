@@ -409,9 +409,15 @@ update msg model =
             , model |> getSizeUpdate |> triggerSavePng
             )
 
+        Randomize ->
+            ( model
+            , requestRandomize ()
+            )
+
         ApplyRandomizer portModel ->
             IE.decodePortModel createLayer portModel
                 |> rebuildAllFssLayersWith
+
 
         NoOp -> ( model, Cmd.none )
 
@@ -978,7 +984,7 @@ view model =
                 , onClick TriggerPause
                 ]
         -- , mergeHtmlLayers model |> div [ H.class "svg-layers"]
-        , Gui.view model.gui |> Html.map GuiMessage
+        , Gui.view model.gui |> Html.map (mapGui model)
         ]
 
 
@@ -1089,5 +1095,7 @@ port export_ : String -> Cmd msg
 port exportZip_ : String -> Cmd msg
 
 port triggerSavePng : SizeUpdate -> Cmd msg
+
+port requestRandomize : () -> Cmd msg
 
 -- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg
