@@ -121,32 +121,35 @@ const RENDER_MODES =
 
 
 const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
-{ 'browser window': [ 0, 0 ]
-, '480x297 prodcard' : [ 480, 297 ] //product card
-, '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
-, '640x400 spl' : [ 640, 400 ] // product splash background
-, '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
-, '650x170 nwlt' : [ 650, 170 ] // newsletter
-, '1300x340 nwlt@2x' : [ 1300, 340 ] // @2x newsletter
-, '800x418 tw' : [ 800, 418 ] // Twitter
-, '1200x628 fb' : [ 1200, 628 ] // Facebook
-, '1280x800 wprev' : [ 1280, 800 ] // Webpage Preview
-, '800x400 blog' : [ 800, 400 ] // Blog
-, '1600x800 blog@2x' : [ 1600, 800 ] // @2x Blog
-, '800x155 bfoot' : [ 800, 155 ] // Blog footer
-, '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
-, '2850x1200 landg' : [ 2850, 1200 ] // Landing page
+ {'480x297 prodcard' : [ 480, 297 ] //product card
+    , '960x594 prodcard@2x' : [ 960, 594 ] //@2x product card
+    , '640x400 spl' : [ 640, 400 ] // product splash background
+    , '1280x800 spl@2x' : [ 1280, 800 ] // @2x splash background
+    , '650x170 nwlt' : [ 650, 170 ] // newsletter
+    , '1300x340 nwlt@2x' : [ 1300, 340 ] // @2x newsletter
+    , '800x418 tw' : [ 800, 418 ] // Twitter
+    , '1200x628 fb' : [ 1200, 628 ] // Facebook
+    , '1280x800 wprev' : [ 1280, 800 ] // Webpage Preview
+    , '800x400 blog' : [ 800, 400 ] // Blog
+    , '1600x800 blog@2x' : [ 1600, 800 ] // @2x Blog
+    , '800x155 bfoot' : [ 800, 155 ] // Blog footer
+    , '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
+    , '2850x1200 landg' : [ 2850, 1200 ] // Landing page
+    , 'browser': [ 0, 0 ]
+
 };
 
 
 const WALLPAPER_SIZES =
-  { 'browser window': [ 0, 0 ]
-  , '1920x1980': [ 1920, 1080 ]
-  , '1920x1200': [ 1920, 1200 ]
-  , '1366x768': [ 1366, 768 ]
-  , '1440x900': [ 1440, 900 ]
-  , '1536x864': [ 1536, 864 ]
-  , '1680x1050': [ 1680, 1050 ]
+  {
+     '2560x1440': [ 2560, 1440 ]
+    , '1920x1200': [ 1920, 1200 ]
+    , '1920x1080': [ 1920, 1080 ]
+    , '1680x1050': [ 1680, 1050 ]
+    , '1536x864': [ 1536, 864 ]
+    , '1440x900': [ 1440, 900 ]
+    , '1366x768': [ 1366, 768 ]
+    , 'browser': [ 0, 0 ]
   };
 
 
@@ -185,7 +188,7 @@ const update = (gui) => () => {
 
 const getSizesSet = (mode) => {
   const predefinedSizes = (mode != 'prod') ? RELEASE_SIZES : WALLPAPER_SIZES;
-  predefinedSizes['your screen'] = [
+  predefinedSizes['monitor'] = [
     window.screen.width * window.devicePixelRatio,
     window.screen.height * window.devicePixelRatio
   ];
@@ -254,7 +257,7 @@ const Config = function(layers, defaults, funcs, randomize) {
       }
     });
 
-    this.customSize = PREDEFINED_SIZES['browser window'];
+    this.customSize = PREDEFINED_SIZES['browser'];
 
     //this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(PREDEFINED_SIZES));
@@ -455,7 +458,7 @@ function start(document, model, funcs) {
     const config = new Config(layers, defaults, funcs, randomize(funcs, model, update(gui)));
     const product = gui.add(config, 'product', PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('vertigo ').min(-1.0).max(1.0).step(0.1);
-    const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size preset');
+    const customSize = gui.add(config, 'customSize', PREDEFINED_SIZES).name('size');
     // gui.add(config, 'savePng').name('save png');
     if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
     gui.add(config, 'randomize').name('i feel lucky');
