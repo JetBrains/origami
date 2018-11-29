@@ -79,7 +79,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Development
+initialMode = Production
 
 
 init : ( Model, Cmd Msg )
