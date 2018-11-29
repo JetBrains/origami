@@ -19,7 +19,6 @@ module Model exposing
     , PortLayerDef
     , PortBlend
     , Msg(..)
-    , mapGui
     )
 
 
@@ -375,44 +374,40 @@ gui =
                 [ Toggle "visible" TurnedOn
                 , Choice "blend" Collapsed 0 chooseSvgBlend svgBlendGrid
                 ]
-        chooseMesh index label =
-            Bang
-        chooseProduct index label =
-            Bang
-        chooseSize index label =
-            Bang
-        chooseWebGlBlend index label =
-            Bang
-        chooseSvgBlend index label =
-            Bang
-        chooseBlendColorFn index label =
-            Bang
-        chooseBlendColorFact1 index label =
-            Bang
-        chooseBlendColorFact2 index label =
-            Bang
-        chooseBlendAlphaFn index label =
-            Bang
-        chooseBlendAlphaFact1 index label =
-            Bang
-        chooseBlendAlphaFact2 index label =
-            Bang
+        logMsg_ name index label v =
+            -- Debug.log (name ++ " " ++ toString index ++ " " ++ label) v
+            v
+        chooseMesh index label _ =
+            logMsg_ "mesh" index label <| NoOp
+        chooseProduct index label _ =
+            logMsg_ "product" index label <| NoOp
+        chooseSize index label _ =
+            logMsg_ "size" index label <| NoOp
+        chooseWebGlBlend index label _ =
+            logMsg_ "wglblend" index label <| NoOp
+        chooseSvgBlend index label _ =
+            logMsg_ "svgBlend" index label <| NoOp
+        chooseBlendColorFn index label _ =
+            logMsg_ "blendColorFn" index label <| NoOp
+        chooseBlendColorFact1 index label _ =
+            logMsg_ "blendColorFact1" index label <| NoOp
+        chooseBlendColorFact2 index label _ =
+            logMsg_ "blendColorFact2" index label <| NoOp
+        chooseBlendAlphaFn index label _ =
+            logMsg_ "blendAlphaFn" index label <| NoOp
+        chooseBlendAlphaFact1 index label _ =
+            logMsg_ "blendAlphaFact1" index label <| NoOp
+        chooseBlendAlphaFact2 index label _ =
+            logMsg_ "blendAlphaFact2" index label <| NoOp
     in
         oneLine
             [ Choice "product" Collapsed 0 chooseProduct productsGrid
             , Knob "rotation" 0
             , Choice "size" Collapsed 0 chooseSize sizeGrid
             , Button "save png" <| always SavePng
-            , Button "lucky" <| always Bang
+            , Button "lucky" <| always NoOp
             , Nested "logo" Collapsed svgControls
             , Nested "title" Collapsed svgControls
             , Nested "net" Collapsed fssControls
             , Nested "low-poly" Collapsed fssControls
             ]
-
-
-mapGui : Model -> Gui.Msg Msg -> Msg
-mapGui model guiMsg  =
-    case guiMsg of
-        UserMsg msg -> msg
-        _ -> GuiMessage guiMsg

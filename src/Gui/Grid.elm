@@ -18,7 +18,7 @@ type alias GridCell umsg =
     { cell: Cell umsg
     , nestPos: NestPos
     -- if it's Choice Item, then we'll call this handler on click:
-    , onSelect : Maybe (String -> umsg)
+    , onSelect : Maybe (String -> () -> umsg)
      -- if it's Choice item, then it has selection state:
     , isSelected: Maybe SelectionState
     , isFocused: FocusState
@@ -55,7 +55,7 @@ bottomLeft = (GridPos 0 0)
 
 
 doCellPurpose : GridCell umsg -> Msg umsg
-doCellPurpose { cell, nestPos, isSelected } =
+doCellPurpose { cell, nestPos, isSelected, onSelect } =
     case cell of
         Toggle _ val ->
             if val == TurnedOn then Off nestPos else On nestPos
@@ -64,11 +64,23 @@ doCellPurpose { cell, nestPos, isSelected } =
         Choice _ state _ _ _ ->
             if state == Expanded then CollapseChoice nestPos else ExpandChoice nestPos
         Button _ handler ->
-            handler () |> UserMsg
-        _ -> case isSelected of
+            handler () |> SendToUser
+        ChoiceItem label ->
             -- ( Just parentPos, Just Selected ) -> Deselect parentPos nestPos |> Just
-            Just NotSelected -> Select nestPos
-            _ -> NoOp
+            --case Debug.log "isSelected" isSelected of
+            case isSelected of
+                Just NotSelected ->
+                    -- (Debug.log "onSelect" onSelect)
+                    onSelect
+                        -- |> Maybe.map ((|>) label)
+                        |> Maybe.map (\f -> f label ())
+                        |> Maybe.map (SelectAndSendToUser nestPos)
+                        |> Maybe.withDefault (Select nestPos)
+                _ -> NoOp
+        _ ->
+            case isSelected of
+                Just NotSelected -> Select nestPos
+                _ -> NoOp
 
 
 findHoverMessage : GridCell umsg -> Msg umsg
@@ -77,25 +89,6 @@ findHoverMessage { cell, nestPos }  =
         Knob label value ->
             Tune nestPos (value + 1)
         _ -> NoOp
-
-
-findClickMessage : GridCell umsg -> Msg umsg
-findClickMessage = doCellPurpose
-
-
--- findKeydownMessage : GridCell -> Int -> Msg
--- findKeydownMessage ({ cell, nestPos, isSelected } as gridCell) keyCode =
---     case Debug.log "keyCode" keyCode of
---         -- left arrow
---         37 -> ShiftFocusLeftAt nestPos
---         -- right arrow
---         39 -> ShiftFocusRightAt nestPos
---         -- space
---         33 -> doCellPurpose gridCell |> Maybe.withDefault NoOp
---         -- enter
---         13 -> doCellPurpose gridCell |> Maybe.withDefault NoOp
---         -- else
---         _ -> NoOp
 
 
 viewCellContentDebug : GridPos -> GridCell umsg -> Html (Msg umsg)
@@ -179,7 +172,7 @@ viewCell focus gridPos maybeGridCell =
             maybeGridCell
                 |> Maybe.map
                     (\gridCell ->
-                        [ H.onClick <| findClickMessage gridCell
+                        [ H.onClick <| doCellPurpose gridCell
                         , H.onMouseOver <| findHoverMessage gridCell
                         ]
                     )
@@ -244,7 +237,6 @@ put
     nest
     (Grid gridShape rows) =
     let
-        --a = Debug.log "gPos" (GridPos row col)
         ( gridWidth, _ ) = gridShape
         parentNestLevel = maybeParent
             |> Maybe.map getNestLevel
@@ -257,8 +249,8 @@ put
                     let nestPos = maybeParent |> deeperOrRoot cellIndex
                     in  { cell = cell
                         , nestPos = nestPos
-                        , onSelect = maybeSelectHandler
-                            |> Maybe.map (\handler -> handler cellIndex)
+                        , onSelect = maybeSelectHandler -- we assume it is the choice item, if Just
+                            |> Maybe.map ((|>) cellIndex)
                         , isSelected = case maybeChosenItem of
                             Just chosenIndex ->
                                 Just <|
@@ -270,7 +262,6 @@ put
                             else NotFocused
                         }
                 )
-        -- hasNesting = Debug.log "nests" <| Array.map (\(_, (NestPos nest _)) -> nest) cells
         fits ( row, col ) ( width, height ) =
             (row < height) && ( col < width )
         indexOf ( row, col ) ( width, _ ) =
@@ -393,13 +384,13 @@ keyDownHandler : Nest umsg -> Grid umsg -> Int -> Msg umsg
 keyDownHandler nest grid keyCode =
     let
         (Focus currentFocus) = findFocus nest
-        maybeCurrentCell = Debug.log "currentCell" <| findGridCell currentFocus grid
+        maybeCurrentCell = findGridCell currentFocus grid
         executeCell = maybeCurrentCell
             |> Maybe.map doCellPurpose
             |> Maybe.withDefault NoOp
     -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
     in
-        case Debug.log "keyCode" keyCode of
+        case keyCode of
             -- left arrow
             37 -> ShiftFocusLeftAt currentFocus
             -- right arrow
