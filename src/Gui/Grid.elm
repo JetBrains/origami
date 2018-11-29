@@ -17,7 +17,10 @@ type GridPos = GridPos Int Int
 type alias GridCell umsg =
     { cell: Cell umsg
     , nestPos: NestPos
-    , isSelected: Maybe SelectionState -- if it's under Choice item, then it has selection state
+    -- if it's Choice Item, then we'll call this handler on click:
+    , onSelect : Maybe (String -> umsg)
+     -- if it's Choice item, then it has selection state:
+    , isSelected: Maybe SelectionState
     , isFocused: FocusState
     }
 
@@ -58,8 +61,10 @@ doCellPurpose { cell, nestPos, isSelected } =
             if val == TurnedOn then Off nestPos else On nestPos
         Nested _ state _ ->
             if state == Expanded then CollapseNested nestPos else ExpandNested nestPos
-        Choice _ state _ _ ->
+        Choice _ state _ _ _ ->
             if state == Expanded then CollapseChoice nestPos else ExpandChoice nestPos
+        Button _ handler ->
+            handler () |> UserMsg
         _ -> case isSelected of
             -- ( Just parentPos, Just Selected ) -> Deselect parentPos nestPos |> Just
             Just NotSelected -> Select nestPos
@@ -119,7 +124,7 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
         --         [ text <| showPos pos ++ " nested item: " ++ toString level ++ " "
         --         , viewCell_ pos cell
         --         ]
-        Choice label selected id _ ->
+        Choice label selected id _ _ ->
             span []
                 [ text <| posStr ++ " choice: " ++ label ++ " "
                     ++ toString id
@@ -220,13 +225,14 @@ viewGrid focus (Grid _ grid) =
 
 putAtRoot : GridPos -> Nest umsg -> Grid umsg -> Grid umsg
 putAtRoot gridPos nest grid =
-    put gridPos Nothing Nothing nest grid
+    put gridPos Nothing Nothing Nothing nest grid
 
 
 put
     :  GridPos
     -> Maybe ItemChosen
     -> Maybe NestPos
+    -> Maybe (ChoiceHandler umsg)
     -> Nest umsg
     -> Grid umsg
     -> Grid umsg
@@ -234,6 +240,7 @@ put
     (GridPos row col)
     maybeChosenItem
     maybeParent
+    maybeSelectHandler
     nest
     (Grid gridShape rows) =
     let
@@ -250,6 +257,8 @@ put
                     let nestPos = maybeParent |> deeperOrRoot cellIndex
                     in  { cell = cell
                         , nestPos = nestPos
+                        , onSelect = maybeSelectHandler
+                            |> Maybe.map (\handler -> handler cellIndex)
                         , isSelected = case maybeChosenItem of
                             Just chosenIndex ->
                                 Just <|
@@ -298,13 +307,15 @@ put
                                     (findNextPos row col currentShape shape)
                                     Nothing
                                     (Just nestPos)
+                                    Nothing
                                     nest
                                     grid
-                            Choice _ Expanded selectedItem ({ shape } as nest) ->
+                            Choice _ Expanded selectedItem handler ({ shape } as nest) ->
                                 put
                                     (findNextPos row col currentShape shape)
                                     (Just selectedItem)
                                     (Just nestPos)
+                                    (Just handler)
                                     nest
                                     grid
                             _ -> grid
@@ -402,7 +413,7 @@ keyDownHandler nest grid keyCode =
                 |> Maybe.map (\{ cell } ->
                         case cell of
                             Nested _ Collapsed _ -> ExpandNested currentFocus
-                            Choice _ Collapsed _ _ -> ExpandChoice currentFocus
+                            Choice _ Collapsed _ _ _ -> ExpandChoice currentFocus
                             _ -> NoOp
                     )
                 |> Maybe.withDefault NoOp -- execute as well?
@@ -415,7 +426,7 @@ keyDownHandler nest grid keyCode =
                             |> Maybe.map (\{ cell } ->
                                     case cell of
                                         Nested _ Expanded _ -> CollapseNested parentFocus
-                                        Choice _ Expanded _ _ -> CollapseChoice parentFocus
+                                        Choice _ Expanded _ _ _ -> CollapseChoice parentFocus
                                         _ -> NoOp
                                 )
                             |> Maybe.withDefault NoOp

@@ -21,6 +21,8 @@ type alias Cells umsg = List (Cell umsg)
 
 type alias Handler umsg = (() -> umsg)
 
+type alias ChoiceHandler umsg = (Int -> String -> umsg)
+
 
 type alias Nest umsg =
     { focus: Int
@@ -54,8 +56,9 @@ type Cell umsg
     | Toggle Label ToggleState
     | Button Label (Handler umsg)
     | Nested Label ExpandState (Nest umsg)
-    | Choice Label ExpandState ItemChosen (Nest umsg)
+    | Choice Label ExpandState ItemChosen (ChoiceHandler umsg) (Nest umsg)
     | ChoiceItem Label
+    -- | ChoiceItem Int Label
 
 
 type Msg umsg
@@ -166,7 +169,7 @@ renderCell position (Focus focus) isSelected cell =
                                 if state == TurnedOn then onColor else offColor)
                             []
                         ]
-                Choice _ state itemChosen { cells } ->
+                Choice _ state itemChosen _ { cells } ->
                     g [ class "gui-choice" ]
                         [ text_
                             (textAttrs (cellWidth / 2) (cellHeight / 2) baseColor)
@@ -210,7 +213,7 @@ renderCell position (Focus focus) isSelected cell =
                 Toggle label state -> label
                 Button label _ -> label
                 Nested label _ _ -> label
-                Choice label _ itemChosen _ -> label
+                Choice label _ itemChosen _ _ -> label
                 ChoiceItem label -> label
         labelBackWidth = cellWidth * 2/3
         labelBackHeight = 20

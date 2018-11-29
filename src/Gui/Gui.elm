@@ -71,7 +71,9 @@ update msg ui =
                             Nested label _ cells ->
                                 Nested label Collapsed cells
                             _ -> cell
-                    )
+
+                  )
+
         ExpandChoice pos ->
             ui
                 |> collapseAllAbove pos
@@ -79,8 +81,8 @@ update msg ui =
                 |> updateCell pos
                     (\cell ->
                         case cell of
-                            Choice label _ selection cells ->
-                                Choice label Expanded selection cells
+                            Choice label _ selection handler cells ->
+                                Choice label Expanded selection handler cells
                             _ -> cell
                     )
         CollapseChoice pos ->
@@ -89,8 +91,8 @@ update msg ui =
                 |> updateCell pos
                     (\cell ->
                         case cell of
-                            Choice label _ selection cells ->
-                                Choice label Collapsed selection cells
+                            Choice label _ selection handler cells ->
+                                Choice label Collapsed selection handler cells
                             _ -> cell
                     )
         Select pos ->
@@ -103,8 +105,8 @@ update msg ui =
                     |> updateCell parentPos
                         (\cell ->
                             case cell of
-                                Choice label expanded selection cells ->
-                                    Choice label expanded index cells
+                                Choice label expanded selection handler cells ->
+                                    Choice label expanded index handler cells
                                 _ -> cell
                         )
 
