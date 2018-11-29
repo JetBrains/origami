@@ -22,9 +22,17 @@ module Model exposing
 
 
 import Time exposing (Time)
+import Window
+import Mouse exposing (Position)
+
+import Time exposing (Time)
 
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
+
+import Gui.Gui as Gui
+import Gui.Cell exposing (..)
+import Gui.Nest exposing (..)
 
 import Product exposing (Product)
 import Product
@@ -42,6 +50,46 @@ type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
 type alias CreateLayer = LayerKind -> LayerModel -> Layer
+
+
+type Msg
+    = Bang
+    | Animate Time
+    | GuiMessage (Gui.Msg Msg)
+    | Resize Window.Size
+    | ResizeFromPreset Window.Size
+    | Locate Position
+    | Rotate Float
+    | Import String
+    | Export
+    | ExportZip
+    | TimeTravel Float
+    | BackToNow
+    | Pause
+    | Continue
+    | TriggerPause
+    | HideControls
+    | ChangeProduct Product
+    | TurnOn LayerIndex
+    | TurnOff LayerIndex
+    | MirrorOn LayerIndex
+    | MirrorOff LayerIndex
+    | Configure LayerIndex LayerModel
+    | ChangeWGLBlend LayerIndex WGLBlend.Blend
+    | ChangeSVGBlend LayerIndex SVGBlend.Blend
+    | RebuildFss LayerIndex FSS.SerializedScene
+    --| RebuildOnClient LayerIndex FSS.SerializedScene
+    | ChangeFssRenderMode LayerIndex FSS.RenderMode
+    | ChangeFaces LayerIndex ( Int, Int )
+    | ChangeLightSpeed LayerIndex Int
+    | ChangeVignette LayerIndex FSS.Vignette
+    | ChangeIris LayerIndex FSS.Iris
+    | ChangeAmplitude LayerIndex FSS.AmplitudeChange
+    | ShiftColor LayerIndex FSS.ColorShiftPatch
+    | ApplyRandomizer PortModel
+    | SavePng
+    | NoOp
+
 
 type UiMode
     = Development
@@ -119,7 +167,7 @@ type alias PortBlend =
 
 type alias Model =
     { mode : UiMode
-    , gui : Gui.Model
+    , gui : Gui.Model Msg
     , paused : Bool
     , autoRotate : Bool
     , fps : Int
@@ -164,10 +212,10 @@ type alias PortLayerDef =
     }
 
 
-initEmpty : UiMode -> Model
-initEmpty mode =
+initEmpty : UiMode -> Gui.Model Msg -> Model
+initEmpty mode gui =
     { mode = mode
-    , gui = Gui.init
+    , gui = gui
     , paused = False
     , autoRotate = False
     , fps = 0
@@ -187,12 +235,13 @@ initEmpty mode =
 
 init
     :  UiMode
+    -> Gui.Model Msg
     -> List ( LayerKind, String, LayerModel )
     -> CreateLayer
     -> Model
-init mode initialLayers createLayer =
+init mode gui initialLayers createLayer =
     let
-        initialModel = initEmpty mode
+        initialModel = initEmpty mode gui
     in
         { initialModel
         | layers = initialLayers |> List.map
@@ -209,3 +258,126 @@ init mode initialLayers createLayer =
 emptyLayer : Layer
 emptyLayer =
     SVGLayer NoContent SVGBlend.default
+
+
+gui : Gui.Model Msg
+gui =
+    let
+        productsGrid =
+            [ "jetbrains"
+            , "intellij"
+            , "phpstorm"
+            , "pycharm"
+            , "rubymine"
+            , "webstorm"
+            , "clion"
+            , "datagrip"
+            , "appcode"
+            , "goland"
+            , "resharper"
+            , "resharper-cpp"
+            --, "dotcover"
+            -- TODO
+            ]
+                |> List.map ChoiceItem
+                |> nest ( 4, 3 )
+        sizeGrid =
+            [ "window"
+            , "1920x1980"
+            , "1366x768"
+            , "1440x900"
+            , "1536x864"
+            , "1680x1050"
+            ]
+                |> List.map ChoiceItem
+                |> nest ( 2, 3 )
+        webglBlendGrid =
+            let
+                funcGrid =
+                    [ "+", "-", "R-" ]
+                        |> List.map ChoiceItem
+                        |> nest ( 3, 1 )
+                factorGrid =
+                    [ "0", "1"
+                    , "sC", "1-sC"
+                    , "dC", "1-dC"
+                    , "sA", "1-sA"
+                    , "dA", "1-dA"
+                    , "AS"
+                    , "CC", "1-CC"
+                    , "CA", "1-CA"
+                    ]
+                        |> List.map ChoiceItem
+                        |> nest (8, 2)
+            in
+                nest ( 3, 2 )
+                -- TODO color
+                    [ Choice "colorFn" Collapsed 0 funcGrid
+                    , Choice "colorFt1" Collapsed 1 factorGrid
+                    , Choice "colorFt2" Collapsed 0 factorGrid
+                    , Choice "alphaFn" Collapsed 0 funcGrid
+                    , Choice "alphaFt1" Collapsed 1 factorGrid
+                    , Choice "alphaFt2" Collapsed 0 factorGrid
+                    ]
+        svgBlendGrid =
+            [ "normal"
+            , "overlay"
+            , "multiply"
+            , "darken"
+            , "lighten"
+            , "multiply"
+            , "multiply"
+            , "multiply"
+            , "multiply"
+            ]
+                |> List.map ChoiceItem
+                |> nest ( 3, 3 )
+        amplitudeGrid = noChildren
+        fssControls =
+            oneLine
+                [ Toggle "visible" TurnedOn
+                , Toggle "mirror" TurnedOff
+                , Knob "lights" 0
+                , Knob "col" 0
+                , Knob "row" 0
+                , Nested "fog" Collapsed <|
+                    nest ( 2, 1 )
+                        [ Knob "shine" 0
+                        , Knob "density" 0
+                        ]
+                , Choice "mesh" Collapsed 0 <|
+                    nest ( 2, 1 )
+                        [ ChoiceItem "triangles"
+                        , ChoiceItem "lines"
+                        ]
+                , Nested "ranges" Collapsed <|
+                        nest ( 3, 1 )
+                            [ Knob "horizontal" 0
+                            , Knob "vertical" 0
+                            , Knob "depth" 0
+                            ]
+                , Nested "hsb" Collapsed <|
+                    nest ( 3, 1 )
+                        [ Knob "hue" 0
+                        , Knob "saturation" 0
+                        , Knob "brightness" 0
+                        ]
+                , Nested "blend" Collapsed webglBlendGrid
+                ]
+        svgControls =
+            oneLine
+                [ Toggle "visible" TurnedOn
+                , Choice "blend" Collapsed 0 svgBlendGrid
+                ]
+    in
+        oneLine
+            [ Choice "product" Collapsed 0 productsGrid
+            , Knob "rotation" 0
+            , Choice "size" Collapsed 0 sizeGrid
+            , Button "save png" <| always ()
+            , Button "lucky" <| always ()
+            , Nested "logo" Collapsed svgControls
+            , Nested "title" Collapsed svgControls
+            , Nested "net" Collapsed fssControls
+            , Nested "low-poly" Collapsed fssControls
+            ]
