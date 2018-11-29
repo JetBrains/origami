@@ -652,7 +652,15 @@ vertexShader =
         }
 
         vec3 lightOscillators(vec3 arg) {
-            return vec3( 2.0 * sin( 5.0 * arg[0]), sin( 6.0 * arg[1]), sin(arg[2]));
+           // return vec3( 2.0 * sin( 5.0 * arg[0]), sin( 6.0 * arg[1]), sin(arg[2]));
+
+             return vec3(
+                 cos(3.0 * arg[0]),
+                 sin(2.0 * arg[1]),
+                  sin(arg[2])
+                  );
+
+
         }
 
         vec3 rgb2hsv(vec3 c){
@@ -709,8 +717,8 @@ vertexShader =
             vec3 amplitudes = uAmplitude * uSegment;
 
             // Light geometry and magnitudes
-            vec3 orbitFactor = !background ? vec3(2.5, 2.5, 2.0) : vec3(-2.5, 1.5, 0.2) ;
-            vec3 lightsSpeed = !background ? vec3(uLightSpeed * 10.0, uLightSpeed  * 10.0, 100.0) : vec3(uLightSpeed, uLightSpeed  * 5.0, 150.0) ;
+            vec3 orbitFactor = !background ? vec3(2.5, 2.5, 2.5) : vec3(-2.5, 1.5, 1.2) ;
+            vec3 lightsSpeed = !background ? vec3(uLightSpeed * 40.0, uLightSpeed  * 10.0, 100.0) : vec3(uLightSpeed, uLightSpeed  * 5.0, 150.0) ;
 
 
 
