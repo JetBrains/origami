@@ -5,6 +5,7 @@ const App = require('./src/Main.elm');
 const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
 const import_ = (app, importedState) => {
+    document.body.style.backgroundColor = importedState.background;
 
     const parsedState = importedState;
 

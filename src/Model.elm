@@ -87,6 +87,7 @@ type Msg
     | ChangeIris LayerIndex FSS.Iris
     | ChangeAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
+    | ChangeOpacity LayerIndex FSS.Opacity
     | ApplyRandomizer PortModel
     | SavePng
     | NoOp
@@ -167,7 +168,8 @@ type alias PortBlend =
 
 
 type alias Model =
-    { mode : UiMode
+    { background: String
+    , mode : UiMode
     , gui : Gui.Model Msg
     , paused : Bool
     , autoRotate : Bool
@@ -190,7 +192,8 @@ type alias Model =
 
 
 type alias PortModel =
-    { layers : List PortLayerDef
+    { background : String
+    , layers : List PortLayerDef
     , mode : String
     , mouse : ( Int, Int )
     , now : Time.Time
@@ -215,7 +218,8 @@ type alias PortLayerDef =
 
 initEmpty : UiMode -> Model
 initEmpty mode =
-    { mode = mode
+    { background = "#333"
+    , mode = mode
     , gui = gui
     , paused = False
     , autoRotate = False

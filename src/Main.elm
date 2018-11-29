@@ -398,6 +398,12 @@ update msg model =
             , Cmd.none
             )
 
+        ChangeOpacity index newOpacity ->
+            ( model |> updateFss index
+                (\fssModel -> { fssModel | opacity = newOpacity })
+            , Cmd.none
+            )
+
         SavePng ->
             ( model
             , model |> getSizeUpdate |> triggerSavePng
@@ -415,6 +421,7 @@ getSizeUpdate model =
     { size = model.size
     , product = Product.encode model.product
     , coverSize = Product.getCoverTextSize model.product
+    , background = model.background
     }
 
 
@@ -699,6 +706,7 @@ subscriptions model =
         , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
         , changeAmplitude (\{value, layer} -> ChangeAmplitude layer value)
         , shiftColor (\{value, layer} -> ShiftColor layer value)
+        , changeOpacity (\{value, layer} -> ChangeOpacity layer value)
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , changeIris (\{value, layer} -> ChangeIris layer value)
         , setCustomSize
@@ -1036,6 +1044,8 @@ port changeAmplitude : ({ value: FSS.AmplitudeChange, layer: LayerIndex } -> msg
 
 port shiftColor : ({ value: FSS.ColorShiftPatch, layer: LayerIndex } -> msg) -> Sub msg
 
+port changeOpacity : ({ value: FSS.Opacity, layer: LayerIndex } -> msg) -> Sub msg
+
 port setCustomSize : ((Int, Int) -> msg) -> Sub msg
 
 port applyRandomizer : (PortModel -> msg) -> Sub msg
@@ -1061,6 +1071,7 @@ type alias SizeUpdate =
     { size: Size
     , product: String
     , coverSize: Size
+    , background: String
     }
 
 port startGui : PortModel -> Cmd msg
