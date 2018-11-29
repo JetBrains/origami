@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    background-color: #333;
+    padding: 0;
 }
 
 #patch-target {
@@ -167,7 +167,7 @@ svg.text-layer {
     text-decoration: none;
     border: 1px solid rgba(255, 255, 255, 0.3);
     background: #000;
-    
+
 }
 
 
@@ -181,7 +181,7 @@ svg.text-layer {
 
 
 }
-/* 
+/*
 .export_html5:hover {
     background-color: #0775ba;
 } */

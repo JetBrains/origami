@@ -157,7 +157,7 @@ const BLENDS_SETS =
   { 'normal': [ [ '+', '1', '0' ], [ '+', '1', '0' ] ]
   , 'soft': [ [ '+', 'sC', '1-sC' ], [ '+', 'sC', '1-sC' ] ]
   , 'caustic': [ [ '+', 'sC', '1' ], [ '+', '1', '0' ] ]
-  , 'darkul': [ [ '+', 'sC', '0' ], [ '+', '1', '0' ] ]
+  , 'kobold': [ [ '+', 'sC', '0' ], [ '+', '1', '0' ] ]
   , 'crystal': [ [ '+', 'sC', 'sC' ], [ '+', '1', '0' ] ]
   , 'dark swan': [ [ '+', '0', 'sC' ], [ '+', '1', '0' ] ]
   , 'chromatic': [ [ '+', '1', '1-CC' ], [ '+', '1', '0' ] ]
@@ -251,6 +251,7 @@ const Config = function(layers, defaults, funcs, randomize) {
         this['amplitudeX' + index] = layer.model.amplitude[0];
         this['amplitudeY' + index] = layer.model.amplitude[1];
         this['amplitudeZ' + index] = layer.model.amplitude[2];
+        this['opacity' + index] = layer.model.opacity;
         this['hue' + index] = layer.model.colorShift[0];
         this['saturation' + index] = layer.model.colorShift[1];
         this['brightness' + index] = layer.model.colorShift[2];
@@ -416,6 +417,8 @@ function start(document, model, funcs) {
         const amplitudeZ = amplitudeFolder.add(config, 'amplitudeZ' + index).name('depth')
           .min(0.0).max(1.0);
 
+        const opacity = folder.add(config, 'opacity' + index).name('opacity').min(0).max(1).step(0.01);
+
         const colorShiftFolder = folder.addFolder('coloring');
         const hue = colorShiftFolder.add(config, 'hue' + index).name('hue')
           .min(-1.0).max(1.0).step(0.01);
@@ -441,6 +444,8 @@ function start(document, model, funcs) {
         amplitudeZ.onFinishChange(value => {
           funcs.changeAmplitude(index)(null, null, value);
         });
+
+        opacity.onFinishChange(funcs.changeOpacity(index));
 
         hue.onFinishChange(value => {
           funcs.shiftColor(index)(value, null, null);
@@ -572,6 +577,10 @@ const randomize = (funcs, model, updateGui) => (config) => () => {
         config['amplitudeX' + index] = amplitudeX;
         config['amplitudeY' + index] = amplitudeY;
         config['amplitudeZ' + index] = amplitudeZ;
+
+        const opacity = Math.random();
+        layerDef.model.opacity = opacity;
+        config['opacity' + index] = opacity;
 
 
         const [ hue, saturation, brightness ] =

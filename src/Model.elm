@@ -117,7 +117,8 @@ type alias PortBlend =
 
 
 type alias Model =
-    { mode : UiMode
+    { background: String
+    , mode : UiMode
     , paused : Bool
     , autoRotate : Bool
     , fps : Int
@@ -139,7 +140,8 @@ type alias Model =
 
 
 type alias PortModel =
-    { layers : List PortLayerDef
+    { background : String
+    , layers : List PortLayerDef
     , mode : String
     , mouse : ( Int, Int )
     , now : Time.Time
@@ -160,11 +162,12 @@ type alias PortLayerDef =
     , name : String
     , model : String
     }
-    
+
 
 initEmpty : UiMode -> Model
 initEmpty mode =
-    { mode = mode
+    { background = "#333"
+    , mode = mode
     , paused = False
     , autoRotate = False
     , fps = 0
