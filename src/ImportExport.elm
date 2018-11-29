@@ -122,7 +122,7 @@ encodeLayerModel layerModel =
             _ -> []
 
 
-encodeModel_ : M.Model umsg -> E.Value
+encodeModel_ : M.Model -> E.Value
 encodeModel_ model =
     E.object
         [ ( "mode", E.string <| encodeMode model.mode )
@@ -145,11 +145,11 @@ encodeModel_ model =
         ]
 
 
-encodeModel : M.Model umsg -> String
+encodeModel : M.Model -> String
 encodeModel model = model |> encodeModel_ |> E.encode 2
 
 
-encodePortModel : M.Model umsg -> M.PortModel
+encodePortModel : M.Model -> M.PortModel
 encodePortModel model =
     { mode = encodeMode model.mode
     , now = model.now
@@ -164,11 +164,11 @@ encodePortModel model =
     }
 
 
-decodePortModel : M.CreateLayer -> M.PortModel -> Gui.Model umsg -> (M.Model umsg)
-decodePortModel createLayer portModel gui =
+decodePortModel : M.CreateLayer -> M.PortModel -> M.Model
+decodePortModel createLayer portModel =
     let
         mode = decodeMode portModel.mode
-        initialModel = M.initEmpty mode gui
+        initialModel = M.initEmpty mode
     in
         { initialModel
         | mode = mode
@@ -385,12 +385,12 @@ layerModelDecoder kind =
             M.NoModel |> D.decode
 
 
-modelDecoder : M.UiMode -> Gui.Model umsg -> M.CreateLayer -> D.Decoder (M.Model umsg)
-modelDecoder mode gui createLayer =
+modelDecoder : M.UiMode -> M.CreateLayer -> D.Decoder M.Model
+modelDecoder mode createLayer =
     let
         createModel theta omega layers size origin mouse now productStr =
             let
-                initialModel = M.init mode gui [] createLayer
+                initialModel = M.init mode [] createLayer
                 product = Product.decode productStr
             in
                 { initialModel
@@ -416,9 +416,9 @@ modelDecoder mode gui createLayer =
             |> D.required "product" D.string
 
 
-decodeModel : M.UiMode -> Gui.Model umsg -> M.CreateLayer -> String -> Maybe (M.Model umsg)
-decodeModel mode gui createLayer modelStr =
-    D.decodeString (modelDecoder mode gui createLayer) modelStr
+decodeModel : M.UiMode -> M.CreateLayer -> String -> Maybe M.Model
+decodeModel mode createLayer modelStr =
+    D.decodeString (modelDecoder mode createLayer) modelStr
         -- |> Debug.log "Decode Result: "
         |> Result.toMaybe
 
