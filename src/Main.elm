@@ -86,17 +86,20 @@ update msg model =
             )
 
         GuiMessage guiMsg ->
-            let
-                -- a_ = Debug.log "guiMsg" guiMsg
-                ( ( newModel, commands ), newGui ) =
-                    model.gui |> Gui.update update model guiMsg
-            in
-                (
-                    { newModel
-                    | gui = newGui
-                    }
-                , commands
-                )
+            case model.gui of
+                Just gui ->
+                    let
+                        -- a_ = Debug.log "guiMsg" guiMsg
+                        ( ( newModel, commands ), newGui ) =
+                            gui |> Gui.update update model guiMsg
+                    in
+                        (
+                            { newModel
+                            | gui = Just newGui
+                            }
+                        , commands
+                        )
+                Nothing -> ( model, Cmd.none )
 
         Animate dt ->
             (
@@ -989,7 +992,10 @@ view model =
                 , onClick TriggerPause
                 ]
         -- , mergeHtmlLayers model |> div [ H.class "svg-layers"]
-        , Gui.view model.gui |> Html.map GuiMessage
+        , model.gui
+            |> Maybe.map Gui.view
+            |> Maybe.map (Html.map GuiMessage)
+            |> Maybe.withDefault (div [] [])
         ]
 
 
