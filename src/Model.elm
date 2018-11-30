@@ -44,6 +44,7 @@ import Layer.Voronoi as Voronoi
 import Layer.Template as Template
 import Layer.Vignette as Vignette
 
+
 type alias LayerIndex = Int
 
 type alias Size = (Int, Int)
@@ -388,22 +389,22 @@ gui =
             layerIndex |> if (state == TurnedOn) then MirrorOn else MirrorOff
         toggleVisibility layerIndex state =
             layerIndex |> if (state == TurnedOn) then TurnOn else TurnOff
-        chooseMesh layerIndex index label =
-            NoOp
-        chooseProduct index label =
+        chooseMesh layerIndex _ label =
+            FSS.decodeRenderMode label |> ChangeFssRenderMode layerIndex
+        chooseProduct _ label =
             case label of
                 "resharper c++" -> ChangeProduct Product.ReSharperCpp
                 "intellij idea" -> ChangeProduct Product.IntelliJ
                 _ -> ChangeProduct <| Product.decode label
-        chooseSize index label =
+        chooseSize _ label =
             sizePresets
                 |> Dict.get label
                 |> Maybe.map (\(w, h) -> ResizeFromPreset <| Window.Size w h)
                 |> Maybe.withDefault NoOp -- TODO: fitWindow
         chooseWebGlBlend layerIndex index label =
             NoOp
-        chooseSvgBlend layerIndex index label =
-            NoOp
+        chooseSvgBlend layerIndex _ label =
+            ChangeSVGBlend layerIndex <| SVGBlend.decode label
         chooseBlendColorFn layerIndex index label =
             NoOp
         chooseBlendColorFact1 layerIndex index label =
