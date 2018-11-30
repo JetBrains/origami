@@ -171,7 +171,7 @@ type alias PortBlend =
 type alias Model =
     { background: String
     , mode : UiMode
-    , gui : Gui.Model Msg
+    , gui : Maybe (Gui.Model Msg)
     , paused : Bool
     , autoRotate : Bool
     , fps : Int
@@ -221,7 +221,7 @@ initEmpty : UiMode -> Model
 initEmpty mode =
     { background = "#333"
     , mode = mode
-    , gui = gui
+    , gui = Nothing
     , paused = False
     , autoRotate = False
     , fps = 0
@@ -246,17 +246,21 @@ init
     -> Model
 init mode initialLayers createLayer =
     let
-        initialModel = initEmpty mode
+        emptyModel = initEmpty mode
+        modelWithLayers =
+            { emptyModel
+            | layers = initialLayers |> List.map
+                (\(kind, name, layerModel) ->
+                    { kind = kind
+                    , layer = layerModel |> createLayer kind
+                    , name = name
+                    , model = layerModel
+                    , on = True
+                    })
+            }
     in
-        { initialModel
-        | layers = initialLayers |> List.map
-            (\(kind, name, layerModel) ->
-                { kind = kind
-                , layer = layerModel |> createLayer kind
-                , name = name
-                , model = layerModel
-                , on = True
-                })
+        { modelWithLayers
+        | gui = Just <| gui modelWithLayers
         }
 
 
@@ -276,8 +280,8 @@ sizePresets =
         ]
 
 
-gui : Gui.Model Msg
-gui =
+gui : Model -> Gui.Model Msg
+gui from =
     let
         productsGrid =
             [ "jetbrains"
