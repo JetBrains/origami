@@ -132,8 +132,10 @@ update userUpdate userModel msg ui =
 
         SendToUser userMsg -> ( userUpdate userMsg userModel, ui )
 
-        SelectAndSendToUser pos _ ->
-            update userUpdate userModel (Select pos) ui
+        SelectAndSendToUser pos userMsg ->
+            sequenceUpdate userUpdate userModel
+                [ Select pos, SendToUser userMsg ]
+                ui
 
         ShiftFocusLeftAt pos ->
             ( userModel ! [], ui |> shiftFocusBy -1 pos )
@@ -142,3 +144,27 @@ update userUpdate userModel msg ui =
             ( userModel ! [], ui |> shiftFocusBy 1 pos )
 
         NoOp -> ( userModel ! [], ui )
+
+
+sequenceUpdate
+    : (umsg -> umodel -> ( umodel, Cmd umsg ))
+    -> umodel
+    -> List (Msg umsg)
+    -> Model umsg
+    -> ( ( umodel, Cmd umsg ), Model umsg )
+sequenceUpdate userUpdate userModel msgs ui =
+    List.foldr
+        (\msg ( ( userModel, prevCommand ), ui ) ->
+            let
+                ( ( newUserModel, newUserCommand ), newUi ) =
+                    update userUpdate userModel msg ui
+            in
+                (
+                    ( newUserModel
+                    , Cmd.batch [ prevCommand, newUserCommand ]
+                    )
+                , newUi
+                )
+        )
+        ( ( userModel, Cmd.none ), ui )
+        msgs
