@@ -22,10 +22,9 @@ module Model exposing
     )
 
 
-import Time exposing (Time)
+import Dict as Dict
 import Window
 import Mouse exposing (Position)
-
 import Time exposing (Time)
 
 import WebGL.Blend as WGLBlend
@@ -265,6 +264,17 @@ emptyLayer =
     SVGLayer NoContent SVGBlend.default
 
 
+sizePresets : Dict.Dict String ( Int, Int )
+sizePresets =
+    Dict.fromList
+        [ ( "1920x1980", ( 1920, 1980 ) )
+        , ( "1366x768", ( 1366, 769 ) )
+        , ( "1440x900", ( 1440, 900 ) )
+        , ( "1536x864", ( 1536, 864 ) )
+        , ( "1680x1050", ( 1680, 1050 ) )
+        ]
+
+
 gui : Gui.Model Msg
 gui =
     let
@@ -287,16 +297,10 @@ gui =
                 |> List.map ChoiceItem
                 |> nest ( 4, 3 )
         sizeGrid =
-            [ "window"
-            , "1920x1980"
-            , "1366x768"
-            , "1440x900"
-            , "1536x864"
-            , "1680x1050"
-            ]
+            ( "window" :: Dict.keys sizePresets )
                 |> List.map ChoiceItem
                 |> nest ( 2, 3 )
-        webglBlendGrid =
+        webglBlendGrid layerIndex =
             let
                 funcGrid =
                     [ "+", "-", "R-" ]
@@ -317,12 +321,18 @@ gui =
             in
                 nest ( 3, 2 )
                 -- TODO color
-                    [ Choice "colorFn" Collapsed 0 chooseBlendColorFn funcGrid
-                    , Choice "colorFt1" Collapsed 1 chooseBlendColorFact1 factorGrid
-                    , Choice "colorFt2" Collapsed 0 chooseBlendColorFact2 factorGrid
-                    , Choice "alphaFn" Collapsed 0 chooseBlendAlphaFn funcGrid
-                    , Choice "alphaFt1" Collapsed 1 chooseBlendAlphaFact1 factorGrid
-                    , Choice "alphaFt2" Collapsed 0 chooseBlendAlphaFact2 factorGrid
+                    [ Choice "colorFn" Collapsed 0
+                        (chooseBlendColorFn layerIndex) funcGrid
+                    , Choice "colorFt1" Collapsed 1
+                        (chooseBlendColorFact1 layerIndex) factorGrid
+                    , Choice "colorFt2" Collapsed 0
+                        (chooseBlendColorFact2 layerIndex) factorGrid
+                    , Choice "alphaFn" Collapsed 0
+                        (chooseBlendAlphaFn layerIndex) funcGrid
+                    , Choice "alphaFt1" Collapsed 1
+                        (chooseBlendAlphaFact1 layerIndex) factorGrid
+                    , Choice "alphaFt2" Collapsed 0
+                        (chooseBlendAlphaFact2 layerIndex) factorGrid
                     ]
         svgBlendGrid =
             [ "normal"
@@ -338,7 +348,7 @@ gui =
                 |> List.map ChoiceItem
                 |> nest ( 3, 3 )
         amplitudeGrid = noChildren
-        fssControls =
+        fssControls layerIndex =
             oneLine
                 [ Toggle "visible" TurnedOn
                 , Toggle "mirror" TurnedOff
@@ -350,7 +360,7 @@ gui =
                         [ Knob "shine" 0
                         , Knob "density" 0
                         ]
-                , Choice "mesh" Collapsed 0 chooseMesh <|
+                , Choice "mesh" Collapsed 0 (chooseMesh layerIndex) <|
                     nest ( 2, 1 )
                         [ ChoiceItem "triangles"
                         , ChoiceItem "lines"
@@ -367,42 +377,41 @@ gui =
                         , Knob "saturation" 0
                         , Knob "brightness" 0
                         ]
-                , Nested "blend" Collapsed webglBlendGrid
+                , Nested "blend" Collapsed (webglBlendGrid layerIndex)
                 ]
         svgControls =
             oneLine
                 [ Toggle "visible" TurnedOn
                 , Choice "blend" Collapsed 0 chooseSvgBlend svgBlendGrid
                 ]
-        logMsg_ name index label v =
-            -- Debug.log (name ++ " " ++ toString index ++ " " ++ label) v
-            v
-        chooseMesh index label _ =
-            logMsg_ "mesh" index label <| NoOp
+        chooseMesh layerIndex index label _ =
+            NoOp
         chooseProduct index label _ =
-            logMsg_ "product" index label
-                <| case label of
-                    "resharper c++" -> ChangeProduct Product.ReSharperCpp
-                    "intellij idea" -> ChangeProduct Product.IntelliJ
-                    _ -> ChangeProduct <| Product.decode label
+            case label of
+                "resharper c++" -> ChangeProduct Product.ReSharperCpp
+                "intellij idea" -> ChangeProduct Product.IntelliJ
+                _ -> ChangeProduct <| Product.decode label
         chooseSize index label _ =
-            logMsg_ "size" index label <| NoOp
+            sizePresets
+                |> Dict.get label
+                |> Maybe.map (\(w, h) -> ResizeFromPreset <| Window.Size w h)
+                |> Maybe.withDefault NoOp -- TODO: fitWindow
         chooseWebGlBlend index label _ =
-            logMsg_ "wglblend" index label <| NoOp
+            NoOp
         chooseSvgBlend index label _ =
-            logMsg_ "svgBlend" index label <| NoOp
-        chooseBlendColorFn index label _ =
-            logMsg_ "blendColorFn" index label <| NoOp
-        chooseBlendColorFact1 index label _ =
-            logMsg_ "blendColorFact1" index label <| NoOp
-        chooseBlendColorFact2 index label _ =
-            logMsg_ "blendColorFact2" index label <| NoOp
-        chooseBlendAlphaFn index label _ =
-            logMsg_ "blendAlphaFn" index label <| NoOp
-        chooseBlendAlphaFact1 index label _ =
-            logMsg_ "blendAlphaFact1" index label <| NoOp
-        chooseBlendAlphaFact2 index label _ =
-            logMsg_ "blendAlphaFact2" index label <| NoOp
+            NoOp
+        chooseBlendColorFn layerIndex index label _ =
+            NoOp
+        chooseBlendColorFact1 layerIndex index label _ =
+            NoOp
+        chooseBlendColorFact2 layerIndex index label _ =
+            NoOp
+        chooseBlendAlphaFn layerIndex index label _ =
+            NoOp
+        chooseBlendAlphaFact1 layerIndex index label _ =
+            NoOp
+        chooseBlendAlphaFact2 layerIndex index label _ =
+            NoOp
     in
         oneLine
             [ Choice "product" Collapsed 0 chooseProduct productsGrid
@@ -412,6 +421,6 @@ gui =
             , Button "lucky" <| always NoOp
             , Nested "logo" Collapsed svgControls
             , Nested "title" Collapsed svgControls
-            , Nested "net" Collapsed fssControls
-            , Nested "low-poly" Collapsed fssControls
+            , Nested "net" Collapsed (fssControls 2)
+            , Nested "low-poly" Collapsed (fssControls 3)
             ]
