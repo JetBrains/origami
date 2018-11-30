@@ -995,6 +995,7 @@ view model =
         , model.gui
             |> Maybe.map Gui.view
             |> Maybe.map (Html.map GuiMessage)
+            |> Maybe.map (\guiLayer -> div [ H.class "hide-on-space" ] [ guiLayer ])
             |> Maybe.withDefault (div [] [])
         ]
 
