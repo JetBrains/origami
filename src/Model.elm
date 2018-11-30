@@ -422,14 +422,21 @@ gui from =
         chooseBlendAlphaFact2 layerIndex index label =
             NoOp
     in
-        oneLine
+        oneLine <|
             [ Choice "product" Collapsed 0 chooseProduct productsGrid
             , Knob "rotation" 0
             , Choice "size" Collapsed 0 chooseSize sizeGrid
             , Button "save png" <| always SavePng
             , Button "lucky" <| always NoOp
-            , Nested "logo" Collapsed <| svgControls 0
-            , Nested "title" Collapsed <| svgControls 1
-            , Nested "net" Collapsed <| fssControls 2
-            , Nested "low-poly" Collapsed <| fssControls 3
             ]
+            ++ List.indexedMap
+                (\layerIndex { name, layer } ->
+                    case layer of
+                        WebGLLayer _ _ ->
+                            Nested name Collapsed <| fssControls layerIndex
+                            -- FIXME: add `fssControls` only if layer is FSS
+                        SVGLayer _ _ ->
+                            Nested name Collapsed <| svgControls layerIndex
+                )
+                from.layers
+
