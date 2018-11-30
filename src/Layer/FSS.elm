@@ -17,6 +17,7 @@ module Layer.FSS exposing
     -- , defaultFaces
     -- , defaultLightSpeed
     , init
+    , decodeRenderMode, encodeRenderMode
     )
 
 
@@ -346,7 +347,6 @@ convertTriangles material side src =
                         , b |> convertVertex (vec4 b.gradient b.gradient b.gradient 1) material sTriangle side
                         , c |> convertVertex (vec4  c.gradient c.gradient c.gradient 1) material sTriangle side
                         )
-
                     _ ->
                         ( defaultVertex
                         , defaultVertex
@@ -386,6 +386,25 @@ v4fromList list =
         a::b::_ -> vec4 a b 0 0
         [a] -> vec4 a 0 0 0
         _ -> vec4 0 0 0 0
+
+
+encodeRenderMode : RenderMode -> String
+encodeRenderMode mode =
+    case mode of
+        Triangles -> "triangles"
+        Lines -> "lines"
+        PartialLines -> "partial-lines"
+        Points -> "points"
+
+
+decodeRenderMode : String -> RenderMode
+decodeRenderMode str =
+    case str of
+        "triangles" -> Triangles
+        "lines" -> Lines
+        "partial-lines" -> PartialLines
+        "points" -> Points
+        _ -> Triangles
 
 
 -- Shaders

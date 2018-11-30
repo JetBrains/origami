@@ -18,6 +18,7 @@ import WebGL.Settings exposing (sampleAlphaToCoverage)
 import WebGL.Settings.DepthTest as DepthTest
 
 import Model exposing (..)
+import Gui.Gui as Gui
 import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
@@ -33,45 +34,6 @@ import Layer.FSS as FSS
 import Layer.Template as Template
 import Layer.Cover as Cover
 import Layer.Vignette as Vignette
-
-
-type Msg
-    = Bang
-    | Animate Time
-    | Resize Window.Size
-    | ResizeFromPreset Window.Size
-    | Locate Position
-    | Rotate Float
-    | Import String
-    | Export
-    | ExportZip
-    | TimeTravel Float
-    | BackToNow
-    | Pause
-    | Continue
-    | TriggerPause
-    | HideControls
-    | ChangeProduct Product
-    | TurnOn LayerIndex
-    | TurnOff LayerIndex
-    | MirrorOn LayerIndex
-    | MirrorOff LayerIndex
-    | Configure LayerIndex LayerModel
-    | ChangeWGLBlend LayerIndex WGLBlend.Blend
-    | ChangeSVGBlend LayerIndex SVGBlend.Blend
-    | RebuildFss LayerIndex FSS.SerializedScene
-    --| RebuildOnClient LayerIndex FSS.SerializedScene
-    | ChangeFssRenderMode LayerIndex FSS.RenderMode
-    | ChangeFaces LayerIndex ( Int, Int )
-    | ChangeLightSpeed LayerIndex Int
-    | ChangeVignette LayerIndex FSS.Vignette
-    | ChangeIris LayerIndex FSS.Iris
-    | ChangeAmplitude LayerIndex FSS.AmplitudeChange
-    | ShiftColor LayerIndex FSS.ColorShiftPatch
-    | ChangeOpacity LayerIndex FSS.Opacity
-    | ApplyRandomizer PortModel
-    | SavePng
-    | NoOp
 
 
 sizeCoef : Float
@@ -122,6 +84,22 @@ update msg model =
             ( model
             , model |> IE.encodePortModel |> startGui
             )
+
+        GuiMessage guiMsg ->
+            case model.gui of
+                Just gui ->
+                    let
+                        -- a_ = Debug.log "guiMsg" guiMsg
+                        ( ( newModel, commands ), newGui ) =
+                            gui |> Gui.update update model guiMsg
+                    in
+                        (
+                            { newModel
+                            | gui = Just newGui
+                            }
+                        , commands
+                        )
+                Nothing -> ( model, Cmd.none )
 
         Animate dt ->
             (
@@ -428,7 +406,6 @@ update msg model =
             , Cmd.none
             )
 
-
         ChangeOpacity index newOpacity ->
             ( model |> updateFss index
                 (\fssModel -> { fssModel | opacity = newOpacity })
@@ -440,9 +417,15 @@ update msg model =
             , model |> getSizeUpdate |> triggerSavePng
             )
 
+        Randomize ->
+            ( model
+            , requestRandomize ()
+            )
+
         ApplyRandomizer portModel ->
             IE.decodePortModel createLayer portModel
                 |> rebuildAllFssLayersWith
+
 
         NoOp -> ( model, Cmd.none )
 
@@ -478,7 +461,11 @@ updateFss index f model =
         )
 
 
-updateAndRebuildFssWith : LayerIndex -> (FSS.Model -> FSS.Model) -> Model -> ( Model, Cmd Msg )
+updateAndRebuildFssWith
+    : LayerIndex
+    -> (FSS.Model -> FSS.Model)
+    -> Model
+    -> ( Model, Cmd Msg )
 updateAndRebuildFssWith index f curModel =
     let
         newModel = updateFss index f curModel
@@ -715,7 +702,7 @@ subscriptions model =
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
         , changeFssRenderMode (\{value, layer} ->
-            IE.decodeFssRenderMode value |> ChangeFssRenderMode layer)
+            FSS.decodeRenderMode value |> ChangeFssRenderMode layer)
         , changeFacesX (\{value, layer} ->
             case model |> getLayerModel layer of
                 Just (FssModel { faces }) ->
@@ -748,7 +735,7 @@ subscriptions model =
             ChangeWGLBlend layer value
           )
         , changeSVGBlend (\{ layer, value } ->
-            ChangeSVGBlend layer (SVGBlend.decode value)
+            ChangeSVGBlend layer <| SVGBlend.decode value
           )
         , configureLorenz (\{ layer, value } ->
             Configure layer (LorenzModel value)
@@ -952,9 +939,8 @@ view model =
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-        [mergeHtmlLayers model |> div [ H.class "svg-layers"]
-
-       , if model.controlsVisible
+        [ mergeHtmlLayers model |> div [ H.class "svg-layers" ]
+        , if model.controlsVisible
             then ( div
                 [ H.class "overlay-panel import-export-panel hide-on-space" ]
                 [
@@ -1005,6 +991,12 @@ view model =
                     ]
                 , onClick TriggerPause
                 ]
+        -- , mergeHtmlLayers model |> div [ H.class "svg-layers"]
+        , model.gui
+            |> Maybe.map Gui.view
+            |> Maybe.map (Html.map GuiMessage)
+            |> Maybe.map (\guiLayer -> div [ H.class "hide-on-space" ] [ guiLayer ])
+            |> Maybe.withDefault (div [] [])
         ]
 
 
@@ -1115,5 +1107,7 @@ port export_ : String -> Cmd msg
 port exportZip_ : String -> Cmd msg
 
 port triggerSavePng : SizeUpdate -> Cmd msg
+
+port requestRandomize : () -> Cmd msg
 
 -- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg

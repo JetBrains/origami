@@ -18,15 +18,25 @@ module Model exposing
     , PortModel
     , PortLayerDef
     , PortBlend
+    , Msg(..)
     )
 
+
+import Dict as Dict
+import Window
+import Mouse exposing (Position)
 import Time exposing (Time)
 
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 
+import Gui.Gui as Gui
+import Gui.Cell exposing (..)
+import Gui.Nest exposing (..)
+
 import Product exposing (Product)
 import Product
+import Gui.Gui as Gui
 import Layer.FSS as FSS
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
@@ -34,12 +44,54 @@ import Layer.Voronoi as Voronoi
 import Layer.Template as Template
 import Layer.Vignette as Vignette
 
+
 type alias LayerIndex = Int
 
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
 
 type alias CreateLayer = LayerKind -> LayerModel -> Layer
+
+
+type Msg
+    = Bang
+    | Animate Time
+    | GuiMessage (Gui.Msg Msg)
+    | Resize Window.Size
+    | ResizeFromPreset Window.Size
+    | Locate Position
+    | Rotate Float
+    | Import String
+    | Export
+    | ExportZip
+    | TimeTravel Float
+    | BackToNow
+    | Pause
+    | Continue
+    | TriggerPause
+    | HideControls
+    | ChangeProduct Product
+    | TurnOn LayerIndex
+    | TurnOff LayerIndex
+    | MirrorOn LayerIndex
+    | MirrorOff LayerIndex
+    | Configure LayerIndex LayerModel
+    | ChangeWGLBlend LayerIndex WGLBlend.Blend
+    | ChangeSVGBlend LayerIndex SVGBlend.Blend
+    | RebuildFss LayerIndex FSS.SerializedScene
+    --| RebuildOnClient LayerIndex FSS.SerializedScene
+    | ChangeFssRenderMode LayerIndex FSS.RenderMode
+    | ChangeFaces LayerIndex ( Int, Int )
+    | ChangeLightSpeed LayerIndex Int
+    | ChangeVignette LayerIndex FSS.Vignette
+    | ChangeIris LayerIndex FSS.Iris
+    | ChangeAmplitude LayerIndex FSS.AmplitudeChange
+    | ShiftColor LayerIndex FSS.ColorShiftPatch
+    | ChangeOpacity LayerIndex FSS.Opacity
+    | Randomize
+    | ApplyRandomizer PortModel
+    | SavePng
+    | NoOp
 
 
 type UiMode
@@ -119,6 +171,7 @@ type alias PortBlend =
 type alias Model =
     { background: String
     , mode : UiMode
+    , gui : Maybe (Gui.Model Msg)
     , paused : Bool
     , autoRotate : Bool
     , fps : Int
@@ -168,6 +221,7 @@ initEmpty : UiMode -> Model
 initEmpty mode =
     { background = "#333"
     , mode = mode
+    , gui = Nothing
     , paused = False
     , autoRotate = False
     , fps = 0
@@ -192,20 +246,197 @@ init
     -> Model
 init mode initialLayers createLayer =
     let
-        initialModel = initEmpty mode
+        emptyModel = initEmpty mode
+        modelWithLayers =
+            { emptyModel
+            | layers = initialLayers |> List.map
+                (\(kind, name, layerModel) ->
+                    { kind = kind
+                    , layer = layerModel |> createLayer kind
+                    , name = name
+                    , model = layerModel
+                    , on = True
+                    })
+            }
     in
-        { initialModel
-        | layers = initialLayers |> List.map
-            (\(kind, name, layerModel) ->
-                { kind = kind
-                , layer = layerModel |> createLayer kind
-                , name = name
-                , model = layerModel
-                , on = True
-                })
+        { modelWithLayers
+        | gui = Just <| gui modelWithLayers
         }
 
 
 emptyLayer : Layer
 emptyLayer =
     SVGLayer NoContent SVGBlend.default
+
+
+sizePresets : Dict.Dict String ( Int, Int )
+sizePresets =
+    Dict.fromList
+        [ ( "1920x1980", ( 1920, 1980 ) )
+        , ( "1366x768", ( 1366, 769 ) )
+        , ( "1440x900", ( 1440, 900 ) )
+        , ( "1536x864", ( 1536, 864 ) )
+        , ( "1680x1050", ( 1680, 1050 ) )
+        ]
+
+
+gui : Model -> Gui.Model Msg
+gui from =
+    let
+        productsGrid =
+            [ "jetbrains"
+            , "intellij idea"
+            , "phpstorm"
+            , "pycharm"
+            , "rubymine"
+            , "webstorm"
+            , "clion"
+            , "datagrip"
+            , "appcode"
+            , "goland"
+            , "resharper"
+            , "resharper c++"
+            --, "dotcover"
+            -- TODO
+            ]
+                |> List.map ChoiceItem
+                |> nest ( 4, 3 )
+        sizeGrid =
+            ( "window" :: Dict.keys sizePresets )
+                |> List.map ChoiceItem
+                |> nest ( 2, 3 )
+        webglBlendGrid layerIndex =
+            let
+                funcGrid =
+                    [ "+", "-", "R-" ]
+                        |> List.map ChoiceItem
+                        |> nest ( 3, 1 )
+                factorGrid =
+                    [ "0", "1"
+                    , "sC", "1-sC"
+                    , "dC", "1-dC"
+                    , "sA", "1-sA"
+                    , "dA", "1-dA"
+                    , "AS"
+                    , "CC", "1-CC"
+                    , "CA", "1-CA"
+                    ]
+                        |> List.map ChoiceItem
+                        |> nest (8, 2)
+            in
+                nest ( 3, 2 )
+                -- TODO color
+                    [ Choice "colorFn" Collapsed 0
+                        (chooseBlendColorFn layerIndex) funcGrid
+                    , Choice "colorFt1" Collapsed 1
+                        (chooseBlendColorFact1 layerIndex) factorGrid
+                    , Choice "colorFt2" Collapsed 0
+                        (chooseBlendColorFact2 layerIndex) factorGrid
+                    , Choice "alphaFn" Collapsed 0
+                        (chooseBlendAlphaFn layerIndex) funcGrid
+                    , Choice "alphaFt1" Collapsed 1
+                        (chooseBlendAlphaFact1 layerIndex) factorGrid
+                    , Choice "alphaFt2" Collapsed 0
+                        (chooseBlendAlphaFact2 layerIndex) factorGrid
+                    ]
+        svgBlendGrid =
+            [ "normal"
+            , "overlay"
+            , "multiply"
+            , "darken"
+            , "lighten"
+            , "multiply"
+            , "multiply"
+            , "multiply"
+            , "multiply"
+            ]
+                |> List.map ChoiceItem
+                |> nest ( 3, 3 )
+        amplitudeGrid = noChildren
+        fssControls layerIndex =
+            oneLine
+                [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
+                , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
+                , Knob "lights" 0
+                , Knob "col" 0
+                , Knob "row" 0
+                , Nested "fog" Collapsed <|
+                    nest ( 2, 1 )
+                        [ Knob "shine" 0
+                        , Knob "density" 0
+                        ]
+                , Choice "mesh" Collapsed 0 (chooseMesh layerIndex) <|
+                    nest ( 2, 1 )
+                        [ ChoiceItem "triangles"
+                        , ChoiceItem "lines"
+                        ]
+                , Nested "ranges" Collapsed <|
+                        nest ( 3, 1 )
+                            [ Knob "horizontal" 0
+                            , Knob "vertical" 0
+                            , Knob "depth" 0
+                            ]
+                , Nested "hsb" Collapsed <|
+                    nest ( 3, 1 )
+                        [ Knob "hue" 0
+                        , Knob "saturation" 0
+                        , Knob "brightness" 0
+                        ]
+                , Nested "blend" Collapsed (webglBlendGrid layerIndex)
+                ]
+        svgControls layerIndex =
+            oneLine
+                [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
+                , Choice "blend" Collapsed 0 (chooseSvgBlend layerIndex) svgBlendGrid
+                ]
+        toggleMirror layerIndex state =
+            layerIndex |> if (state == TurnedOn) then MirrorOn else MirrorOff
+        toggleVisibility layerIndex state =
+            layerIndex |> if (state == TurnedOn) then TurnOn else TurnOff
+        chooseMesh layerIndex _ label =
+            FSS.decodeRenderMode label |> ChangeFssRenderMode layerIndex
+        chooseProduct _ label =
+            case label of
+                "resharper c++" -> ChangeProduct Product.ReSharperCpp
+                "intellij idea" -> ChangeProduct Product.IntelliJ
+                _ -> ChangeProduct <| Product.decode label
+        chooseSize _ label =
+            sizePresets
+                |> Dict.get label
+                |> Maybe.map (\(w, h) -> ResizeFromPreset <| Window.Size w h)
+                |> Maybe.withDefault NoOp -- TODO: fitWindow
+        chooseWebGlBlend layerIndex index label =
+            NoOp
+        chooseSvgBlend layerIndex _ label =
+            ChangeSVGBlend layerIndex <| SVGBlend.decode label
+        chooseBlendColorFn layerIndex index label =
+            NoOp
+        chooseBlendColorFact1 layerIndex index label =
+            NoOp
+        chooseBlendColorFact2 layerIndex index label =
+            NoOp
+        chooseBlendAlphaFn layerIndex index label =
+            NoOp
+        chooseBlendAlphaFact1 layerIndex index label =
+            NoOp
+        chooseBlendAlphaFact2 layerIndex index label =
+            NoOp
+    in
+        oneLine <|
+            [ Choice "product" Collapsed 0 chooseProduct productsGrid
+            , Knob "rotation" 0
+            , Choice "size" Collapsed 0 chooseSize sizeGrid
+            , Button "save png" <| always SavePng
+            , Button "lucky" <| always NoOp
+            ]
+            ++ List.indexedMap
+                (\layerIndex { name, layer } ->
+                    case layer of
+                        WebGLLayer _ _ ->
+                            Nested (String.toLower name) Collapsed <| fssControls layerIndex
+                            -- FIXME: add `fssControls` only if layer is FSS
+                        SVGLayer _ _ ->
+                            Nested (String.toLower name) Collapsed <| svgControls layerIndex
+                )
+                from.layers
+
