@@ -671,7 +671,15 @@ vertexShader =
         }
 
         vec3 lightOscillators(vec3 arg) {
-            return vec3( 2.0 * sin( 5.0 * arg[0]), sin( 6.0 * arg[1]), sin(arg[2]));
+           // return vec3( 2.0 * sin( 5.0 * arg[0]), sin( 6.0 * arg[1]), sin(arg[2]));
+
+             return vec3(
+                 cos(3.0 * arg[0]),
+                 sin(2.0 * arg[1]),
+                  sin(arg[2])
+                  );
+
+
         }
 
         vec3 rgb2hsv(vec3 c){
@@ -717,7 +725,7 @@ vertexShader =
 
 
             float phase = aPhi;
-            vec3 speed = normalize(aV0) * 0.0008;
+            vec3 speed = normalize(aV0) * 0.0007;
 
             // Create color
              vColor1 = materialAmbient;
@@ -725,12 +733,11 @@ vertexShader =
              vColor = vec4(1.0);
 
             // Calculate the vertex position
-            //vec3 amplitudes = vec3(0.5, 0.2, 0.2) * uSegment;
             vec3 amplitudes = uAmplitude * uSegment;
 
             // Light geometry and magnitudes
-            vec3 orbitFactor = !background ? vec3(2.5, 2.5, 2.0) : vec3(-2.5, 1.5, 0.2) ;
-            vec3 lightsSpeed = !background ? vec3(uLightSpeed * 10.0, uLightSpeed  * 10.0, 100.0) : vec3(uLightSpeed, uLightSpeed  * 5.0, 150.0) ;
+            vec3 orbitFactor = !background ? vec3(2.5, 2.5, 2.5) : vec3(-2.5, 1.5, 1.2) ;
+            vec3 lightsSpeed = !background ? vec3(uLightSpeed * 40.0, uLightSpeed  * 10.0, 100.0) : vec3(uLightSpeed, uLightSpeed  * 5.0, 150.0) ;
 
 
 
@@ -771,11 +778,21 @@ vertexShader =
 
             }
 
-            vColor = clamp(vColor, 0.0, 1.0);
+            //vColor = clamp(vColor, 0.0, 1.0);
 
             vec3 gradientColor = rgb2hsv(vColor.xyz);
-            gradientColor[2] /= 3.0;
-          // gradientColor[1] -= 0.6; // hue shift
+            gradientColor[2] *= 0.3;
+            gradientColor[1] = 0.9; 
+            
+             // hue shift in shadows   
+
+             
+          //  if(gradientColor[0] >= 0.3 && gradientColor[0] <= 0.6) {
+               // gradientColor[0] = gradientColor[0] + 0.2; 
+          //  } else {
+                gradientColor[0] = gradientColor[0] - 0.2; 
+          //  }
+
             gradientColor = hsv2rgb(gradientColor);
 
 
@@ -891,21 +908,20 @@ fragmentShader =
             }
              gl_FragColor = vColor;
 
-            // noise by brightness
-            if ( low_poly ) {
-               gl_FragColor.rgb = mix(vColor.rgb, vec3(noise(actPos * 1000.0, 1.0) * 100.0), 0.016 / pow(brightness(vColor.rgb), 0.3));
-            }
-
 
             // fog
                 vec3 shadowHSV = rgb2hsv(vColor1.rgb);
                 shadowHSV[2] *=  uVignette + 0.1;
                 vec3 shadowRGB = hsv2rgb(shadowHSV);
-             gl_FragColor.rgb =  mix(vColor.rgb, shadowRGB, smoothstep(0.0, 1.3 - uIris, distance(actPos, vec2(0.5))));
+             gl_FragColor.rgb =  mix(gl_FragColor.rgb, shadowRGB, smoothstep(0.0, 1.3 - uIris, distance(actPos, vec2(0.5))));
+
+            // noise by brightness
+            if ( low_poly ) {
+               gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(noise(actPos * 1000.0, 1.0) * 100.0), 0.02 / pow(brightness(gl_FragColor.rgb), 0.1));
+            }
 
 
-
-               gl_FragColor.a = uOpacity;
+            gl_FragColor.a = uOpacity;
 
 
              //gl_FragColor.rgb *= gl_FragColor.a;

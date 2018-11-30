@@ -59,7 +59,7 @@ function buildFSS(model, fss, source) {
         }
 
         light1.setPosition(120, 120, 50);
-        light2.setPosition(10, -100, 25);
+        light2.setPosition(30, 100, 30);
 
         //container.appendChild(renderer.element);
         // window.addEventListener('resize', resize);
