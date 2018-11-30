@@ -87,7 +87,7 @@ update msg model =
 
         GuiMessage guiMsg ->
             let
-                a_ = Debug.log "guiMsg" guiMsg
+                -- a_ = Debug.log "guiMsg" guiMsg
                 ( ( newModel, commands ), newGui ) =
                     model.gui |> Gui.update update model guiMsg
             in
