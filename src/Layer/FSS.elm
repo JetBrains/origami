@@ -759,20 +759,15 @@ vertexShader =
 
             }
 
-            //vColor = clamp(vColor, 0.0, 1.0);
-
             vec3 gradientColor = rgb2hsv(vColor.xyz);
+      
+           
+             // hue shift in shadows   
+            gradientColor[0] -= 0.15; 
+
+
             gradientColor[2] *= 0.3;
             gradientColor[1] = 0.9; 
-            
-             // hue shift in shadows   
-
-             
-          //  if(gradientColor[0] >= 0.3 && gradientColor[0] <= 0.6) {
-               // gradientColor[0] = gradientColor[0] + 0.2; 
-          //  } else {
-                gradientColor[0] = gradientColor[0] - 0.2; 
-          //  }
 
             gradientColor = hsv2rgb(gradientColor);
 

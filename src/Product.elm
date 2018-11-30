@@ -58,7 +58,7 @@ getPalette product =
         IntelliJ -> [ "#003976",  "#fc31fe", "#ffd08d" ]
         PhpStorm ->  [ "#bb43e6", "#9034b1", "#f93394" ]
         PyCharm -> [ "#006137", "#fcf84a", "#f9ff93" ]
-        RubyMine -> [ "#fc2555", "#fd8638", "#8f41cd" ]
+        RubyMine -> [ "#e52763", "#8f41cd", "#ea7211" ]
         WebStorm -> [ "#22cdd6", "#2888d4", "#feee56" ]
         CLion -> [ "#32d791", "#1a9edd", "#ea3a8c" ]
         DataGrip -> [ "#32d791", "#9779f5", "#fd5fe4" ]
