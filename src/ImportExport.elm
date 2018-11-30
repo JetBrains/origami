@@ -6,8 +6,6 @@ module ImportExport exposing
     , decodePortModel
     , encodeFss
     , fromFssPortModel
-    , encodeFssRenderMode
-    , decodeFssRenderMode
     , encodeMode
     )
 
@@ -101,7 +99,7 @@ encodeLayerModel layerModel =
     E.object <|
         case layerModel of
             M.FssModel fssModel ->
-                [ ( "renderMode", encodeFssRenderMode fssModel.renderMode |> E.string )
+                [ ( "renderMode", FSS.encodeRenderMode fssModel.renderMode |> E.string )
                 , ( "faces", encodePairAsArray E.int fssModel.faces )
                 , ( "lightSpeed", E.int fssModel.lightSpeed )
                 , ( "amplitude", encodeTripleAsArray E.float fssModel.amplitude )
@@ -359,7 +357,7 @@ layerModelDecoder kind =
                     , [clipX, clipY]
                     ) ->
                         M.FssModel
-                            { renderMode = decodeFssRenderMode renderModeStr
+                            { renderMode = FSS.decodeRenderMode renderModeStr
                             , faces = ( facesX, facesY )
                             , amplitude = ( amplitudeX, amplitudeY, amplitudeZ )
                             , colorShift = ( hue, saturation, brightness )
@@ -440,7 +438,7 @@ encodeFss m product =
     , opacity = m.opacity
     , faces = m.faces
     , lightSpeed = m.lightSpeed
-    , renderMode = encodeFssRenderMode m.renderMode
+    , renderMode = FSS.encodeRenderMode m.renderMode
     , clip = m.clip
     , shareMesh = m.shareMesh
     , vignette = m.vignette
@@ -450,29 +448,10 @@ encodeFss m product =
     }
 
 
-encodeFssRenderMode : FSS.RenderMode -> String
-encodeFssRenderMode mode =
-    case mode of
-        FSS.Triangles -> "triangles"
-        FSS.Lines -> "lines"
-        FSS.PartialLines -> "partial-lines"
-        FSS.Points -> "points"
-
-
-decodeFssRenderMode : String -> FSS.RenderMode
-decodeFssRenderMode str =
-    case str of
-        "triangles" -> FSS.Triangles
-        "lines" -> FSS.Lines
-        "partial-lines" -> FSS.PartialLines
-        "points" -> FSS.Points
-        _ -> FSS.Triangles
-
-
 fromFssPortModel : FSS.PortModel -> FSS.Model
 fromFssPortModel portModel =
     { portModel
-    | renderMode = decodeFssRenderMode portModel.renderMode
+    | renderMode = FSS.decodeRenderMode portModel.renderMode
     }
 
 

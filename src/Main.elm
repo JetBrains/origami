@@ -699,7 +699,7 @@ subscriptions model =
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
         , changeFssRenderMode (\{value, layer} ->
-            IE.decodeFssRenderMode value |> ChangeFssRenderMode layer)
+            FSS.decodeRenderMode value |> ChangeFssRenderMode layer)
         , changeFacesX (\{value, layer} ->
             case model |> getLayerModel layer of
                 Just (FssModel { faces }) ->
@@ -732,7 +732,7 @@ subscriptions model =
             ChangeWGLBlend layer value
           )
         , changeSVGBlend (\{ layer, value } ->
-            ChangeSVGBlend layer (SVGBlend.decode value)
+            ChangeSVGBlend layer <| SVGBlend.decode value
           )
         , configureLorenz (\{ layer, value } ->
             Configure layer (LorenzModel value)

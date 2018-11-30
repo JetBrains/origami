@@ -298,16 +298,12 @@ setTimeout(() => {
 
                 nextPng();
             }
-            , changeAmplitude : index => (x, y, z) => {
-                app.ports.changeAmplitude.send({ layer: index, value: [ x, y, z ]});
-            }
-            , shiftColor : index => (h, s, b) => {
-                app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]});
-            }
-
+            , changeAmplitude : index => (x, y, z) =>
+                { app.ports.changeAmplitude.send({ layer: index, value: [ x, y, z ]}); }
+            , shiftColor : index => (h, s, b) =>
+                { app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]}); }
             , changeOpacity : index => value =>
-            { app.ports.changeOpacity.send({ layer: index, value: value }) }
-
+                { app.ports.changeOpacity.send({ layer: index, value: value }) }
             , turnOn : index =>
                 { app.ports.turnOn.send(index); }
             , turnOff : index =>
