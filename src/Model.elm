@@ -433,10 +433,10 @@ gui from =
                 (\layerIndex { name, layer } ->
                     case layer of
                         WebGLLayer _ _ ->
-                            Nested name Collapsed <| fssControls layerIndex
+                            Nested (String.toLower name) Collapsed <| fssControls layerIndex
                             -- FIXME: add `fssControls` only if layer is FSS
                         SVGLayer _ _ ->
-                            Nested name Collapsed <| svgControls layerIndex
+                            Nested (String.toLower name) Collapsed <| svgControls layerIndex
                 )
                 from.layers
 
