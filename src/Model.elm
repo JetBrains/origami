@@ -350,8 +350,8 @@ gui =
         amplitudeGrid = noChildren
         fssControls layerIndex =
             oneLine
-                [ Toggle "visible" TurnedOn
-                , Toggle "mirror" TurnedOff
+                [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
+                , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
                 , Knob "lights" 0
                 , Knob "col" 0
                 , Knob "row" 0
@@ -379,38 +379,42 @@ gui =
                         ]
                 , Nested "blend" Collapsed (webglBlendGrid layerIndex)
                 ]
-        svgControls =
+        svgControls layerIndex =
             oneLine
-                [ Toggle "visible" TurnedOn
-                , Choice "blend" Collapsed 0 chooseSvgBlend svgBlendGrid
+                [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
+                , Choice "blend" Collapsed 0 (chooseSvgBlend layerIndex) svgBlendGrid
                 ]
-        chooseMesh layerIndex index label _ =
+        toggleMirror layerIndex state =
+            layerIndex |> if (state == TurnedOn) then MirrorOn else MirrorOff
+        toggleVisibility layerIndex state =
+            layerIndex |> if (state == TurnedOn) then TurnOn else TurnOff
+        chooseMesh layerIndex index label =
             NoOp
-        chooseProduct index label _ =
+        chooseProduct index label =
             case label of
                 "resharper c++" -> ChangeProduct Product.ReSharperCpp
                 "intellij idea" -> ChangeProduct Product.IntelliJ
                 _ -> ChangeProduct <| Product.decode label
-        chooseSize index label _ =
+        chooseSize index label =
             sizePresets
                 |> Dict.get label
                 |> Maybe.map (\(w, h) -> ResizeFromPreset <| Window.Size w h)
                 |> Maybe.withDefault NoOp -- TODO: fitWindow
-        chooseWebGlBlend index label _ =
+        chooseWebGlBlend layerIndex index label =
             NoOp
-        chooseSvgBlend index label _ =
+        chooseSvgBlend layerIndex index label =
             NoOp
-        chooseBlendColorFn layerIndex index label _ =
+        chooseBlendColorFn layerIndex index label =
             NoOp
-        chooseBlendColorFact1 layerIndex index label _ =
+        chooseBlendColorFact1 layerIndex index label =
             NoOp
-        chooseBlendColorFact2 layerIndex index label _ =
+        chooseBlendColorFact2 layerIndex index label =
             NoOp
-        chooseBlendAlphaFn layerIndex index label _ =
+        chooseBlendAlphaFn layerIndex index label =
             NoOp
-        chooseBlendAlphaFact1 layerIndex index label _ =
+        chooseBlendAlphaFact1 layerIndex index label =
             NoOp
-        chooseBlendAlphaFact2 layerIndex index label _ =
+        chooseBlendAlphaFact2 layerIndex index label =
             NoOp
     in
         oneLine
@@ -419,8 +423,8 @@ gui =
             , Choice "size" Collapsed 0 chooseSize sizeGrid
             , Button "save png" <| always SavePng
             , Button "lucky" <| always NoOp
-            , Nested "logo" Collapsed svgControls
-            , Nested "title" Collapsed svgControls
-            , Nested "net" Collapsed (fssControls 2)
-            , Nested "low-poly" Collapsed (fssControls 3)
+            , Nested "logo" Collapsed <| svgControls 0
+            , Nested "title" Collapsed <| svgControls 1
+            , Nested "net" Collapsed <| fssControls 2
+            , Nested "low-poly" Collapsed <| fssControls 3
             ]
