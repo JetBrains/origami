@@ -40,25 +40,27 @@ update userUpdate userModel msg ui =
                             _ -> cell
                     )
             )
-        On pos ->
+        ToggleOn pos ->
             ( userModel ! []
             , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
                         case cell of
-                            Toggle label _ -> Toggle label TurnedOn
+                            Toggle label _ handler ->
+                                Toggle label TurnedOn handler
                             _ -> cell
                     )
             )
-        Off pos ->
+        ToggleOff pos ->
             ( userModel ! []
             , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
                         case cell of
-                            Toggle label _ -> Toggle label TurnedOff
+                            Toggle label _ handler ->
+                                Toggle label TurnedOff handler
                             _ -> cell
                     )
             )
@@ -135,6 +137,16 @@ update userUpdate userModel msg ui =
         SelectAndSendToUser pos userMsg ->
             sequenceUpdate userUpdate userModel
                 [ Select pos, SendToUser userMsg ]
+                ui
+
+        ToggleOnAndSendToUser pos userMsg ->
+            sequenceUpdate userUpdate userModel
+                [ ToggleOn pos, SendToUser userMsg ]
+                ui
+
+        ToggleOffAndSendToUser pos userMsg ->
+            sequenceUpdate userUpdate userModel
+                [ ToggleOff pos, SendToUser userMsg ]
                 ui
 
         ShiftFocusLeftAt pos ->

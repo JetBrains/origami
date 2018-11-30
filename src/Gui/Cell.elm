@@ -21,7 +21,9 @@ type alias Cells umsg = List (Cell umsg)
 
 type alias Handler umsg = (() -> umsg)
 
-type alias ChoiceHandler umsg = (Int -> String -> () -> umsg)
+type alias ChoiceHandler umsg = (Int -> String -> umsg)
+
+type alias ToggleHandler umsg = (ToggleState -> umsg)
 
 
 type alias Nest umsg =
@@ -53,7 +55,7 @@ type SelectionState
 
 type Cell umsg
     = Knob Label Float
-    | Toggle Label ToggleState
+    | Toggle Label ToggleState (ToggleHandler umsg)
     | Button Label (Handler umsg)
     | Nested Label ExpandState (Nest umsg)
     | Choice Label ExpandState ItemChosen (ChoiceHandler umsg) (Nest umsg)
@@ -64,8 +66,8 @@ type Cell umsg
 type Msg umsg
     = NoOp
     | Tune NestPos Float
-    | On NestPos
-    | Off NestPos
+    | ToggleOn NestPos
+    | ToggleOff NestPos
     | ExpandNested NestPos
     | CollapseNested NestPos
     | ExpandChoice NestPos
@@ -76,6 +78,8 @@ type Msg umsg
     | ShiftFocusRightAt NestPos
     | SendToUser umsg
     | SelectAndSendToUser NestPos umsg
+    | ToggleOnAndSendToUser NestPos umsg
+    | ToggleOffAndSendToUser NestPos umsg
     -- | Color
 
 
@@ -160,7 +164,7 @@ renderCell position (Focus focus) isSelected cell =
                             (circleAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
                             []
                         ]
-                Toggle _ state ->
+                Toggle _ state _ ->
                     g [ class "gui-toggle" ]
                         [ text_
                             (textAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
@@ -211,7 +215,7 @@ renderCell position (Focus focus) isSelected cell =
         cellLabel cell =
             case cell of
                 Knob label _ -> label
-                Toggle label state -> label
+                Toggle label _ _ -> label
                 Button label _ -> label
                 Nested label _ _ -> label
                 Choice label _ itemChosen _ _ -> label

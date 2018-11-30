@@ -18,7 +18,7 @@ type alias GridCell umsg =
     { cell: Cell umsg
     , nestPos: NestPos
     -- if it's Choice Item, then we'll call this handler on click:
-    , onSelect : Maybe (String -> () -> umsg)
+    , onSelect : Maybe (String -> umsg)
      -- if it's Choice item, then it has selection state:
     , isSelected: Maybe SelectionState
     , isFocused: FocusState
@@ -57,8 +57,12 @@ bottomLeft = (GridPos 0 0)
 doCellPurpose : GridCell umsg -> Msg umsg
 doCellPurpose { cell, nestPos, isSelected, onSelect } =
     case cell of
-        Toggle _ val ->
-            if val == TurnedOn then Off nestPos else On nestPos
+        Toggle _ val handler ->
+            -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
+            if val == TurnedOn then
+                handler TurnedOff |> ToggleOffAndSendToUser nestPos
+            else
+                handler TurnedOn |> ToggleOnAndSendToUser nestPos
         Nested _ state _ ->
             if state == Expanded then CollapseNested nestPos else ExpandNested nestPos
         Choice _ state _ _ _ ->
@@ -72,8 +76,7 @@ doCellPurpose { cell, nestPos, isSelected, onSelect } =
                 Just NotSelected ->
                     -- (Debug.log "onSelect" onSelect)
                     onSelect
-                        -- |> Maybe.map ((|>) label)
-                        |> Maybe.map (\f -> f label ())
+                        |> Maybe.map ((|>) label)
                         |> Maybe.map (SelectAndSendToUser nestPos)
                         |> Maybe.withDefault (Select nestPos)
                 _ -> NoOp
@@ -99,7 +102,7 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
         Knob label val ->
             span []
                 [ text <| posStr ++ " knob: " ++ label ++ " " ++ toString val ]
-        Toggle label val ->
+        Toggle label val _ ->
             span []
                 [ text <| posStr ++ " toggle: " ++ label ++ " "
                     ++ (if val == TurnedOn then "on" else "off")
