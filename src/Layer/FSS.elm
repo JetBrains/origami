@@ -348,8 +348,8 @@ convertTriangles material side src =
                 case sTriangle.vertices of
                     a::b::c::_ ->
                         ( a |> convertVertex (vec4 a.gradient a.gradient a.gradient 1) material sTriangle side
-                        , b |> convertVertex (vec4 b.gradient b.gradient b.gradient 1) material sTriangle side
-                        , c |> convertVertex (vec4  c.gradient c.gradient c.gradient 1) material sTriangle side
+                        , b |> convertVertex (vec4 a.gradient a.gradient a.gradient 1) material sTriangle side
+                        , c |> convertVertex (vec4 b.gradient b.gradient b.gradient 1) material sTriangle side
                         )
 
                     _ ->
@@ -768,26 +768,24 @@ vertexShader =
 
             }
 
-            vec3 materialColor1 = rgb2hsv(vColor1.rgb);
-            vec3 gradientColor = rgb2hsv(vColor.rgb * aGradient.rgb );
+            //Chaotic shadows
+
+            vec3 materialColor1 = rgb2hsv( vColor1.rgb );
+            vec3 shadowColor = rgb2hsv( aGradient.rgb );
 
              // hue shift in shadows by material color  
              if(materialColor1[0] > 0.3 && materialColor1[0] < 0.6 )
              { 
-                 gradientColor[0] += 0.2;
-                 gradientColor[2] *= 0.3;
+                 shadowColor[0] += 0.2;
+                 shadowColor[2] *= 0.5;
 
              } else {
-                 gradientColor[0] -= 0.2;
-                 gradientColor[1] = 0.9;
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 1.0;
+                shadowColor[2] *= 0.5;
                  
              }
-
-            gradientColor = hsv2rgb(gradientColor);
-
-
-           // Gradients
-             vColor *=  mix(vec4(gradientColor,1.0), vColor, abs(position.z));
+             vColor *=  mix(vec4(hsv2rgb(shadowColor), 1.0), vColor, abs(position.z));
 
            // Set gl_Position
              gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
@@ -797,7 +795,7 @@ vertexShader =
               gl_Position.x = -1.0 * gl_Position.x;
           }
 
-
+      //  vColor = aGradient;
         }
 
    |]

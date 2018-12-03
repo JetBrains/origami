@@ -55,7 +55,7 @@ function buildFSS(model, fss, source) {
                 : Math.randomInRange(0, Math.PIM2);
             vertex.gradient = source && source[v]
                 ? source[v].gradient
-                : Math.randomInRange(0.2, 0.2);
+                : Math.randomInRange(0.3, 1.0);
         }
 
         light1.setPosition(120, 120, 50);
@@ -80,7 +80,7 @@ function buildFSS(model, fss, source) {
     //resize();
     //animate();
 
-  //  console.log(scene);
+   // console.log(scene);
     return scene;
 }
 
