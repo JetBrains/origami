@@ -8,10 +8,12 @@ module Product exposing
     , getLogoPath
     , getTextLinePath
     , getCoverTextSize
+    , getId
+    , ProductId
     )
 
-
 type alias Color = String
+type alias ProductId = Int
 
 type alias Palette = List Color
 
@@ -211,3 +213,44 @@ getCoverTextSize product =
         MPS -> ( 200, 77 )
         _ -> ( 90, 90 )
 
+
+getId : Product -> ProductId
+getId product =
+    let 
+        labelToId = 
+            [ "jetbrains"
+            , "intellij-idea"
+            , "phpstorm"
+            , "pycharm"
+            , "rubymine"
+            , "webstorm"
+            , "clion"
+            , "datagrip"
+            , "appcode"
+            , "goland"
+            , "resharper"
+            , "resharper-cpp"
+            , "dotcover"
+            , "dotmemory"
+            , "dotpeek"
+            , "dottrace"
+            , "rider"
+            , "teamcity"
+            , "youtrack"
+            , "upsource"
+            , "hub"
+            , "kotlin"
+            , "mps"
+            ]
+            |> List.indexedMap 
+                (\index label -> ( index, label ))    
+    in            
+        labelToId 
+            |> List.filterMap
+                (\(index, label) -> 
+                    if (encode product == label) 
+                    then Just index
+                    else Nothing
+                )
+            |> List.head
+            |> Maybe.withDefault -1

@@ -31,6 +31,7 @@ import Time exposing (Time)
 
 
 import Viewport exposing (Viewport)
+import Product exposing (ProductId)
 
 
 
@@ -47,6 +48,7 @@ type alias ColorShiftPatch = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
 type alias Vignette = Float
 type alias Iris = Float
+
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -220,13 +222,14 @@ makeEntity
      : Time
     -> Mouse
     -> Int
+    -> ProductId
     -> Viewport {}
     -> Model
     -> Maybe SerializedScene
     -> List Setting
     -> Mesh
     -> WebGL.Entity
-makeEntity now mouse layerIndex viewport model maybeScene settings mesh =
+makeEntity now mouse productId layerIndex viewport model maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -253,6 +256,7 @@ makeEntity now mouse layerIndex viewport model maybeScene settings mesh =
             (uniforms
                 now
                 mouse
+                productId
                 viewport
                 model
                 meshSize
@@ -303,7 +307,7 @@ build model maybeScene =
             (maybeScene
             |> Maybe.map (\scene ->
                 case List.head scene.meshes of
-                    Just mesh ->
+                    Just mesh  ->
                         convertTriangles
                             mesh.material
                             mesh.side
@@ -345,8 +349,8 @@ convertTriangles material side src =
                 case sTriangle.vertices of
                     a::b::c::_ ->
                         ( a |> convertVertex (vec4 a.gradient a.gradient a.gradient 1) material sTriangle side
-                        , b |> convertVertex (vec4 b.gradient b.gradient b.gradient 1) material sTriangle side
-                        , c |> convertVertex (vec4  c.gradient c.gradient c.gradient 1) material sTriangle side
+                        , b |> convertVertex (vec4 a.gradient a.gradient a.gradient 1) material sTriangle side
+                        , c |> convertVertex (vec4 b.gradient b.gradient b.gradient 1) material sTriangle side
                         )
                     _ ->
                         ( defaultVertex
@@ -421,6 +425,7 @@ type alias Uniforms =
         , uNow : Float
         , uLayerIndex : Int
         , uMousePosition : Vec2
+        , uProductId : ProductId
         , uAmplitude : Vec3
         , uColorShift : Vec3
         , uOpacity : Float
@@ -445,13 +450,14 @@ type alias Varyings =
 uniforms
      : Time
     -> Mouse
+    -> ProductId
     -> Viewport {}
     -> Model
     -> ( Int, Int )
     -> ( List SLight, Speed )
     -> Int
     -> Uniforms
-uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
+uniforms now mouse productId v model meshSize ( lights, speed ) layerIndex =
     let
         adaptedLights = lights |> adaptLights meshSize speed
         (meshWidth, meshHeight) = meshSize
@@ -494,6 +500,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , cameraRotate = v.cameraRotate
         , size = v.size
         , origin = v.origin
+        , uProductId = productId
         }
 
 
@@ -780,26 +787,24 @@ vertexShader =
 
             }
 
-            vec3 materialColor1 = rgb2hsv(vColor1.rgb);
-            vec3 gradientColor = rgb2hsv(vColor.rgb * aGradient.rgb );
+            //Chaotic shadows
+
+            vec3 materialColor1 = rgb2hsv( vColor1.rgb );
+            vec3 shadowColor = rgb2hsv( aGradient.rgb );
 
              // hue shift in shadows by material color  
              if(materialColor1[0] > 0.3 && materialColor1[0] < 0.6 )
              { 
-                 gradientColor[0] += 0.2;
-                 gradientColor[2] *= 0.3;
+                 shadowColor[0] += 0.2;
+                 shadowColor[2] *= 0.5;
 
              } else {
-                 gradientColor[0] -= 0.2;
-                 gradientColor[1] = 0.9;
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 1.0;
+                shadowColor[2] *= 0.5;
                  
              }
-
-            gradientColor = hsv2rgb(gradientColor);
-
-
-           // Gradients
-             vColor *=  mix(vec4(gradientColor,1.0), vColor, abs(position.z));
+             vColor *=  mix(vec4(hsv2rgb(shadowColor), 1.0), vColor, abs(position.z));
 
            // Set gl_Position
              gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
@@ -809,8 +814,7 @@ vertexShader =
               gl_Position.x = -1.0 * gl_Position.x;
           }
 
-         // vColor = vec4(vec3(materialColor1[0]), 1.0);
-
+      //  vColor = aGradient;
         }
 
    |]
