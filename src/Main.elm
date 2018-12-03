@@ -899,6 +899,7 @@ layerToEntities model viewport index layerDef =
                         [ FSS.makeEntity
                             model.now
                             model.mouse
+                            (model.product |> Product.getId)
                             index
                             viewport
                             fssModel

@@ -30,6 +30,7 @@ import Time exposing (Time)
 
 
 import Viewport exposing (Viewport)
+import Product exposing (ProductId)
 
 
 
@@ -46,6 +47,7 @@ type alias ColorShiftPatch = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
 type alias Vignette = Float
 type alias Iris = Float
+
 
 
 type alias Mesh = WebGL.Mesh Vertex
@@ -219,13 +221,14 @@ makeEntity
      : Time
     -> Mouse
     -> Int
+    -> ProductId
     -> Viewport {}
     -> Model
     -> Maybe SerializedScene
     -> List Setting
     -> Mesh
     -> WebGL.Entity
-makeEntity now mouse layerIndex viewport model maybeScene settings mesh =
+makeEntity now mouse productId layerIndex viewport model maybeScene settings mesh =
     let
         lights = maybeScene
             |> Maybe.map (\scene -> scene.lights)
@@ -252,6 +255,7 @@ makeEntity now mouse layerIndex viewport model maybeScene settings mesh =
             (uniforms
                 now
                 mouse
+                productId
                 viewport
                 model
                 meshSize
@@ -302,7 +306,7 @@ build model maybeScene =
             (maybeScene
             |> Maybe.map (\scene ->
                 case List.head scene.meshes of
-                    Just mesh ->
+                    Just mesh  ->
                         convertTriangles
                             mesh.material
                             mesh.side
@@ -402,6 +406,7 @@ type alias Uniforms =
         , uNow : Float
         , uLayerIndex : Int
         , uMousePosition : Vec2
+        , uProductId : ProductId
         , uAmplitude : Vec3
         , uColorShift : Vec3
         , uOpacity : Float
@@ -426,13 +431,14 @@ type alias Varyings =
 uniforms
      : Time
     -> Mouse
+    -> ProductId
     -> Viewport {}
     -> Model
     -> ( Int, Int )
     -> ( List SLight, Speed )
     -> Int
     -> Uniforms
-uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
+uniforms now mouse productId v model meshSize ( lights, speed ) layerIndex =
     let
         adaptedLights = lights |> adaptLights meshSize speed
         (meshWidth, meshHeight) = meshSize
@@ -475,6 +481,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         , cameraRotate = v.cameraRotate
         , size = v.size
         , origin = v.origin
+        , uProductId = productId
         }
 
 
@@ -790,7 +797,6 @@ vertexShader =
               gl_Position.x = -1.0 * gl_Position.x;
           }
 
-         // vColor = vec4(vec3(materialColor1[0]), 1.0);
 
         }
 

@@ -107,15 +107,6 @@ type alias LayerDef =
     }
 
 
--- kinda Either, but for ports:
---    ( Just WebGLBlend, Nothing ) --> WebGL Blend
---    ( Nothing, Just String ) --> SVG Blend
---    ( Nothing, Nothing ) --> None
---    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
-type alias PortBlend =
-    ( Maybe WGLBlend.Blend, Maybe String )
-
-
 type alias Model =
     { background: String
     , mode : UiMode
@@ -137,6 +128,14 @@ type alias Model =
     -- , lights (taken from product)
     -- , material TODO
     }
+
+-- kinda Either, but for ports:
+--    ( Just WebGLBlend, Nothing ) --> WebGL Blend
+--    ( Nothing, Just String ) --> SVG Blend
+--    ( Nothing, Nothing ) --> None
+--    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
+type alias PortBlend =
+    ( Maybe WGLBlend.Blend, Maybe String )
 
 
 type alias PortModel =
