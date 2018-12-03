@@ -58,7 +58,7 @@ getPalette product =
     case product of
         JetBrains -> [ "#ad3259",  "#aa48ff", "#ffdb00" ]
         IntelliJ -> [ "#0b67cc",  "#fc31fe", "#ffd08d" ]
-        PhpStorm ->  [ "#bb43e6", "#9034b1", "#f93394" ]
+        PhpStorm ->  [ "#b345f1", "#765af8", "#ff318c" ]
         PyCharm -> [ "#09f58f", "#ed8b00", "#ffe400" ]
         RubyMine -> [ "#e52763", "#8f41cd", "#ea7211" ]
         WebStorm -> [ "#22cdd6", "#2888d4", "#feee56" ]
