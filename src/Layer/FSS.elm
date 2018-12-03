@@ -34,6 +34,7 @@ import Viewport exposing (Viewport)
 
 
 
+
 type alias Mouse = ( Int, Int )
 type alias Faces = ( Int, Int )
 type alias Clip = ( Float, Float )
@@ -464,6 +465,7 @@ uniforms now mouse v model meshSize ( lights, speed ) layerIndex =
         ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
         ( hue, saturation, brightness ) = model.colorShift
         opacity = model.opacity
+
     in
         -- { perspective = Mat4.mul v.perspective v.camera }
         { uResolution = vec3 width height depth
@@ -778,24 +780,28 @@ vertexShader =
 
             }
 
-            vec3 gradientColor = rgb2hsv(vColor.xyz);
-      
-           
-             // hue shift in shadows   
-            gradientColor[0] -= 0.15; 
+            vec3 materialColor1 = rgb2hsv(vColor1.rgb);
+            vec3 gradientColor = rgb2hsv(vColor.rgb * aGradient.rgb );
 
+             // hue shift in shadows by material color  
+             if(materialColor1[0] > 0.3 && materialColor1[0] < 0.6 )
+             { 
+                 gradientColor[0] += 0.2;
+                 gradientColor[2] *= 0.3;
 
-            gradientColor[2] *= 0.3;
-            gradientColor[1] = 0.9; 
+             } else {
+                 gradientColor[0] -= 0.2;
+                 gradientColor[1] = 0.9;
+                 
+             }
 
             gradientColor = hsv2rgb(gradientColor);
-
 
 
            // Gradients
              vColor *=  mix(vec4(gradientColor,1.0), vColor, abs(position.z));
 
-          // Set gl_Position
+           // Set gl_Position
              gl_Position = cameraRotate * cameraTranslate * vec4(position, 1.0);
 
 
@@ -803,7 +809,7 @@ vertexShader =
               gl_Position.x = -1.0 * gl_Position.x;
           }
 
-        //  vColor = materialDiffuse;
+         // vColor = vec4(vec3(materialColor1[0]), 1.0);
 
         }
 
@@ -905,10 +911,10 @@ fragmentShader =
 
 
             // fog
-                vec3 shadowHSV = rgb2hsv(vColor1.rgb);
-                shadowHSV[2] *=  uVignette + 0.1;
-                vec3 shadowRGB = hsv2rgb(shadowHSV);
-             gl_FragColor.rgb =  mix(gl_FragColor.rgb, shadowRGB, smoothstep(0.0, 1.3 - uIris, distance(actPos, vec2(0.5))));
+            vec3 shadowHSV = rgb2hsv(vColor1.rgb);
+            shadowHSV[2] *=  uVignette + 0.1;
+            vec3 shadowRGB = hsv2rgb(shadowHSV);
+            gl_FragColor.rgb =  mix(gl_FragColor.rgb, shadowRGB, smoothstep(0.0, 1.3 - uIris, distance(actPos, vec2(0.5))));
 
             // noise by brightness
             if ( low_poly ) {
