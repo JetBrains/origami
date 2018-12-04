@@ -19,6 +19,7 @@ module Model exposing
     , PortLayerDef
     , PortBlend
     , Msg(..)
+    , gui
     )
 
 
