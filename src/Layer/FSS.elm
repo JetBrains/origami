@@ -769,7 +769,93 @@ vertexShader =
                 orbitFactor[2] -= 0.5;
             }    
 
+            if( uProductId == 3 ) {
+                deltaHSVLight1 = vec3( 0.1, 1.0, 0.2 );
+                deltaHSVLight2 = vec3( -0.1, 1.0, 0.4 );
+                shadowColor[0] += 0.3;
+                shadowColor[1] = 0.3;
+                shadowColor[2] *= 0.4;
+                shine = 1.1;
+                orbitFactor[1] += 1.5;
+            }    
 
+            if( uProductId == 5 ) {
+                deltaHSVLight1 = vec3( 0.0, 0.5, -0.1 );
+                deltaHSVLight2 = vec3( 0.1, 1.0, 0.7 );
+                shadowColor[0] -= 0.1;
+                shadowColor[1] = 0.5;
+                shadowColor[2] *= 0.5;
+                shine = 1.1;
+                orbitFactor[1] += 1.5;
+            }    
+            if( uProductId == 6 ) {
+                deltaHSVLight1 = vec3( -0.04, 1.0, -0.1 );
+                deltaHSVLight2 = vec3( 0.0, 1.0, 0.9 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.5;
+                shine = 1.3;
+                orbitFactor[0] += 0.5;
+            }    
+            if( uProductId == 7 ) {
+                deltaHSVLight1 = vec3( -0.18, 0.9, 0.8 );
+                deltaHSVLight2 = vec3( 0.0, 0.4, 0.8 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.4;
+                shadowColor[2] *= 0.4;
+                shine = 1.4;
+                orbitFactor[0] -= 1.5;
+            }  
+            if( uProductId == 8 ) {
+                deltaHSVLight1 = vec3( -0.03, 0.9, 0.1 );
+                deltaHSVLight2 = vec3( 0.0, 0.9, -0.1 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.2;
+                orbitFactor[1] -= 1.5;
+            }  
+
+            if( uProductId == 9 ) {
+                deltaHSVLight1 = vec3( 0.1, 0.8, 0.9 );
+                deltaHSVLight2 = vec3( 0.0, 0.6, 0.9 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.8;
+                shadowColor[2] *= 0.4;
+                orbitFactor[1] += 1.5;
+            }  
+            if( uProductId == 10 ) {
+                deltaHSVLight1 = vec3( -0.01, 0.8, -0.1 );
+                deltaHSVLight2 = vec3( 0.0, 0.6, 1.0 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.8;
+                shadowColor[2] *= 0.5;
+                orbitFactor[1] -= 2.0;
+            }  
+            if( uProductId == 11 ) {
+                deltaHSVLight1 = vec3( -0.02, 0.8, -0.1 );
+                deltaHSVLight2 = vec3( 0.0, 0.6, 1.0 );
+                shadowColor[0] -= 0.3;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.3;
+                orbitFactor[1] -= 2.0;
+            } 
+
+            if( uProductId == 12 ) {
+                deltaHSVLight1 = vec3( 0.25, 1.0, 0.5 );
+                deltaHSVLight2 = vec3( -0.64, 1.0, 1.0 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 1.0;
+                shadowColor[2] *= 0.7;
+                orbitFactor[2] += 1.0;
+            }
+            if( uProductId == 13 ) {
+                deltaHSVLight1 = vec3( -0.45, 0.4, 0.9 );
+                deltaHSVLight2 = vec3( -0.2, -0.8, 0.7 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.8;
+                shadowColor[2] *= 0.4;
+                orbitFactor[2] += 1.0;
+            }                          
             // Iterate through lights
 
             for (int i = 0; i < 2; i++) {
