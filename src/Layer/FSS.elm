@@ -763,13 +763,13 @@ vertexShader =
             vec3 shadowColor = rgb2hsv( aGradient.rgb );
 
 
-            if( uProductId == 0 ) {
+            if( uProductId == 0 ) { //JetBrains
                 shadowColor[0] -= 0.25;
                 shadowColor[1] = 1.0;
                 shadowColor[2] *= 0.5;
             }
 
-            if( uProductId == 1 ) {
+            if( uProductId == 1 ) { //IntelliJ IDEA
                 deltaHSVLight1 = vec3( 0.0, 0.0, -0.2 );
                 deltaHSVLight2 = vec3( -0.1, 1.0, 1.0 );
                 shadowColor[0] -= 0.2;
@@ -779,7 +779,7 @@ vertexShader =
                 orbitFactor[1] += 2.5;
             }
 
-            if( uProductId == 2 ) {
+            if( uProductId == 2 ) { //PyCharm
                 deltaHSVLight1 = vec3( 0.1, 0.0, 0.2 );
                 deltaHSVLight2 = vec3( -0.1, 0.0, -0.4 );
                 shadowColor[0] -= 0.4;
@@ -788,7 +788,7 @@ vertexShader =
                 orbitFactor[2] -= 0.5;
             }    
 
-            if( uProductId == 3 ) {
+            if( uProductId == 3 ) { //RubyMine
                 deltaHSVLight1 = vec3( 0.1, 1.0, 0.2 );
                 deltaHSVLight2 = vec3( -0.1, 1.0, 0.4 );
                 shadowColor[0] += 0.3;
@@ -798,7 +798,7 @@ vertexShader =
                 orbitFactor[1] += 1.5;
             }    
 
-            if( uProductId == 5 ) {
+            if( uProductId == 5 ) { //WebStorm
                 deltaHSVLight1 = vec3( 0.0, 0.5, -0.1 );
                 deltaHSVLight2 = vec3( 0.1, 1.0, 0.7 );
                 shadowColor[0] -= 0.1;
@@ -807,7 +807,7 @@ vertexShader =
                 shine = 1.1;
                 orbitFactor[1] += 1.5;
             }    
-            if( uProductId == 6 ) {
+            if( uProductId == 6 ) { //CLion
                 deltaHSVLight1 = vec3( -0.04, 1.0, -0.1 );
                 deltaHSVLight2 = vec3( 0.0, 1.0, 0.9 );
                 shadowColor[0] -= 0.2;
@@ -816,7 +816,7 @@ vertexShader =
                 shine = 1.3;
                 orbitFactor[0] += 0.5;
             }    
-            if( uProductId == 7 ) {
+            if( uProductId == 7 ) { //DataGrip
                 deltaHSVLight1 = vec3( -0.18, 0.9, 0.8 );
                 deltaHSVLight2 = vec3( 0.0, 0.4, 0.8 );
                 shadowColor[0] -= 0.2;
@@ -825,7 +825,7 @@ vertexShader =
                 shine = 1.4;
                 orbitFactor[0] -= 1.5;
             }  
-            if( uProductId == 8 ) {
+            if( uProductId == 8 ) { //AppCode
                 deltaHSVLight1 = vec3( -0.03, 0.9, 0.1 );
                 deltaHSVLight2 = vec3( 0.0, 0.9, -0.1 );
                 shadowColor[0] -= 0.2;
@@ -834,7 +834,7 @@ vertexShader =
                 orbitFactor[1] -= 1.5;
             }  
 
-            if( uProductId == 9 ) {
+            if( uProductId == 9 ) { //GoLand
                 deltaHSVLight1 = vec3( 0.1, 0.8, 0.9 );
                 deltaHSVLight2 = vec3( 0.0, 0.6, 0.9 );
                 shadowColor[0] -= 0.2;
@@ -842,7 +842,7 @@ vertexShader =
                 shadowColor[2] *= 0.4;
                 orbitFactor[1] += 1.5;
             }  
-            if( uProductId == 10 ) {
+            if( uProductId == 10 ) { //ReSharper
                 deltaHSVLight1 = vec3( -0.01, 0.8, -0.1 );
                 deltaHSVLight2 = vec3( 0.0, 0.6, 1.0 );
                 shadowColor[0] -= 0.2;
@@ -850,7 +850,7 @@ vertexShader =
                 shadowColor[2] *= 0.5;
                 orbitFactor[1] -= 2.0;
             }  
-            if( uProductId == 11 ) {
+            if( uProductId == 11 ) { //ReSharper C++
                 deltaHSVLight1 = vec3( -0.02, 0.8, -0.1 );
                 deltaHSVLight2 = vec3( 0.0, 0.6, 1.0 );
                 shadowColor[0] -= 0.3;
@@ -859,7 +859,7 @@ vertexShader =
                 orbitFactor[1] -= 2.0;
             } 
 
-            if( uProductId == 12 ) {
+            if( uProductId == 12 ) { //dotCover
                 deltaHSVLight1 = vec3( 0.25, 1.0, 0.5 );
                 deltaHSVLight2 = vec3( -0.64, 1.0, 1.0 );
                 shadowColor[0] -= 0.2;
@@ -867,14 +867,91 @@ vertexShader =
                 shadowColor[2] *= 0.7;
                 orbitFactor[2] += 1.0;
             }
-            if( uProductId == 13 ) {
+            if( uProductId == 13 ) { //dotMemory
                 deltaHSVLight1 = vec3( -0.45, 0.4, 0.9 );
                 deltaHSVLight2 = vec3( -0.2, -0.8, 0.7 );
                 shadowColor[0] -= 0.2;
                 shadowColor[1] = 0.8;
                 shadowColor[2] *= 0.4;
                 orbitFactor[2] += 1.0;
-            }                          
+            }     
+
+            if( uProductId == 14 ) { //dotPeek
+                deltaHSVLight1 = vec3( 0.0, -0.7, -0.3 );
+                deltaHSVLight2 = vec3( 0.0, 0.0, 1.0 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.5;
+                orbitFactor[1] += 1.5;
+            }
+
+            if( uProductId == 15 ) { //dotTrace
+                deltaHSVLight1 = vec3( 0.2, 0.4, -0.1 );
+                deltaHSVLight2 = vec3( -0.2, 1.0, 0.3 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.8;
+            }
+        
+            if( uProductId == 16 ) { //Rider
+                deltaHSVLight1 = vec3( 0.15, 0.5, 0.0 );
+                deltaHSVLight2 = vec3( 0.0, 0.0, 1.0 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.5;
+            }
+
+            if( uProductId == 17 ) { //Teamcity
+                deltaHSVLight1 = vec3( 0.0, -0.2, -0.2 );
+                deltaHSVLight2 = vec3( -0.2, 1.0, 0.3 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.7;
+                shadowColor[2] *= 0.8;
+                orbitFactor[1] += 1.0;
+            }            
+
+            if( uProductId == 18 ) { //YouTrack
+                deltaHSVLight1 = vec3( 0.0, -0.4, -0.2 );
+                deltaHSVLight2 = vec3( 0.1, 1.0, 0.3 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.7;
+                shadowColor[2] *= 0.8;
+                orbitFactor[1] += 1.0;
+            }     
+
+            if( uProductId == 19 ) { //Upsource
+                deltaHSVLight1 = vec3( 0.0, -0.3, -0.2 );
+                deltaHSVLight2 = vec3( 0.1, 1.0, 0.3 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.7;
+                shadowColor[2] *= 0.8;
+                orbitFactor[1] += 1.0;
+            }                
+
+            if( uProductId == 20 ) { //Hub
+                deltaHSVLight1 = vec3( 0.05, -0.4, -0.1 );
+                deltaHSVLight2 = vec3( 0.0, 0.9, 0.4 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.5;
+                orbitFactor[1] += 1.5;
+            }  
+
+            if( uProductId == 21 ) { //Kotlin
+                deltaHSVLight1 = vec3( 0.0, -0.2, -0.2 );
+                deltaHSVLight2 = vec3( 0.06, 1.0, 0.1 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.8;
+                orbitFactor[1] += 1.0;
+            }     
+
+            if( uProductId == 22 ) { //MPS
+                deltaHSVLight1 = vec3( 0.0, -0.2, 0.2 );
+                deltaHSVLight2 = vec3( 0.0, 0.7, -0.3 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.7;
+                shadowColor[2] *= 0.6;
+                orbitFactor[1] += 1.0;
+            }                                      
+
             // Iterate through lights
 
             for (int i = 0; i < 2; i++) {
