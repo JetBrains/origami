@@ -322,6 +322,7 @@ gui from =
             , "multiply"
             , "multiply"
             ]
+        defaultKnobSetup = { min = 0.0, max = 1.0, step = 0.05 }
         productsGrid =
             products
                 |> List.map ChoiceItem
@@ -362,36 +363,42 @@ gui from =
                 |> nest ( 3, 3 )
         amplitudeGrid = noChildren
         fssControls fssModel currentBlend layerIndex =
-            oneLine
-                [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
-                , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
-                , Knob "lights" 0
-                , Knob "col" 0
-                , Knob "row" 0
-                , Nested "fog" Collapsed <|
-                    nest ( 2, 1 )
-                        [ Knob "shine" 0
-                        , Knob "density" 0
-                        ]
-                , Choice "mesh" Collapsed 0 (chooseMesh layerIndex) <|
-                    nest ( 2, 1 )
-                        [ ChoiceItem "triangles"
-                        , ChoiceItem "lines"
-                        ]
-                , Nested "ranges" Collapsed <|
-                        nest ( 3, 1 )
-                            [ Knob "horizontal" 0
-                            , Knob "vertical" 0
-                            , Knob "depth" 0
+            let
+                { lightSpeed, faces } = fssModel
+                ( facesX, facesY ) = faces
+                lightSpeedSetup = { min = 0.0, max = 1000.0, step = 1.0 }
+                facesKnobSetup = { min = 0.0, max = 100.0, step = 1.0 }
+            in
+                oneLine
+                    [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
+                    , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
+                    , Knob "lights" lightSpeedSetup <| toFloat lightSpeed
+                    , Knob "col" facesKnobSetup <| toFloat facesX
+                    , Knob "row" facesKnobSetup <| toFloat facesY
+                    , Nested "fog" Collapsed <|
+                        nest ( 2, 1 )
+                            [ Knob "shine" defaultKnobSetup 0
+                            , Knob "density" defaultKnobSetup 0
                             ]
-                , Nested "hsb" Collapsed <|
-                    nest ( 3, 1 )
-                        [ Knob "hue" 0
-                        , Knob "saturation" 0
-                        , Knob "brightness" 0
-                        ]
-                , Nested "blend" Collapsed (webglBlendGrid currentBlend layerIndex)
-                ]
+                    , Choice "mesh" Collapsed 0 (chooseMesh layerIndex) <|
+                        nest ( 2, 1 )
+                            [ ChoiceItem "triangles"
+                            , ChoiceItem "lines"
+                            ]
+                    , Nested "ranges" Collapsed <|
+                            nest ( 3, 1 )
+                                [ Knob "horizontal" defaultKnobSetup 0
+                                , Knob "vertical" defaultKnobSetup 0
+                                , Knob "depth" defaultKnobSetup 0
+                                ]
+                    , Nested "hsb" Collapsed <|
+                        nest ( 3, 1 )
+                            [ Knob "hue" defaultKnobSetup 0
+                            , Knob "saturation" defaultKnobSetup 0
+                            , Knob "brightness" defaultKnobSetup 0
+                            ]
+                    , Nested "blend" Collapsed (webglBlendGrid currentBlend layerIndex)
+                    ]
         svgControls currentBlend layerIndex =
             oneLine
                 [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
@@ -432,7 +439,7 @@ gui from =
     in
         oneLine <|
             [ Choice "product" Collapsed 0 chooseProduct productsGrid
-            , Knob "rotation" 0
+            , Knob "rotation" defaultKnobSetup 0
             , Choice "size" Collapsed 0 chooseSize sizeGrid
             , Button "save png" <| always SavePng
             , Button "lucky" <| always Randomize

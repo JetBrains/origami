@@ -55,7 +55,9 @@ type SelectionState
 
 type Cell umsg
     = Ghost Label
-    | Knob Label Float
+    | Knob Label
+        { min : Float, max : Float, step : Float }
+        Float -- value
     | Toggle Label ToggleState (ToggleHandler umsg)
     | Button Label (Handler umsg)
     | Nested Label ExpandState (Nest umsg)
@@ -159,7 +161,7 @@ renderCell position (Focus focus) isSelected cell =
                 Ghost _ ->
                     g [ class "gui-ghost" ]
                         [ ]
-                Knob _ value ->
+                Knob _ { min, max, step } value ->
                     g [ class "gui-knob" ]
                         [ text_
                             (textAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
@@ -219,7 +221,7 @@ renderCell position (Focus focus) isSelected cell =
         cellLabel cell =
             case cell of
                 Ghost label -> label
-                Knob label _ -> label
+                Knob label _ _ -> label
                 Toggle label _ _ -> label
                 Button label _ -> label
                 Nested label _ _ -> label

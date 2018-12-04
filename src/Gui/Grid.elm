@@ -89,7 +89,7 @@ doCellPurpose { cell, nestPos, isSelected, onSelect } =
 findHoverMessage : GridCell umsg -> Msg umsg
 findHoverMessage { cell, nestPos }  =
     case cell of
-        Knob label value ->
+        Knob label _ value ->
             Tune nestPos (value + 1)
         _ -> NoOp
 
@@ -102,9 +102,11 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
         Ghost label  ->
             span []
                 [ text <| posStr ++ " ghost: " ++ label ]
-        Knob label val ->
+        Knob label { min, step, max } val ->
             span []
-                [ text <| posStr ++ " knob: " ++ label ++ " " ++ toString val ]
+                [ text <| posStr ++ " knob: " ++ label
+                    ++ " " ++ toString min ++ "/" ++ toString step ++ "/" ++ toString max
+                    ++ " " ++ toString val ]
         Toggle label val _ ->
             span []
                 [ text <| posStr ++ " toggle: " ++ label ++ " "

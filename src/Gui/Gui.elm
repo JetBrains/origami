@@ -36,7 +36,9 @@ update userUpdate userModel msg ui =
                 |> updateCell pos
                     (\cell ->
                         case cell of
-                            Knob label _ -> Knob label value
+                            Knob label setup  _ ->
+                                -- TODO: use min, max, step
+                                Knob label setup value
                             _ -> cell
                     )
             )
