@@ -6,6 +6,8 @@ require('./index.css');
 require('./src/Gui/Gui.css');
 
 const deepClone = require('./deep-clone.js');
+const randomize = require('./randomize.js');
+const isFss = require('./is-fss.js');
 const drawToCanvas = require('./draw-to-canvas.js');
 const JSZip = require('jszip');
 const JSZipUtils = require('jszip-utils');
@@ -20,8 +22,6 @@ const app = App.Main.embed(mountNode);
 
 const startGui = require('./gui.js');
 const buildFSS = require('./fss.js');
-
-const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
 const fssScenes = {};
 
@@ -236,6 +236,14 @@ setTimeout(() => {
 
     app.ports.triggerSavePng.subscribe((update) => {
         savePng(hiddenLink, update);
+    });
+
+    app.ports.requestRandomize.subscribe((model) => {
+        console.log('apply randomize');
+        randomize((randomizedModel) => {
+            console.log('apply randomize');
+            app.ports.applyRandomizer.send(prepareModelForImport(randomizedModel))
+        }, model, null)({})();
     });
 
     app.ports.startGui.subscribe((model) => {

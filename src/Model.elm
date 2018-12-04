@@ -426,7 +426,7 @@ gui from =
             , Knob "rotation" 0
             , Choice "size" Collapsed 0 chooseSize sizeGrid
             , Button "save png" <| always SavePng
-            , Button "lucky" <| always NoOp
+            , Button "lucky" <| always Randomize
             ]
             ++ List.indexedMap
                 (\layerIndex { name, layer } ->

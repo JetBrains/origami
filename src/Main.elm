@@ -419,7 +419,7 @@ update msg model =
 
         Randomize ->
             ( model
-            , requestRandomize ()
+            , model |> IE.encodePortModel |> requestRandomize
             )
 
         ApplyRandomizer portModel ->
@@ -1109,6 +1109,6 @@ port exportZip_ : String -> Cmd msg
 
 port triggerSavePng : SizeUpdate -> Cmd msg
 
-port requestRandomize : () -> Cmd msg
+port requestRandomize : PortModel -> Cmd msg
 
 -- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg

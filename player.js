@@ -1,8 +1,7 @@
 const buildFSS = require('./fss.js');
+const isFss = require('./is-fss.js');
 const deepClone = require('./deep-clone.js')
 const App = require('./src/Main.elm');
-
-const isFss = layer => layer.kind == 'fss' || layer.kind == 'fss-mirror';
 
 const import_ = (app, importedState) => {
     document.body.style.backgroundColor = importedState.background;
