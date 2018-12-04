@@ -179,8 +179,7 @@ initEmpty mode =
     , now = 0.0
     , timeShift = 0.0
     --, range = ( 0.8, 1.0 )
-    -- , product = Product.JetBrains
-    , product = Product.DotMemory
+    , product = Product.JetBrains
     , controlsVisible = True
     }
 
