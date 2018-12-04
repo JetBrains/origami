@@ -239,10 +239,9 @@ setTimeout(() => {
     });
 
     app.ports.requestRandomize.subscribe((model) => {
-        console.log('apply randomize');
         randomize((randomizedModel) => {
-            console.log('apply randomize');
-            app.ports.applyRandomizer.send(prepareModelForImport(randomizedModel))
+            console.log('apply randomize', randomizedModel);
+            app.ports.applyRandomizer.send(randomizedModel);
         }, model, null)({})();
     });
 

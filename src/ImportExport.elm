@@ -170,18 +170,22 @@ decodePortModel createLayer portModel =
     let
         mode = decodeMode portModel.mode
         initialModel = M.initEmpty mode
+        decodedModel =
+            { initialModel
+            | background = portModel.background
+            , mode = mode
+            , now = portModel.now
+            , theta = portModel.theta
+            , omega = portModel.omega
+            , layers = Debug.log "layers" <| List.map (decodePortLayer createLayer) portModel.layers
+            , size = portModel.size
+            , origin = portModel.origin
+            , mouse = portModel.mouse
+            , product = portModel.product |> Product.decode
+            }
     in
-        { initialModel
-        | background = portModel.background
-        , mode = mode
-        , now = portModel.now
-        , theta = portModel.theta
-        , omega = portModel.omega
-        , layers = List.map (decodePortLayer createLayer) portModel.layers
-        , size = portModel.size
-        , origin = portModel.origin
-        , mouse = portModel.mouse
-        , product = portModel.product |> Product.decode
+        { decodedModel
+        | gui = M.gui decodedModel |> Just
         }
 
 

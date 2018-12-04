@@ -423,9 +423,8 @@ update msg model =
             )
 
         ApplyRandomizer portModel ->
-            IE.decodePortModel createLayer portModel
+            (Debug.log "randomized" <| IE.decodePortModel createLayer portModel)
                 |> rebuildAllFssLayersWith
-
 
         NoOp -> ( model, Cmd.none )
 
