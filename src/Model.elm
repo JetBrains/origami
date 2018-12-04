@@ -283,7 +283,7 @@ sizePresets =
 gui : Model -> Gui.Model Msg
 gui from =
     let
-        productsGrid =
+        products =
             [ "jetbrains"
             , "intellij idea"
             , "phpstorm"
@@ -299,28 +299,45 @@ gui from =
             --, "dotcover"
             -- TODO
             ]
+        blendFuncs =
+            [ "+", "-", "R-" ]
+        blendFactors =
+            [ "0", "1"
+            , "sC", "1-sC"
+            , "dC", "1-dC"
+            , "sA", "1-sA"
+            , "dA", "1-dA"
+            , "AS"
+            , "CC", "1-CC"
+            , "CA", "1-CA"
+            ]
+        svgBlends =
+            [ "normal"
+            , "overlay"
+            , "multiply"
+            , "darken"
+            , "lighten"
+            , "multiply"
+            , "multiply"
+            , "multiply"
+            , "multiply"
+            ]
+        productsGrid =
+            products
                 |> List.map ChoiceItem
                 |> nest ( 4, 3 )
         sizeGrid =
             ( "window" :: Dict.keys sizePresets )
                 |> List.map ChoiceItem
                 |> nest ( 2, 3 )
-        webglBlendGrid layerIndex =
+        webglBlendGrid currentBlend layerIndex =
             let
                 funcGrid =
-                    [ "+", "-", "R-" ]
+                    blendFuncs
                         |> List.map ChoiceItem
                         |> nest ( 3, 1 )
                 factorGrid =
-                    [ "0", "1"
-                    , "sC", "1-sC"
-                    , "dC", "1-dC"
-                    , "sA", "1-sA"
-                    , "dA", "1-dA"
-                    , "AS"
-                    , "CC", "1-CC"
-                    , "CA", "1-CA"
-                    ]
+                    blendFactors
                         |> List.map ChoiceItem
                         |> nest (8, 2)
             in
@@ -340,20 +357,11 @@ gui from =
                         (chooseBlendAlphaFact2 layerIndex) factorGrid
                     ]
         svgBlendGrid =
-            [ "normal"
-            , "overlay"
-            , "multiply"
-            , "darken"
-            , "lighten"
-            , "multiply"
-            , "multiply"
-            , "multiply"
-            , "multiply"
-            ]
+            svgBlends
                 |> List.map ChoiceItem
                 |> nest ( 3, 3 )
         amplitudeGrid = noChildren
-        fssControls layerIndex =
+        fssControls fssModel currentBlend layerIndex =
             oneLine
                 [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
                 , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
@@ -382,9 +390,9 @@ gui from =
                         , Knob "saturation" 0
                         , Knob "brightness" 0
                         ]
-                , Nested "blend" Collapsed (webglBlendGrid layerIndex)
+                , Nested "blend" Collapsed (webglBlendGrid currentBlend layerIndex)
                 ]
-        svgControls layerIndex =
+        svgControls currentBlend layerIndex =
             oneLine
                 [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
                 , Choice "blend" Collapsed 0 (chooseSvgBlend layerIndex) svgBlendGrid
@@ -430,13 +438,17 @@ gui from =
             , Button "lucky" <| always Randomize
             ]
             ++ List.indexedMap
-                (\layerIndex { name, layer } ->
+                (\layerIndex { name, layer, model } ->
                     case layer of
-                        WebGLLayer _ _ ->
-                            Nested (String.toLower name) Collapsed <| fssControls layerIndex
-                            -- FIXME: add `fssControls` only if layer is FSS
-                        SVGLayer _ _ ->
-                            Nested (String.toLower name) Collapsed <| svgControls layerIndex
+                        WebGLLayer webGllayer webglBlend ->
+                            case model of
+                                FssModel fssModel ->
+                                    Nested (String.toLower name) Collapsed
+                                        <| fssControls fssModel webglBlend layerIndex
+                                _ -> Ghost <| "layer " ++ toString layerIndex
+                        SVGLayer _ svgBlend ->
+                            Nested (String.toLower name) Collapsed
+                                <| svgControls svgBlend layerIndex
                 )
                 from.layers
 

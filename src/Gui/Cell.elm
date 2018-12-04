@@ -54,7 +54,8 @@ type SelectionState
 
 
 type Cell umsg
-    = Knob Label Float
+    = Ghost Label
+    | Knob Label Float
     | Toggle Label ToggleState (ToggleHandler umsg)
     | Button Label (Handler umsg)
     | Nested Label ExpandState (Nest umsg)
@@ -155,6 +156,9 @@ renderCell : NestPos -> Focus -> Maybe SelectionState -> Cell umsg -> Html (Msg 
 renderCell position (Focus focus) isSelected cell =
     let cellBody =
             case cell of
+                Ghost _ ->
+                    g [ class "gui-ghost" ]
+                        [ ]
                 Knob _ value ->
                     g [ class "gui-knob" ]
                         [ text_
@@ -214,6 +218,7 @@ renderCell position (Focus focus) isSelected cell =
                         ]
         cellLabel cell =
             case cell of
+                Ghost label -> label
                 Knob label _ -> label
                 Toggle label _ _ -> label
                 Button label _ -> label

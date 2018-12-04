@@ -119,6 +119,10 @@
     opacity: 0;
 }
 
+.gui-ghost {
+    background-color: rgba(0,0,0,0.1);
+}
+
 .hole {
     /* border-color: #333;
     background-color: rgba(0, 0, 0, 0.3); */

@@ -99,6 +99,9 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
     let
         posStr = showGridPos gridPos ++ " " ++ showNestPos nestPos
     in case cell of
+        Ghost label  ->
+            span []
+                [ text <| posStr ++ " ghost: " ++ label ]
         Knob label val ->
             span []
                 [ text <| posStr ++ " knob: " ++ label ++ " " ++ toString val ]
