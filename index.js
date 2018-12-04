@@ -239,10 +239,21 @@ setTimeout(() => {
     });
 
     app.ports.requestRandomize.subscribe((model) => {
+        const toSend = deepClone(model);
+        toSend.layers = toSend.layers.map((layerDef) => {
+            layerDef.model = JSON.parse(layerDef.model);
+            return layerDef;
+        });
         randomize((randomizedModel) => {
-            console.log('apply randomize', randomizedModel);
-            app.ports.applyRandomizer.send(randomizedModel);
-        }, model, null)({})();
+            //const toSend = deepClone(randomizedModel);
+            randomizedModel.layers.forEach((layer) => {
+                console.log(layer, layer.model);
+            });
+            prepareModelForImport(randomizedModel).layers.forEach((layer) => {
+                console.log(layer, layer.model);
+            });
+            app.ports.applyRandomizer.send(prepareModelForImport(randomizedModel));
+        }, toSend, null)({})();
     });
 
     app.ports.startGui.subscribe((model) => {
