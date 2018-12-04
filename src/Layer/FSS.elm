@@ -653,6 +653,7 @@ vertexShader =
         uniform float uOpacity;
 
         uniform vec2 uMousePosition;
+        uniform int uProductId;
         uniform float uMirror;
         uniform vec2 uClip;
 
@@ -667,7 +668,7 @@ vertexShader =
        float time = uNow;
        vec3 position = vec3(0.0);
        bool background = false;
-       bool low_poly = false;
+       bool midLayer = false;
 
        //       vec3 vertexOscillators(vec3 arg) {
        //     return vec3(sin(arg[0]), cos(arg[1]), sin(arg[2]));
@@ -701,22 +702,19 @@ vertexShader =
                 return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
             }
 
-        vec3 hsv2rgb(vec3 c)
-            {
-                vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-                vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-                return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-            }
+        vec3 hsv2rgb(vec3 c){
+            vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+            vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+            return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+        }
 
-         vec4 adjustLight(vec4 origColor, float deltaHue, float deltaSaturation, float deltaBrightness) {
-
-                vec3 changedColor  = rgb2hsv(origColor.rgb);
-                    changedColor[0] = clamp(changedColor[0] + deltaHue, 0.0, 1.0); // hue shift
-                    changedColor[1] = clamp(changedColor[1] + deltaSaturation, 0.0, 1.0); // saturation shift
-                    changedColor[2] = clamp(changedColor[2] + deltaBrightness, 0.0, 1.0); // brightness shift
-
-                    return vec4(vec3(hsv2rgb(changedColor)), 1.0);
-         }
+        vec4 adjustLight(vec4 origColor, vec3 hsb) {
+            vec3 changedColor  = rgb2hsv(origColor.rgb);
+            changedColor[0] = clamp(changedColor[0] + hsb[0], 0.0, 1.0); // hue shift
+            changedColor[1] = clamp(changedColor[1] + hsb[1], 0.0, 1.0); // saturation shift
+            changedColor[2] = clamp(changedColor[2] + hsb[2], 0.0, 1.0); // brightness shift
+            return vec4(vec3(hsv2rgb(changedColor)), 1.0);
+        }
 
 
         // Main
@@ -729,7 +727,7 @@ vertexShader =
            }
 
             if ( uLayerIndex == 1 ) {
-              low_poly = true;
+              midLayer = true;
            }
 
 
@@ -757,8 +755,126 @@ vertexShader =
 
             vec4 light1 = vec4(0.0);
             vec4 light2 = vec4(0.0);
+            vec3 deltaHSVLight1 = vec3(0.0);
+            vec3 deltaHSVLight2 = vec3(0.0);
+            float shine = 1.0;
+            
+            // hue shift in shadows 
+            vec3 shadowColor = rgb2hsv( aGradient.rgb );
 
 
+            if( uProductId == 0 ) {
+                shadowColor[0] -= 0.25;
+                shadowColor[1] = 1.0;
+                shadowColor[2] *= 0.5;
+            }
+
+            if( uProductId == 1 ) {
+                deltaHSVLight1 = vec3( 0.0, 0.0, -0.2 );
+                deltaHSVLight2 = vec3( -0.1, 1.0, 1.0 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.9;
+                shine = 1.1;
+                orbitFactor[1] += 2.5;
+            }
+
+            if( uProductId == 2 ) {
+                deltaHSVLight1 = vec3( 0.1, 0.0, 0.2 );
+                deltaHSVLight2 = vec3( -0.1, 0.0, -0.4 );
+                shadowColor[0] -= 0.4;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.4;
+                orbitFactor[2] -= 0.5;
+            }    
+
+            if( uProductId == 3 ) {
+                deltaHSVLight1 = vec3( 0.1, 1.0, 0.2 );
+                deltaHSVLight2 = vec3( -0.1, 1.0, 0.4 );
+                shadowColor[0] += 0.3;
+                shadowColor[1] = 0.3;
+                shadowColor[2] *= 0.4;
+                shine = 1.1;
+                orbitFactor[1] += 1.5;
+            }    
+
+            if( uProductId == 5 ) {
+                deltaHSVLight1 = vec3( 0.0, 0.5, -0.1 );
+                deltaHSVLight2 = vec3( 0.1, 1.0, 0.7 );
+                shadowColor[0] -= 0.1;
+                shadowColor[1] = 0.5;
+                shadowColor[2] *= 0.5;
+                shine = 1.1;
+                orbitFactor[1] += 1.5;
+            }    
+            if( uProductId == 6 ) {
+                deltaHSVLight1 = vec3( -0.04, 1.0, -0.1 );
+                deltaHSVLight2 = vec3( 0.0, 1.0, 0.9 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.5;
+                shine = 1.3;
+                orbitFactor[0] += 0.5;
+            }    
+            if( uProductId == 7 ) {
+                deltaHSVLight1 = vec3( -0.18, 0.9, 0.8 );
+                deltaHSVLight2 = vec3( 0.0, 0.4, 0.8 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.4;
+                shadowColor[2] *= 0.4;
+                shine = 1.4;
+                orbitFactor[0] -= 1.5;
+            }  
+            if( uProductId == 8 ) {
+                deltaHSVLight1 = vec3( -0.03, 0.9, 0.1 );
+                deltaHSVLight2 = vec3( 0.0, 0.9, -0.1 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.2;
+                orbitFactor[1] -= 1.5;
+            }  
+
+            if( uProductId == 9 ) {
+                deltaHSVLight1 = vec3( 0.1, 0.8, 0.9 );
+                deltaHSVLight2 = vec3( 0.0, 0.6, 0.9 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.8;
+                shadowColor[2] *= 0.4;
+                orbitFactor[1] += 1.5;
+            }  
+            if( uProductId == 10 ) {
+                deltaHSVLight1 = vec3( -0.01, 0.8, -0.1 );
+                deltaHSVLight2 = vec3( 0.0, 0.6, 1.0 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.8;
+                shadowColor[2] *= 0.5;
+                orbitFactor[1] -= 2.0;
+            }  
+            if( uProductId == 11 ) {
+                deltaHSVLight1 = vec3( -0.02, 0.8, -0.1 );
+                deltaHSVLight2 = vec3( 0.0, 0.6, 1.0 );
+                shadowColor[0] -= 0.3;
+                shadowColor[1] = 0.9;
+                shadowColor[2] *= 0.3;
+                orbitFactor[1] -= 2.0;
+            } 
+
+            if( uProductId == 12 ) {
+                deltaHSVLight1 = vec3( 0.25, 1.0, 0.5 );
+                deltaHSVLight2 = vec3( -0.64, 1.0, 1.0 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 1.0;
+                shadowColor[2] *= 0.7;
+                orbitFactor[2] += 1.0;
+            }
+            if( uProductId == 13 ) {
+                deltaHSVLight1 = vec3( -0.45, 0.4, 0.9 );
+                deltaHSVLight2 = vec3( -0.2, -0.8, 0.7 );
+                shadowColor[0] -= 0.2;
+                shadowColor[1] = 0.8;
+                shadowColor[2] *= 0.4;
+                orbitFactor[2] += 1.0;
+            }                          
             // Iterate through lights
 
             for (int i = 0; i < 2; i++) {
@@ -767,16 +883,16 @@ vertexShader =
                 vec3 lightPosition = orbitFactor[i] * vec3(uLightPosition[i]) * lightOscillators(vec3(vec2(uNow / lightsSpeed[i]), 90.0)) ;
 
                 if ( background ) {
-                    light2 =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
-                    light1 =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    light1 =  adjustLight(uLightDiffuse[i], uColorShift);
+                    light2 =  adjustLight(uLightAmbient[i], uColorShift);
                 } else {
-                    light1 =  adjustLight(uLightAmbient[i], uColorShift[0], uColorShift[1], uColorShift[2]);
-                    light2 =  adjustLight(uLightDiffuse[i], uColorShift[0], uColorShift[1], uColorShift[2]);
+                    light1 =  adjustLight(uLightAmbient[i], deltaHSVLight1 + uColorShift);
+                    light2 =  adjustLight(uLightDiffuse[i], deltaHSVLight2 + uColorShift);
                 }
 
                 vec3 ray = normalize(lightPosition - aCentroid);
                 float illuminance = dot(aNormal, ray);
-                illuminance = 1.1 * max(illuminance, 0.0);
+                illuminance = shine * max(illuminance, 0.0);
 
 
                 // Calculate ambient light
@@ -787,23 +903,8 @@ vertexShader =
 
             }
 
-            //Chaotic shadows
+       //Chaotic shadows
 
-            vec3 materialColor1 = rgb2hsv( vColor1.rgb );
-            vec3 shadowColor = rgb2hsv( aGradient.rgb );
-
-             // hue shift in shadows by material color  
-             if(materialColor1[0] > 0.3 && materialColor1[0] < 0.6 )
-             { 
-                 shadowColor[0] += 0.2;
-                 shadowColor[2] *= 0.5;
-
-             } else {
-                shadowColor[0] -= 0.2;
-                shadowColor[1] = 1.0;
-                shadowColor[2] *= 0.5;
-                 
-             }
              vColor *=  mix(vec4(hsv2rgb(shadowColor), 1.0), vColor, abs(position.z));
 
            // Set gl_Position
@@ -814,7 +915,6 @@ vertexShader =
               gl_Position.x = -1.0 * gl_Position.x;
           }
 
-      //  vColor = aGradient;
         }
 
    |]
@@ -849,7 +949,7 @@ fragmentShader =
 
        // vec4 bgColor = vec4(0.0, 0.0, 0.0, 1.0);
 
-       bool low_poly = false;
+       bool midLayer = false;
 
 
         float noise(vec2 seed, float time) {
@@ -894,7 +994,7 @@ fragmentShader =
         void main() {
 
         if ( uLayerIndex == 1 ) {
-              low_poly = true;
+              midLayer = true;
            }
 
 
@@ -921,7 +1021,7 @@ fragmentShader =
             gl_FragColor.rgb =  mix(gl_FragColor.rgb, shadowRGB, smoothstep(0.0, 1.3 - uIris, distance(actPos, vec2(0.5))));
 
             // noise by brightness
-            if ( low_poly ) {
+            if ( midLayer ) {
                gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(noise(actPos * 1000.0, 1.0) * 100.0), 0.02 / pow(brightness(gl_FragColor.rgb), 0.1));
             }
 
