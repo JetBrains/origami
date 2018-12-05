@@ -19,6 +19,9 @@ module Model exposing
     , PortLayerDef
     , PortBlend
     , Msg(..)
+    , initMouse
+    , withMouseAt
+    , findMouseVec
     , gui
     )
 
@@ -60,7 +63,7 @@ type Msg
     | GuiMessage (Gui.Msg Msg)
     | Resize Window.Size
     | ResizeFromPreset Window.Size
-    | Locate Position
+    | Locate Pos
     | Rotate Float
     | Import String
     | Export
@@ -160,6 +163,13 @@ type alias LayerDef =
     }
 
 
+type alias MouseState =
+    { pos: (Int, Int)
+    , vec: (Float, Float)
+    , down : Bool
+    }
+
+
 type alias Model =
     { background: String
     , mode : UiMode
@@ -172,7 +182,7 @@ type alias Model =
     , layers : List LayerDef
     , size : Size
     , origin : Pos
-    , mouse : (Int, Int)
+    , mouse : MouseState
     , now : Time
     , timeShift : Time
     , product : Product
@@ -217,28 +227,6 @@ type alias PortLayerDef =
     }
 
 
-initEmpty : UiMode -> Model
-initEmpty mode =
-    { background = "#333"
-    , mode = mode
-    , gui = Nothing
-    , paused = False
-    , autoRotate = False
-    , fps = 0
-    , theta = 0.1
-    , omega = 0.0
-    , layers = []
-    , size = ( 1200, 1200 )
-    , origin = ( 0, 0 )
-    , mouse = ( 0, 0 )
-    , now = 0.0
-    , timeShift = 0.0
-    --, range = ( 0.8, 1.0 )
-    , product = Product.JetBrains
-    , controlsVisible = True
-    }
-
-
 init
     :  UiMode
     -> List ( LayerKind, String, LayerModel )
@@ -264,6 +252,28 @@ init mode initialLayers createLayer =
         }
 
 
+initEmpty : UiMode -> Model
+initEmpty mode =
+    { background = "#333"
+    , mode = mode
+    , gui = Nothing
+    , paused = False
+    , autoRotate = False
+    , fps = 0
+    , theta = 0.1
+    , omega = 0.0
+    , layers = []
+    , size = ( 1200, 1200 )
+    , origin = ( 0, 0 )
+    , mouse = initMouse
+    , now = 0.0
+    , timeShift = 0.0
+    --, range = ( 0.8, 1.0 )
+    , product = Product.JetBrains
+    , controlsVisible = True
+    }
+
+
 emptyLayer : Layer
 emptyLayer =
     SVGLayer NoContent SVGBlend.default
@@ -278,6 +288,33 @@ sizePresets =
         , ( "1536x864", ( 1536, 864 ) )
         , ( "1680x1050", ( 1680, 1050 ) )
         ]
+
+
+initMouse : MouseState
+initMouse =
+    { pos = ( 0, 0 )
+    , vec = ( 0, 0 )
+    , down = False
+    }
+
+
+withMouseAt : Pos -> MouseState
+withMouseAt pos =
+    { pos = pos
+    , vec = ( 0, 0 )
+    , down = False
+    }
+
+
+findMouseVec : Pos -> Pos -> ( Float, Float )
+findMouseVec ( prevX, prevY ) ( curX, curY ) =
+    ( if prevX == curX then 0.0
+        else if prevX < curX then -1.0
+            else 1.0
+    , if prevY == curY then 0.0
+        else if prevY < curY then -1.0
+            else 1.0
+    )
 
 
 gui : Model -> Gui.Model Msg

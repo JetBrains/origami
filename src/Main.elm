@@ -189,9 +189,19 @@ update msg model =
                 )
 
         Locate pos ->
-            ( { model | mouse = (pos.x, pos.y) }
-            , Cmd.none
-            )
+            let
+                prevMouse = model.mouse
+                curMouse =
+                    { pos = pos
+                    , vec = findMouseVec prevMouse.pos pos
+                    , down = prevMouse.down
+                    }
+            in
+                ( { model
+                  | mouse = curMouse
+                  }
+                , Cmd.none
+                )
 
         TurnOn index ->
             ( model |> updateLayerDef index
@@ -693,8 +703,8 @@ subscriptions model =
         --         |> Maybe.map (\pos -> Pause)
         --         |> Maybe.withDefault NoOp
         --   )
-        , moves (\pos ->
-            toLocal model.size pos
+        , moves (\{ x, y } ->
+            toLocal model.size (x, y)
                 |> Maybe.map (\localPos -> Locate localPos)
                 |> Maybe.withDefault NoOp
           )
@@ -773,10 +783,10 @@ getOrigin (width, height) =
     )
 
 
-toLocal : (Int, Int) -> Position -> Maybe Position
-toLocal (width, height) pos =
-        if (pos.x <= width) && (pos.y <= height)
-        then Just pos else Nothing
+toLocal : (Int, Int) -> Pos -> Maybe Pos
+toLocal (width, height) (x, y) =
+        if (x <= width) && (y <= height)
+        then Just (x, y) else Nothing
 
 
 
@@ -884,7 +894,7 @@ layerToEntities model viewport index layerDef =
                     in
                         [ FSS.makeEntity
                             model.now
-                            model.mouse
+                            model.mouse.pos
                             (model.product |> Product.getId)
                             index
                             viewport

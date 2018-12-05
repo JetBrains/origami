@@ -21,7 +21,6 @@ import Svg.Blend as SVGBlend
 import Layer.FSS as FSS
 import Product exposing (..)
 
-import Gui.Gui as Gui
 import Model as M
 
 
@@ -133,7 +132,7 @@ encodeModel_ model =
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
         , ( "size", encodeIntPair model.size )
         , ( "origin", encodeIntPair model.origin )
-        , ( "mouse", encodeIntPair model.mouse )
+        , ( "mouse", encodeIntPair model.mouse.pos )
         , ( "now", E.float model.now )
         , ( "palette",
             model.product
@@ -159,7 +158,7 @@ encodePortModel model =
     , layers = List.map encodePortLayer model.layers
     , size = model.size
     , origin = model.origin
-    , mouse = model.mouse
+    , mouse = model.mouse.pos
     , palette = model.product |> getPalette
     , product = model.product |> Product.encode
     }
@@ -177,10 +176,10 @@ decodePortModel createLayer portModel =
             , now = portModel.now
             , theta = portModel.theta
             , omega = portModel.omega
-            , layers = Debug.log "layers" <| List.map (decodePortLayer createLayer) portModel.layers
+            , layers = List.map (decodePortLayer createLayer) portModel.layers
             , size = portModel.size
             , origin = portModel.origin
-            , mouse = portModel.mouse
+            , mouse = M.withMouseAt portModel.mouse
             , product = portModel.product |> Product.decode
             }
     in
@@ -410,7 +409,7 @@ modelDecoder mode createLayer =
                 , layers = layers
                 , size = size
                 , origin = origin
-                , mouse = mouse
+                , mouse = M.withMouseAt mouse
                 , now = now
                 , product = product
                 --, palette = Product.getPalette product
