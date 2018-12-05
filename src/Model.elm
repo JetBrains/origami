@@ -64,6 +64,8 @@ type Msg
     | Resize Window.Size
     | ResizeFromPreset Window.Size
     | Locate Pos
+    | MouseUp
+    | MouseDown
     | Rotate Float
     | Import String
     | Export

@@ -4,7 +4,7 @@ import Array exposing (Array)
 import AnimationFrame
 import Time exposing (Time)
 import Window
-import Mouse exposing (clicks, moves, Position)
+import Mouse exposing (clicks, moves, downs, ups, Position)
 import Task exposing (Task)
 
 import Html exposing (Html, text, div, span, input)
@@ -199,6 +199,32 @@ update msg model =
             in
                 ( { model
                   | mouse = curMouse
+                  }
+                , Cmd.none
+                )
+
+        MouseUp ->
+            let
+                prevMouse = model.mouse
+            in
+                ( { model
+                  | mouse =
+                      { prevMouse
+                      | down = False
+                      }
+                  }
+                , Cmd.none
+                )
+
+        MouseDown ->
+            let
+                prevMouse = model.mouse
+            in
+                ( { model
+                  | mouse =
+                      { prevMouse
+                      | down = True
+                      }
                   }
                 , Cmd.none
                 )
@@ -433,7 +459,7 @@ update msg model =
             )
 
         ApplyRandomizer portModel ->
-            (Debug.log "randomized" <| IE.decodePortModel createLayer portModel)
+            (IE.decodePortModel createLayer portModel)
                 |> rebuildAllFssLayersWith
 
         NoOp -> ( model, Cmd.none )
@@ -708,6 +734,8 @@ subscriptions model =
                 |> Maybe.map (\localPos -> Locate localPos)
                 |> Maybe.withDefault NoOp
           )
+        , downs <| always MouseDown
+        , ups <| always MouseUp
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
         , changeFssRenderMode (\{value, layer} ->
