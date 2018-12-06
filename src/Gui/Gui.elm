@@ -226,8 +226,11 @@ applyMove prev next =
 
 
 alterKnob : KnobState -> AlterKnob -> Float -> Float
-alterKnob { min, max, step } direction curValue =
-    case direction of
+alterKnob { min, max, step } (Alter amount) curValue =
+    -- amount is a (-0.5 <= value <= 0.5)
+    let
+        fullValue = if amount < 0 then (amount + 0.5)
+    in case direction of
         Up -> if (curValue + step < max) then curValue + step else max
         Down -> if (curValue - step > min) then curValue - step else min
         Stay -> curValue

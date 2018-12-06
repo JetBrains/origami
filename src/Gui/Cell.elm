@@ -58,10 +58,13 @@ type SelectionState
     | NotSelected
 
 
-type AlterKnob
-    = Up
-    | Down
-    | Stay
+-- type AlterKnob
+--     = Up
+--     | Down
+--     | Stay
+
+
+type AlterKnob = Alter Float -- from -0.5 to 0.5
 
 
 type Cell umsg
@@ -98,6 +101,9 @@ type Msg umsg
 
 cellWidth = 70
 cellHeight = 70
+
+
+knobDistance = cellHeight * 4
 
 
 labelColor = "white"
