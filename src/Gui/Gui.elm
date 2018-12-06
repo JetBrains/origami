@@ -2,6 +2,7 @@ module Gui.Gui exposing
     ( Msg, Model
     , view, update, build
     , moves, ups, downs
+    , extractMouse
     )
 
 
@@ -17,9 +18,16 @@ type alias Msg umsg = Gui.Cell.Msg umsg
 
 
 view = Tuple.second >> Gui.Grid.view
-moves = Gui.Mouse.moves
-ups = Gui.Mouse.ups >> TrackMouse
-downs = Gui.Mouse.downs >> TrackMouse
+--moves mstate = Gui.Mouse.moves mstate >> TrackMouse
+moves gui pos = extractMouse gui |> Gui.Mouse.moves pos |> TrackMouse
+--ups mstate = Gui.Mouse.ups mstate >> TrackMouse
+ups gui pos = extractMouse gui |> Gui.Mouse.ups pos |> TrackMouse
+--downs mstate = Gui.Mouse.downs mstate >> TrackMouse
+downs gui pos = extractMouse gui |> Gui.Mouse.downs pos |> TrackMouse
+
+
+extractMouse : Model umsg -> MouseState
+extractMouse = Tuple.first
 
 
 build : Nest umsg -> Model umsg

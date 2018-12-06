@@ -8,19 +8,26 @@ type alias MouseState =
     }
 
 
-moves : ( Int, Int ) -> ( Int, Int ) -> MouseState
-moves _ _
-    = init
+moves : ( Int, Int ) -> MouseState -> MouseState
+moves pos prev =
+    { prev
+    | vec = findMouseVec prev.pos pos
+    , pos = pos
+    }
 
 
-ups : a -> MouseState
-ups _
-    = init
+ups : a -> MouseState -> MouseState
+ups _ prev =
+    { prev
+    | down = False
+    }
 
 
-downs : a -> MouseState
-downs _
-    = init
+downs : a -> MouseState -> MouseState
+downs _ prev =
+    { prev
+    | down = True
+    }
 
 
 init : MouseState

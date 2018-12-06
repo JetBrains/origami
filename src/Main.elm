@@ -189,12 +189,16 @@ update msg model =
                 )
 
         Locate pos ->
-            (
-                { model
-                | mouse = pos
-                } --|> update (GuiMessage <| Gui.moves pos)
-            , Cmd.none
-            )
+            let
+                modelWithMouse =
+                    { model
+                    | mouse = pos
+                    }
+                message = model.gui
+                    |> Maybe.map (\gui -> Gui.moves gui pos |> GuiMessage)
+                    |> Maybe.withDefault NoOp
+            in
+                update message modelWithMouse
 
         TurnOn index ->
             ( model |> updateLayerDef index
@@ -685,6 +689,13 @@ updateLayerBlend index ifWebgl ifSvg model =
             })
 
 
+tellGui : (Gui.Model Msg -> a -> Gui.Msg Msg) -> Model -> a -> Msg
+tellGui f model =
+    model.gui
+        |> Maybe.map (\gui -> f gui >> GuiMessage)
+        |> Maybe.withDefault (always NoOp)
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
@@ -701,8 +712,10 @@ subscriptions model =
                 |> Maybe.map (\localPos -> Locate localPos)
                 |> Maybe.withDefault NoOp
           )
-        , downs <| Gui.downs >> GuiMessage
-        , ups <| Gui.ups >> GuiMessage
+        --, downs <| Gui.downs >> GuiMessage
+        , downs <| tellGui Gui.downs model
+        -- , ups <| Gui.ups >> GuiMessage
+        , ups <| tellGui Gui.ups model
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
         , changeFssRenderMode (\{value, layer} ->
