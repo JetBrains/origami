@@ -132,7 +132,7 @@ encodeModel_ model =
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
         , ( "size", encodeIntPair model.size )
         , ( "origin", encodeIntPair model.origin )
-        , ( "mouse", encodeIntPair model.mouse.pos )
+        , ( "mouse", encodeIntPair model.mouse )
         , ( "now", E.float model.now )
         , ( "palette",
             model.product
@@ -158,7 +158,7 @@ encodePortModel model =
     , layers = List.map encodePortLayer model.layers
     , size = model.size
     , origin = model.origin
-    , mouse = model.mouse.pos
+    , mouse = model.mouse
     , palette = model.product |> getPalette
     , product = model.product |> Product.encode
     }
@@ -179,7 +179,7 @@ decodePortModel createLayer portModel =
             , layers = List.map (decodePortLayer createLayer) portModel.layers
             , size = portModel.size
             , origin = portModel.origin
-            , mouse = M.withMouseAt portModel.mouse
+            , mouse = portModel.mouse
             , product = portModel.product |> Product.decode
             }
     in
@@ -409,7 +409,7 @@ modelDecoder mode createLayer =
                 , layers = layers
                 , size = size
                 , origin = origin
-                , mouse = M.withMouseAt mouse
+                , mouse = mouse
                 , now = now
                 , product = product
                 --, palette = Product.getPalette product

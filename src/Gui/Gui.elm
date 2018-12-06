@@ -1,20 +1,30 @@
 module Gui.Gui exposing
-    ( Msg
-    , Model
-    , view
-    , update
+    ( Msg, Model
+    , view, update, build
+    , moves, ups, downs
     )
 
 
 import Gui.Cell exposing (..)
 import Gui.Nest exposing (..)
 import Gui.Grid exposing (..)
+import Gui.Mouse exposing (..)
 
 
-type alias Model umsg = Nest umsg
+type alias Model umsg = ( MouseState, Nest umsg )
 type alias View umsg = Grid umsg
 type alias Msg umsg = Gui.Cell.Msg umsg
-view = Gui.Grid.view
+
+
+view = Tuple.second >> Gui.Grid.view
+moves = Gui.Mouse.moves
+ups = Gui.Mouse.ups >> TrackMouse
+downs = Gui.Mouse.downs >> TrackMouse
+
+
+build : Nest umsg -> Model umsg
+build nest =
+    ( Gui.Mouse.init, nest )
 
 
 subscriptions : Model umsg -> Sub (Msg umsg)
@@ -27,8 +37,12 @@ update
     -> Msg umsg
     -> Model umsg
     -> ( ( umodel, Cmd umsg ), Model umsg )
-update userUpdate userModel msg ui =
+update userUpdate userModel msg (( mouse, ui ) as model) =
     case msg of
+        TrackMouse mouse ->
+            ( userModel ! []
+            , ui |> withMouse mouse
+            )
         Tune pos value ->
             ( userModel ! []
             , ui
@@ -41,6 +55,7 @@ update userUpdate userModel msg ui =
                                 Knob label setup value
                             _ -> cell
                     )
+                |> withMouse mouse
             )
         ToggleOn pos ->
             ( userModel ! []
@@ -53,6 +68,7 @@ update userUpdate userModel msg ui =
                                 Toggle label TurnedOn handler
                             _ -> cell
                     )
+                |> withMouse mouse
             )
         ToggleOff pos ->
             ( userModel ! []
@@ -65,6 +81,7 @@ update userUpdate userModel msg ui =
                                 Toggle label TurnedOff handler
                             _ -> cell
                     )
+                |> withMouse mouse
             )
         ExpandNested pos ->
             ( userModel ! []
@@ -78,6 +95,7 @@ update userUpdate userModel msg ui =
                                 Nested label Expanded cells
                             _ -> cell
                     )
+                |> withMouse mouse
             )
         CollapseNested pos ->
             ( userModel ! []
@@ -89,8 +107,8 @@ update userUpdate userModel msg ui =
                             Nested label _ cells ->
                                 Nested label Collapsed cells
                             _ -> cell
-
-                  )
+                    )
+                |> withMouse mouse
             )
         ExpandChoice pos ->
             ( userModel ! []
@@ -104,6 +122,7 @@ update userUpdate userModel msg ui =
                                 Choice label Expanded selection handler cells
                             _ -> cell
                     )
+                |> withMouse mouse
             )
         CollapseChoice pos ->
             ( userModel ! []
@@ -116,6 +135,7 @@ update userUpdate userModel msg ui =
                                 Choice label Collapsed selection handler cells
                             _ -> cell
                     )
+                |> withMouse mouse
             )
         Select pos ->
             ( userModel ! []
@@ -132,32 +152,37 @@ update userUpdate userModel msg ui =
                                     Choice label expanded index handler cells
                                 _ -> cell
                         )
+                    |> withMouse mouse
             )
 
-        SendToUser userMsg -> ( userUpdate userMsg userModel, ui )
+        SendToUser userMsg -> ( userUpdate userMsg userModel, ui |> withMouse mouse )
 
         SelectAndSendToUser pos userMsg ->
             sequenceUpdate userUpdate userModel
                 [ Select pos, SendToUser userMsg ]
-                ui
+                ( ui |> withMouse mouse )
 
         ToggleOnAndSendToUser pos userMsg ->
             sequenceUpdate userUpdate userModel
                 [ ToggleOn pos, SendToUser userMsg ]
-                ui
+                ( ui |> withMouse mouse )
 
         ToggleOffAndSendToUser pos userMsg ->
             sequenceUpdate userUpdate userModel
                 [ ToggleOff pos, SendToUser userMsg ]
-                ui
+                ( ui |> withMouse mouse )
 
         ShiftFocusLeftAt pos ->
-            ( userModel ! [], ui |> shiftFocusBy -1 pos )
+            ( userModel ! [], ui |> shiftFocusBy -1 pos |> withMouse mouse )
 
         ShiftFocusRightAt pos ->
-            ( userModel ! [], ui |> shiftFocusBy 1 pos )
+            ( userModel ! [], ui |> shiftFocusBy 1 pos |> withMouse mouse )
 
-        NoOp -> ( userModel ! [], ui )
+        NoOp -> ( userModel ! [], ui |> withMouse mouse )
+
+
+withMouse : MouseState -> Nest umsg -> Model umsg
+withMouse = (,)
 
 
 sequenceUpdate

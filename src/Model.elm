@@ -19,9 +19,6 @@ module Model exposing
     , PortLayerDef
     , PortBlend
     , Msg(..)
-    , initMouse
-    , withMouseAt
-    , findMouseVec
     , gui
     )
 
@@ -64,8 +61,6 @@ type Msg
     | Resize Window.Size
     | ResizeFromPreset Window.Size
     | Locate Pos
-    | MouseUp
-    | MouseDown
     | Rotate Float
     | Import String
     | Export
@@ -165,13 +160,6 @@ type alias LayerDef =
     }
 
 
-type alias MouseState =
-    { pos: (Int, Int)
-    , vec: (Float, Float)
-    , down : Bool
-    }
-
-
 type alias Model =
     { background: String
     , mode : UiMode
@@ -184,7 +172,7 @@ type alias Model =
     , layers : List LayerDef
     , size : Size
     , origin : Pos
-    , mouse : MouseState
+    , mouse : Pos
     , now : Time
     , timeShift : Time
     , product : Product
@@ -267,7 +255,7 @@ initEmpty mode =
     , layers = []
     , size = ( 1200, 1200 )
     , origin = ( 0, 0 )
-    , mouse = initMouse
+    , mouse = ( 0, 0 )
     , now = 0.0
     , timeShift = 0.0
     --, range = ( 0.8, 1.0 )
@@ -290,33 +278,6 @@ sizePresets =
         , ( "1536x864", ( 1536, 864 ) )
         , ( "1680x1050", ( 1680, 1050 ) )
         ]
-
-
-initMouse : MouseState
-initMouse =
-    { pos = ( 0, 0 )
-    , vec = ( 0, 0 )
-    , down = False
-    }
-
-
-withMouseAt : Pos -> MouseState
-withMouseAt pos =
-    { pos = pos
-    , vec = ( 0, 0 )
-    , down = False
-    }
-
-
-findMouseVec : Pos -> Pos -> ( Float, Float )
-findMouseVec ( prevX, prevY ) ( curX, curY ) =
-    ( if prevX == curX then 0.0
-        else if prevX < curX then -1.0
-            else 1.0
-    , if prevY == curY then 0.0
-        else if prevY < curY then -1.0
-            else 1.0
-    )
 
 
 gui : Model -> Gui.Model Msg
@@ -476,25 +437,26 @@ gui from =
         chooseBlendAlphaFact2 layerIndex index label =
             NoOp
     in
-        oneLine <|
-            [ Choice "product" Collapsed 0 chooseProduct productsGrid
-            , Knob "rotation" defaultKnobSetup 0
-            , Choice "size" Collapsed 0 chooseSize sizeGrid
-            , Button "save png" <| always SavePng
-            , Button "lucky" <| always Randomize
-            ]
-            ++ List.indexedMap
-                (\layerIndex { name, layer, model } ->
-                    case layer of
-                        WebGLLayer webGllayer webglBlend ->
-                            case model of
-                                FssModel fssModel ->
-                                    Nested (String.toLower name) Collapsed
-                                        <| fssControls fssModel webglBlend layerIndex
-                                _ -> Ghost <| "layer " ++ toString layerIndex
-                        SVGLayer _ svgBlend ->
-                            Nested (String.toLower name) Collapsed
-                                <| svgControls svgBlend layerIndex
-                )
-                from.layers
+        Gui.build <|
+            oneLine <|
+                [ Choice "product" Collapsed 0 chooseProduct productsGrid
+                , Knob "rotation" defaultKnobSetup 0
+                , Choice "size" Collapsed 0 chooseSize sizeGrid
+                , Button "save png" <| always SavePng
+                , Button "lucky" <| always Randomize
+                ]
+                ++ List.indexedMap
+                    (\layerIndex { name, layer, model } ->
+                        case layer of
+                            WebGLLayer webGllayer webglBlend ->
+                                case model of
+                                    FssModel fssModel ->
+                                        Nested (String.toLower name) Collapsed
+                                            <| fssControls fssModel webglBlend layerIndex
+                                    _ -> Ghost <| "layer " ++ toString layerIndex
+                            SVGLayer _ svgBlend ->
+                                Nested (String.toLower name) Collapsed
+                                    <| svgControls svgBlend layerIndex
+                    )
+                    from.layers
 

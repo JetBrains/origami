@@ -7,6 +7,9 @@ import Html.Events as H
 import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 
+import Gui.Mouse exposing (..)
+
+
 type alias Label = String
 
 type alias ItemChosen = Int
@@ -68,6 +71,7 @@ type Cell umsg
 
 type Msg umsg
     = NoOp
+    | TrackMouse MouseState
     | Tune NestPos Float
     | ToggleOn NestPos
     | ToggleOff NestPos

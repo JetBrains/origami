@@ -189,45 +189,12 @@ update msg model =
                 )
 
         Locate pos ->
-            let
-                prevMouse = model.mouse
-                curMouse =
-                    { pos = pos
-                    , vec = findMouseVec prevMouse.pos pos
-                    , down = prevMouse.down
-                    }
-            in
-                ( { model
-                  | mouse = curMouse
-                  }
-                , Cmd.none
-                )
-
-        MouseUp ->
-            let
-                prevMouse = model.mouse
-            in
-                ( { model
-                  | mouse =
-                      { prevMouse
-                      | down = False
-                      }
-                  }
-                , Cmd.none
-                )
-
-        MouseDown ->
-            let
-                prevMouse = model.mouse
-            in
-                ( { model
-                  | mouse =
-                      { prevMouse
-                      | down = True
-                      }
-                  }
-                , Cmd.none
-                )
+            (
+                { model
+                | mouse = pos
+                } --|> update (GuiMessage <| Gui.moves pos)
+            , Cmd.none
+            )
 
         TurnOn index ->
             ( model |> updateLayerDef index
@@ -734,8 +701,8 @@ subscriptions model =
                 |> Maybe.map (\localPos -> Locate localPos)
                 |> Maybe.withDefault NoOp
           )
-        , downs <| always MouseDown
-        , ups <| always MouseUp
+        , downs <| Gui.downs >> GuiMessage
+        , ups <| Gui.ups >> GuiMessage
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
         , changeFssRenderMode (\{value, layer} ->
@@ -922,7 +889,7 @@ layerToEntities model viewport index layerDef =
                     in
                         [ FSS.makeEntity
                             model.now
-                            model.mouse.pos
+                            model.mouse
                             (model.product |> Product.getId)
                             index
                             viewport
