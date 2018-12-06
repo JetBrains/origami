@@ -86,14 +86,6 @@ doCellPurpose { cell, nestPos, isSelected, onSelect } =
                 _ -> NoOp
 
 
-findHoverMessage : GridCell umsg -> Msg umsg
-findHoverMessage { cell, nestPos }  =
-    case cell of
-        Knob label _ value ->
-            Tune nestPos (value + 1)
-        _ -> NoOp
-
-
 viewCellContentDebug : GridPos -> GridCell umsg -> Html (Msg umsg)
 viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected } =
     let
@@ -181,7 +173,6 @@ viewCell focus gridPos maybeGridCell =
                 |> Maybe.map
                     (\gridCell ->
                         [ H.onClick <| doCellPurpose gridCell
-                        , H.onMouseOver <| findHoverMessage gridCell
                         ]
                     )
                 |> Maybe.withDefault []

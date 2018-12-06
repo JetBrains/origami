@@ -38,14 +38,6 @@ init =
     }
 
 
---withMouseAt : Pos -> MouseState
-withMouseAt pos =
-    { pos = pos
-    , vec = ( 0, 0 )
-    , down = False
-    }
-
-
 --findMouseVec : Pos -> Pos -> ( Float, Float )
 findMouseVec ( prevX, prevY ) ( curX, curY ) =
     ( if prevX == curX then 0.0

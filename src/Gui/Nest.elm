@@ -184,9 +184,12 @@ findCell : NestPos -> Nest umsg -> Maybe (Cell umsg)
 findCell pos nest =
     nest |>
         foldCells (\cell cellPos maybeFound ->
-            case ( maybeFound, isSamePos cellPos pos ) of
-                ( Nothing, True ) -> Just cell
-                _ -> Nothing
+            case maybeFound of
+                Just cell -> Just cell
+                Nothing ->
+                    if isSamePos cellPos pos
+                        then Just cell
+                        else Nothing
         ) Nothing
 
 

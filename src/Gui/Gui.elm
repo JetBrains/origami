@@ -45,12 +45,14 @@ update
     -> Msg umsg
     -> Model umsg
     -> ( ( umodel, Cmd umsg ), Model umsg )
-update userUpdate userModel msg (( mouse, ui ) as model) =
+update userUpdate userModel msg ( ( mouse, ui ) as model ) =
     case msg of
-        TrackMouse mouse ->
-            ( userModel ! []
-            , ui |> withMouse mouse
-            )
+
+        TrackMouse newMouse ->
+            update userUpdate userModel
+                (findMessageForMouse model newMouse)
+                ( newMouse, ui )
+
         Tune pos value ->
             ( userModel ! []
             , ui
@@ -65,6 +67,7 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                     )
                 |> withMouse mouse
             )
+
         ToggleOn pos ->
             ( userModel ! []
             , ui
@@ -78,6 +81,7 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                     )
                 |> withMouse mouse
             )
+
         ToggleOff pos ->
             ( userModel ! []
             , ui
@@ -91,6 +95,7 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                     )
                 |> withMouse mouse
             )
+
         ExpandNested pos ->
             ( userModel ! []
             , ui
@@ -105,6 +110,7 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                     )
                 |> withMouse mouse
             )
+
         CollapseNested pos ->
             ( userModel ! []
             , ui
@@ -118,6 +124,7 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                     )
                 |> withMouse mouse
             )
+
         ExpandChoice pos ->
             ( userModel ! []
             , ui
@@ -132,6 +139,7 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                     )
                 |> withMouse mouse
             )
+
         CollapseChoice pos ->
             ( userModel ! []
             , ui
@@ -145,6 +153,7 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                     )
                 |> withMouse mouse
             )
+
         Select pos ->
             ( userModel ! []
             , let
@@ -163,7 +172,10 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                     |> withMouse mouse
             )
 
-        SendToUser userMsg -> ( userUpdate userMsg userModel, ui |> withMouse mouse )
+        SendToUser userMsg ->
+            ( userUpdate userMsg userModel
+            , ui |> withMouse mouse
+            )
 
         SelectAndSendToUser pos userMsg ->
             sequenceUpdate userUpdate userModel
@@ -181,16 +193,40 @@ update userUpdate userModel msg (( mouse, ui ) as model) =
                 ( ui |> withMouse mouse )
 
         ShiftFocusLeftAt pos ->
-            ( userModel ! [], ui |> shiftFocusBy -1 pos |> withMouse mouse )
+            ( userModel ! []
+            , ui |> shiftFocusBy -1 pos |> withMouse mouse
+            )
 
         ShiftFocusRightAt pos ->
-            ( userModel ! [], ui |> shiftFocusBy 1 pos |> withMouse mouse )
+            ( userModel ! []
+            , ui |> shiftFocusBy 1 pos |> withMouse mouse
+            )
 
-        NoOp -> ( userModel ! [], ui |> withMouse mouse )
+        NoOp ->
+            ( userModel ! []
+            , ui |> withMouse mouse
+            )
 
 
 withMouse : MouseState -> Nest umsg -> Model umsg
 withMouse = (,)
+
+
+mouseMoved : MouseState -> MouseState -> Bool
+mouseMoved prev next =
+    next.vec /= ( 0.0, 0.0 )
+
+
+findMessageForMouse : Model umsg -> MouseState -> Msg umsg
+findMessageForMouse ( prevState, ui ) nextState =
+    let (Focus focusedPos) = findFocus ui
+    in
+        case findCell focusedPos ui of
+            Just (Knob _ _ _) ->
+                if mouseMoved prevState nextState then
+                    Tune focusedPos 1.0
+                else NoOp
+            _ -> NoOp
 
 
 sequenceUpdate

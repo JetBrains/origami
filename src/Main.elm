@@ -89,7 +89,6 @@ update msg model =
             case model.gui of
                 Just gui ->
                     let
-                        -- a_ = Debug.log "guiMsg" guiMsg
                         ( ( newModel, commands ), newGui ) =
                             gui |> Gui.update update model guiMsg
                     in
@@ -194,7 +193,7 @@ update msg model =
                     { model
                     | mouse = pos
                     }
-                message = model.gui
+                message = modelWithMouse.gui
                     |> Maybe.map (\gui -> Gui.moves gui pos |> GuiMessage)
                     |> Maybe.withDefault NoOp
             in
@@ -827,9 +826,10 @@ mergeWebGLLayers model =
             |> List.filter .on
             |> List.indexedMap (,)
             -- |> List.concatMap (uncurry >> layerToEntities model viewport)
-            |> List.concatMap (\(index, layer) ->
-                    layerToEntities model viewport index layer
-               )
+            |> List.concatMap
+                    (\(index, layer) ->
+                        layerToEntities model viewport index layer
+                    )
 
 
 mergeHtmlLayers : Model -> List (Html Msg)
