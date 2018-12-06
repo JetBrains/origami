@@ -28,6 +28,8 @@ type alias ChoiceHandler umsg = (Int -> String -> umsg)
 
 type alias ToggleHandler umsg = (ToggleState -> umsg)
 
+type alias KnobState = { min : Float, max : Float, step : Float }
+
 
 type alias Nest umsg =
     { focus: Int
@@ -56,11 +58,15 @@ type SelectionState
     | NotSelected
 
 
+type AlterKnob
+    = Up
+    | Down
+    | Stay
+
+
 type Cell umsg
     = Ghost Label
-    | Knob Label
-        { min : Float, max : Float, step : Float }
-        Float -- value
+    | Knob Label KnobState Float -- value
     | Toggle Label ToggleState (ToggleHandler umsg)
     | Button Label (Handler umsg)
     | Nested Label ExpandState (Nest umsg)
@@ -72,7 +78,7 @@ type Cell umsg
 type Msg umsg
     = NoOp
     | TrackMouse MouseState
-    | Tune NestPos Float
+    | Tune NestPos AlterKnob
     | ToggleOn NestPos
     | ToggleOff NestPos
     | ExpandNested NestPos

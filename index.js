@@ -246,12 +246,12 @@ setTimeout(() => {
         });
         randomize((randomizedModel) => {
             //const toSend = deepClone(randomizedModel);
-            randomizedModel.layers.forEach((layer) => {
-                console.log(layer, layer.model);
-            });
-            prepareModelForImport(randomizedModel).layers.forEach((layer) => {
-                console.log(layer, layer.model);
-            });
+            // randomizedModel.layers.forEach((layer) => {
+            //     console.log(layer, layer.model);
+            // });
+            // prepareModelForImport(randomizedModel).layers.forEach((layer) => {
+            //     console.log(layer, layer.model);
+            // });
             app.ports.applyRandomizer.send(prepareModelForImport(randomizedModel));
         }, toSend, null)({})();
     });

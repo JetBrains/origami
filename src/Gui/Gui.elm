@@ -53,16 +53,16 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                 (findMessageForMouse model newMouse)
                 ( newMouse, ui )
 
-        Tune pos value ->
+        Tune pos alter ->
             ( userModel ! []
             , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
                         case cell of
-                            Knob label setup  _ ->
-                                -- TODO: use min, max, step
-                                Knob label setup value
+                            Knob label setup curValue ->
+                                Knob label setup
+                                    <| alterKnob setup alter curValue
                             _ -> cell
                     )
                 |> withMouse mouse
@@ -212,9 +212,25 @@ withMouse : MouseState -> Nest umsg -> Model umsg
 withMouse = (,)
 
 
-mouseMoved : MouseState -> MouseState -> Bool
-mouseMoved prev next =
-    next.vec /= ( 0.0, 0.0 )
+applyMove : MouseState -> MouseState -> AlterKnob
+applyMove prev next =
+    let
+        ( prevX, prevY ) = prev.vec
+        ( nextX, nextY ) = next.vec
+    in
+        if (nextY == 0.0) then Stay
+            else if (nextY < 0.0) then Down
+                else if (nextY > 0.0) then Up
+                    else Stay
+
+
+
+alterKnob : KnobState -> AlterKnob -> Float -> Float
+alterKnob { min, max, step } direction curValue =
+    case direction of
+        Up -> if (curValue + step < max) then curValue + step else max
+        Down -> if (curValue - step > min) then curValue - step else min
+        Stay -> curValue
 
 
 findMessageForMouse : Model umsg -> MouseState -> Msg umsg
@@ -223,9 +239,7 @@ findMessageForMouse ( prevState, ui ) nextState =
     in
         case findCell focusedPos ui of
             Just (Knob _ _ _) ->
-                if mouseMoved prevState nextState then
-                    Tune focusedPos 1.0
-                else NoOp
+                Tune focusedPos <| applyMove prevState nextState
             _ -> NoOp
 
 
