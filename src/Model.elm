@@ -85,10 +85,11 @@ type Msg
     --| RebuildOnClient LayerIndex FSS.SerializedScene
     | ChangeFssRenderMode LayerIndex FSS.RenderMode
     | ChangeFaces LayerIndex ( Int, Int )
+    | AlterFaces LayerIndex FSS.FacesChange
     | ChangeLightSpeed LayerIndex Int
     | ChangeVignette LayerIndex FSS.Vignette
     | ChangeIris LayerIndex FSS.Iris
-    | ChangeAmplitude LayerIndex FSS.AmplitudeChange
+    | AlterAmplitude LayerIndex FSS.AmplitudeChange
     | ShiftColor LayerIndex FSS.ColorShiftPatch
     | ChangeOpacity LayerIndex FSS.Opacity
     | Randomize
@@ -301,18 +302,6 @@ gui from =
             --, "dotcover"
             -- TODO
             ]
-        blendFuncs =
-            [ "+", "-", "R-" ]
-        blendFactors =
-            [ "0", "1"
-            , "sC", "1-sC"
-            , "dC", "1-dC"
-            , "sA", "1-sA"
-            , "dA", "1-dA"
-            , "AS"
-            , "CC", "1-CC"
-            , "CA", "1-CA"
-            ]
         svgBlends =
             [ "normal"
             , "overlay"
@@ -332,103 +321,15 @@ gui from =
             ( "window" :: Dict.keys sizePresets )
                 |> List.map ChoiceItem
                 |> nest ( 2, 3 )
-        webglBlendGrid currentBlend layerIndex =
-            let
-                funcGrid =
-                    blendFuncs
-                        |> List.map ChoiceItem
-                        |> nest ( 3, 1 )
-                factorGrid =
-                    blendFactors
-                        |> List.map ChoiceItem
-                        |> nest (8, 2)
-            in
-                nest ( 3, 2 )
-                -- TODO color
-                    [ Choice "colorFn" Collapsed 0
-                        (chooseBlendColorFn layerIndex) funcGrid
-                    , Choice "colorFt1" Collapsed 1
-                        (chooseBlendColorFact1 layerIndex) factorGrid
-                    , Choice "colorFt2" Collapsed 0
-                        (chooseBlendColorFact2 layerIndex) factorGrid
-                    , Choice "alphaFn" Collapsed 0
-                        (chooseBlendAlphaFn layerIndex) funcGrid
-                    , Choice "alphaFt1" Collapsed 1
-                        (chooseBlendAlphaFact1 layerIndex) factorGrid
-                    , Choice "alphaFt2" Collapsed 0
-                        (chooseBlendAlphaFact2 layerIndex) factorGrid
-                    ]
         svgBlendGrid =
             svgBlends
                 |> List.map ChoiceItem
                 |> nest ( 3, 3 )
-        amplitudeGrid = noChildren
-        fssControls fssModel currentBlend layerIndex =
-            let
-                { lightSpeed, faces } = fssModel
-                ( facesX, facesY ) = faces
-                changeFacesX val = NoOp
-                changeFacesY val = NoOp
-                changeAmplutudeX val = NoOp
-                changeAmplutudeY val = NoOp
-                changeAmplutudeZ val = NoOp
-                changeHue val = NoOp
-                changeSaturation val = NoOp
-                changeBrightness val = NoOp
-                lightSpeedSetup =
-                    { min = 0.0, max = 2000.0, step = 1.0, roundBy = 1
-                    , default = toFloat lightSpeed }
-                facesKnobSetup =
-                    { min = 0.0, max = 100.0, step = 1.0, roundBy = 1, default = -1 }
-            in
-                oneLine
-                    [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
-                    , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
-                    , Knob "lights" lightSpeedSetup (toFloat lightSpeed)
-                        <| round >> ChangeLightSpeed layerIndex
-                    , Knob "col"
-                        ({ facesKnobSetup | default = toFloat facesX })
-                        (toFloat facesX)
-                        changeFacesX
-                    , Knob "row"
-                        ({ facesKnobSetup | default = toFloat facesY })
-                        (toFloat facesY)
-                        changeFacesY
-                    , Nested "fog" Collapsed <|
-                        nest ( 2, 1 )
-                            [ Knob "shine" defaultKnobSetup 0 <| ChangeVignette layerIndex
-                            , Knob "density" defaultKnobSetup 0 <| ChangeIris layerIndex
-                            ]
-                    , Choice "mesh" Collapsed 0 (chooseMesh layerIndex) <|
-                        nest ( 2, 1 )
-                            [ ChoiceItem "triangles"
-                            , ChoiceItem "lines"
-                            ]
-                    , Nested "ranges" Collapsed <|
-                            nest ( 3, 1 )
-                                [ Knob "horizontal" defaultKnobSetup 0 changeAmplutudeX
-                                , Knob "vertical" defaultKnobSetup 0 changeAmplutudeY
-                                , Knob "depth" defaultKnobSetup 0 changeAmplutudeZ
-                                ]
-                    , Nested "hsb" Collapsed <|
-                        nest ( 3, 1 )
-                            [ Knob "hue" defaultKnobSetup 0 changeHue
-                            , Knob "saturation" defaultKnobSetup 0 changeSaturation
-                            , Knob "brightness" defaultKnobSetup 0 changeBrightness
-                            ]
-                    , Nested "blend" Collapsed (webglBlendGrid currentBlend layerIndex)
-                    ]
         svgControls currentBlend layerIndex =
             oneLine
                 [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
                 , Choice "blend" Collapsed 0 (chooseSvgBlend layerIndex) svgBlendGrid
                 ]
-        toggleMirror layerIndex state =
-            layerIndex |> if (state == TurnedOn) then MirrorOn else MirrorOff
-        toggleVisibility layerIndex state =
-            layerIndex |> if (state == TurnedOn) then TurnOn else TurnOff
-        chooseMesh layerIndex _ label =
-            FSS.decodeRenderMode label |> ChangeFssRenderMode layerIndex
         chooseProduct _ label =
             case label of
                 "resharper c++" -> ChangeProduct Product.ReSharperCpp
@@ -443,22 +344,11 @@ gui from =
             NoOp
         chooseSvgBlend layerIndex _ label =
             ChangeSVGBlend layerIndex <| SVGBlend.decode label
-        chooseBlendColorFn layerIndex index label =
-            NoOp
-        chooseBlendColorFact1 layerIndex index label =
-            NoOp
-        chooseBlendColorFact2 layerIndex index label =
-            NoOp
-        chooseBlendAlphaFn layerIndex index label =
-            NoOp
-        chooseBlendAlphaFact1 layerIndex index label =
-            NoOp
-        chooseBlendAlphaFact2 layerIndex index label =
-            NoOp
+        toggleVisibility layerIndex state =
+            layerIndex |> if (state == TurnedOn) then TurnOn else TurnOff
         rotateKnobSetup =
             { min = -1.0, max = 1.0, step = 0.05, roundBy = 100
             , default = from.omega }
-        defaultKnobSetup = { min = 0.0, max = 1.0, step = 0.05, roundBy = 100, default = 0.5 }
     in
         Gui.build <|
             oneLine <|
@@ -483,3 +373,141 @@ gui from =
                     )
                     from.layers
 
+
+webglBlendGrid : WGLBlend.Blend -> LayerIndex -> Nest Msg
+webglBlendGrid currentBlend layerIndex =
+    let
+        blendFuncs =
+            [ "+", "-", "R-" ]
+        blendFactors =
+            [ "0", "1"
+            , "sC", "1-sC"
+            , "dC", "1-dC"
+            , "sA", "1-sA"
+            , "dA", "1-dA"
+            , "AS"
+            , "CC", "1-CC"
+            , "CA", "1-CA"
+            ]
+        funcGrid =
+            blendFuncs
+                |> List.map ChoiceItem
+                |> nest ( 3, 1 )
+        factorGrid =
+            blendFactors
+                |> List.map ChoiceItem
+                |> nest (8, 2)
+        chooseBlendColorFn layerIndex index label =
+            NoOp
+        chooseBlendColorFact1 layerIndex index label =
+            NoOp
+        chooseBlendColorFact2 layerIndex index label =
+            NoOp
+        chooseBlendAlphaFn layerIndex index label =
+            NoOp
+        chooseBlendAlphaFact1 layerIndex index label =
+            NoOp
+        chooseBlendAlphaFact2 layerIndex index label =
+            NoOp
+    in
+        nest ( 3, 2 )
+        -- TODO color
+            [ Choice "colorFn" Collapsed 0
+                (chooseBlendColorFn layerIndex) funcGrid
+            , Choice "colorFt1" Collapsed 1
+                (chooseBlendColorFact1 layerIndex) factorGrid
+            , Choice "colorFt2" Collapsed 0
+                (chooseBlendColorFact2 layerIndex) factorGrid
+            , Choice "alphaFn" Collapsed 0
+                (chooseBlendAlphaFn layerIndex) funcGrid
+            , Choice "alphaFt1" Collapsed 1
+                (chooseBlendAlphaFact1 layerIndex) factorGrid
+            , Choice "alphaFt2" Collapsed 0
+                (chooseBlendAlphaFact2 layerIndex) factorGrid
+            ]
+
+
+fssControls : FSS.Model -> WGLBlend.Blend -> LayerIndex -> Nest Msg
+fssControls fssModel currentBlend layerIndex =
+    let
+        { lightSpeed, faces, amplitude, vignette, iris, colorShift } = fssModel
+        ( facesX, facesY ) = faces
+        ( amplitudeX, amplitudeY, amplitudeZ ) = amplitude
+        ( hueShift, saturationShift, brightnessShift ) = colorShift
+        changeFacesX val = AlterFaces layerIndex ( Just <| round val, Nothing )
+        changeFacesY val = AlterFaces layerIndex ( Nothing, Just <| round val )
+        changeAmplutudeX val = AlterAmplitude layerIndex ( Just val, Nothing, Nothing )
+        changeAmplutudeY val = AlterAmplitude layerIndex ( Nothing, Just val, Nothing )
+        changeAmplutudeZ val = AlterAmplitude layerIndex ( Nothing, Nothing, Just val )
+        changeHue val = ShiftColor layerIndex ( Just val, Nothing, Nothing )
+        changeSaturation val = ShiftColor layerIndex ( Nothing, Just val, Nothing )
+        changeBrightness val = ShiftColor layerIndex ( Nothing, Nothing, Just val )
+        toggleMirror layerIndex state =
+            layerIndex |> if (state == TurnedOn) then MirrorOn else MirrorOff
+        toggleVisibility layerIndex state =
+            layerIndex |> if (state == TurnedOn) then TurnOn else TurnOff
+        chooseMesh layerIndex _ label =
+            FSS.decodeRenderMode label |> ChangeFssRenderMode layerIndex
+        defaultKnobSetup defaultVal =
+            { min = 0.0, max = 1.0, step = 0.05, roundBy = 100, default = defaultVal }
+        lightSpeedSetup =
+            { min = 0.0, max = 2000.0, step = 1.0, roundBy = 1
+            , default = toFloat lightSpeed }
+        facesKnobSetup defaultVal =
+            { min = 0.0, max = 100.0, step = 1.0, roundBy = 1, default = defaultVal }
+        colorShiftKnobSetup defaultVal =
+            { min = -1.0, max = 1.0, step = 0.05, roundBy = 100, default = defaultVal }
+    in
+        oneLine
+            [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
+            , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
+            , Knob "lights" lightSpeedSetup (toFloat lightSpeed)
+                <| round >> ChangeLightSpeed layerIndex
+            , Knob "col"
+                (facesKnobSetup <| toFloat facesX)
+                (toFloat facesX)
+                changeFacesX
+            , Knob "row"
+                (facesKnobSetup <| toFloat facesY)
+                (toFloat facesY)
+                changeFacesY
+            , Nested "fog" Collapsed <|
+                nest ( 2, 1 )
+                    [ Knob "shine"
+                        (defaultKnobSetup vignette)
+                        vignette <| ChangeVignette layerIndex
+                    , Knob "density"
+                        (defaultKnobSetup iris)
+                        iris <| ChangeIris layerIndex
+                    ]
+            , Choice "mesh" Collapsed 0 (chooseMesh layerIndex) <|
+                nest ( 2, 1 )
+                    [ ChoiceItem "triangles"
+                    , ChoiceItem "lines"
+                    ]
+            , Nested "ranges" Collapsed <|
+                    nest ( 3, 1 )
+                        [ Knob "horizontal"
+                            (defaultKnobSetup amplitudeX)
+                            amplitudeX changeAmplutudeX
+                        , Knob "vertical"
+                            (defaultKnobSetup amplitudeY)
+                            amplitudeY changeAmplutudeY
+                        , Knob "depth"
+                            (defaultKnobSetup amplitudeZ)
+                            amplitudeZ changeAmplutudeZ
+                        ]
+            , Nested "hsb" Collapsed <|
+                nest ( 3, 1 )
+                    [ Knob "hue"
+                        (colorShiftKnobSetup hueShift)
+                        hueShift changeHue
+                    , Knob "saturation"
+                        (colorShiftKnobSetup saturationShift)
+                        saturationShift changeSaturation
+                    , Knob "brightness"
+                        (colorShiftKnobSetup brightnessShift)
+                        brightnessShift changeBrightness
+                    ]
+            , Nested "blend" Collapsed (webglBlendGrid currentBlend layerIndex)
+            ]

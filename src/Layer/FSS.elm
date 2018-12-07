@@ -5,6 +5,7 @@ module Layer.FSS exposing
     , SerializedScene
     , Amplitude, AmplitudeChange
     , ColorShift, ColorShiftPatch
+    , FacesChange
     , Opacity
     , Vignette, Iris
     , Clip
@@ -43,6 +44,7 @@ type alias Mirror = Float
 type alias Amplitude = ( Float, Float, Float )
 type alias ColorShift = ( Float, Float, Float )
 type alias Opacity = Float
+type alias FacesChange = ( Maybe Int, Maybe Int )
 type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
 type alias ColorShiftPatch = ( Maybe Float, Maybe Float, Maybe Float )
 type alias Speed = Float
@@ -758,8 +760,8 @@ vertexShader =
             vec3 deltaHSVLight1 = vec3(0.0);
             vec3 deltaHSVLight2 = vec3(0.0);
             float shine = 1.0;
-            
-            // hue shift in shadows 
+
+            // hue shift in shadows
             vec3 shadowColor = rgb2hsv( aGradient.rgb );
 
 
@@ -786,7 +788,7 @@ vertexShader =
                 shadowColor[1] = 0.9;
                 shadowColor[2] *= 0.4;
                 orbitFactor[2] -= 0.5;
-            }    
+            }
 
             if( uProductId == 3 ) { //RubyMine
                 deltaHSVLight1 = vec3( 0.1, 1.0, 0.2 );
@@ -796,7 +798,7 @@ vertexShader =
                 shadowColor[2] *= 0.4;
                 shine = 1.1;
                 orbitFactor[1] += 1.5;
-            }    
+            }
 
             if( uProductId == 5 ) { //WebStorm
                 deltaHSVLight1 = vec3( 0.0, 0.5, -0.1 );
@@ -806,7 +808,7 @@ vertexShader =
                 shadowColor[2] *= 0.5;
                 shine = 1.1;
                 orbitFactor[1] += 1.5;
-            }    
+            }
             if( uProductId == 6 ) { //CLion
                 deltaHSVLight1 = vec3( -0.04, 1.0, -0.1 );
                 deltaHSVLight2 = vec3( 0.0, 1.0, 0.9 );
@@ -815,7 +817,7 @@ vertexShader =
                 shadowColor[2] *= 0.5;
                 shine = 1.3;
                 orbitFactor[0] += 0.5;
-            }    
+            }
             if( uProductId == 7 ) { //DataGrip
                 deltaHSVLight1 = vec3( -0.18, 0.9, 0.8 );
                 deltaHSVLight2 = vec3( 0.0, 0.4, 0.8 );
@@ -824,7 +826,7 @@ vertexShader =
                 shadowColor[2] *= 0.4;
                 shine = 1.4;
                 orbitFactor[0] -= 1.5;
-            }  
+            }
             if( uProductId == 8 ) { //AppCode
                 deltaHSVLight1 = vec3( -0.03, 0.9, 0.1 );
                 deltaHSVLight2 = vec3( 0.0, 0.9, -0.1 );
@@ -832,7 +834,7 @@ vertexShader =
                 shadowColor[1] = 0.9;
                 shadowColor[2] *= 0.2;
                 orbitFactor[1] -= 1.5;
-            }  
+            }
 
             if( uProductId == 9 ) { //GoLand
                 deltaHSVLight1 = vec3( 0.1, 0.8, 0.9 );
@@ -841,7 +843,7 @@ vertexShader =
                 shadowColor[1] = 0.8;
                 shadowColor[2] *= 0.4;
                 orbitFactor[1] += 1.5;
-            }  
+            }
             if( uProductId == 10 ) { //ReSharper
                 deltaHSVLight1 = vec3( -0.01, 0.8, -0.1 );
                 deltaHSVLight2 = vec3( 0.0, 0.6, 1.0 );
@@ -849,7 +851,7 @@ vertexShader =
                 shadowColor[1] = 0.8;
                 shadowColor[2] *= 0.5;
                 orbitFactor[1] -= 2.0;
-            }  
+            }
             if( uProductId == 11 ) { //ReSharper C++
                 deltaHSVLight1 = vec3( -0.02, 0.8, -0.1 );
                 deltaHSVLight2 = vec3( 0.0, 0.6, 1.0 );
@@ -857,7 +859,7 @@ vertexShader =
                 shadowColor[1] = 0.9;
                 shadowColor[2] *= 0.3;
                 orbitFactor[1] -= 2.0;
-            } 
+            }
 
             if( uProductId == 12 ) { //dotCover
                 deltaHSVLight1 = vec3( 0.25, 1.0, 0.5 );
@@ -874,7 +876,7 @@ vertexShader =
                 shadowColor[1] = 0.8;
                 shadowColor[2] *= 0.4;
                 orbitFactor[2] += 1.0;
-            }     
+            }
 
             if( uProductId == 14 ) { //dotPeek
                 deltaHSVLight1 = vec3( 0.0, -0.7, -0.3 );
@@ -890,7 +892,7 @@ vertexShader =
                 shadowColor[0] -= 0.2;
                 shadowColor[1] = 0.8;
             }
-        
+
             if( uProductId == 16 ) { //Rider
                 deltaHSVLight1 = vec3( 0.15, 0.5, 0.0 );
                 deltaHSVLight2 = vec3( 0.0, 0.0, 1.0 );
@@ -905,7 +907,7 @@ vertexShader =
                 shadowColor[1] = 0.7;
                 shadowColor[2] *= 0.8;
                 orbitFactor[1] += 1.0;
-            }            
+            }
 
             if( uProductId == 18 ) { //YouTrack
                 deltaHSVLight1 = vec3( 0.0, -0.4, -0.2 );
@@ -914,7 +916,7 @@ vertexShader =
                 shadowColor[1] = 0.7;
                 shadowColor[2] *= 0.8;
                 orbitFactor[1] += 1.0;
-            }     
+            }
 
             if( uProductId == 19 ) { //Upsource
                 deltaHSVLight1 = vec3( 0.0, -0.3, -0.2 );
@@ -923,7 +925,7 @@ vertexShader =
                 shadowColor[1] = 0.7;
                 shadowColor[2] *= 0.8;
                 orbitFactor[1] += 1.0;
-            }                
+            }
 
             if( uProductId == 20 ) { //Hub
                 deltaHSVLight1 = vec3( 0.05, -0.4, -0.1 );
@@ -932,7 +934,7 @@ vertexShader =
                 shadowColor[1] = 0.9;
                 shadowColor[2] *= 0.5;
                 orbitFactor[1] += 1.5;
-            }  
+            }
 
             if( uProductId == 21 ) { //Kotlin
                 deltaHSVLight1 = vec3( 0.0, -0.2, -0.2 );
@@ -941,7 +943,7 @@ vertexShader =
                 shadowColor[1] = 0.9;
                 shadowColor[2] *= 0.8;
                 orbitFactor[1] += 1.0;
-            }     
+            }
 
             if( uProductId == 22 ) { //MPS
                 deltaHSVLight1 = vec3( 0.0, -0.2, 0.2 );
@@ -950,7 +952,7 @@ vertexShader =
                 shadowColor[1] = 0.7;
                 shadowColor[2] *= 0.6;
                 orbitFactor[1] += 1.0;
-            }                                      
+            }
 
             // Iterate through lights
 

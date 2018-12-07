@@ -320,6 +320,20 @@ update msg model =
                 |> updateAndRebuildFssWith index
                     (\fssModel -> { fssModel | faces = faces })
 
+        AlterFaces index ( newFacesX, newFacesY ) ->
+            model
+                |> updateAndRebuildFssWith index
+                    (\fss ->
+                        let
+                            ( currentFacesX, currentFacesY ) = fss.faces
+                        in
+                            { fss | faces =
+                                ( Maybe.withDefault currentFacesX newFacesX
+                                , Maybe.withDefault currentFacesY newFacesY
+                                )
+                            }
+                    )
+
         ChangeLightSpeed index lightSpeed ->
             model
                 |> updateAndRebuildFssWith index
@@ -381,7 +395,7 @@ update msg model =
             --         )
             -- , Cmd.none
 
-        ChangeAmplitude index ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
+        AlterAmplitude index ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
             model
                 |> updateAndRebuildFssWith index
                     (\fss ->
@@ -737,7 +751,7 @@ subscriptions model =
                 _ -> NoOp
           )
         , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
-        , changeAmplitude (\{value, layer} -> ChangeAmplitude layer value)
+        , changeAmplitude (\{value, layer} -> AlterAmplitude layer value)
         , shiftColor (\{value, layer} -> ShiftColor layer value)
         , changeOpacity (\{value, layer} -> ChangeOpacity layer value)
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
