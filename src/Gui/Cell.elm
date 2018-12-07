@@ -101,7 +101,7 @@ renderCell position (Focus focus) isSelected cell =
                                     , height "5"
                                     , x <| toString (-2.5)
                                     , y <| toString (-2.5)
-                                    , fill "black"
+                                    , fill baseColor
                                     , stroke "none"
                                     , transform
                                         <| "rotate(" ++ toString rotationAngle ++ ") translate(0,-15)"

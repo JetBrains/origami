@@ -6,22 +6,24 @@ import Gui.Mouse exposing (..)
 
 
 applyMove : MouseState -> MouseState -> KnobState -> Float -> AlterKnob
-applyMove _ next curState curValue =
+applyMove prev next curState curValue =
     case next.dragFrom of
         Just dragFrom ->
-            let
-                originY = dragFrom.y
-                curY = next.pos.y
-                bottomY = toFloat originY - (knobDistance / 2)
-                topY = toFloat originY + (knobDistance / 2)
-                -- Y is going from top to bottom
-                -- diffY = (toFloat curY - bottomY) / knobDistance
-                diffY = (topY - toFloat curY) / knobDistance
-            in
-                Alter
-                    <| if diffY > 1 then 1.0
-                        else if diffY < 0 then 0.0
-                            else diffY
+            if next.pos /= dragFrom then
+                let
+                    originY = dragFrom.y
+                    curY = next.pos.y
+                    bottomY = toFloat originY - (knobDistance / 2)
+                    topY = toFloat originY + (knobDistance / 2)
+                    -- Y is going from top to bottom
+                    -- diffY = (toFloat curY - bottomY) / knobDistance
+                    diffY = (topY - toFloat curY) / knobDistance
+                in
+                    Alter
+                        <| if diffY > 1 then 1.0
+                            else if diffY < 0 then 0.0
+                                else diffY
+            else Stay
         _ -> Stay
     -- let
     --     ( prevX, prevY ) = prev.vec
