@@ -25,7 +25,6 @@ module Model exposing
 
 import Dict as Dict
 import Window
-import Mouse exposing (Position)
 import Time exposing (Time)
 
 import WebGL.Blend as WGLBlend
@@ -33,8 +32,6 @@ import Svg.Blend as SVGBlend
 
 import Gui.Gui as Gui
 import Gui.Def exposing (..)
-import Gui.Msg exposing (..)
-import Gui.Cell exposing (..)
 import Gui.Nest exposing (..)
 
 import Product exposing (Product)
@@ -365,7 +362,7 @@ gui from =
                                 case model of
                                     FssModel fssModel ->
                                         Nested (String.toLower name) Collapsed
-                                            <| fssControls fssModel webglBlend layerIndex
+                                            <| fssControls from.mode fssModel webglBlend layerIndex
                                     _ -> Ghost <| "layer " ++ toString layerIndex
                             SVGLayer _ svgBlend ->
                                 Nested (String.toLower name) Collapsed
@@ -374,8 +371,8 @@ gui from =
                     from.layers
 
 
-webglBlendGrid : WGLBlend.Blend -> LayerIndex -> Nest Msg
-webglBlendGrid currentBlend layerIndex =
+webglBlendGrid : UiMode -> WGLBlend.Blend -> LayerIndex -> Nest Msg
+webglBlendGrid mode currentBlend layerIndex =
     let
         blendFuncs =
             [ "+", "-", "R-" ]
@@ -427,8 +424,8 @@ webglBlendGrid currentBlend layerIndex =
             ]
 
 
-fssControls : FSS.Model -> WGLBlend.Blend -> LayerIndex -> Nest Msg
-fssControls fssModel currentBlend layerIndex =
+fssControls : UiMode -> FSS.Model -> WGLBlend.Blend -> LayerIndex -> Nest Msg
+fssControls mode fssModel currentBlend layerIndex =
     let
         { lightSpeed, faces, amplitude, vignette, iris, colorShift } = fssModel
         ( facesX, facesY ) = faces
@@ -509,5 +506,6 @@ fssControls fssModel currentBlend layerIndex =
                         (colorShiftKnobSetup brightnessShift)
                         brightnessShift changeBrightness
                     ]
-            , Nested "blend" Collapsed (webglBlendGrid currentBlend layerIndex)
+            , Nested "blend" Collapsed
+                <| webglBlendGrid mode currentBlend layerIndex
             ]
