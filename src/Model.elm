@@ -32,6 +32,8 @@ import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend
 
 import Gui.Gui as Gui
+import Gui.Def exposing (..)
+import Gui.Msg exposing (..)
 import Gui.Cell exposing (..)
 import Gui.Nest exposing (..)
 

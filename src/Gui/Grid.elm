@@ -8,8 +8,10 @@ import Html.Events as H
 import Json.Decode as Json
 
 
-import Gui.Nest exposing (..)
+import Gui.Def exposing (..)
+import Gui.Msg exposing (..)
 import Gui.Cell exposing (..)
+import Gui.Nest exposing (..)
 
 
 type GridPos = GridPos Int Int

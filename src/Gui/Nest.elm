@@ -1,7 +1,7 @@
 module Gui.Nest exposing (..)
 
 
-import Gui.Cell exposing (..)
+import Gui.Def exposing (..)
 
 
 noChildren : Nest umsg

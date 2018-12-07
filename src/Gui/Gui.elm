@@ -5,7 +5,9 @@ module Gui.Gui exposing
     , extractMouse
     )
 
+import Gui.Def exposing (..)
 import Gui.Cell exposing (..)
+import Gui.Msg exposing (..)
 import Gui.Nest exposing (..)
 import Gui.Grid exposing (..)
 import Gui.Mouse exposing (..)
@@ -13,7 +15,7 @@ import Gui.Mouse exposing (..)
 
 type alias Model umsg = ( MouseState, Nest umsg )
 type alias View umsg = Grid umsg
-type alias Msg umsg = Gui.Cell.Msg umsg
+type alias Msg umsg = Gui.Msg.Msg umsg
 
 
 view = Tuple.second >> Gui.Grid.view
