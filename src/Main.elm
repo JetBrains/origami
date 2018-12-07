@@ -46,15 +46,15 @@ initialMode = Production
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model.init initialMode initialLayers createLayer
+    ( Model.init initialMode (initialLayers initialMode) createLayer
     , Cmd.batch
         [ Task.perform Resize Window.size
         ]
     )
 
 
-initialLayers : List ( LayerKind, String, LayerModel )
-initialLayers =
+initialLayers : UiMode -> List ( LayerKind, String, LayerModel )
+initialLayers mode =
     [ ( Fss, "Lower Layer", FssModel FSS.init )
     , ( Fss, "Mid Layer", FssModel FSS.init )
     , ( Fss, "Top layer"
@@ -70,7 +70,7 @@ initialLayers =
     -- , ( Vignette, Vignette.init )
     ]
     |> List.filter (\(kind, _, _) ->
-        case ( kind, initialMode ) of
+        case ( kind, mode ) of
             ( Cover, Ads ) -> False
             _ -> True
     )
@@ -83,6 +83,13 @@ update msg model =
         Bang ->
             ( model
             , model |> IE.encodePortModel |> startGui
+            )
+
+        ChangeMode mode ->
+            ( Model.init mode (initialLayers mode) createLayer
+            , Cmd.batch
+                [ Task.perform Resize Window.size
+                ]
             )
 
         GuiMessage guiMsg ->
@@ -136,7 +143,7 @@ update msg model =
 
         Import encodedModel ->
             encodedModel
-                |> IE.decodeModel initialMode createLayer
+                |> IE.decodeModel model.mode createLayer
                 |> Maybe.withDefault model
                 |> rebuildAllFssLayersWith
 
@@ -756,6 +763,7 @@ subscriptions model =
         , changeOpacity (\{value, layer} -> ChangeOpacity layer value)
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , changeIris (\{value, layer} -> ChangeIris layer value)
+        , changeMode (\modeStr -> ChangeMode <| IE.decodeMode modeStr)
         , setCustomSize
             (\(w, h) ->
                 let
@@ -863,7 +871,7 @@ layerToHtml model index { layer } =
         SVGLayer svgLayer svgBlend ->
             case svgLayer of
                 CoverLayer ->
-                    Cover.view initialMode model.product model.size model.origin svgBlend
+                    Cover.view model.mode model.product model.size model.origin svgBlend
                 NoContent -> div [] []
         _ -> div [] []
 
@@ -1048,6 +1056,8 @@ main =
 -- INCOMING PORTS
 
 port bang : (() -> msg) -> Sub msg
+
+port changeMode : (String -> msg) -> Sub msg
 
 port pause : (() -> msg) -> Sub msg
 

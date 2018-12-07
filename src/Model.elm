@@ -47,14 +47,17 @@ import Layer.Vignette as Vignette
 
 type alias LayerIndex = Int
 
+
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
+
 
 type alias CreateLayer = LayerKind -> LayerModel -> Layer
 
 
 type Msg
     = Bang
+    | ChangeMode UiMode
     | Animate Time
     | GuiMessage (Gui.Msg Msg)
     | Resize Window.Size
@@ -100,6 +103,7 @@ type UiMode
     | Production
     | Release
     | Ads
+    | TronUi UiMode
 
 
 type LayerKind
@@ -222,9 +226,9 @@ init
     -> List ( LayerKind, String, LayerModel )
     -> CreateLayer
     -> Model
-init mode initialLayers createLayer =
+init uiMode initialLayers createLayer =
     let
-        emptyModel = initEmpty mode
+        emptyModel = initEmpty uiMode
         modelWithLayers =
             { emptyModel
             | layers = initialLayers |> List.map
@@ -238,7 +242,11 @@ init mode initialLayers createLayer =
             }
     in
         { modelWithLayers
-        | gui = Just <| gui modelWithLayers
+        | gui =
+            case uiMode of
+                TronUi innerUiMode ->
+                    Just <| gui { modelWithLayers | mode = innerUiMode }
+                _ -> Nothing
         }
 
 
@@ -458,6 +466,7 @@ fssControls mode fssModel currentBlend layerIndex =
         oneLine
             [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
             , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
+            -- , Knob "opacity" TurnedOff <| toggleMirror layerIndex
             , Knob "lights" lightSpeedSetup (toFloat lightSpeed)
                 <| round >> ChangeLightSpeed layerIndex
             , Knob "col"

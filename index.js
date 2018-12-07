@@ -224,6 +224,14 @@ prepareImportExport();
 // document.addEventListener('DOMContentLoaded', () => {
 setTimeout(() => {
 
+    const url_string = window.location.href;
+    const url = new URL(url_string);
+    const mode = url.searchParams.get("mode");
+
+    if (mode) {
+        app.ports.changeMode.send(mode);
+    }
+
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
@@ -257,7 +265,8 @@ setTimeout(() => {
     });
 
     app.ports.startGui.subscribe((model) => {
-        document.getElementById('grid-gui').focus();
+        const altGui = document.getElementById('grid-gui');
+        if (altGui) altGui.focus();
         document.body.style.backgroundColor = model.background;
 
         // console.log('startGui', model);

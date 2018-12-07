@@ -24,6 +24,7 @@ type alias GridCell umsg =
     , isFocused: FocusState
     }
 
+
 type GridPos = GridPos Int Int
 type alias Row umsg = Array (Maybe (GridCell umsg))
 type alias Rows umsg = Array (Row umsg)

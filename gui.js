@@ -218,7 +218,8 @@ function start(document, model, funcs) {
     }
 
     function addSVGBlend(folder, config, layer, index) {
-      const blendControl = folder.add(config, 'layer' + index + 'Blend', SVG_BLENDS).name('blend');
+      const blendControl =
+        folder.add(config, 'layer' + index + 'Blend', C.SVG_BLENDS).name('blend');
       blendControl.onFinishChange((value) => {
         funcs.changeSVGBlend(index, value);
       });

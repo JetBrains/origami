@@ -7,6 +7,7 @@ module ImportExport exposing
     , encodeFss
     , fromFssPortModel
     , encodeMode
+    , decodeMode
     )
 
 import Array
@@ -465,13 +466,17 @@ encodeMode mode =
         M.Production -> "prod"
         M.Release -> "release"
         M.Ads -> "ads"
+        M.TronUi innerMode -> "tron-" ++ encodeMode innerMode
 
 
 decodeMode : String -> M.UiMode
 decodeMode mode =
-    case mode of
-        "dev" -> M.Development
-        "prod" -> M.Production
-        "release" -> M.Release
-        "ads" -> M.Ads
-        _ -> M.Production
+    if String.startsWith mode "tron-"
+    then decodeMode <| String.dropRight 5 mode
+    else
+        case mode of
+            "dev" -> M.Development
+            "prod" -> M.Production
+            "release" -> M.Release
+            "ads" -> M.Ads
+            _ -> M.Production
