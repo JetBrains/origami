@@ -216,13 +216,16 @@ withMouse : MouseState -> Nest umsg -> Model umsg
 withMouse = (,)
 
 
+-- findMessageForMouse : MouseState -> MouseState -> Focus -> Cell umsg -> Msg umsg
+-- findMessageForMouse prevMouseState nextMouseState focusedPos focusedCell =
 findMessageForMouse : Model umsg -> MouseState -> Msg umsg
-findMessageForMouse ( prevState, ui ) nextState =
+findMessageForMouse ( prevMouseState, ui ) nextMouseState =
     let (Focus focusedPos) = findFocus ui
     in
         case findCell focusedPos ui of
-            Just (Knob _ _ _) ->
-                Tune focusedPos <| applyMove prevState nextState
+            Just (Knob _ knobState curValue) ->
+                applyMove prevMouseState nextMouseState knobState curValue
+                    |> Tune focusedPos
             _ -> NoOp
 
 

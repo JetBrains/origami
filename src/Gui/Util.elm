@@ -5,8 +5,8 @@ import Gui.Def exposing (..)
 import Gui.Mouse exposing (..)
 
 
-applyMove : MouseState -> MouseState -> AlterKnob
-applyMove _ next =
+applyMove : MouseState -> MouseState -> KnobState -> Float -> AlterKnob
+applyMove _ next curState curValue =
     case next.dragFrom of
         Just dragFrom ->
             let

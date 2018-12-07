@@ -67,6 +67,8 @@ downArrow xPos yPos color =
         ]
 
 
+--  rotate(360deg) translate(0,-14px)
+
 
 renderCell : NestPos -> Focus -> Maybe SelectionState -> Cell umsg -> Html (Msg umsg)
 renderCell position (Focus focus) isSelected cell =
@@ -79,14 +81,34 @@ renderCell position (Focus focus) isSelected cell =
                     let
                         friendlyValue =
                             toFloat (round (value * toFloat roundBy)) / toFloat roundBy
+                        normalizedValue = value / (max - min)
+                        rotationAngle = 360 * normalizedValue
                     in
                         g [ class "gui-knob" ]
                             [ text_
                                 (textAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
                                 [ Svg.text <| toString friendlyValue ]
-                            , circle
-                                (circleAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
-                                []
+                            , g
+                                [ transform
+                                    <| "translate(" ++ toString (cellWidth / 2) ++ ","
+                                    ++ toString (cellHeight / 3) ++ ")"
+                                ]
+                                [ circle
+                                    (circleAttrs 0 0 baseColor)
+                                    []
+                                , rect
+                                    [ width "5"
+                                    , height "5"
+                                    , x <| toString (-2.5)
+                                    , y <| toString (-2.5)
+                                    , fill "black"
+                                    , stroke "none"
+                                    , transform
+                                        <| "rotate(" ++ toString rotationAngle ++ ") translate(0,-15)"
+                                    ]
+                                    []
+                                ]
+
                             ]
                 Toggle _ state _ ->
                     g [ class "gui-toggle" ]
