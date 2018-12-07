@@ -40,5 +40,5 @@ alterKnob { min, max, step } alter curValue =
     case alter of
         Alter amount ->
             -- amount is a (0 <= value <= 1)
-            amount * (max - min) -- TODO: apply step
+            min + (amount * (max - min)) -- TODO: apply step
         Stay -> curValue

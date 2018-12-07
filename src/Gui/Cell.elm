@@ -88,9 +88,10 @@ renderCell position (Focus focus) isSelected cell =
                     let
                         friendlyValue =
                             toFloat (round (value * toFloat roundBy)) / toFloat roundBy
-                        normalizedValue = value / (max - min)
+                        normalizedValue = (value - min) / (max - min)
+                        normalizedDefault = (default - min) / (max - min)
                         rotationAngle = 360 * normalizedValue
-                        defaultRotationAngle = 360 * default
+                        defaultRotationAngle = 360 * normalizedDefault
                     in
                         g [ class "gui-knob" ]
                             [ text_
