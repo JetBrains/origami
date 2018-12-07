@@ -56,7 +56,7 @@ bottomLeft = (GridPos 0 0)
 doCellPurpose : GridCell umsg -> Msg umsg
 doCellPurpose { cell, nestPos, isSelected, onSelect } =
     case cell of
-        Knob _ _ _ ->
+        Knob _ _ _ handler ->
             FocusOn nestPos
         Toggle _ val handler ->
             -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
@@ -95,7 +95,7 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
         Ghost label  ->
             span []
                 [ text <| posStr ++ " ghost: " ++ label ]
-        Knob label { min, step, max } val ->
+        Knob label { min, step, max } val _ ->
             span []
                 [ text <| posStr ++ " knob: " ++ label
                     ++ " " ++ toString min ++ "/" ++ toString step ++ "/" ++ toString max

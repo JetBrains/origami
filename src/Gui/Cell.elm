@@ -2,14 +2,11 @@ module Gui.Cell exposing (..)
 
 import Array
 import Html exposing (Html, text, div, span, input)
-import Html.Attributes as H
-import Html.Events as H
 import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 
 import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
-import Gui.Mouse exposing (..)
 
 
 textAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
@@ -67,9 +64,6 @@ downArrow xPos yPos color =
         ]
 
 
---  rotate(360deg) translate(0,-14px)
-
-
 renderCell : NestPos -> Focus -> Maybe SelectionState -> Cell umsg -> Html (Msg umsg)
 renderCell position (Focus focus) isSelected cell =
     let cellBody =
@@ -77,7 +71,7 @@ renderCell position (Focus focus) isSelected cell =
                 Ghost _ ->
                     g [ class "gui-ghost" ]
                         [ ]
-                Knob _ { min, max, step, roundBy } value ->
+                Knob _ { min, max, step, roundBy } value _ ->
                     let
                         friendlyValue =
                             toFloat (round (value * toFloat roundBy)) / toFloat roundBy
@@ -161,7 +155,7 @@ renderCell position (Focus focus) isSelected cell =
         cellLabel cell =
             case cell of
                 Ghost label -> label
-                Knob label _ _ -> label
+                Knob label _ _ _ -> label
                 Toggle label _ _ -> label
                 Button label _ -> label
                 Nested label _ _ -> label

@@ -22,6 +22,8 @@ type alias ChoiceHandler umsg = (Int -> String -> umsg)
 
 type alias ToggleHandler umsg = (ToggleState -> umsg)
 
+type alias KnobHandler umsg = (Float -> umsg)
+
 
 type alias KnobState =
     { min : Float
@@ -71,7 +73,7 @@ type AlterKnob
 
 type Cell umsg
     = Ghost Label
-    | Knob Label KnobState Float -- value
+    | Knob Label KnobState Float (KnobHandler umsg)
     | Toggle Label ToggleState (ToggleHandler umsg)
     | Button Label (Handler umsg)
     | Nested Label ExpandState (Nest umsg)

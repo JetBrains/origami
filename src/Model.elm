@@ -370,17 +370,26 @@ gui from =
                 ( facesX, facesY ) = faces
                 lightSpeedSetup = { min = 0.0, max = 1000.0, step = 1.0, roundBy = 1 }
                 facesKnobSetup = { min = 0.0, max = 100.0, step = 1.0, roundBy = 1 }
+                changeFacesX val = NoOp
+                changeFacesY val = NoOp
+                changeAmplutudeX val = NoOp
+                changeAmplutudeY val = NoOp
+                changeAmplutudeZ val = NoOp
+                changeHue val = NoOp
+                changeSaturation val = NoOp
+                changeBrightness val = NoOp
             in
                 oneLine
                     [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
                     , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
-                    , Knob "lights" lightSpeedSetup <| toFloat lightSpeed
-                    , Knob "col" facesKnobSetup <| toFloat facesX
-                    , Knob "row" facesKnobSetup <| toFloat facesY
+                    , Knob "lights" lightSpeedSetup (toFloat lightSpeed)
+                        <| round >> ChangeLightSpeed layerIndex
+                    , Knob "col" facesKnobSetup (toFloat facesX) changeFacesX
+                    , Knob "row" facesKnobSetup (toFloat facesY) changeFacesY
                     , Nested "fog" Collapsed <|
                         nest ( 2, 1 )
-                            [ Knob "shine" defaultKnobSetup 0
-                            , Knob "density" defaultKnobSetup 0
+                            [ Knob "shine" defaultKnobSetup 0 <| ChangeVignette layerIndex
+                            , Knob "density" defaultKnobSetup 0 <| ChangeIris layerIndex
                             ]
                     , Choice "mesh" Collapsed 0 (chooseMesh layerIndex) <|
                         nest ( 2, 1 )
@@ -389,15 +398,15 @@ gui from =
                             ]
                     , Nested "ranges" Collapsed <|
                             nest ( 3, 1 )
-                                [ Knob "horizontal" defaultKnobSetup 0
-                                , Knob "vertical" defaultKnobSetup 0
-                                , Knob "depth" defaultKnobSetup 0
+                                [ Knob "horizontal" defaultKnobSetup 0 changeAmplutudeX
+                                , Knob "vertical" defaultKnobSetup 0 changeAmplutudeY
+                                , Knob "depth" defaultKnobSetup 0 changeAmplutudeZ
                                 ]
                     , Nested "hsb" Collapsed <|
                         nest ( 3, 1 )
-                            [ Knob "hue" defaultKnobSetup 0
-                            , Knob "saturation" defaultKnobSetup 0
-                            , Knob "brightness" defaultKnobSetup 0
+                            [ Knob "hue" defaultKnobSetup 0 changeHue
+                            , Knob "saturation" defaultKnobSetup 0 changeSaturation
+                            , Knob "brightness" defaultKnobSetup 0 changeBrightness
                             ]
                     , Nested "blend" Collapsed (webglBlendGrid currentBlend layerIndex)
                     ]
@@ -442,7 +451,7 @@ gui from =
         Gui.build <|
             oneLine <|
                 [ Choice "product" Collapsed 0 chooseProduct productsGrid
-                , Knob "rotation" defaultKnobSetup 0
+                , Knob "rotation" defaultKnobSetup 0 Rotate
                 , Choice "size" Collapsed 0 chooseSize sizeGrid
                 , Button "save png" <| always SavePng
                 , Button "lucky" <| always Randomize

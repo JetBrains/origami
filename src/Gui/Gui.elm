@@ -64,9 +64,10 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                 |> updateCell pos
                     (\cell ->
                         case cell of
-                            Knob label setup curValue ->
+                            Knob label setup curValue handler ->
                                 Knob label setup
-                                    <| alterKnob setup alter curValue
+                                    (alterKnob setup alter curValue)
+                                    handler
                             _ -> cell
                     )
                 |> withMouse mouse
@@ -223,9 +224,12 @@ findMessageForMouse ( prevMouseState, ui ) nextMouseState =
     let (Focus focusedPos) = findFocus ui
     in
         case findCell focusedPos ui of
-            Just (Knob _ knobState curValue) ->
+            Just (Knob _ knobState curValue _) ->
                 applyMove prevMouseState nextMouseState knobState curValue
-                    |> Tune focusedPos
+                    |> if (prevMouseState.down == True && nextMouseState.down == False)
+                        then Debug.log "apply and tune" <| Tune focusedPos
+                        else Tune focusedPos
+                --    then TuneAndApplyKnob else Tune
             _ -> NoOp
 
 
