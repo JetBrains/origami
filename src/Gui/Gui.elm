@@ -36,10 +36,6 @@ build nest =
     ( Gui.Mouse.init, nest )
 
 
-subscriptions : Model umsg -> Sub (Msg umsg)
-subscriptions model = Sub.batch []
-
-
 update
     : (umsg -> umodel -> ( umodel, Cmd umsg ))
     -> umodel

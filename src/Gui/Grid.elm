@@ -438,7 +438,7 @@ view nest =
         keyDownHandler_ = H.on "keydown" <| Json.map (keyDownHandler nest grid) H.keyCode
     in
         div [ H.id "grid-gui"
-            , H.class "gui"
+            , H.class "gui noselect"
             , H.tabindex -1
             , keyDownHandler_
             ]
