@@ -220,7 +220,9 @@ applyMove _ next =
                 curY = next.pos.y
                 bottomY = toFloat originY - (knobDistance / 2)
                 topY = toFloat originY + (knobDistance / 2)
-                diffY = (toFloat curY - bottomY) / knobDistance
+                -- Y is going from top to bottom
+                -- diffY = (toFloat curY - bottomY) / knobDistance
+                diffY = (topY - toFloat curY) / knobDistance
             in
                 Alter
                     <| if diffY > 1 then 1.0

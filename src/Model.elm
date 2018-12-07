@@ -322,7 +322,7 @@ gui from =
             , "multiply"
             , "multiply"
             ]
-        defaultKnobSetup = { min = 0.0, max = 1.0, step = 0.05 }
+        defaultKnobSetup = { min = 0.0, max = 1.0, step = 0.05, roundBy = 100 }
         productsGrid =
             products
                 |> List.map ChoiceItem
@@ -366,8 +366,8 @@ gui from =
             let
                 { lightSpeed, faces } = fssModel
                 ( facesX, facesY ) = faces
-                lightSpeedSetup = { min = 0.0, max = 1000.0, step = 1.0 }
-                facesKnobSetup = { min = 0.0, max = 100.0, step = 1.0 }
+                lightSpeedSetup = { min = 0.0, max = 1000.0, step = 1.0, roundBy = 1 }
+                facesKnobSetup = { min = 0.0, max = 100.0, step = 1.0, roundBy = 1 }
             in
                 oneLine
                     [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex

@@ -28,7 +28,12 @@ type alias ChoiceHandler umsg = (Int -> String -> umsg)
 
 type alias ToggleHandler umsg = (ToggleState -> umsg)
 
-type alias KnobState = { min : Float, max : Float, step : Float }
+type alias KnobState =
+    { min : Float
+    , max : Float
+    , step : Float
+    , roundBy : Int
+    }
 
 
 type alias Nest umsg =
@@ -179,15 +184,19 @@ renderCell position (Focus focus) isSelected cell =
                 Ghost _ ->
                     g [ class "gui-ghost" ]
                         [ ]
-                Knob _ { min, max, step } value ->
-                    g [ class "gui-knob" ]
-                        [ text_
-                            (textAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
-                            [ Svg.text <| toString value ]
-                        , circle
-                            (circleAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
-                            []
-                        ]
+                Knob _ { min, max, step, roundBy } value ->
+                    let
+                        friendlyValue =
+                            toFloat (round (value * toFloat roundBy)) / toFloat roundBy
+                    in
+                        g [ class "gui-knob" ]
+                            [ text_
+                                (textAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
+                                [ Svg.text <| toString friendlyValue ]
+                            , circle
+                                (circleAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
+                                []
+                            ]
                 Toggle _ state _ ->
                     g [ class "gui-toggle" ]
                         [ text_
