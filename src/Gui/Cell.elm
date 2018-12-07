@@ -64,7 +64,9 @@ type SelectionState
 --     | Stay
 
 
-type AlterKnob = Alter Float -- from -0.5 to 0.5
+type AlterKnob
+    = Stay
+    | Alter Float -- from -0.5 to 0.5
 
 
 type Cell umsg

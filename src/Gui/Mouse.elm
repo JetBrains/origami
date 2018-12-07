@@ -1,22 +1,20 @@
 module Gui.Mouse exposing (..)
 
 
+import Mouse exposing (Position)
+
+
 type alias MouseState =
-    { pos: (Int, Int)
+    { pos: Position
     , down : Bool
-    , dragFrom : Maybe (Int, Int)
-    , vec: Maybe (Float, Float)
+    , dragFrom : Maybe Position
     }
 
 
-moves : ( Int, Int ) -> MouseState -> MouseState
+moves : Position -> MouseState -> MouseState
 moves pos prev =
     { prev
-    | vec =
-        prev.dragFrom
-            |> Maybe.map (\dragStart ->
-                findMouseVec dragStart pos)
-    , pos = pos
+    | pos = pos
     }
 
 
@@ -24,12 +22,11 @@ ups : a -> MouseState -> MouseState
 ups _ prev =
     { prev
     | down = False
-    , vec = Nothing
     , dragFrom = Nothing
     }
 
 
-downs : ( Int, Int ) -> MouseState -> MouseState
+downs : Position -> MouseState -> MouseState
 downs pos prev =
     { prev
     | pos = pos
@@ -43,19 +40,7 @@ downs pos prev =
 
 init : MouseState
 init =
-    { pos = ( 0, 0 )
+    { pos = { x = 0, y = 0 }
     , down = False
-    , vec = Nothing
     , dragFrom = Nothing
     }
-
-
---findMouseVec : Pos -> Pos -> ( Float, Float )
-findMouseVec ( originX, originY ) ( curX, curY ) =
-    ( if originX == curX then 0.0
-        else if originX < curX then -1.0
-            else 1.0
-    , if originY == curY then 0.0
-        else if originY < curY then -1.0
-            else 1.0
-    )

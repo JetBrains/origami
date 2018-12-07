@@ -187,14 +187,17 @@ update msg model =
                 , newModel |> getSizeUpdate |> presetSizeChanged
                 )
 
-        Locate pos ->
+        Locate (( x, y ) as pos) ->
             let
                 modelWithMouse =
                     { model
                     | mouse = pos
                     }
                 message = modelWithMouse.gui
-                    |> Maybe.map (\gui -> Gui.moves gui pos |> GuiMessage)
+                    |> Maybe.map
+                        (\gui ->
+                            Gui.moves gui { x = x, y = y } |> GuiMessage
+                        )
                     |> Maybe.withDefault NoOp
             in
                 update message modelWithMouse
