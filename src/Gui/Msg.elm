@@ -24,4 +24,5 @@ type Msg umsg
     | SelectAndSendToUser NestPos umsg
     | ToggleOnAndSendToUser NestPos umsg
     | ToggleOffAndSendToUser NestPos umsg
+    | TuneAndApply NestPos AlterKnob umsg
     -- | Color

@@ -207,6 +207,11 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
             , ui |> shiftFocusBy 1 pos |> withMouse mouse
             )
 
+        TuneAndApply pos alter userMsg ->
+            sequenceUpdate userUpdate userModel
+                [ Tune pos alter, SendToUser userMsg ]
+                ( ui |> withMouse mouse )
+
         NoOp ->
             ( userModel ! []
             , ui |> withMouse mouse
@@ -224,12 +229,12 @@ findMessageForMouse ( prevMouseState, ui ) nextMouseState =
     let (Focus focusedPos) = findFocus ui
     in
         case findCell focusedPos ui of
-            Just (Knob _ knobState curValue _) ->
-                applyMove prevMouseState nextMouseState knobState curValue
-                    |> if (prevMouseState.down == True && nextMouseState.down == False)
-                        then Debug.log "apply and tune" <| Tune focusedPos
-                        else Tune focusedPos
-                --    then TuneAndApplyKnob else Tune
+            Just (Knob _ knobState curValue handler) ->
+                let alter = applyMove prevMouseState nextMouseState knobState curValue
+                in if (prevMouseState.down == True && nextMouseState.down == False)
+                    then TuneAndApply focusedPos alter
+                        <| handler (alterKnob knobState alter curValue)
+                    else Tune focusedPos alter
             _ -> NoOp
 
 
