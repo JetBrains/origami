@@ -14,8 +14,6 @@ import Gui.Cell exposing (..)
 import Gui.Nest exposing (..)
 
 
-type GridPos = GridPos Int Int
-
 type alias GridCell umsg =
     { cell: Cell umsg
     , nestPos: NestPos
@@ -26,10 +24,9 @@ type alias GridCell umsg =
     , isFocused: FocusState
     }
 
+type GridPos = GridPos Int Int
 type alias Row umsg = Array (Maybe (GridCell umsg))
-
 type alias Rows umsg = Array (Row umsg)
-
 type Grid umsg = Grid Shape (Rows umsg)
 
 
@@ -59,6 +56,8 @@ bottomLeft = (GridPos 0 0)
 doCellPurpose : GridCell umsg -> Msg umsg
 doCellPurpose { cell, nestPos, isSelected, onSelect } =
     case cell of
+        Knob _ _ _ ->
+            FocusOn nestPos
         Toggle _ val handler ->
             -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
             if val == TurnedOn then

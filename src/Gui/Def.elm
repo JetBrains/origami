@@ -3,6 +3,7 @@ module Gui.Def exposing (..)
 
 import Gui.Mouse exposing (..)
 
+
 type alias Label = String
 
 type alias ItemChosen = Int
@@ -20,6 +21,7 @@ type alias Handler umsg = (() -> umsg)
 type alias ChoiceHandler umsg = (Int -> String -> umsg)
 
 type alias ToggleHandler umsg = (ToggleState -> umsg)
+
 
 type alias KnobState =
     { min : Float

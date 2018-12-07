@@ -8,6 +8,7 @@ import Gui.Mouse exposing (..)
 type Msg umsg
     = NoOp
     | TrackMouse MouseState
+    | FocusOn NestPos
     | Tune NestPos AlterKnob
     | ToggleOn NestPos
     | ToggleOff NestPos
