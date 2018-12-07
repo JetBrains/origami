@@ -324,7 +324,6 @@ gui from =
             , "multiply"
             , "multiply"
             ]
-        defaultKnobSetup = { min = 0.0, max = 1.0, step = 0.05, roundBy = 100 }
         productsGrid =
             products
                 |> List.map ChoiceItem
@@ -368,8 +367,6 @@ gui from =
             let
                 { lightSpeed, faces } = fssModel
                 ( facesX, facesY ) = faces
-                lightSpeedSetup = { min = 0.0, max = 1000.0, step = 1.0, roundBy = 1 }
-                facesKnobSetup = { min = 0.0, max = 100.0, step = 1.0, roundBy = 1 }
                 changeFacesX val = NoOp
                 changeFacesY val = NoOp
                 changeAmplutudeX val = NoOp
@@ -378,14 +375,25 @@ gui from =
                 changeHue val = NoOp
                 changeSaturation val = NoOp
                 changeBrightness val = NoOp
+                lightSpeedSetup =
+                    { min = 0.0, max = 2000.0, step = 1.0, roundBy = 1
+                    , default = toFloat lightSpeed }
+                facesKnobSetup =
+                    { min = 0.0, max = 100.0, step = 1.0, roundBy = 1, default = -1 }
             in
                 oneLine
                     [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
                     , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
                     , Knob "lights" lightSpeedSetup (toFloat lightSpeed)
                         <| round >> ChangeLightSpeed layerIndex
-                    , Knob "col" facesKnobSetup (toFloat facesX) changeFacesX
-                    , Knob "row" facesKnobSetup (toFloat facesY) changeFacesY
+                    , Knob "col"
+                        ({ facesKnobSetup | default = toFloat facesX })
+                        (toFloat facesX)
+                        changeFacesX
+                    , Knob "row"
+                        ({ facesKnobSetup | default = toFloat facesY })
+                        (toFloat facesY)
+                        changeFacesY
                     , Nested "fog" Collapsed <|
                         nest ( 2, 1 )
                             [ Knob "shine" defaultKnobSetup 0 <| ChangeVignette layerIndex
@@ -447,11 +455,15 @@ gui from =
             NoOp
         chooseBlendAlphaFact2 layerIndex index label =
             NoOp
+        rotateKnobSetup =
+            { min = -1.0, max = 1.0, step = 0.05, roundBy = 100
+            , default = from.omega }
+        defaultKnobSetup = { min = 0.0, max = 1.0, step = 0.05, roundBy = 100, default = 0.5 }
     in
         Gui.build <|
             oneLine <|
                 [ Choice "product" Collapsed 0 chooseProduct productsGrid
-                , Knob "rotation" defaultKnobSetup 0 Rotate
+                , Knob "rotation" rotateKnobSetup from.omega Rotate
                 , Choice "size" Collapsed 0 chooseSize sizeGrid
                 , Button "save png" <| always SavePng
                 , Button "lucky" <| always Randomize

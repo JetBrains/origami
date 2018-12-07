@@ -30,6 +30,7 @@ type alias KnobState =
     , max : Float
     , step : Float
     , roundBy : Int
+    , default : Float
     }
 
 

@@ -30,6 +30,19 @@ circleAttrs xPos yPos color =
     ]
 
 
+knobRectAttrs : String -> Float -> List (Attribute (Msg umsg))
+knobRectAttrs color rotation =
+    [ width "5"
+    , height "5"
+    , x <| toString (-2.5)
+    , y <| toString (-2.5)
+    , fill color
+    , stroke "none"
+    , transform
+        <| "rotate(" ++ toString rotation ++ ") translate(0,-15)"
+    ]
+
+
 upArrow : Float -> Float -> String -> Svg (Msg umsg)
 upArrow xPos yPos color =
     g
@@ -71,12 +84,13 @@ renderCell position (Focus focus) isSelected cell =
                 Ghost _ ->
                     g [ class "gui-ghost" ]
                         [ ]
-                Knob _ { min, max, step, roundBy } value _ ->
+                Knob _ { min, max, step, roundBy, default } value _ ->
                     let
                         friendlyValue =
                             toFloat (round (value * toFloat roundBy)) / toFloat roundBy
                         normalizedValue = value / (max - min)
                         rotationAngle = 360 * normalizedValue
+                        defaultRotationAngle = 360 * default
                     in
                         g [ class "gui-knob" ]
                             [ text_
@@ -91,18 +105,12 @@ renderCell position (Focus focus) isSelected cell =
                                     (circleAttrs 0 0 baseColor)
                                     []
                                 , rect
-                                    [ width "5"
-                                    , height "5"
-                                    , x <| toString (-2.5)
-                                    , y <| toString (-2.5)
-                                    , fill baseColor
-                                    , stroke "none"
-                                    , transform
-                                        <| "rotate(" ++ toString rotationAngle ++ ") translate(0,-15)"
-                                    ]
+                                    (knobRectAttrs "rgba(0,255,0,0.4)" defaultRotationAngle)
+                                    []
+                                , rect
+                                    (knobRectAttrs baseColor rotationAngle)
                                     []
                                 ]
-
                             ]
                 Toggle _ state _ ->
                     g [ class "gui-toggle" ]
