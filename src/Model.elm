@@ -291,9 +291,8 @@ sizePresets mode =
                 , ( "1536x864", ( 1536, 864 ) )
                 , ( "1440x900", ( 1440, 900 ) )
                 , ( "1366x768", ( 1366, 768 ) )
-                , ( "browser", ( 0, 0 ) )
                 ]
-            , ( 3, 2 )
+            , ( 4, 2 )
             )
         _ ->
             -- RELEASE_SIZES // TODO: Multiply for creating @2x @3x
@@ -334,9 +333,19 @@ gui from =
             , "datagrip"
             , "appcode"
             , "goland"
-            , "resharper"
-            , "resharper c++"
-            --, "dotcover"
+            , "r#"
+            , "r# c++"
+            , "dotcover"
+            , "dotmemory"
+            , "dotpeek"
+            , "dottrace"
+            , "rider"
+            , "teamcity"
+            , "youtrack"
+            , "upsource"
+            , "hub"
+            , "kotlin"
+            , "mps"
             -- TODO
             ]
         svgBlends =
@@ -353,7 +362,7 @@ gui from =
         productsGrid =
             products
                 |> List.map ChoiceItem
-                |> nest ( 4, 3 )
+                |> nest ( 6, 4 )
         sizeGrid =
             ( "window" :: Dict.keys currentSizePresets )
                 |> List.map ChoiceItem
@@ -369,7 +378,8 @@ gui from =
                 ]
         chooseProduct _ label =
             case label of
-                "resharper c++" -> ChangeProduct Product.ReSharperCpp
+                "r#" -> ChangeProduct Product.ReSharper
+                "r# c++" -> ChangeProduct Product.ReSharperCpp
                 "intellij idea" -> ChangeProduct Product.IntelliJ
                 _ -> ChangeProduct <| Product.decode label
         chooseSize _ label =
