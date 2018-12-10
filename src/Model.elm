@@ -277,7 +277,7 @@ emptyLayer =
     SVGLayer NoContent SVGBlend.default
 
 
-sizePresets : UiMode -> ( Dict.Dict String ( Int, Int ), ( Int, Int ) )
+sizePresets : UiMode -> ( Dict.Dict String ( Int, Int ), Shape )
 sizePresets mode =
     case mode of
         Production ->
@@ -320,7 +320,7 @@ sizePresets mode =
 gui : Model -> Gui.Model Msg
 gui from =
     let
-        ( currentSizePresets, sizeBlockShape ) =
+        ( currentSizePresets, sizePresetsShape ) =
             sizePresets from.mode
         products =
             [ "jetbrains"
@@ -356,7 +356,7 @@ gui from =
         sizeGrid =
             ( "window" :: Dict.keys currentSizePresets )
                 |> List.map ChoiceItem
-                |> nest sizeBlockShape
+                |> nest sizePresetsShape
         svgBlendGrid =
             svgBlends
                 |> List.map ChoiceItem
@@ -385,16 +385,15 @@ gui from =
         rotateKnobSetup =
             { min = -1.0, max = 1.0, step = 0.05, roundBy = 100
             , default = from.omega }
-    in
-        Gui.build <|
-            oneLine <|
-                [ Choice "product" Collapsed 0 chooseProduct productsGrid
-                , Knob "rotation" rotateKnobSetup from.omega Rotate
-                , Choice "size" Collapsed 0 chooseSize sizeGrid
-                , Button "save png" <| always SavePng
-                , Button "lucky" <| always Randomize
-                ]
-                ++ List.indexedMap
+        layerButtons =
+            from.layers
+                |> List.filter
+                    (\{ name } ->
+                        case ( name, from.mode ) of
+                            ( "Cover", Production ) -> False
+                            _ -> True
+                    )
+                |> List.indexedMap
                     (\layerIndex { name, layer, model } ->
                         case layer of
                             WebGLLayer webGllayer webglBlend ->
@@ -407,7 +406,17 @@ gui from =
                                 Nested (String.toLower name) Collapsed
                                     <| svgControls svgBlend layerIndex
                     )
-                    from.layers
+    in
+        Gui.build <|
+            oneLine <|
+                [ Choice "product" Collapsed 0 chooseProduct productsGrid
+                , Knob "rotation" rotateKnobSetup from.omega Rotate
+                , Choice "size" Collapsed 0 chooseSize sizeGrid
+                , Button "save png" <| always SavePng
+                , Button "lucky" <| always Randomize
+                ]
+                ++ layerButtons
+
 
 
 webglBlendGrid : UiMode -> WGLBlend.Blend -> LayerIndex -> Nest Msg
