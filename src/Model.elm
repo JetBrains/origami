@@ -413,7 +413,7 @@ gui from =
                 [ Choice "product" Collapsed 0 chooseProduct productsGrid
                 , Knob "rotation" rotateKnobSetup from.omega Rotate
                 , Choice "size" Collapsed 0 chooseSize sizeGrid
-                , Button "save png" <| always SavePng
+                -- , Button "save png" <| always SavePng
                 , Button "lucky" <| always Randomize
                 ]
                 ++ layerButtons
@@ -429,11 +429,11 @@ webglBlendGrid mode currentBlend layerIndex =
             [ "0", "1"
             , "sC", "1-sC"
             , "dC", "1-dC"
-            , "sA", "1-sA"
-            , "dA", "1-dA"
-            , "AS"
+            , "sα", "1-sα"
+            , "dα", "1-dα"
+            , "αS"
             , "CC", "1-CC"
-            , "CA", "1-CA"
+            , "Cα", "1-Cα"
             ]
         funcGrid =
             blendFuncs

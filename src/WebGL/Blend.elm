@@ -409,3 +409,24 @@ decodeFactor s =
         "CA" -> 13 -- B.constantAlpha
         "1-CA" -> 14 -- B.oneMinusConstantAlpha
         _ -> 0 -- B.zero
+
+
+decodeFactorGreek : String -> Int
+decodeFactorGreek s =
+     case s of
+        "0" -> 0 -- B.zero
+        "1" -> 1 -- B.one
+        "sC" -> 2 -- B.srcColor
+        "1-sC" -> 3 -- B.oneMinusSrcColor
+        "dC" -> 4 -- B.dstColor
+        "1-dC" -> 5 -- B.oneMinusDstColor
+        "sα" -> 6 -- B.srcAlpha
+        "1-sα" -> 7 -- B.oneMinusSrcAlpha
+        "dα" -> 8 -- B.dstAlpha
+        "1-dα" -> 9 -- B.oneMinusDstAlpha
+        "αS" -> 10 -- B.srcAlphaSaturate
+        "CC" -> 11 -- B.constantColor
+        "1-CC" -> 12 -- B.oneMinusConstantColor
+        "Cα" -> 13 -- B.constantAlpha
+        "1-Cα" -> 14 -- B.oneMinusConstantAlpha
+        _ -> 0 -- B.zero
