@@ -185,7 +185,9 @@ decodePortModel createLayer portModel =
             }
     in
         { decodedModel
-        | gui = M.gui decodedModel |> Just
+        | gui = case mode of
+            M.TronUi _ -> M.gui decodedModel |> Just
+            _ -> Nothing
         }
 
 
