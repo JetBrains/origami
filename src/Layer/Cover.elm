@@ -45,7 +45,7 @@ view mode product ( w, h ) ( x, y ) blend =
                 , ( "color", "white" )
                 ]
             ]
-        ( if mode == Production then
+        ( if (mode == Production) || (mode == TronUi Production) then
             [ productName product ( centerX, centerY ) blend scale
             , logo ( logoX, logoY ) blend scale
             ]
