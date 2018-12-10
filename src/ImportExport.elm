@@ -473,12 +473,13 @@ encodeMode mode =
 
 decodeMode : String -> M.UiMode
 decodeMode mode =
-    if String.startsWith mode "tron-"
-    then decodeMode <| String.dropRight 5 mode
+    if String.startsWith "tron-" mode
+    then M.TronUi <| decodeMode <| String.dropLeft 5 mode
     else
         case mode of
             "dev" -> M.Development
             "prod" -> M.Production
             "release" -> M.Release
             "ads" -> M.Ads
+            "tron" -> M.TronUi M.Production
             _ -> M.Production

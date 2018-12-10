@@ -226,7 +226,7 @@ setTimeout(() => {
 
     const url_string = window.location.href;
     const url = new URL(url_string);
-    const mode = url.searchParams.get("mode");
+    let mode = url.searchParams.get("mode");
 
     if (mode) {
         app.ports.changeMode.send(mode);
@@ -273,77 +273,82 @@ setTimeout(() => {
         model.layers.forEach(layer => {
             layer.model = JSON.parse(layer.model) || {};
         });
-        startGui(
-            document,
-            model,
-            { changeLightSpeed : index => value =>
-                { app.ports.changeLightSpeed.send({ layer: index, value: Math.round(value) }) }
-            , changeVignette : index => value =>
-                { app.ports.changeVignette.send({ layer: index, value: value }) }
-            , changeIris : index => value =>
-                { app.ports.changeIris.send({ layer: index, value: value }) }
-            , changeFacesX : index => value =>
-                { app.ports.changeFacesX.send({ layer: index, value: Math.round(value) }) }
-            , changeFacesY : index => value =>
-                { app.ports.changeFacesY.send({ layer: index, value: Math.round(value) }) }
-            , changeRenderMode : index => renderMode =>
-                { app.ports.changeFssRenderMode.send({ layer: index, value: renderMode }) }
-            , changeWGLBlend : (index, blend) =>
-                { app.ports.changeWGLBlend.send({ layer: index, value: blend }) }
-            , changeSVGBlend : (index, blend) =>
-                { app.ports.changeSVGBlend.send({ layer: index, value: blend }) }
-            , changeProduct : (id) =>
-                { app.ports.changeProduct.send(id) }
-            , setCustomSize : (value) => {
-                const size = value.split(',');
-                const width = parseInt(size[0]);
-                const height = parseInt(size[1]);
-                if (width > 0 && height > 0) {
-                    app.ports.setCustomSize.send([ width, height ]);
-                } else {
-                    app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
-                }
-            }
-            , savePng : () =>
-                { app.ports.savePng.send(null); }
-            , saveBatch : sizes_ => {
-                let sizes = sizes_.concat([[0, 0]]);
-                let sizeIndex = 0;
-                savingBatch = true;
-                const nextPng = () => {
-                    if (sizeIndex < sizes.length) {
-                        const [ width, height ] = sizes[sizeIndex];
-                        // console.log('sending', width, height);
-                        app.ports.setCustomSize.send([ width, height ]);
-                        sizeIndex = sizeIndex + 1;
-                        setTimeout(nextPng, batchPause);
-                    } else {
-                        savingBatch = false;
-                        // console.log('done saving batch');
-                    }
-                };
 
-                nextPng();
-            }
-            , changeAmplitude : index => (x, y, z) =>
-                { app.ports.changeAmplitude.send({ layer: index, value: [ x, y, z ]}); }
-            , shiftColor : index => (h, s, b) =>
-                { app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]}); }
-            , changeOpacity : index => value =>
-                { app.ports.changeOpacity.send({ layer: index, value: value }) }
-            , turnOn : index =>
-                { app.ports.turnOn.send(index); }
-            , turnOff : index =>
-                { app.ports.turnOff.send(index); }
-            , mirrorOn : index =>
-                { app.ports.mirrorOn.send(index); }
-            , mirrorOff : index =>
-                { app.ports.mirrorOff.send(index); }
-            , rotate : value =>
-                { app.ports.rotate.send(value); }
-            , applyRandomizer : value =>
-                { app.ports.applyRandomizer.send(prepareModelForImport(value)); }
-            });
+        if (!model.mode || (model.mode.substring(0, 4) != 'tron')) {
+
+            startGui(
+                document,
+                model,
+                { changeLightSpeed : index => value =>
+                    { app.ports.changeLightSpeed.send({ layer: index, value: Math.round(value) }) }
+                , changeVignette : index => value =>
+                    { app.ports.changeVignette.send({ layer: index, value: value }) }
+                , changeIris : index => value =>
+                    { app.ports.changeIris.send({ layer: index, value: value }) }
+                , changeFacesX : index => value =>
+                    { app.ports.changeFacesX.send({ layer: index, value: Math.round(value) }) }
+                , changeFacesY : index => value =>
+                    { app.ports.changeFacesY.send({ layer: index, value: Math.round(value) }) }
+                , changeRenderMode : index => renderMode =>
+                    { app.ports.changeFssRenderMode.send({ layer: index, value: renderMode }) }
+                , changeWGLBlend : (index, blend) =>
+                    { app.ports.changeWGLBlend.send({ layer: index, value: blend }) }
+                , changeSVGBlend : (index, blend) =>
+                    { app.ports.changeSVGBlend.send({ layer: index, value: blend }) }
+                , changeProduct : (id) =>
+                    { app.ports.changeProduct.send(id) }
+                , setCustomSize : (value) => {
+                    const size = value.split(',');
+                    const width = parseInt(size[0]);
+                    const height = parseInt(size[1]);
+                    if (width > 0 && height > 0) {
+                        app.ports.setCustomSize.send([ width, height ]);
+                    } else {
+                        app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
+                    }
+                }
+                , savePng : () =>
+                    { app.ports.savePng.send(null); }
+                , saveBatch : sizes_ => {
+                    let sizes = sizes_.concat([[0, 0]]);
+                    let sizeIndex = 0;
+                    savingBatch = true;
+                    const nextPng = () => {
+                        if (sizeIndex < sizes.length) {
+                            const [ width, height ] = sizes[sizeIndex];
+                            // console.log('sending', width, height);
+                            app.ports.setCustomSize.send([ width, height ]);
+                            sizeIndex = sizeIndex + 1;
+                            setTimeout(nextPng, batchPause);
+                        } else {
+                            savingBatch = false;
+                            // console.log('done saving batch');
+                        }
+                    };
+
+                    nextPng();
+                }
+                , changeAmplitude : index => (x, y, z) =>
+                    { app.ports.changeAmplitude.send({ layer: index, value: [ x, y, z ]}); }
+                , shiftColor : index => (h, s, b) =>
+                    { app.ports.shiftColor.send({ layer: index, value: [ h, s, b ]}); }
+                , changeOpacity : index => value =>
+                    { app.ports.changeOpacity.send({ layer: index, value: value }) }
+                , turnOn : index =>
+                    { app.ports.turnOn.send(index); }
+                , turnOff : index =>
+                    { app.ports.turnOff.send(index); }
+                , mirrorOn : index =>
+                    { app.ports.mirrorOn.send(index); }
+                , mirrorOff : index =>
+                    { app.ports.mirrorOff.send(index); }
+                , rotate : value =>
+                    { app.ports.rotate.send(value); }
+                , applyRandomizer : value =>
+                    { app.ports.applyRandomizer.send(prepareModelForImport(value)); }
+                });
+
+        }
 
         model.layers.forEach((layer, index) => {
             if (isFss(layer)) {
