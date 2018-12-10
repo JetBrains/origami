@@ -62,6 +62,7 @@ type Msg
     | GuiMessage (Gui.Msg Msg)
     | Resize Window.Size
     | ResizeFromPreset Window.Size
+    | RequestFitToWindow
     | Locate Pos
     | Rotate Float
     | Import String
@@ -311,7 +312,7 @@ sizePresets mode =
                 , ( "800x155 bfoot", ( 800, 155 ) ) -- Blog footer
                 , ( "1600x310 bfoot", ( 1600, 310 ) ) -- @2x Blog footer
                 , ( "2850x1200 landg", ( 2850, 1200 ) ) -- Landing page
-                , ( "browser", ( 0, 0 ) )
+                -- , ( "browser", ( 0, 0 ) )
                 ]
             , ( 4, 4 )
             )
@@ -364,7 +365,7 @@ gui from =
                 |> List.map ChoiceItem
                 |> nest ( 6, 4 )
         sizeGrid =
-            ( "window" :: Dict.keys currentSizePresets )
+            ( "browser" :: Dict.keys currentSizePresets )
                 |> List.map ChoiceItem
                 |> nest sizePresetsShape
         svgBlendGrid =
@@ -383,10 +384,14 @@ gui from =
                 "idea" -> ChangeProduct Product.IntelliJ
                 _ -> ChangeProduct <| Product.decode label
         chooseSize _ label =
-            currentSizePresets
-                |> Dict.get label
-                |> Maybe.map (\(w, h) -> ResizeFromPreset <| Window.Size w h)
-                |> Maybe.withDefault NoOp -- TODO: fitWindow
+            case label of
+                "window" -> RequestFitToWindow
+                "browser" -> RequestFitToWindow
+                _ ->
+                    currentSizePresets
+                        |> Dict.get label
+                        |> Maybe.map (\(w, h) -> ResizeFromPreset <| Window.Size w h)
+                        |> Maybe.withDefault RequestFitToWindow
         chooseWebGlBlend layerIndex index label =
             NoOp
         chooseSvgBlend layerIndex _ label =

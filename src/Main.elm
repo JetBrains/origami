@@ -194,6 +194,9 @@ update msg model =
                 , newModel |> getSizeUpdate |> presetSizeChanged
                 )
 
+        RequestFitToWindow ->
+            ( model, requestFitToWindow () )
+
         Locate (( x, y ) as pos) ->
             let
                 modelWithMouse =
@@ -1161,5 +1164,7 @@ port exportZip_ : String -> Cmd msg
 port triggerSavePng : SizeUpdate -> Cmd msg
 
 port requestRandomize : PortModel -> Cmd msg
+
+port requestFitToWindow : () -> Cmd msg
 
 -- port rebuildOnClient : (FSS.SerializedScene, Int) -> Cmd msg

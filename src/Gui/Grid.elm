@@ -58,7 +58,7 @@ doCellPurpose : GridCell umsg -> Msg umsg
 doCellPurpose { cell, nestPos, isSelected, onSelect } =
     case cell of
         Knob _ _ _ _ ->
-            FocusOn nestPos
+            FocusOn nestPos -- FIXME: NoOp? We do the same on mousedown
         Toggle _ val handler ->
             -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
             if val == TurnedOn then

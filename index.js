@@ -235,6 +235,10 @@ setTimeout(() => {
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
+    app.ports.requestFitToWindow.subscribe((_) => {
+        app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
+    });
+
     app.ports.presetSizeChanged.subscribe((update) => {
         if (savingBatch) {
             // console.log('saving ', size);
