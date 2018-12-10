@@ -2,6 +2,7 @@ module WebGL.Blend exposing
     ( Blend
     , Color
     , Equation
+    , BlendChange
     , produce
     , build
     , default
@@ -15,6 +16,8 @@ module WebGL.Blend exposing
     , encodeAll
     , encodeHumanOne
     , encodeHumanAll
+    , decodeFunc
+    , decodeFactor
     )
 
 
@@ -51,6 +54,9 @@ type alias Blend
       , colorEq : Equation
       , alphaEq : Equation
       }
+
+
+type alias BlendChange = (Blend -> Blend)
 
 
 type alias Function
@@ -373,3 +379,33 @@ nameOfFactor n =
         13 -> "constantAlpha"
         14 -> "oneMinusConstantAlpha"
         _ -> "[?]"
+
+
+decodeFunc : String -> Int
+decodeFunc s =
+    case s of
+        "+" -> 0 -- B.customAdd f1_ f2_
+        "-" -> 1 -- B.customSubtract f1_ f2_
+        "R-" -> 2 -- B.customReverseSubtract f1_ f2_
+        _ -> 0 -- B.customAdd f1_ f2_
+
+
+decodeFactor : String -> Int
+decodeFactor s =
+     case s of
+        "0" -> 0 -- B.zero
+        "1" -> 1 -- B.one
+        "sC" -> 2 -- B.srcColor
+        "1-sC" -> 3 -- B.oneMinusSrcColor
+        "dC" -> 4 -- B.dstColor
+        "1-dC" -> 5 -- B.oneMinusDstColor
+        "sA" -> 6 -- B.srcAlpha
+        "1-sA" -> 7 -- B.oneMinusSrcAlpha
+        "dA" -> 8 -- B.dstAlpha
+        "1-dA" -> 9 -- B.oneMinusDstAlpha
+        "AS" -> 10 -- B.srcAlphaSaturate
+        "CC" -> 11 -- B.constantColor
+        "1-CC" -> 12 -- B.oneMinusConstantColor
+        "CA" -> 13 -- B.constantAlpha
+        "1-CA" -> 14 -- B.oneMinusConstantAlpha
+        _ -> 0 -- B.zero

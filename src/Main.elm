@@ -305,6 +305,13 @@ update msg model =
             , Cmd.none
             )
 
+        AlterWGLBlend index changeF ->
+            ( model |> updateLayerBlend index
+                (\curBlend -> Just <| changeF curBlend)
+                (\_ -> Nothing)
+            , Cmd.none
+            )
+
         ChangeSVGBlend index newBlend ->
             ( model |> updateLayerBlend index
                 (\_ -> Nothing)
@@ -692,8 +699,8 @@ updateLayerWithItsModel index f model =
 
 updateLayerBlend
     : Int
-    -> (() -> Maybe WGLBlend.Blend)
-    -> (() -> Maybe SVGBlend.Blend)
+    -> (WGLBlend.Blend -> Maybe WGLBlend.Blend)
+    -> (SVGBlend.Blend -> Maybe SVGBlend.Blend)
     -> Model
     -> Model
 updateLayerBlend index ifWebgl ifSvg model =
@@ -702,11 +709,11 @@ updateLayerBlend index ifWebgl ifSvg model =
             { layerDef
             | layer = case layerDef.layer of
                 WebGLLayer webglLayer webglBlend ->
-                    ifWebgl ()
+                    ifWebgl webglBlend
                         |> Maybe.withDefault webglBlend
                         |> WebGLLayer webglLayer
                 SVGLayer svgLayer svgBlend ->
-                    ifSvg ()
+                    ifSvg svgBlend
                         |> Maybe.withDefault svgBlend
                         |> SVGLayer svgLayer
             })

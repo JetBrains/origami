@@ -80,6 +80,7 @@ type Msg
     | MirrorOff LayerIndex
     | Configure LayerIndex LayerModel
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
+    | AlterWGLBlend LayerIndex WGLBlend.BlendChange
     | ChangeSVGBlend LayerIndex SVGBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
     --| RebuildOnClient LayerIndex FSS.SerializedScene
@@ -441,19 +442,51 @@ webglBlendGrid mode currentBlend layerIndex =
         factorGrid =
             blendFactors
                 |> List.map ChoiceItem
-                |> nest (8, 2)
+                |> nest ( 8, 2 )
         chooseBlendColorFn layerIndex index label =
-            NoOp
+            AlterWGLBlend layerIndex
+                (\curBlend ->
+                    let ( _, colorFactor1, colorFactor2 ) = curBlend.colorEq
+                    in { curBlend | colorEq =
+                        ( WGLBlend.decodeFunc label, colorFactor1, colorFactor2 ) }
+                )
         chooseBlendColorFact1 layerIndex index label =
-            NoOp
+            AlterWGLBlend layerIndex
+                (\curBlend ->
+                    let ( colorFunc, _, colorFactor2 ) = curBlend.colorEq
+                    in { curBlend | colorEq =
+                        ( colorFunc, WGLBlend.decodeFactor label, colorFactor2 ) }
+                )
         chooseBlendColorFact2 layerIndex index label =
-            NoOp
+            AlterWGLBlend layerIndex
+                (\curBlend ->
+                    let ( colorFunc, colorFactor1, _ ) = curBlend.colorEq
+                    in { curBlend | colorEq =
+                        ( colorFunc, colorFactor1, WGLBlend.decodeFactor label ) }
+                )
         chooseBlendAlphaFn layerIndex index label =
-            NoOp
+            AlterWGLBlend layerIndex
+                (\curBlend ->
+                    let ( _, alphaFactor1, alphaFactor2 ) = curBlend.alphaEq
+                    in { curBlend | alphaEq =
+                        ( WGLBlend.decodeFunc label, alphaFactor1, alphaFactor2 ) }
+                )
         chooseBlendAlphaFact1 layerIndex index label =
-            NoOp
+            AlterWGLBlend layerIndex
+                (\curBlend ->
+                    let ( alphaFunc, alphaFactor1, _ ) = curBlend.alphaEq
+                    in { curBlend | alphaEq =
+                        ( alphaFunc, alphaFactor1, WGLBlend.decodeFactor label )
+                    }
+                )
         chooseBlendAlphaFact2 layerIndex index label =
-            NoOp
+            AlterWGLBlend layerIndex
+                (\curBlend ->
+                    let ( alphaFunc, _, alphaFactor2 ) = curBlend.alphaEq
+                    in { curBlend | alphaEq =
+                        ( alphaFunc, WGLBlend.decodeFactor label, alphaFactor2 )
+                    }
+                )
     in
         nest ( 3, 2 )
         -- TODO color
