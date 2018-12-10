@@ -277,20 +277,51 @@ emptyLayer =
     SVGLayer NoContent SVGBlend.default
 
 
-sizePresets : Dict.Dict String ( Int, Int )
-sizePresets =
-    Dict.fromList
-        [ ( "1920x1980", ( 1920, 1980 ) )
-        , ( "1366x768", ( 1366, 769 ) )
-        , ( "1440x900", ( 1440, 900 ) )
-        , ( "1536x864", ( 1536, 864 ) )
-        , ( "1680x1050", ( 1680, 1050 ) )
-        ]
+sizePresets : UiMode -> ( Dict.Dict String ( Int, Int ), ( Int, Int ) )
+sizePresets mode =
+    case mode of
+        Production ->
+            -- WALLPAPER_SIZES
+            ( Dict.fromList
+                [ ( "2560x1440", ( 2560, 1440 ) )
+                , ( "1920x1200", ( 1920, 1200 ) )
+                , ( "1920x1080", ( 1920, 1080 ) )
+                , ( "1680x1050", ( 1680, 1050 ) )
+                , ( "1536x864", ( 1536, 864 ) )
+                , ( "1440x900", ( 1440, 900 ) )
+                , ( "1366x768", ( 1366, 768 ) )
+                , ( "browser", ( 0, 0 ) )
+                ]
+            , ( 3, 2 )
+            )
+        _ ->
+            -- RELEASE_SIZES // TODO: Multiply for creating @2x @3x
+            ( Dict.fromList
+                [ ( "480x297 prodcard", ( 480, 297 ) ) -- product card
+                , ( "960x594 prodcard@2x", ( 960, 594 ) ) -- @2x product card
+                , ( "640x400 spl", ( 640, 400 ) ) -- product splash background
+                , ( "1280x800 spl@2x", ( 1280, 800 ) ) -- @2x splash background
+                , ( "650x170 nwlt", ( 650, 170 ) ) -- newsletter
+                , ( "1300x340 nwlt@2x", ( 1300, 340 ) ) -- @2x newsletter
+                , ( "800x418 tw", ( 800, 418 ) ) -- Twitter
+                , ( "1200x628 fb", ( 1200, 628 ) ) -- Facebook
+                , ( "1280x800 wprev", ( 1280, 800 ) ) -- Webpage Preview
+                , ( "800x400 blog", ( 800, 400 ) ) -- Blog
+                , ( "1600x800 blog@2x", ( 1600, 800 ) ) -- @2x Blog
+                , ( "800x155 bfoot", ( 800, 155 ) ) -- Blog footer
+                , ( "1600x310 bfoot", ( 1600, 310 ) ) -- @2x Blog footer
+                , ( "2850x1200 landg", ( 2850, 1200 ) ) -- Landing page
+                , ( "browser", ( 0, 0 ) )
+                ]
+            , ( 4, 4 )
+            )
 
 
 gui : Model -> Gui.Model Msg
 gui from =
     let
+        ( currentSizePresets, sizeBlockShape ) =
+            sizePresets from.mode
         products =
             [ "jetbrains"
             , "intellij idea"
@@ -323,9 +354,9 @@ gui from =
                 |> List.map ChoiceItem
                 |> nest ( 4, 3 )
         sizeGrid =
-            ( "window" :: Dict.keys sizePresets )
+            ( "window" :: Dict.keys currentSizePresets )
                 |> List.map ChoiceItem
-                |> nest ( 2, 3 )
+                |> nest sizeBlockShape
         svgBlendGrid =
             svgBlends
                 |> List.map ChoiceItem
@@ -341,7 +372,7 @@ gui from =
                 "intellij idea" -> ChangeProduct Product.IntelliJ
                 _ -> ChangeProduct <| Product.decode label
         chooseSize _ label =
-            sizePresets
+            currentSizePresets
                 |> Dict.get label
                 |> Maybe.map (\(w, h) -> ResizeFromPreset <| Window.Size w h)
                 |> Maybe.withDefault NoOp -- TODO: fitWindow

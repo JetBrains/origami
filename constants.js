@@ -132,13 +132,11 @@ const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
     , '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
     , '2850x1200 landg' : [ 2850, 1200 ] // Landing page
     , 'browser': [ 0, 0 ]
-
 };
 
 
 const WALLPAPER_SIZES =
-  {
-     '2560x1440': [ 2560, 1440 ]
+    { '2560x1440': [ 2560, 1440 ]
     , '1920x1200': [ 1920, 1200 ]
     , '1920x1080': [ 1920, 1080 ]
     , '1680x1050': [ 1680, 1050 ]
@@ -146,7 +144,7 @@ const WALLPAPER_SIZES =
     , '1440x900': [ 1440, 900 ]
     , '1366x768': [ 1366, 768 ]
     , 'browser': [ 0, 0 ]
-  };
+};
 
 
 const BLEND_SETS =
