@@ -210,10 +210,15 @@ viewRows focus rows =
 
 
 
-viewGrid : Focus -> Grid umsg -> Html (Msg umsg)
-viewGrid focus (Grid _ grid) =
-    div [ H.class "grid" ]
-        [ grid |> viewRows focus ]
+viewGrid : Int -> Focus -> Grid umsg -> Html (Msg umsg)
+viewGrid cellCount focus (Grid _ grid) =
+    let
+        width = (cellCount * (cellWidth + 2)) + (cellCount * cellMargin * 2)
+    in
+        div [ H.class "grid"
+            , H.style [ ( "width", toString width ++ "px" ) ]
+            ]
+            [ grid |> viewRows focus ]
 
 
 
@@ -435,6 +440,7 @@ view nest =
     let
         grid = layout nest
         focus = findFocus nest
+        cellCount = sizeOf nest
         --keyDownHandlers = Json.map (\_ -> [ NoOp ]) H.keyCode
         keyDownHandler_ = H.on "keydown" <| Json.map (keyDownHandler nest grid) H.keyCode
     in
@@ -443,4 +449,4 @@ view nest =
             , H.tabindex -1
             , keyDownHandler_
             ]
-            [ grid |> viewGrid focus ]
+            [ grid |> viewGrid cellCount focus ]

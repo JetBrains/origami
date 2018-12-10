@@ -1,6 +1,8 @@
 module Gui.Nest exposing (..)
 
 
+import Array
+
 import Gui.Def exposing (..)
 
 
@@ -302,3 +304,8 @@ findFocus nest =
         if isSamePos innerFocus nowhere then
             nowhere |> deeper nest.focus |> Focus
         else Focus innerFocus
+
+
+sizeOf : Nest umsg -> Int
+sizeOf { cells } =
+    List.length cells

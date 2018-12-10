@@ -85,6 +85,7 @@ type Cell umsg
 
 cellWidth = 70
 cellHeight = 70
+cellMargin = 5
 
 
 knobDistance = cellHeight * 4

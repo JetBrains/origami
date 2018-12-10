@@ -217,8 +217,3 @@ svg.text-layer {
 .dg.ac {
     z-index: 30 !important;
 }
-
-#grid-gui > div {
-    position: relative;
-    left: 4.4%;
-}
