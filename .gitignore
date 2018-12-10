@@ -1,7 +1,10 @@
+.npmrc
 # elm-package generated files
 elm-stuff
 # elm-repl generated files
 repl-temp-*
+# .npmrc
+.npmrc
 # node modules installation folder
 node_modules
 # idea dir
