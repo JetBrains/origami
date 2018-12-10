@@ -13,6 +13,8 @@ node_modules
 build
 # DS_Store
 .DS_Store
+# vcs_key
+vcs_key
 # app file
 app.js
 # scene file
