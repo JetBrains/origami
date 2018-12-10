@@ -57,7 +57,7 @@ bottomLeft = (GridPos 0 0)
 doCellPurpose : GridCell umsg -> Msg umsg
 doCellPurpose { cell, nestPos, isSelected, onSelect } =
     case cell of
-        Knob _ _ _ handler ->
+        Knob _ _ _ _ ->
             FocusOn nestPos
         Toggle _ val handler ->
             -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
@@ -86,6 +86,14 @@ doCellPurpose { cell, nestPos, isSelected, onSelect } =
             case isSelected of
                 Just NotSelected -> Select nestPos
                 _ -> NoOp
+
+
+maybeFocus : GridCell umsg -> Msg umsg
+maybeFocus { cell, nestPos } =
+    case cell of
+        Knob _ _ _ _ ->
+            FocusOn nestPos
+        _ -> NoOp
 
 
 viewCellContentDebug : GridPos -> GridCell umsg -> Html (Msg umsg)
@@ -175,6 +183,7 @@ viewCell focus gridPos maybeGridCell =
                 |> Maybe.map
                     (\gridCell ->
                         [ H.onClick <| doCellPurpose gridCell
+                        , H.onMouseDown <| maybeFocus gridCell
                         ]
                     )
                 |> Maybe.withDefault []
