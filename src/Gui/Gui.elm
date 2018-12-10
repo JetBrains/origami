@@ -232,7 +232,8 @@ findMessageForMouse ( prevMouseState, ui ) nextMouseState =
         case findCell focusedPos ui of
             Just (Knob _ knobState curValue handler) ->
                 let alter = applyMove prevMouseState nextMouseState knobState curValue
-                in if (prevMouseState.down == True && nextMouseState.down == False)
+                in
+                    if (prevMouseState.down == True && nextMouseState.down == False)
                     then TuneAndApply focusedPos alter
                         <| handler (alterKnob knobState alter curValue)
                     else Tune focusedPos alter

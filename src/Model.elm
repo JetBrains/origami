@@ -324,7 +324,7 @@ gui from =
             sizePresets from.mode
         products =
             [ "jetbrains"
-            , "intellij idea"
+            , "idea"
             , "phpstorm"
             , "pycharm"
             , "rubymine"
@@ -333,8 +333,8 @@ gui from =
             , "datagrip"
             , "appcode"
             , "goland"
-            , "r#"
-            , "r# c++"
+            , "rs"
+            , "rs cpp"
             , "dotcover"
             , "dotmemory"
             , "dotpeek"
@@ -378,9 +378,9 @@ gui from =
                 ]
         chooseProduct _ label =
             case label of
-                "r#" -> ChangeProduct Product.ReSharper
-                "r# c++" -> ChangeProduct Product.ReSharperCpp
-                "intellij idea" -> ChangeProduct Product.IntelliJ
+                "rs" -> ChangeProduct Product.ReSharper
+                "rs cpp" -> ChangeProduct Product.ReSharperCpp
+                "idea" -> ChangeProduct Product.IntelliJ
                 _ -> ChangeProduct <| Product.decode label
         chooseSize _ label =
             currentSizePresets
