@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY . /app
 
-RUN npm install && ./node_modules/.bin/elm-package install -y
+RUN npm install
 
 RUN npm run build && npm run build:player
 
