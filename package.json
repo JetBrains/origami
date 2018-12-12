@@ -9,7 +9,6 @@
     "dat.gui": "^0.7.3",
     "elm-webpack-loader": "^4.4.0",
     "flat-surface-shader": "github:shamansir/flat-surface-shader",
-    "jetbrains-logos": "^2.0.2",
     "jszip": "^3.1.5",
     "jszip-utils": "0.0.2",
     "kefir": "^3.8.0",
