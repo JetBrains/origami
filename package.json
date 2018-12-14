@@ -6,7 +6,7 @@
   "dependencies": {
     "css-loader": "^2.0.0",
     "dat.gui": "^0.7.3",
-    "elm-webpack-loader": "^4.4.0",
+    "elm-webpack-loader": "^5.0.0",
     "flat-surface-shader": "github:shamansir/flat-surface-shader",
     "jszip": "^3.1.5",
     "jszip-utils": "0.0.2",
