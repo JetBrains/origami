@@ -6,12 +6,18 @@
   "dependencies": {
     "css-loader": "^2.0.0",
     "dat.gui": "^0.7.3",
-    "elm-webpack-loader": "^4.4.0",
+    "elm-webpack-loader": "^4.5.0",
     "flat-surface-shader": "github:shamansir/flat-surface-shader",
     "jszip": "^3.1.5",
     "jszip-utils": "0.0.2",
     "webpack": "^4.27.1",
-    "webpack-dev-server": "^3.1.10"
+    "webpack-dev-server": "^3.1.10",
+    "cryptiles": "^4.1.3",
+    "hoek": "^6.1.2",
+    "fresh": "^0.5.2",
+    "debug": "^4.1.0",
+    "mime": "^2.4.0",
+    "negotiator": "^0.6.1"
   },
   "devDependencies": {
     "elm-svg-loader": "^1.0.2",
