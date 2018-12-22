@@ -1,7 +1,7 @@
 module Gui.Mouse exposing (..)
 
 
-import Mouse exposing (Position)
+type alias Position = ( Int, Int )
 
 
 type alias MouseState =
@@ -40,7 +40,7 @@ downs pos prev =
 
 init : MouseState
 init =
-    { pos = { x = 0, y = 0 }
+    { pos = ( 0, 0 )
     , down = False
     , dragFrom = Nothing
     }

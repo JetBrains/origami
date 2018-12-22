@@ -41,27 +41,28 @@ traverseCells : (Cell umsg -> NestPos -> Cell umsg) -> Cells umsg -> Cells umsg
 traverseCells f cells =
     let
         scanCell maybeParentPos index cell =
-            let nestPos =
-                case  maybeParentPos of
-                    Just parentPos -> parentPos |> deeper index
-                    Nothing -> root index
+            let
+                nestPos =
+                    case maybeParentPos of
+                        Just parentPos -> parentPos |> deeper index
+                        Nothing -> root index
             in case f cell nestPos of
-                Nested label state nest ->
+                Nested label state innerNest ->
                     Nested
                         label
                         state
-                        { nest
+                        { innerNest
                         | cells =
                             nest.cells
                                 |> List.indexedMap (scanCell (Just nestPos))
                         }
-                Choice label state selected handler nest ->
+                Choice label state selected handler innerNest ->
                     Choice
                         label
                         state
                         selected
                         handler
-                        { nest
+                        { innerNest
                         | cells =
                             nest.cells |>
                                 List.indexedMap (scanCell (Just nestPos))
@@ -78,10 +79,12 @@ traverseAllNests f nest =
     | cells = f nest nowhere |> .cells |> traverseCells
         (\cell cellPosition ->
             case cell of
-                Nested label state nest ->
-                    f nest cellPosition |> Nested label state
-                Choice label state selected handler nest ->
-                    f nest cellPosition |> Choice label state selected handler
+                Nested label state innerNest ->
+                    f innerNest cellPosition
+                        |> Nested label state
+                Choice label state selected handler innerNest ->
+                    f innerNest cellPosition
+                        |> Choice label state selected handler
                 _ -> cell
         )
     }

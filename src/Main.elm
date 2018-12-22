@@ -2,15 +2,14 @@ port module Main exposing (main)
 
 import Array exposing (Array)
 import AnimationFrame
-import Time exposing (Time)
-import Window
-import Mouse exposing (clicks, moves, downs, ups, Position)
 import Task exposing (Task)
 
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H
     exposing (class, width, height, style, class, type_, min, max, value, id)
-import Html.Events exposing (on, onInput, onMouseUp, onClick)
+-- import Html.Events exposing (on, onInput, onMouseUp, onClick)
+import Browser.Events as Events
+import Json.Decode as D
 
 import WebGL exposing (Mesh, Option)
 import WebGL.Settings.Blend as B
@@ -746,9 +745,9 @@ subscriptions model =
                 |> Maybe.withDefault NoOp
           )
         --, downs <| Gui.downs >> GuiMessage
-        , downs <| tellGui Gui.downs model
+        , Events.onMouseDown <| D.succeed <| tellGui Gui.downs model
         -- , ups <| Gui.ups >> GuiMessage
-        , ups <| tellGui Gui.ups model
+        , Events.onMouseUp <| D.succeed <| tellGui Gui.ups model
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
         , changeFssRenderMode (\{value, layer} ->

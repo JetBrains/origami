@@ -24,8 +24,6 @@ module Model exposing
 
 
 import Dict as Dict
-import Window
-import Time exposing (Time)
 
 import WebGL.Blend as WGLBlend
 import Svg.Blend as SVGBlend

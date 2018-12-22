@@ -12,7 +12,7 @@ import Gui.Msg exposing (..)
 textAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
 textAttrs xPos yPos color =
     [ fill color
-    , x <| toString xPos, y <| toString yPos
+    , x <| String.fromFloat xPos, y <| String.fromFloat yPos
     , fontSize "12"
     , S.style "font-family: sans-serif;"
     , textAnchor "middle"
@@ -22,8 +22,8 @@ textAttrs xPos yPos color =
 
 circleAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
 circleAttrs xPos yPos color =
-    [ cx <| toString <| xPos
-    , cy <| toString <| yPos
+    [ cx <| String.fromFloat <| xPos
+    , cy <| String.fromFloat <| yPos
     , r "15"
     , stroke color, fill "none"
     , strokeWidth lineWidth
@@ -34,12 +34,12 @@ knobRectAttrs : String -> Float -> List (Attribute (Msg umsg))
 knobRectAttrs color rotation =
     [ width "5"
     , height "5"
-    , x <| toString (-2.5)
-    , y <| toString (-2.5)
+    , x <| String.fromFloat (-2.5)
+    , y <| String.fromFloat (-2.5)
     , fill color
     , stroke "none"
     , transform
-        <| "rotate(" ++ toString rotation ++ ") translate(0,-15)"
+        <| "rotate(" ++ String.fromFloat rotation ++ ") translate(0,-15)"
     ]
 
 
@@ -50,7 +50,8 @@ upArrow xPos yPos color =
         , transform "rotate(-180.000000) translate(-30, -12)" ]
         [
             Svg.path
-                [ x <| toString <| xPos, y <| toString <| yPos
+                [ x <| String.fromFloat <| xPos
+                , y <| String.fromFloat <| yPos
                 --transform "translate(-37.125,-290.25)"
                 , d "m 0 0 l 20 20 l 20 -20"
                 , stroke color, fill "none"
@@ -67,7 +68,8 @@ downArrow xPos yPos color =
         , transform "rotate(-180.000000) translate(-30, -12)" ]
         [
             Svg.path
-                [ x <| toString <| xPos, y <| toString <| yPos
+                [ x <| String.fromFloat <| xPos
+                , y <| String.fromFloat <| yPos
                 --transform "translate(-37.125,-290.25)"
                 , d "m 0 20 l 20 -20 l 20 20"
                 , stroke color, fill "none"
@@ -96,11 +98,11 @@ renderCell position (Focus focus) isSelected cell =
                         g [ class "gui-knob" ]
                             [ text_
                                 (textAttrs (cellWidth / 2) (cellHeight / 3) baseColor)
-                                [ Svg.text <| toString friendlyValue ]
+                                [ Svg.text <| String.fromFloat friendlyValue ]
                             , g
                                 [ transform
-                                    <| "translate(" ++ toString (cellWidth / 2) ++ ","
-                                    ++ toString (cellHeight / 3) ++ ")"
+                                    <| "translate(" ++ String.fromFloat (cellWidth / 2) ++ ","
+                                    ++ String.fromFloat (cellHeight / 3) ++ ")"
                                 ]
                                 [ circle
                                     (circleAttrs 0 0 baseColor)
@@ -132,7 +134,8 @@ renderCell position (Focus focus) isSelected cell =
                                 |> Maybe.map cellLabel |> Maybe.withDefault "" |> Svg.text ]
                         , g
                             [ transform
-                                <| "translate(" ++ (toString <| cellWidth / 2 - 10) ++ ",10)" ]
+                                <| "translate("
+                                    ++ (String.fromFloat <| cellWidth / 2 - 10) ++ ",10)" ]
                             [ if state == Expanded
                                 then downArrow (cellWidth / 2) 10 baseColor
                                 else upArrow (cellWidth / 2) 10 baseColor ]
@@ -141,7 +144,8 @@ renderCell position (Focus focus) isSelected cell =
                     g [ class "gui-nested" ]
                         [ g
                             [ transform
-                                <| "translate(" ++ (toString <| cellWidth / 2 - 10) ++ ",10)" ]
+                                <| "translate("
+                                    ++ (String.fromFloat <| cellWidth / 2 - 10) ++ ",10)" ]
                             [ if state == Expanded
                                 then downArrow (cellWidth / 2) 10 baseColor
                                 else upArrow (cellWidth / 2) 10 baseColor  ]
@@ -150,7 +154,8 @@ renderCell position (Focus focus) isSelected cell =
                     g [ class "gui-choice-item" ]
                         [ g
                             [ transform
-                                <| "translate(" ++ (toString <| cellWidth / 2 - 10) ++ ",10)" ]
+                                <| "translate("
+                                    ++ (String.fromFloat <| cellWidth / 2 - 10) ++ ",10)" ]
                             [ case isSelected of
                                 (Just Selected) -> downArrow (cellWidth / 2) 10 onColor
                                 _ -> downArrow (cellWidth / 2) 10 nothingColor ]
@@ -161,8 +166,8 @@ renderCell position (Focus focus) isSelected cell =
                             (circleAttrs (cellWidth / 2) (cellHeight / 3) nothingColor)
                             []
                         ]
-        cellLabel cell =
-            case cell of
+        cellLabel c =
+            case c of
                 Ghost label -> label
                 Knob label _ _ _ -> label
                 Toggle label _ _ -> label
@@ -173,8 +178,8 @@ renderCell position (Focus focus) isSelected cell =
         labelBackWidth = cellWidth * 2/3
         labelBackHeight = 20
     in svg
-        [ width <| toString cellWidth
-        , height <| toString cellHeight
+        [ width <| String.fromInt cellWidth
+        , height <| String.fromInt cellHeight
         ]
         [ cellBody
 --        , rect
