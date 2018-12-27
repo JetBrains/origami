@@ -22,8 +22,8 @@ oneLine cells =
     }
 
 
-nest : Shape -> Cells umsg -> Nest umsg
-nest shape cells =
+nestWith : Shape -> Cells umsg -> Nest umsg
+nestWith shape cells =
     { focus = 0
     , shape = shape
     , cells = cells
@@ -47,22 +47,22 @@ traverseCells f cells =
                         Just parentPos -> parentPos |> deeper index
                         Nothing -> root index
             in case f cell nestPos of
-                Nested label state innerNest ->
+                Nested label state nest ->
                     Nested
                         label
                         state
-                        { innerNest
+                        { nest
                         | cells =
                             nest.cells
                                 |> List.indexedMap (scanCell (Just nestPos))
                         }
-                Choice label state selected handler innerNest ->
+                Choice label state selected handler nest ->
                     Choice
                         label
                         state
                         selected
                         handler
-                        { innerNest
+                        { nest
                         | cells =
                             nest.cells |>
                                 List.indexedMap (scanCell (Just nestPos))
@@ -123,10 +123,10 @@ foldNests f default nest =
     nest |>
         foldCells (\cell nestPos v ->
             case cell of
-                Nested _ _ nest ->
-                    f nest nestPos v
-                Choice _ _ _ _ nest ->
-                    f nest nestPos v
+                Nested _ _ innerNest ->
+                    f innerNest nestPos v
+                Choice _ _ _ _ innerNest ->
+                    f innerNest nestPos v
                 _ -> v
         ) (f nest nowhere default)
 
@@ -190,7 +190,7 @@ findCell pos nest =
     nest |>
         foldCells (\cell cellPos maybeFound ->
             case maybeFound of
-                Just cell -> Just cell
+                Just foundCell -> Just foundCell
                 Nothing ->
                     if isSamePos cellPos pos
                         then Just cell
