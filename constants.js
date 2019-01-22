@@ -108,7 +108,7 @@ const BLEND_FACTORS_IDS =
 };
 
 
-const SVG_BLENDS =
+const HTML_BLENDS =
   [ 'normal', 'overlay' ];
 
 
@@ -131,6 +131,46 @@ const RELEASE_SIZES = // TODO: Multiply for creating @2x @3x
     , '800x155 bfoot' : [ 800, 155 ] // Blog footer
     , '1600x310 bfoot' : [ 1600, 310 ] // @2x Blog footer
     , '2850x1200 landg' : [ 2850, 1200 ] // Landing page
+    , 'browser': [ 0, 0 ]
+};
+
+
+
+const ADS_SIZES = // TODO: Multiply for creating @2x @3x
+    { '120x600' : [ 120, 600 ]
+    , '125x125' : [ 125, 125 ]
+    , '130x100' : [ 130, 100 ]
+    , '180x150' : [ 180, 150 ]
+    , '200x125' : [ 200, 125 ]
+    , '200x200' : [ 200, 200 ]
+    , '220x250' : [ 220, 250 ]
+    , '250x250' : [ 250, 250 ]
+    , '260x200' : [ 260, 200 ]
+    , '300x250' : [ 300, 250 ]
+    , '320x100' : [ 320, 100 ]
+    , '320x50' : [ 320, 50 ]
+    , '336x280' : [ 336, 280 ]
+    , '468x60' : [ 468, 60 ]
+    , '160x600' : [ 160, 600 ]
+    , '300x600' : [ 300, 600 ]
+    , '728x90' : [ 728, 90 ]
+    , '800x320' : [ 800, 320 ]
+    , '970x250' : [ 970, 250 ]
+    , '970x90' : [ 970, 90 ]
+    , '960x90 baidu' : [ 960, 90 ]
+    , '728x90 baidu' : [ 728, 90 ]
+    , '468x60 baidu' : [ 468, 60 ]
+    , '200x200 baidu' : [ 200, 200 ]
+    , '960x60 baidu' : [ 960, 60 ]
+    , '640x60 baidu' : [ 640, 60 ]
+    , '580x90 baidu' : [ 580, 90 ]
+    , '460x60 baidu' : [ 460, 60 ]
+    , '300x250 baidu' : [ 300, 250 ]
+    , '336x280 baidu' : [ 336, 280 ]
+    , '1200x628 fb' : [ 1200, 628 ]
+    , '800x418 tw' : [ 800, 418 ]
+    , '1080x1080 in' : [ 1080, 1080 ]
+    , '1200x627 ln' : [ 1200, 627 ]
     , 'browser': [ 0, 0 ]
 };
 
@@ -178,9 +218,10 @@ module.exports = {
     BLEND_FACTORS,
     BLEND_FACTORS_IDS,
     BLEND_SETS,
-    SVG_BLENDS,
+    HTML_BLENDS,
     RENDER_MODES,
     RELEASE_SIZES,
+    ADS_SIZES,
     WALLPAPER_SIZES,
     funcKeys,
     factorKeys,

@@ -3,8 +3,8 @@ module Layer.Cover exposing
     )
 
 import Html exposing (..)
-import Html.Attributes as HAttrs
-import Svg.Blend as Blend
+import Html.Attributes exposing (style, class, attribute, contenteditable)
+import Html.Blend as Blend
 import Product exposing (..)
 import Json.Encode as E
 
@@ -14,10 +14,10 @@ import Product
 
 defaultSize = 110
 defaultWidth = 1500.0
-imageWidth : Int
-imageWidth = 120
-imageHeight : Int
-imageHeight = 120
+-- imageWidth : Int
+-- imageWidth = 120
+-- imageHeight : Int
+-- imageHeight = 120
 scaleFactor : Float
 scaleFactor = 0.1
 
@@ -32,18 +32,16 @@ view mode product ( w, h ) ( x, y ) blend =
         logoY = toFloat h - toFloat y - 0.1 * toFloat h
     in
         div
-            [ HAttrs.class "cover-layer"
-            , HAttrs.style
-                [ ( "mix-blend-mode", Blend.encode blend )
-                , ( "position", "absolute" )
-                , ( "top", "0px" )
-                , ( "left", "0px" )
-                , ( "font-size", toString defaultSize ++ "px" )
-                , ( "font-family", "'Gotham', Helvetica, sans-serif" )
-                , ( "font-weight", "170" )
+            [ class "cover-layer"
+            , style "mix-blend-mode" <| Blend.encode blend
+            , style "position" "absolute"
+            , style "top" "0px"
+            , style "left" "0px"
+            , style "font-size" <| String.fromInt defaultSize ++ "px"
+            , style "font-family" "'Gotham', Helvetica, sans-serif"
+            , style "font-weight" "170"
                 -- , ("text-transform", "uppercase")
-                , ( "color", "white" )
-                ]
+            , style "color" "white"
             ]
         ( if (mode == Production) || (mode == TronUi Production) then
             [ productName product ( centerX, centerY ) blend scale
@@ -95,9 +93,9 @@ logo ( logoX, logoY ) blend scale =
 
 
 image : String -> String -> ( Float, Float ) -> ( Int, Int ) -> Blend.Blend -> Float -> Html a
-image imagePath class ( posX, posY ) ( imageWidth, imageHeight ) blend scale =
+image imagePath imgClass ( posX, posY ) ( imageWidth, imageHeight ) blend scale =
     div
-        [ HAttrs.class class
+        [ class imgClass
         ,
             { blend = Blend.encode blend
             , posX = posX
@@ -109,23 +107,20 @@ image imagePath class ( posX, posY ) ( imageWidth, imageHeight ) blend scale =
             }
             |> encodeStoredData
             |> E.encode 0
-            |> HAttrs.attribute "data-stored"
-        , HAttrs.style
-            [ ("mix-blend-mode", Blend.encode blend)
-            , ("position", "absolute")
-            , ("top", "0px")
-            , ("left", "0px")
-            , ("width", toString ( toFloat imageWidth * scale ) ++ "px")
-            , ("height", toString ( toFloat imageHeight * scale ) ++ "px")
-            , ("transform", "translate("
-                ++ toString (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, "
-                ++ toString (posY - (toFloat imageHeight * scale) / 2.0) ++ "px)"
-              )
-            , ("background-image", "url(\"" ++ imagePath ++ "\")")
-            , ("background-repeat", "no-repeat")
-            , ("background-position", "center center")
-            , ("background-size", "contain")
-            ]
+            |> attribute "data-stored"
+        , style "mix-blend-mode" <| Blend.encode blend
+        , style "position" "absolute"
+        , style "top" "0px"
+        , style "left" "0px"
+        , style "width" <| String.fromFloat ( toFloat imageWidth * scale ) ++ "px"
+        , style "height" <| String.fromFloat ( toFloat imageHeight * scale ) ++ "px"
+        , style "transform" <| "translate("
+                ++ String.fromFloat (posX - (toFloat imageWidth * scale) / 2.0) ++ "px, "
+                ++ String.fromFloat (posY - (toFloat imageHeight * scale) / 2.0) ++ "px)"
+        , style "background-image" <| "url(\"" ++ imagePath ++ "\")"
+        , style "background-repeat" "no-repeat"
+        , style "background-position" "center center"
+        , style "background-size" "contain"
         ]
         [ --img [ HAttrs.src logoPath, HAttrs.attribute "crossorigin" "anonymous" ] []
         ]
@@ -134,22 +129,20 @@ image imagePath class ( posX, posY ) ( imageWidth, imageHeight ) blend scale =
 title : Product -> Html a
 title product =
     div
-        [ HAttrs.class
+        [ class
             ("text-layer--title text-layer--" ++ Product.encode product)
-        ,  HAttrs.style
-            [ ("max-width", "800px")
+        , style "max-width" "800px"
 --            ,("mix-blend-mode", Blend.encode blend)
 --                , ("position", "absolute")
 --                , ("top", toString posY ++ "px")
 --                , ("left", toString posX ++ "px")
 --                , ("transform", "scale(" ++ toString scale ++ ")")
-              , ("font-size", toString defaultSize ++ "px")
-              , ("font-family", "'Gotham', Helvetica, sans-serif")
-              , ("font-weight", "170")
+        , style "font-size" <| String.fromInt defaultSize ++ "px"
+        , style "font-family" "'Gotham', Helvetica, sans-serif"
+        , style "font-weight" "170"
               -- , ("text-transform", "uppercase")
-              , ("color", "white")
-              ]
-        , HAttrs.contenteditable True
+        , style "color" "white"
+        , contenteditable True
         ]
         [ text <| getName product ]
 

@@ -52,14 +52,14 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                 ( newMouse, ui )
 
         FocusOn pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui
                 |> shiftFocusTo pos
                 |> withMouse mouse
             )
 
         Tune pos alter ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
@@ -75,7 +75,7 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
             )
 
         ToggleOn pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
@@ -89,7 +89,7 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
             )
 
         ToggleOff pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
@@ -103,7 +103,7 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
             )
 
         ExpandNested pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui
                 |> shiftFocusTo pos
                 |> collapseAllAbove pos
@@ -118,7 +118,7 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
             )
 
         CollapseNested pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
@@ -132,7 +132,7 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
             )
 
         ExpandChoice pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui
                 |> collapseAllAbove pos
                 |> shiftFocusTo pos
@@ -147,7 +147,7 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
             )
 
         CollapseChoice pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui
                 |> shiftFocusTo pos
                 |> updateCell pos
@@ -161,7 +161,7 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
             )
 
         Select pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , let
                 parentPos = getParentPos pos |> Maybe.withDefault nowhere
                 index = getIndexOf pos |> Maybe.withDefault -1
@@ -199,12 +199,12 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                 ( ui |> withMouse mouse )
 
         ShiftFocusLeftAt pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui |> shiftFocusBy -1 pos |> withMouse mouse
             )
 
         ShiftFocusRightAt pos ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui |> shiftFocusBy 1 pos |> withMouse mouse
             )
 
@@ -214,13 +214,13 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                 ( ui |> withMouse mouse )
 
         NoOp ->
-            ( userModel ! []
+            ( ( userModel, Cmd.none )
             , ui |> withMouse mouse
             )
 
 
 withMouse : MouseState -> Nest umsg -> Model umsg
-withMouse = (,)
+withMouse = Tuple.pair
 
 
 -- findMessageForMouse : MouseState -> MouseState -> Focus -> Cell umsg -> Msg umsg
@@ -248,10 +248,10 @@ sequenceUpdate
     -> ( ( umodel, Cmd umsg ), Model umsg )
 sequenceUpdate userUpdate userModel msgs ui =
     List.foldr
-        (\msg ( ( userModel, prevCommand ), ui ) ->
+        (\msg ( ( prevUserModel, prevCommand ), prevUi ) ->
             let
                 ( ( newUserModel, newUserCommand ), newUi ) =
-                    update userUpdate userModel msg ui
+                    update userUpdate prevUserModel msg prevUi
             in
                 (
                     ( newUserModel

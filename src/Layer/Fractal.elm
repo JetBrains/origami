@@ -292,7 +292,7 @@ varying float minRange;
 varying float stepLimit;
 
 /**
-* Fractal Lab's uber 3D fractal shader
+* Fractal Lab^s uber 3D fractal shader
 * Last update: 26 February 2011
 *
 * Changelog:
@@ -540,7 +540,7 @@ vec3 blinnPhong(vec3 color, vec3 p, vec3 n)
 
 
 // Ambient occlusion approximation.
-// Based upon boxplorer's implementation which is derived from:
+// Based upon boxplorer^s implementation which is derived from:
 // http://www.iquilezles.org/www/material/nvscene2008/rwwtt.pdf
 float ambientOcclusion(vec3 p, vec3 n, float eps)
 {
@@ -585,7 +585,7 @@ vec4 render(vec2 pixel)
             dist = MengerSponge(ray);
             dist.x *= surfaceSmoothness;
 
-            // If we hit the surface on the previous step check again to make sure it wasn't
+            // If we hit the surface on the previous step check again to make sure it wasn^t
             // just a thin filament
             if (hit && dist.x < eps || ray_length > tmax || ray_length < tmin) {
                 steps--;

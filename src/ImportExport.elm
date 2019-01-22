@@ -12,12 +12,16 @@ module ImportExport exposing
 
 import Array
 
+import Tuple
+import Time
+
 import Json.Decode as D exposing (bool, int, string, float, Decoder, Value)
-import Json.Decode.Pipeline as D exposing (decode, required, optional, hardcoded)
+import Json.Decode.Pipeline as D exposing (required, optional, hardcoded)
+import Json.Decode.Extra as D exposing (andMap)
 import Json.Encode as E exposing (encode, Value, string, int, float, bool, list, object)
 
 import WebGL.Blend as WGLBlend
-import Svg.Blend as SVGBlend
+import Html.Blend as HtmlBlend
 
 import Layer.FSS as FSS
 import Product exposing (..)
@@ -33,20 +37,56 @@ encodeIntPair ( v1, v2 ) =
         ]
 
 
-encodePairAsArray : (a -> E.Value) -> ( a, a ) -> E.Value
-encodePairAsArray f ( v1, v2 ) =
-   [ v1, v2 ]
-        |> List.map f
-        |> Array.fromList
-        |> E.array
+-- encodePairAsArray : (a -> E.Value) -> ( a, a ) -> E.Value
+-- encodePairAsArray f ( v1, v2 ) =
+--     E.list f [ v1, v2 ]
 
 
-encodeTripleAsArray : (a -> E.Value) -> ( a, a, a ) -> E.Value
-encodeTripleAsArray f ( v1, v2, v3 ) =
-   [ v1, v2, v3 ]
-        |> List.map f
-        |> Array.fromList
-        |> E.array
+encodeXY : (a -> E.Value) -> { x: a, y: a } -> E.Value
+encodeXY f { x, y } =
+    E.list
+        f
+        [ x
+        , y
+        ]
+
+
+encodeColor : { r: Float, g: Float, b: Float } -> E.Value
+encodeColor { r, g, b } =
+    E.list
+        E.float
+        [ r
+        , g
+        , b
+        ]
+
+
+encodeColorShift : FSS.ColorShift -> E.Value
+encodeColorShift { hue, saturation, brightness } =
+    E.list
+        E.float
+        [ hue
+        , saturation
+        , brightness
+        ]
+
+
+encodeAmplitude : FSS.Amplitude -> E.Value
+encodeAmplitude { amplitudeX, amplitudeY, amplitudeZ } =
+    E.list
+        E.float
+        [ amplitudeX
+        , amplitudeY
+        , amplitudeZ
+        ]
+
+
+-- encodeTripleAsArray : (a -> E.Value) -> Array a -> E.Value
+-- encodeTripleAsArray f [ v1, v2, v3 ] =
+--    [ v1, v2, v3 ]
+--         |> List.map f
+--         |> Array.fromList
+--         |> E.array
 
 
 encodeKind_ : M.LayerKind -> String
@@ -57,6 +97,7 @@ encodeKind_ kind =
         M.Lorenz -> "lorenz"
         M.Fractal -> "fractal"
         M.Template -> "template"
+        M.Canvas -> "canvas"
         M.Voronoi -> "voronoi"
         M.Cover -> "cover"
         M.Vignette -> "vignette"
@@ -75,8 +116,8 @@ encodeLayerDef layerDef =
             case layerDef.layer of
                 M.WebGLLayer _ webglBlend ->
                     WGLBlend.encodeOne webglBlend |> E.string
-                M.SVGLayer _ svgBlend ->
-                    SVGBlend.encode svgBlend |> E.string
+                M.HtmlLayer _ htmlBlend ->
+                    HtmlBlend.encode htmlBlend |> E.string
           )
         , ( "blendDesc",
             case layerDef.layer of
@@ -84,8 +125,8 @@ encodeLayerDef layerDef =
                     webglBlend
                     |> WGLBlend.encodeHumanOne { delim = "; ", space = "> " }
                     |> E.string
-                M.SVGLayer _ svgBlend ->
-                    SVGBlend.encode svgBlend |> E.string
+                M.HtmlLayer _ htmlBlend ->
+                    HtmlBlend.encode htmlBlend |> E.string
           )
         , ( "isOn", layerDef.on |> E.bool )
         , ( "model", encodeLayerModel layerDef.model )
@@ -100,15 +141,15 @@ encodeLayerModel layerModel =
         case layerModel of
             M.FssModel fssModel ->
                 [ ( "renderMode", FSS.encodeRenderMode fssModel.renderMode |> E.string )
-                , ( "faces", encodePairAsArray E.int fssModel.faces )
+                , ( "faces", encodeXY E.int fssModel.faces )
                 , ( "lightSpeed", E.int fssModel.lightSpeed )
-                , ( "amplitude", encodeTripleAsArray E.float fssModel.amplitude )
-                , ( "colorShift", encodeTripleAsArray E.float fssModel.colorShift )
+                , ( "amplitude", encodeAmplitude fssModel.amplitude )
+                , ( "colorShift", encodeColorShift fssModel.colorShift )
                 , ( "opacity", E.float fssModel.opacity )
                 , ( "mirror", E.bool fssModel.mirror )
                 , ( "clip",
                         Maybe.withDefault FSS.noClip fssModel.clip
-                        |> encodePairAsArray E.float
+                            |> encodeXY E.float
                   )
                 , ( "shareMesh", E.bool fssModel.shareMesh )
                 , ( "vignette", E.float fssModel.vignette )
@@ -116,7 +157,7 @@ encodeLayerModel layerModel =
                 ]
             M.VignetteModel vignetteModel ->
                 [ ( "opacity", E.float vignetteModel.opacity )
-                , ( "color", encodeTripleAsArray E.float vignetteModel.color )
+                , ( "color", encodeColor vignetteModel.color )
                 ]
             _ -> []
 
@@ -128,7 +169,7 @@ encodeModel_ model =
         , ( "mode", E.string <| encodeMode model.mode )
         , ( "theta", E.float model.theta )
         , ( "omega", E.float model.omega )
-        , ( "layers", E.list (List.map encodeLayerDef model.layers) )
+        , ( "layers", E.list encodeLayerDef model.layers )
         -- , ( "layers", E.list (List.filterMap
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
         , ( "size", encodeIntPair model.size )
@@ -138,9 +179,7 @@ encodeModel_ model =
         , ( "palette",
             model.product
                 |> getPalette
-                |> List.map E.string
-                |> Array.fromList
-                |> E.array )
+                |> E.list E.string )
         , ( "product", model.product |> Product.encode |> E.string )
         ]
 
@@ -195,16 +234,16 @@ encodePortLayer : M.LayerDef -> M.PortLayerDef
 encodePortLayer layerDef =
     { kind = encodeKind_ layerDef.kind
     , isOn = layerDef.on
-    , webglOrSvg =
+    , webglOrHtml =
         case layerDef.layer of
             M.WebGLLayer _ _ -> "webgl"
-            M.SVGLayer _ _ -> "svg"
+            M.HtmlLayer _ _ -> "html"
     , blend =
         case layerDef.layer of
             M.WebGLLayer _ webglBlend ->
                 ( Just webglBlend, Nothing )
-            M.SVGLayer _ svgBlend ->
-                ( Nothing, SVGBlend.encode svgBlend |> Just )
+            M.HtmlLayer _ htmlBlend ->
+                ( Nothing, HtmlBlend.encode htmlBlend |> Just )
     , name = layerDef.name
     , model = layerDef.model
         |> encodeLayerModel
@@ -228,12 +267,12 @@ decodePortLayer createLayer portLayerDef =
                     |> Tuple.first
                     |> Maybe.withDefault WGLBlend.default
                     |> M.WebGLLayer webglLayer
-            M.SVGLayer svgLayer _ ->
+            M.HtmlLayer htmlLayer _ ->
                 portLayerDef.blend
                     |> Tuple.second
-                    |> Maybe.map SVGBlend.decode
-                    |> Maybe.withDefault SVGBlend.default
-                    |> M.SVGLayer svgLayer
+                    |> Maybe.map HtmlBlend.decode
+                    |> Maybe.withDefault HtmlBlend.default
+                    |> M.HtmlLayer htmlLayer
     in
         { kind = kind
         , on = portLayerDef.isOn
@@ -259,9 +298,9 @@ decodeKind layerTypeStr =
 
 intPairDecoder : D.Decoder (Int, Int)
 intPairDecoder =
-    D.decode (\i1 i2 -> (i1, i2))
-        |> D.required "v1" D.int
-        |> D.required "v2" D.int
+    D.map2 Tuple.pair
+        (D.field "v1" D.int)
+        (D.field "v2" D.int)
 
 -- layerDefsDecoder =
 --     let
@@ -300,9 +339,9 @@ layerDefDecoder createLayer =
                         WGLBlend.decodeOne blendStr
                             |> Maybe.withDefault WGLBlend.default
                             |> M.WebGLLayer webglLayer
-                    M.SVGLayer svgLayer _ ->
-                        SVGBlend.decode blendStr |>
-                            M.SVGLayer svgLayer
+                    M.HtmlLayer htmlLayer _ ->
+                        HtmlBlend.decode blendStr |>
+                            M.HtmlLayer htmlLayer
             in
                 { kind = kind
                 , on = isOn
@@ -311,12 +350,12 @@ layerDefDecoder createLayer =
                 , name = name
                 }
     in
-        D.decode createLayerDef
-            |> D.required "kind" D.string
-            |> D.required "model" D.string
-            |> D.required "name" D.string
-            |> D.required "isOn" D.bool
-            |> D.required "blend" D.string
+        D.map5 createLayerDef
+            (D.field "kind" D.string)
+            (D.field "model" D.string)
+            (D.field "name" D.string)
+            (D.field "isOn" D.bool)
+            (D.field "blend" D.string)
 
 
 -- layerDecoder : M.LayerKind -> D.Decoder M.Layer
@@ -326,7 +365,7 @@ layerDefDecoder createLayer =
 --             let
 --                 createLayer renderType model isOn =
 --                      -- TODO
---                     M.SVGLayer M.NoContent SVGBlend.default
+--                     M.HtmlLayer M.NoContent HtmlBlend.default
 --             in
 --                 D.decode createLayer
 --                     |> D.required "renderMode" D.string
@@ -334,7 +373,7 @@ layerDefDecoder createLayer =
 --                     |> D.required "isOn" D.bool
 --          -- TODO
 --         _ ->
---             M.SVGLayer M.NoContent SVGBlend.default
+--             M.HtmlLayer M.NoContent HtmlBlend.default
 --                 |> D.decode
 
 
@@ -355,46 +394,49 @@ layerModelDecoder kind =
                     shareMesh
                     vignette
                     iris =
-                case ( faces, amplitude, colorShift, opacity, clip ) of
-                    ( [facesX, facesY]
-                    , [amplitudeX, amplitudeY, amplitudeZ]
-                    , [hue, saturation, brightness]
-                    , opacity
-                    , [clipX, clipY]
-                    ) ->
-                        M.FssModel
-                            { renderMode = FSS.decodeRenderMode renderModeStr
-                            , faces = ( facesX, facesY )
-                            , amplitude = ( amplitudeX, amplitudeY, amplitudeZ )
-                            , colorShift = ( hue, saturation, brightness )
-                            , opacity = opacity
-                            , mirror = mirror
-                            , clip = Just ( clipX, clipY )
-                            , lightSpeed = lightSpeed
-                            , shareMesh = shareMesh
-                            , vignette = vignette
-                            , iris = iris
-                            }
-                    _ -> M.NoModel
-                    -- _ -> Debug.log "failed to parse model" M.NoModel
+                    case [ faces, amplitude, colorShift, clip ] of
+                        [ [facesX, facesY], [amplitudeX, amplitudeY, amplitudeZ], [hue, saturation, brightness], [clipX, clipY] ] ->
+                            M.FssModel
+                                { renderMode = FSS.decodeRenderMode renderModeStr
+                                , faces = { x = floor facesX, y = floor facesY }
+                                , amplitude =
+                                    { amplitudeX = amplitudeX
+                                    , amplitudeY = amplitudeY
+                                    , amplitudeZ = amplitudeZ
+                                    }
+                                , colorShift =
+                                    { hue = hue
+                                    , saturation = saturation
+                                    , brightness = brightness
+                                    }
+                                , opacity = opacity
+                                , mirror = mirror
+                                , clip = Just { x = clipX, y = clipY }
+                                , lightSpeed = lightSpeed
+                                , shareMesh = shareMesh
+                                , vignette = vignette
+                                , iris = iris
+                                }
+                        _ -> M.NoModel
+                        -- _ -> Debug.log "failed to parse model" M.NoModel
             in
-                D.decode createFssModel
-                    |> D.required "renderMode" D.string
-                    |> D.required "faces" (D.list D.int)
-                    |> D.required "amplitude" (D.list D.float)
-                    |> D.required "colorShift" (D.list D.float)
-                    |> D.required "opacity" D.float
-                    |> D.required "mirror" D.bool
-                    |> D.required "clip" (D.list D.float)
-                    |> D.required "lightSpeed" D.int
-                    |> D.required "shareMesh" D.bool
-                    |> D.required "vignette" D.float
-                    |> D.required "iris" D.float
+                D.succeed createFssModel
+                    |> D.andMap (D.field "renderMode" D.string)
+                    |> D.andMap (D.field "faces" <| D.list D.float)
+                    |> D.andMap (D.field "amplitude" <| D.list D.float)
+                    |> D.andMap (D.field "colorShift" <| D.list D.float)
+                    |> D.andMap (D.field "opacity" D.float)
+                    |> D.andMap (D.field "mirror" D.bool)
+                    |> D.andMap (D.field "clip" <| D.list D.float)
+                    |> D.andMap (D.field "lightSpeed" D.int)
+                    |> D.andMap (D.field "shareMesh" D.bool)
+                    |> D.andMap (D.field "vignette" D.float)
+                    |> D.andMap (D.field "iris" D.float)
         M.MirroredFss ->
             layerModelDecoder M.Fss
         -- TODO
         _ ->
-            M.NoModel |> D.decode
+            D.succeed M.NoModel
 
 
 modelDecoder : M.UiMode -> M.CreateLayer -> D.Decoder M.Model
@@ -418,16 +460,16 @@ modelDecoder mode createLayer =
                 --, palette = Product.getPalette product
                 }
     in
-        D.decode createModel
-            |> D.required "background" D.string
-            |> D.required "theta" D.float
-            |> D.required "omega" D.float
-            |> D.required "layers" (layerDefDecoder createLayer |> D.list)
-            |> D.required "size" intPairDecoder
-            |> D.required "origin" intPairDecoder
-            |> D.required "mouse" intPairDecoder
-            |> D.required "now" D.float
-            |> D.required "product" D.string
+        D.succeed createModel
+            |> D.andMap (D.field "background" D.string)
+            |> D.andMap (D.field "theta" D.float)
+            |> D.andMap (D.field "omega" D.float)
+            |> D.andMap (D.field "layers" (layerDefDecoder createLayer |> D.list))
+            |> D.andMap (D.field "size" intPairDecoder)
+            |> D.andMap (D.field "origin" intPairDecoder)
+            |> D.andMap (D.field "mouse" intPairDecoder)
+            |> D.andMap (D.field "now" D.float)
+            |> D.andMap (D.field "product" D.string)
 
 
 decodeModel : M.UiMode -> M.CreateLayer -> String -> Maybe M.Model
@@ -455,9 +497,19 @@ encodeFss m product =
 
 
 fromFssPortModel : FSS.PortModel -> FSS.Model
-fromFssPortModel portModel =
-    { portModel
-    | renderMode = FSS.decodeRenderMode portModel.renderMode
+fromFssPortModel pm =
+    { amplitude = pm.amplitude
+    , colorShift = pm.colorShift
+    , opacity = pm.opacity
+    , faces = pm.faces
+    , lightSpeed = pm.lightSpeed
+    , renderMode = FSS.decodeRenderMode pm.renderMode
+    , clip = pm.clip
+    , shareMesh = pm.shareMesh
+    , vignette = pm.vignette
+    , iris = pm.iris
+    , mirror = pm.mirror
+    --, palette = product |> getPalette
     }
 
 

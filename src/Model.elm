@@ -3,18 +3,19 @@ module Model exposing
     , initEmpty
     , Model
     , UiMode(..)
-    , Layer
+    , Layer(..)
     , emptyLayer
     , LayerIndex
     , LayerDef
     , LayerModel(..)
     , LayerKind(..)
-    , Layer(..)
     , WebGLLayer_(..)
-    , SVGLayer_(..)
+    , HtmlLayer_(..)
     , CreateLayer
+    , ViewportSize(..)
     , Size
     , Pos
+    , TimeDelta
     , PortModel
     , PortLayerDef
     , PortBlend
@@ -24,11 +25,11 @@ module Model exposing
 
 
 import Dict as Dict
-import Window
-import Time exposing (Time)
+import Time as Time
+import Browser.Dom exposing (Viewport)
 
 import WebGL.Blend as WGLBlend
-import Svg.Blend as SVGBlend
+import Html.Blend as HtmlBlend
 
 import Gui.Gui as Gui
 import Gui.Def exposing (..)
@@ -48,9 +49,11 @@ import Layer.Vignette as Vignette
 type alias LayerIndex = Int
 
 
+type ViewportSize = ViewportSize Int Int
 type alias Size = (Int, Int)
 type alias Pos = (Int, Int)
-
+type alias TimeNow = Float
+type alias TimeDelta = Float
 
 type alias CreateLayer = LayerKind -> LayerModel -> Layer
 
@@ -58,10 +61,10 @@ type alias CreateLayer = LayerKind -> LayerModel -> Layer
 type Msg
     = Bang
     | ChangeMode UiMode
-    | Animate Time
+    | Animate TimeDelta
     | GuiMessage (Gui.Msg Msg)
-    | Resize Window.Size
-    | ResizeFromPreset Window.Size
+    | Resize ViewportSize
+    | ResizeFromPreset ViewportSize
     | RequestFitToWindow
     | Locate Pos
     | Rotate Float
@@ -82,11 +85,11 @@ type Msg
     | Configure LayerIndex LayerModel
     | ChangeWGLBlend LayerIndex WGLBlend.Blend
     | AlterWGLBlend LayerIndex WGLBlend.BlendChange
-    | ChangeSVGBlend LayerIndex SVGBlend.Blend
+    | ChangeHtmlBlend LayerIndex HtmlBlend.Blend
     | RebuildFss LayerIndex FSS.SerializedScene
     --| RebuildOnClient LayerIndex FSS.SerializedScene
     | ChangeFssRenderMode LayerIndex FSS.RenderMode
-    | ChangeFaces LayerIndex ( Int, Int )
+    | ChangeFaces LayerIndex FSS.Faces
     | AlterFaces LayerIndex FSS.FacesChange
     | ChangeLightSpeed LayerIndex Int
     | ChangeVignette LayerIndex FSS.Vignette
@@ -112,6 +115,7 @@ type LayerKind
     = Lorenz
     | Fractal
     | Template
+    | Canvas
     | Voronoi
     | Fss
     | MirroredFss
@@ -122,7 +126,7 @@ type LayerKind
 
 -- type LayerBlend
 --     = WGLB WGLBlend.Blend
---     | SVGB SVGBlend.Blend
+--     | HTMLB HtmlBlend.Blend
 
 
 type LayerModel
@@ -145,14 +149,15 @@ type WebGLLayer_
     | VignetteLayer
 
 
-type SVGLayer_
+type HtmlLayer_
     = CoverLayer
+    | CanvasLayer
     | NoContent
 
 
 type Layer
     = WebGLLayer WebGLLayer_ WGLBlend.Blend
-    | SVGLayer SVGLayer_ SVGBlend.Blend
+    | HtmlLayer HtmlLayer_ HtmlBlend.Blend
 
 
 -- `change` is needed since we store a sample layer model
@@ -179,8 +184,8 @@ type alias Model =
     , size : Size
     , origin : Pos
     , mouse : Pos
-    , now : Time
-    , timeShift : Time
+    , now : TimeNow
+    , timeShift : TimeDelta
     , product : Product
     , controlsVisible : Bool
     -- voronoi : Voronoi.Config
@@ -191,7 +196,7 @@ type alias Model =
 
 -- kinda Either, but for ports:
 --    ( Just WebGLBlend, Nothing ) --> WebGL Blend
---    ( Nothing, Just String ) --> SVG Blend
+--    ( Nothing, Just String ) --> HTML Blend
 --    ( Nothing, Nothing ) --> None
 --    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
 type alias PortBlend =
@@ -203,20 +208,20 @@ type alias PortModel =
     , layers : List PortLayerDef
     , mode : String
     , mouse : ( Int, Int )
-    , now : Time.Time
-    , origin : Pos
-    , size : Size
+    , now : Float
+    , origin : (Int, Int)
+    , size : (Int, Int)
     , theta : Float
     , omega : Float
     , product : String
-    , palette : Product.Palette
+    , palette : List String
     }
 
 
 type alias PortLayerDef =
     { kind : String
     , blend : PortBlend
-    , webglOrSvg : String
+    , webglOrHtml : String
     , isOn : Bool
     , name : String
     , model : String
@@ -276,7 +281,7 @@ initEmpty mode =
 
 emptyLayer : Layer
 emptyLayer =
-    SVGLayer NoContent SVGBlend.default
+    HtmlLayer NoContent HtmlBlend.default
 
 
 sizePresets : UiMode -> ( Dict.Dict String ( Int, Int ), Shape )
@@ -295,6 +300,46 @@ sizePresets mode =
                 ]
             , ( 4, 2 )
             )
+        Ads ->
+            -- ADS SIZES 
+            ( Dict.fromList
+                [( "120x600", ( 120, 600 ) )
+                ,( "125x125", ( 125, 125 ) )
+                ,( "130x100", ( 130, 100 ) )
+                ,( "180x150", ( 180, 150 ) )
+                ,( "200x125", ( 200, 125 ) )
+                ,( "200x200", ( 200, 200 ) )
+                ,( "220x250", ( 220, 250 ) )
+                ,( "250x250", ( 250, 250 ) )
+                ,( "260x200", ( 260, 200 ) )
+                ,( "300x250", ( 300, 250 ) )
+                ,( "320x100", ( 320, 100 ) )
+                ,( "320x50", ( 320, 50 ) )
+                ,( "336x280", ( 336, 280 ) )
+                ,( "468x60", ( 468, 60 ) )
+                ,( "160x600", ( 160, 600 ) )
+                ,( "300x600", ( 300, 600 ) )
+                ,( "728x90", ( 728, 90 ) )
+                ,( "800x320", ( 800, 320 ) )
+                ,( "970x250", ( 970, 250 ) )
+                ,( "970x90", ( 970, 90 ) )
+                ,( "960x90 baidu", ( 960, 90 ) )
+                ,( "728x90 baidu", ( 728, 90 ) )
+                ,( "468x60 baidu", ( 468, 60 ) )
+                ,( "200x200 baidu", ( 200, 200 ) )
+                ,( "960x60 baidu", ( 960, 60 ) )
+                ,( "640x60 baidu", ( 640, 60 ) )
+                ,( "580x90 baidu", ( 580, 90 ) )
+                ,( "460x60 baidu", ( 460, 60 ) )
+                ,( "300x250 baidu", ( 300, 250 ) )
+                ,( "336x280 baidu", ( 336, 280 ) )
+                ,( "1200x628 fb", ( 1200, 628 ) )
+                ,( "800x418 tw", ( 800, 418 ) )
+                ,( "1080x1080 in", ( 1080, 1080 ) )
+                ,( "1200x627 ln", ( 1200, 627 ) )                
+                ]
+            , ( 4, 2 )
+            )   
         _ ->
             -- RELEASE_SIZES // TODO: Multiply for creating @2x @3x
             ( Dict.fromList
@@ -314,7 +359,7 @@ sizePresets mode =
                 , ( "2850x1200 landg", ( 2850, 1200 ) ) -- Landing page
                 -- , ( "browser", ( 0, 0 ) )
                 ]
-            , ( 4, 4 )
+            , ( 4, 4 ) 
             )
 
 
@@ -349,7 +394,7 @@ gui from =
             , "mps"
             -- TODO
             ]
-        svgBlends =
+        htmlBlends =
             [ "normal"
             , "overlay"
             , "multiply"
@@ -363,19 +408,19 @@ gui from =
         productsGrid =
             products
                 |> List.map ChoiceItem
-                |> nest ( 6, 4 )
+                |> nestWithin ( 6, 4 )
         sizeGrid =
             ( "browser" :: Dict.keys currentSizePresets )
                 |> List.map ChoiceItem
-                |> nest sizePresetsShape
-        svgBlendGrid =
-            svgBlends
+                |> nestWithin sizePresetsShape
+        htmlBlendGrid =
+            htmlBlends
                 |> List.map ChoiceItem
-                |> nest ( 3, 3 )
-        svgControls currentBlend layerIndex =
+                |> nestWithin ( 3, 3 )
+        htmlControls currentBlend layerIndex =
             oneLine
                 [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
-                , Choice "blend" Collapsed 0 (chooseSvgBlend layerIndex) svgBlendGrid
+                , Choice "blend" Collapsed 0 (chooseHtmlBlend layerIndex) htmlBlendGrid
                 ]
         chooseProduct _ label =
             case label of
@@ -390,12 +435,12 @@ gui from =
                 _ ->
                     currentSizePresets
                         |> Dict.get label
-                        |> Maybe.map (\(w, h) -> ResizeFromPreset <| Window.Size w h)
+                        |> Maybe.map (\(w, h) -> ResizeFromPreset <| ViewportSize w h)
                         |> Maybe.withDefault RequestFitToWindow
         chooseWebGlBlend layerIndex index label =
             NoOp
-        chooseSvgBlend layerIndex _ label =
-            ChangeSVGBlend layerIndex <| SVGBlend.decode label
+        chooseHtmlBlend layerIndex _ label =
+            ChangeHtmlBlend layerIndex <| HtmlBlend.decode label
         toggleVisibility layerIndex state =
             layerIndex |> if (state == TurnedOn) then TurnOn else TurnOff
         rotateKnobSetup =
@@ -417,10 +462,10 @@ gui from =
                                     FssModel fssModel ->
                                         Nested (String.toLower name) Collapsed
                                             <| fssControls from.mode fssModel webglBlend layerIndex
-                                    _ -> Ghost <| "layer " ++ toString layerIndex
-                            SVGLayer _ svgBlend ->
+                                    _ -> Ghost <| "layer " ++ String.fromInt layerIndex
+                            HtmlLayer _ htmlBlend ->
                                 Nested (String.toLower name) Collapsed
-                                    <| svgControls svgBlend layerIndex
+                                    <| htmlControls htmlBlend layerIndex
                     )
     in
         Gui.build <|
@@ -453,40 +498,40 @@ webglBlendGrid mode currentBlend layerIndex =
         funcGrid =
             blendFuncs
                 |> List.map ChoiceItem
-                |> nest ( 3, 1 )
+                |> nestWithin ( 3, 1 )
         factorGrid =
             blendFactors
                 |> List.map ChoiceItem
-                |> nest ( 8, 2 )
-        chooseBlendColorFn layerIndex index label =
+                |> nestWithin ( 8, 2 )
+        chooseBlendColorFn index label =
             AlterWGLBlend layerIndex
                 (\curBlend ->
                     let ( _, colorFactor1, colorFactor2 ) = curBlend.colorEq
                     in { curBlend | colorEq =
                         ( WGLBlend.decodeFunc label, colorFactor1, colorFactor2 ) }
                 )
-        chooseBlendColorFact1 layerIndex index label =
+        chooseBlendColorFact1 index label =
             AlterWGLBlend layerIndex
                 (\curBlend ->
                     let ( colorFunc, _, colorFactor2 ) = curBlend.colorEq
                     in { curBlend | colorEq =
                         ( colorFunc, WGLBlend.decodeFactor label, colorFactor2 ) }
                 )
-        chooseBlendColorFact2 layerIndex index label =
+        chooseBlendColorFact2 index label =
             AlterWGLBlend layerIndex
                 (\curBlend ->
                     let ( colorFunc, colorFactor1, _ ) = curBlend.colorEq
                     in { curBlend | colorEq =
                         ( colorFunc, colorFactor1, WGLBlend.decodeFactor label ) }
                 )
-        chooseBlendAlphaFn layerIndex index label =
+        chooseBlendAlphaFn index label =
             AlterWGLBlend layerIndex
                 (\curBlend ->
                     let ( _, alphaFactor1, alphaFactor2 ) = curBlend.alphaEq
                     in { curBlend | alphaEq =
                         ( WGLBlend.decodeFunc label, alphaFactor1, alphaFactor2 ) }
                 )
-        chooseBlendAlphaFact1 layerIndex index label =
+        chooseBlendAlphaFact1 index label =
             AlterWGLBlend layerIndex
                 (\curBlend ->
                     let ( alphaFunc, alphaFactor1, _ ) = curBlend.alphaEq
@@ -494,7 +539,7 @@ webglBlendGrid mode currentBlend layerIndex =
                         ( alphaFunc, alphaFactor1, WGLBlend.decodeFactor label )
                     }
                 )
-        chooseBlendAlphaFact2 layerIndex index label =
+        chooseBlendAlphaFact2 index label =
             AlterWGLBlend layerIndex
                 (\curBlend ->
                     let ( alphaFunc, _, alphaFactor2 ) = curBlend.alphaEq
@@ -503,20 +548,14 @@ webglBlendGrid mode currentBlend layerIndex =
                     }
                 )
     in
-        nest ( 3, 2 )
+        nestWithin ( 3, 2 )
         -- TODO color
-            [ Choice "colorFn" Collapsed 0
-                (chooseBlendColorFn layerIndex) funcGrid
-            , Choice "colorFt1" Collapsed 1
-                (chooseBlendColorFact1 layerIndex) factorGrid
-            , Choice "colorFt2" Collapsed 0
-                (chooseBlendColorFact2 layerIndex) factorGrid
-            , Choice "alphaFn" Collapsed 0
-                (chooseBlendAlphaFn layerIndex) funcGrid
-            , Choice "alphaFt1" Collapsed 1
-                (chooseBlendAlphaFact1 layerIndex) factorGrid
-            , Choice "alphaFt2" Collapsed 0
-                (chooseBlendAlphaFact2 layerIndex) factorGrid
+            [ Choice "colorFn"  Collapsed 0 chooseBlendColorFn funcGrid
+            , Choice "colorFt1" Collapsed 1 chooseBlendColorFact1 factorGrid
+            , Choice "colorFt2" Collapsed 0 chooseBlendColorFact2 factorGrid
+            , Choice "alphaFn"  Collapsed 0 chooseBlendAlphaFn funcGrid
+            , Choice "alphaFt1" Collapsed 1 chooseBlendAlphaFact1 factorGrid
+            , Choice "alphaFt2" Collapsed 0 chooseBlendAlphaFact2 factorGrid
             ]
 
 
@@ -524,22 +563,28 @@ fssControls : UiMode -> FSS.Model -> WGLBlend.Blend -> LayerIndex -> Nest Msg
 fssControls mode fssModel currentBlend layerIndex =
     let
         { lightSpeed, faces, amplitude, vignette, iris, colorShift } = fssModel
-        ( facesX, facesY ) = faces
-        ( amplitudeX, amplitudeY, amplitudeZ ) = amplitude
-        ( hueShift, saturationShift, brightnessShift ) = colorShift
-        changeFacesX val = AlterFaces layerIndex ( Just <| round val, Nothing )
-        changeFacesY val = AlterFaces layerIndex ( Nothing, Just <| round val )
-        changeAmplutudeX val = AlterAmplitude layerIndex ( Just val, Nothing, Nothing )
-        changeAmplutudeY val = AlterAmplitude layerIndex ( Nothing, Just val, Nothing )
-        changeAmplutudeZ val = AlterAmplitude layerIndex ( Nothing, Nothing, Just val )
-        changeHue val = ShiftColor layerIndex ( Just val, Nothing, Nothing )
-        changeSaturation val = ShiftColor layerIndex ( Nothing, Just val, Nothing )
-        changeBrightness val = ShiftColor layerIndex ( Nothing, Nothing, Just val )
-        toggleMirror layerIndex state =
+        { amplitudeX, amplitudeY, amplitudeZ } = amplitude
+        changeFacesX val = AlterFaces layerIndex
+                                    { xChange = Just <| round val, yChange = Nothing }
+        changeFacesY val = AlterFaces layerIndex
+                                    { xChange = Nothing, yChange = Just <| round val }
+        changeAmplutudeX val = AlterAmplitude layerIndex
+                                    <| FSS.AmplitudeChange (Just val) Nothing Nothing
+        changeAmplutudeY val = AlterAmplitude layerIndex
+                                    <| FSS.AmplitudeChange Nothing (Just val) Nothing
+        changeAmplutudeZ val = AlterAmplitude layerIndex
+                                    <| FSS.AmplitudeChange Nothing Nothing (Just val)
+        changeHue val = ShiftColor layerIndex
+                                    <| FSS.ColorShiftPatch (Just val) Nothing Nothing
+        changeSaturation val = ShiftColor layerIndex
+                                    <| FSS.ColorShiftPatch Nothing (Just val) Nothing
+        changeBrightness val = ShiftColor layerIndex
+                                    <| FSS.ColorShiftPatch Nothing Nothing (Just val)
+        toggleMirror state =
             layerIndex |> if (state == TurnedOn) then MirrorOn else MirrorOff
-        toggleVisibility layerIndex state =
+        toggleVisibility state =
             layerIndex |> if (state == TurnedOn) then TurnOn else TurnOff
-        chooseMesh layerIndex _ label =
+        chooseMesh _ label =
             FSS.decodeRenderMode label |> ChangeFssRenderMode layerIndex
         defaultKnobSetup defaultVal =
             { min = 0.0, max = 1.0, step = 0.05, roundBy = 100, default = defaultVal }
@@ -552,21 +597,21 @@ fssControls mode fssModel currentBlend layerIndex =
             { min = -1.0, max = 1.0, step = 0.05, roundBy = 100, default = defaultVal }
     in
         oneLine
-            [ Toggle "visible" TurnedOn <| toggleVisibility layerIndex
-            , Toggle "mirror" TurnedOff <| toggleMirror layerIndex
+            [ Toggle "visible" TurnedOn toggleVisibility
+            , Toggle "mirror" TurnedOff toggleMirror
             -- , Knob "opacity" TurnedOff <| toggleMirror layerIndex
             , Knob "lights" lightSpeedSetup (toFloat lightSpeed)
                 <| round >> ChangeLightSpeed layerIndex
             , Knob "col"
-                (facesKnobSetup <| toFloat facesX)
-                (toFloat facesX)
+                (facesKnobSetup <| toFloat faces.x)
+                (toFloat faces.y)
                 changeFacesX
             , Knob "row"
-                (facesKnobSetup <| toFloat facesY)
-                (toFloat facesY)
+                (facesKnobSetup <| toFloat faces.y)
+                (toFloat faces.y)
                 changeFacesY
             , Nested "fog" Collapsed <|
-                nest ( 2, 1 )
+                nestWithin ( 2, 1 )
                     [ Knob "shine"
                         (defaultKnobSetup vignette)
                         vignette <| ChangeVignette layerIndex
@@ -574,13 +619,13 @@ fssControls mode fssModel currentBlend layerIndex =
                         (defaultKnobSetup iris)
                         iris <| ChangeIris layerIndex
                     ]
-            , Choice "mesh" Collapsed 0 (chooseMesh layerIndex) <|
-                nest ( 2, 1 )
+            , Choice "mesh" Collapsed 0 chooseMesh <|
+                nestWithin ( 2, 1 )
                     [ ChoiceItem "triangles"
                     , ChoiceItem "lines"
                     ]
             , Nested "ranges" Collapsed <|
-                    nest ( 3, 1 )
+                    nestWithin ( 3, 1 )
                         [ Knob "horizontal"
                             (defaultKnobSetup amplitudeX)
                             amplitudeX changeAmplutudeX
@@ -592,16 +637,16 @@ fssControls mode fssModel currentBlend layerIndex =
                             amplitudeZ changeAmplutudeZ
                         ]
             , Nested "hsb" Collapsed <|
-                nest ( 3, 1 )
+                nestWithin ( 3, 1 )
                     [ Knob "hue"
-                        (colorShiftKnobSetup hueShift)
-                        hueShift changeHue
+                        (colorShiftKnobSetup colorShift.hue)
+                        colorShift.hue changeHue
                     , Knob "saturation"
-                        (colorShiftKnobSetup saturationShift)
-                        saturationShift changeSaturation
+                        (colorShiftKnobSetup colorShift.saturation)
+                        colorShift.saturation changeSaturation
                     , Knob "brightness"
-                        (colorShiftKnobSetup brightnessShift)
-                        brightnessShift changeBrightness
+                        (colorShiftKnobSetup colorShift.brightness)
+                        colorShift.brightness changeBrightness
                     ]
             , Nested "blend" Collapsed
                 <| webglBlendGrid mode currentBlend layerIndex

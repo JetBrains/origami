@@ -35,7 +35,7 @@ const import_ = (app, importedState) => {
 
 window.runGenScene = function() {
     var node = document.getElementById("app");
-    var app = App.Main.embed(node);
+    var app = App.Elm.Main.init({ node: node });
 
     //console.log('runGenScene', window.jsGenScene, app);
 

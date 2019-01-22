@@ -107,8 +107,10 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
         Knob label { min, step, max } val _ ->
             span []
                 [ text <| posStr ++ " knob: " ++ label
-                    ++ " " ++ toString min ++ "/" ++ toString step ++ "/" ++ toString max
-                    ++ " " ++ toString val ]
+                    ++ " " ++ String.fromFloat min ++ "/"
+                    ++ String.fromFloat step ++ "/"
+                    ++ String.fromFloat max
+                    ++ " " ++ String.fromFloat val ]
         Toggle label val _ ->
             span []
                 [ text <| posStr ++ " toggle: " ++ label ++ " "
@@ -130,7 +132,7 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
         Choice label selected id _ _ ->
             span []
                 [ text <| posStr ++ " choice: " ++ label ++ " "
-                    ++ toString id
+                    ++ String.fromInt id
                 ]
         ChoiceItem label ->
             span []
@@ -154,12 +156,12 @@ viewCell focus gridPos maybeGridCell =
     let
         findFocusIntensity cellNestLevel focusNestLevel =
             focusNestLevel - cellNestLevel
-        getFocusIntensityClass cellNestLevel (Focus focus) =
-            "focused--" ++ toString
-                (findFocusIntensity cellNestLevel <| getNestLevel focus)
-        getLevelIntensityClass cellNestLevel (Focus focus) =
-            "level--" ++ toString
-                (findFocusIntensity cellNestLevel <| getNestLevel focus)
+        getFocusIntensityClass cellNestLevel (Focus innerFocus) =
+            "focused--" ++ String.fromInt
+                (findFocusIntensity cellNestLevel <| getNestLevel innerFocus)
+        getLevelIntensityClass cellNestLevel (Focus innerFocus) =
+            "level--" ++ String.fromInt
+                (findFocusIntensity cellNestLevel <| getNestLevel innerFocus)
         className =
             case maybeGridCell of
                 Just { isSelected, isFocused, nestPos } ->
@@ -225,7 +227,7 @@ viewGrid cellCount focus (Grid _ grid) =
         width = (cellCount * (cellWidth + 2)) + (cellCount * cellMargin * 2)
     in
         div [ H.class "grid"
-            , H.style [ ( "width", toString width ++ "px" ) ]
+            , H.style "width" (String.fromInt width ++ "px")
             ]
             [ grid |> viewRows focus ]
 
@@ -277,14 +279,14 @@ put
                             else NotFocused
                         }
                 )
-        fits ( row, col ) ( width, height ) =
-            (row < height) && ( col < width )
-        indexOf ( row, col ) ( width, _ ) =
-            row * width + col
-        updateCell row_ col_ prevCell =
-            if (row_ >= row) && (col_ >= col) then
+        fits ( locRow, locCol ) ( width, height ) =
+            (locRow < height) && ( locCol < width )
+        indexOf ( locRow, locCol ) ( width, _ ) =
+            locRow * width + locCol
+        updateCell locRow locCol prevCell =
+            if (locRow >= row) && (locCol >= col) then
                 let
-                    localPos = (row_ - row, col_ - col)
+                    localPos = (locRow - row, locCol - col)
                 in
                     if fits localPos currentShape then
                         case Array.get (indexOf localPos currentShape) cells of
@@ -292,50 +294,51 @@ put
                             Nothing -> prevCell
                     else prevCell
             else prevCell
-        updateRow row_ row =
-            row |> Array.indexedMap (updateCell row_)
+        updateRow rowIndex innerRow =
+            innerRow |> Array.indexedMap (updateCell rowIndex)
         findNextPos row_ col_ ( curWidth, curHeight ) ( nestedWidth, nestedHeight ) =
             if (col_ + nestedWidth < gridWidth) then
                 GridPos (row_ + curHeight) col_
             else GridPos (row_ + curHeight) (gridWidth - nestedWidth)
-        applyColExpands maybeCell ( col, grid ) =
-            ( col + 1
+        applyColExpands maybeCell ( locCol, grid ) =
+            ( locCol + 1
             , case maybeCell of
                 Just { cell, nestPos } ->
-                    let ( cellNestLevel, cellIndex ) =
-                        ( getNestLevel nestPos
-                        , getIndexOf nestPos |> Maybe.withDefault -1
-                        )
+                    let
+                        ( cellNestLevel, cellIndex ) =
+                            ( getNestLevel nestPos
+                            , getIndexOf nestPos |> Maybe.withDefault -1
+                            )
                     in if (cellNestLevel == parentNestLevel + 1) then
                         case cell of
-                            Nested _ Expanded ({ shape } as nest) ->
+                            Nested _ Expanded ({ shape } as innerNest) ->
                                 put
                                     (findNextPos row col currentShape shape)
                                     Nothing
                                     (Just nestPos)
                                     Nothing
-                                    nest
+                                    innerNest
                                     grid
-                            Choice _ Expanded selectedItem handler ({ shape } as nest) ->
+                            Choice _ Expanded selectedItem handler ({ shape } as innerNest) ->
                                 put
                                     (findNextPos row col currentShape shape)
                                     (Just selectedItem)
                                     (Just nestPos)
                                     (Just handler)
-                                    nest
+                                    innerNest
                                     grid
                             _ -> grid
                     else grid
                 _ -> grid
             )
-        applyExpands row grid =
-            Array.foldl applyColExpands ( 0, grid ) row
+        applyExpands locRow grid =
+            Array.foldl applyColExpands ( 0, grid ) locRow
                 |> Tuple.second
     in
         rows
             |> Array.indexedMap updateRow
-            |> (\rows ->
-                    Array.foldl applyExpands (Grid gridShape rows) rows
+            |> (\innerRows ->
+                    Array.foldl applyExpands (Grid gridShape innerRows) innerRows
                 )
 
 
@@ -371,12 +374,12 @@ flip (Grid shape rows) =
 
 showGridPos : GridPos -> String
 showGridPos (GridPos row col) =
-    "(" ++ toString row ++ "," ++ toString col ++ ")"
+    "(" ++ String.fromInt row ++ "," ++ String.fromInt col ++ ")"
 
 
 showNestPos : NestPos -> String
 showNestPos (NestPos path) =
-    "<" ++ (path |> List.reverse |> List.map toString |> String.join ",") ++ ">"
+    "<" ++ (path |> List.reverse |> List.map String.fromInt |> String.join ",") ++ ">"
 
 
 findGridCell : NestPos -> Grid umsg -> Maybe (GridCell umsg)
@@ -384,13 +387,13 @@ findGridCell searchFor (Grid _ rows) =
     rows |> Array.foldl
         (\row foundCell ->
             row |> Array.foldl
-                (\maybeGridCell foundCell ->
-                    case ( foundCell, maybeGridCell ) of
+                (\maybeGridCell cellFoundInRow ->
+                    case ( cellFoundInRow, maybeGridCell ) of
                         ( Nothing, Just ({ nestPos } as gridCell) ) ->
                             if (isSamePos searchFor nestPos) then
                                 Just gridCell
                             else Nothing
-                        _ -> foundCell
+                        _ -> cellFoundInRow
                 ) foundCell
         ) Nothing
 

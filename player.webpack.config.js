@@ -19,7 +19,7 @@ const config = {
           test:    /\.elm$/,
           exclude: [ /elm-stuff/, /node_modules/, /build/ ],
           use: {
-            loader: "elm-webpack-loader?verbose=true&warn=true"
+            loader: "elm-webpack-loader?verbose=true"
           }
         },
         {

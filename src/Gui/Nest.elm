@@ -22,8 +22,8 @@ oneLine cells =
     }
 
 
-nest : Shape -> Cells umsg -> Nest umsg
-nest shape cells =
+nestWithin : Shape -> Cells umsg -> Nest umsg
+nestWithin shape cells =
     { focus = 0
     , shape = shape
     , cells = cells
@@ -41,10 +41,11 @@ traverseCells : (Cell umsg -> NestPos -> Cell umsg) -> Cells umsg -> Cells umsg
 traverseCells f cells =
     let
         scanCell maybeParentPos index cell =
-            let nestPos =
-                case  maybeParentPos of
-                    Just parentPos -> parentPos |> deeper index
-                    Nothing -> root index
+            let
+                nestPos =
+                    case maybeParentPos of
+                        Just parentPos -> parentPos |> deeper index
+                        Nothing -> root index
             in case f cell nestPos of
                 Nested label state nest ->
                     Nested
@@ -78,10 +79,12 @@ traverseAllNests f nest =
     | cells = f nest nowhere |> .cells |> traverseCells
         (\cell cellPosition ->
             case cell of
-                Nested label state nest ->
-                    f nest cellPosition |> Nested label state
-                Choice label state selected handler nest ->
-                    f nest cellPosition |> Choice label state selected handler
+                Nested label state innerNest ->
+                    f innerNest cellPosition
+                        |> Nested label state
+                Choice label state selected handler innerNest ->
+                    f innerNest cellPosition
+                        |> Choice label state selected handler
                 _ -> cell
         )
     }
@@ -94,7 +97,7 @@ foldCells = foldCells_ Nothing
 foldCells_ : Maybe NestPos -> (Cell umsg -> NestPos -> a -> a) -> a -> Nest umsg -> a
 foldCells_ maybeParentPos f default { cells } =
     let
-        foldingF maybeParentPos cell ( index, v ) =
+        foldingF cell ( index, v ) =
             ( index + 1
             ,   let
                     nestPos =
@@ -111,7 +114,7 @@ foldCells_ maybeParentPos f default { cells } =
                     _ -> f cell nestPos v
             )
     in
-        List.foldl (foldingF maybeParentPos) (0, default) cells
+        List.foldl foldingF (0, default) cells
             |> Tuple.second
 
 
@@ -120,10 +123,10 @@ foldNests f default nest =
     nest |>
         foldCells (\cell nestPos v ->
             case cell of
-                Nested _ _ nest ->
-                    f nest nestPos v
-                Choice _ _ _ _ nest ->
-                    f nest nestPos v
+                Nested _ _ innerNest ->
+                    f innerNest nestPos v
+                Choice _ _ _ _ innerNest ->
+                    f innerNest nestPos v
                 _ -> v
         ) (f nest nowhere default)
 
@@ -187,7 +190,7 @@ findCell pos nest =
     nest |>
         foldCells (\cell cellPos maybeFound ->
             case maybeFound of
-                Just cell -> Just cell
+                Just foundCell -> Just foundCell
                 Nothing ->
                     if isSamePos cellPos pos
                         then Just cell

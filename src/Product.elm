@@ -12,6 +12,7 @@ module Product exposing
     , ProductId
     )
 
+
 type alias Color = String
 type alias ProductId = Int
 
@@ -174,7 +175,7 @@ getLogoPath : Product -> Maybe String
 getLogoPath product =
     (case product of
         Unknown -> Nothing
-        product -> Just (encode product))
+        knownProduct -> Just (encode knownProduct))
             |> Maybe.map (\fileName -> fileName ++ ".svg")
 
 
@@ -182,7 +183,7 @@ getTextLinePath : Product -> Maybe String
 getTextLinePath product =
     (case product of
         Unknown -> Nothing
-        product -> Just (encode product))
+        knownProduct -> Just (encode knownProduct))
             |> Maybe.map (\fileName -> fileName ++ "-text.svg")
 
 
@@ -216,8 +217,8 @@ getCoverTextSize product =
 
 getId : Product -> ProductId
 getId product =
-    let 
-        labelToId = 
+    let
+        labelToId =
             [ "jetbrains"
             , "intellij-idea"
             , "phpstorm"
@@ -242,13 +243,13 @@ getId product =
             , "kotlin"
             , "mps"
             ]
-            |> List.indexedMap 
-                (\index label -> ( index, label ))    
-    in            
-        labelToId 
+            |> List.indexedMap
+                (\index label -> ( index, label ))
+    in
+        labelToId
             |> List.filterMap
-                (\(index, label) -> 
-                    if (encode product == label) 
+                (\(index, label) ->
+                    if (encode product == label)
                     then Just index
                     else Nothing
                 )

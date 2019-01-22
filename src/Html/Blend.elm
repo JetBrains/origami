@@ -1,5 +1,6 @@
-module Svg.Blend exposing
+module Html.Blend exposing
     ( Blend(..)
+    , PortBlend
     , default
     , encode
     , decode
@@ -25,7 +26,9 @@ type Blend
     | Unset
 
 
--- TODO: use Map Blend PortBlend
+type alias PortBlend = String
+
+
 encode : Blend -> String
 encode blend =
     case blend of

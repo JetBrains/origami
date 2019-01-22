@@ -81,7 +81,7 @@ const randomize = (applyRandomizer, model, updateGui) => (config) => () => {
         }
 
         // comment this out to not randomize blends
-        if (layerDef.webglOrSvg == 'webgl') {
+        if (layerDef.webglOrHtml == 'webgl') {
           if (mode !== 'prod') {
 
             const blendFuncsCount = Object.values(BLEND_FUNCS_IDS).length;

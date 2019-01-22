@@ -5,9 +5,9 @@ module Layer.FSS exposing
     , SerializedScene
     , Amplitude, AmplitudeChange
     , ColorShift, ColorShiftPatch
-    , FacesChange
-    , Opacity
+    , Faces, FacesChange
     , Vignette, Iris
+    , Opacity
     , Clip
     , makeEntity
     , build
@@ -28,7 +28,6 @@ import Math.Vector3 as Vec3 exposing (vec3, Vec3, getX, getY, getZ)
 import Math.Vector4 as Vec4 exposing (vec4, Vec4)
 import WebGL
 import WebGL.Settings exposing (Setting)
-import Time exposing (Time)
 
 
 import Viewport exposing (Viewport)
@@ -37,17 +36,22 @@ import Product exposing (ProductId)
 
 
 
-type alias Mouse = ( Int, Int )
-type alias Faces = ( Int, Int )
-type alias Clip = ( Float, Float )
+type alias Mouse = { x: Int, y: Int }
+type alias Faces = { x: Int, y: Int }
+type alias Clip = { x: Float, y: Float }
 type alias Mirror = Float
-type alias Amplitude = ( Float, Float, Float )
-type alias ColorShift = ( Float, Float, Float )
+type alias Amplitude = { amplitudeX: Float, amplitudeY: Float, amplitudeZ: Float }
+type alias ColorShift = { hue: Float, saturation: Float, brightness: Float }
 type alias Opacity = Float
-type alias FacesChange = ( Maybe Int, Maybe Int )
-type alias AmplitudeChange = ( Maybe Float, Maybe Float, Maybe Float )
-type alias ColorShiftPatch = ( Maybe Float, Maybe Float, Maybe Float )
-type alias Speed = Float
+type alias FacesChange = { xChange: Maybe Int, yChange: Maybe Int }
+type alias AmplitudeChange = { xChange: Maybe Float, yChange: Maybe Float, zChange: Maybe Float }
+type alias ColorShiftPatch =
+    { hueShift: Maybe Float
+    , saturationShift: Maybe Float
+    , brightnessShift: Maybe Float
+    }
+type alias Time = Float -- FIXME
+type alias LightSpeed = Int
 type alias Vignette = Float
 type alias Iris = Float
 
@@ -73,7 +77,7 @@ type alias PortModel =
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
-    , lightSpeed : Int
+    , lightSpeed : LightSpeed
     , shareMesh : Bool
     }
 
@@ -88,7 +92,7 @@ type alias Model =
     , faces : Faces
     , mirror : Bool
     , clip : Maybe Clip -- max and min values of X for clipping
-    , lightSpeed : Int
+    , lightSpeed : LightSpeed
     , shareMesh : Bool
     }
 
@@ -103,7 +107,7 @@ type alias SColor =
 type alias SLight =
     { ambient : SColor
     , diffuse : SColor
-    , speed : Speed
+    , speed : Float
     , position : List Float
     , ray : List Float
     }
@@ -168,12 +172,12 @@ type alias SerializedScene =
 
 -- Base logic
 
-defaultAmplitude : ( Float, Float, Float )
-defaultAmplitude = ( 0.3, 0.3, 0.3 )
+defaultAmplitude : Amplitude
+defaultAmplitude = { amplitudeX = 0.3, amplitudeY = 0.3, amplitudeZ = 0.3 }
 
 
-defaultColorShift : ( Float, Float, Float )
-defaultColorShift = ( 0.0, 0.0, 0.0 )
+defaultColorShift : ColorShift
+defaultColorShift = { hue = 0.0, saturation = 0.0, brightness = 0.0 }
 
 
 defaultVignette : Vignette
@@ -188,20 +192,20 @@ defaultOpacity : Opacity
 defaultOpacity = 1.0
 
 
-defaultMirror : Float
+defaultMirror : Mirror
 defaultMirror = 0.50001
 
 
-defaultFaces : ( Int, Int )
-defaultFaces = ( 17, 17 )
+defaultFaces : Faces
+defaultFaces = { x = 17, y = 17 }
 
 
-defaultLightSpeed : Int
+defaultLightSpeed : LightSpeed
 defaultLightSpeed = 1000
 
 
 noClip : Clip
-noClip = ( -1, -1 )
+noClip = { x = -1, y = -1 }
 
 
 init : Model
@@ -239,12 +243,15 @@ makeEntity now mouse productId layerIndex viewport model maybeScene settings mes
         speed = case lights of
             first::_ -> first.speed
             _ -> 0
-        meshSize = maybeScene
+        firstMeshSize = maybeScene
             |> Maybe.map (\scene ->
                 List.head scene.meshes)
-            |> Maybe.map (\maybeMesh ->
-                case maybeMesh of
-                    Just mesh -> ( mesh.geometry.width,  mesh.geometry.height )
+            |> Maybe.map (\maybeFirstMesh ->
+                case maybeFirstMesh of
+                    Just firstMesh ->
+                        ( firstMesh.geometry.width
+                        , firstMesh.geometry.height
+                        )
                     Nothing -> (0, 0)
                 )
             |> Maybe.withDefault (0, 0)
@@ -261,8 +268,8 @@ makeEntity now mouse productId layerIndex viewport model maybeScene settings mes
                 productId
                 viewport
                 model
-                meshSize
-                ( lights, speed )
+                firstMeshSize
+                ( lights, floor speed )
                 layerIndex
                 )
 
@@ -456,7 +463,7 @@ uniforms
     -> Viewport {}
     -> Model
     -> ( Int, Int )
-    -> ( List SLight, Speed )
+    -> ( List SLight, LightSpeed )
     -> Int
     -> Uniforms
 uniforms now mouse productId v model meshSize ( lights, speed ) layerIndex =
@@ -470,8 +477,8 @@ uniforms now mouse productId v model meshSize ( lights, speed ) layerIndex =
         depth = 100.0
         mirror = if model.mirror then 1.0 else 0.0
         clip =  model.clip |> Maybe.withDefault noClip
-        ( amplitudeX, amplitudeY, amplitudeZ ) = model.amplitude
-        ( hue, saturation, brightness ) = model.colorShift
+        { amplitudeX, amplitudeY, amplitudeZ } = model.amplitude
+        { hue, saturation, brightness } = model.colorShift
         opacity = model.opacity
 
     in
@@ -480,13 +487,13 @@ uniforms now mouse productId v model meshSize ( lights, speed ) layerIndex =
         , uLightAmbient = adaptedLights.ambient
         , uLightDiffuse = adaptedLights.diffuse
         , uLightPosition = adaptedLights.position
-        , uLightSpeed = adaptedLights.speed
+        , uLightSpeed = toFloat adaptedLights.speed
         , uNow = now
         , uLayerIndex = layerIndex
-        , uMousePosition = vec2 (toFloat (Tuple.first mouse)) (toFloat (Tuple.second mouse))
+        , uMousePosition = vec2 (toFloat mouse.x) (toFloat mouse.y)
         , uSegment  = vec3 100 100 50
         , uMirror = mirror
-        , uClip = vec2 (Tuple.first clip) (Tuple.second clip)
+        , uClip = vec2 clip.x clip.y
         , uScale = vec2 (toFloat meshWidth / width) (toFloat meshHeight / height)
         , uAmplitude = vec3 amplitudeX amplitudeY amplitudeZ
         , uColorShift = vec3 hue saturation brightness
@@ -506,105 +513,167 @@ uniforms now mouse productId v model meshSize ( lights, speed ) layerIndex =
         }
 
 
-getLightRows : SLight -> { ambient : Vec4, diffuse : Vec4, position : Vec3 }
-getLightRows light =
-    { ambient =
-        case light.ambient.rgba of
-            r::g::b::a::_ -> vec4 r g b a
-            _ -> vec4 0 0 0 0
-    , diffuse =
-        case light.diffuse.rgba of
-            r::g::b::a::_ -> vec4 r g b a
-            _ -> vec4 0 0 0 0
-    , position =
-        case light.position of
-            x::y::z::_ -> vec3 x y z
-            _ -> vec3 0 0 0
-    }
-
-
-adaptLights : (Int, Int) -> Speed -> List SLight -> { ambient : Mat4, diffuse : Mat4, position : Mat4, speed : Speed }
+adaptLights
+    : (Int, Int)
+    -> LightSpeed
+    -> List SLight
+    -> { ambient : Mat4, diffuse : Mat4, position : Mat4, speed : LightSpeed }
 adaptLights size speed srcLights =
     let
-        emptyVec4 = vec4 0 0 0 0
-        emptyVec3 = vec3 0 0 0
-        emptyRows =
-            { ambient = emptyVec4
-            , diffuse = emptyVec4
-            , position = emptyVec3
+        emptyRecords =
+            { ambient  = Mat4.identity |> Mat4.toRecord
+            , diffuse  = Mat4.identity |> Mat4.toRecord
+            , position = Mat4.identity |> Mat4.toRecord
+            , speed = 0
             }
-        lightRows = srcLights |> List.map getLightRows
+        foldingF light ( recs, lightIndex ) =
+            ( recs |> fillWithLight light lightIndex
+            , lightIndex + 1
+            )
+        toMatrices recs =
+            { ambient  = Mat4.fromRecord recs.ambient
+            , diffuse  = Mat4.fromRecord recs.diffuse
+            , position = Mat4.fromRecord recs.position
+            , speed    = recs.speed
+            }
+        transposeResults recs =
+            { ambient  = Mat4.transpose recs.ambient
+            , diffuse  = Mat4.transpose recs.diffuse
+            , position = Mat4.transpose recs.position
+            , speed    = recs.speed
+            }
     in
-        case lightRows of
-            [a] ->
-                let
-                    rowA = ( a.ambient, emptyVec4, emptyVec4, emptyVec4 )
-                    rowB = ( a.diffuse, emptyVec4, emptyVec4, emptyVec4 )
-                    rowC = ( a.position, emptyVec3, emptyVec3, emptyVec3 )
-                in
-                    lightsToMatrices size speed rowA rowB rowC
-            [a,b] ->
-                let
-                    rowA = ( a.ambient, b.ambient, emptyVec4, emptyVec4 )
-                    rowB = ( a.diffuse, b.diffuse, emptyVec4, emptyVec4 )
-                    rowC = ( a.position, b.position, emptyVec3, emptyVec3 )
-                in
-                    lightsToMatrices size speed rowA rowB rowC
-            [a,b,c] ->
-                let
-                    rowA = ( a.ambient, b.ambient, c.ambient, emptyVec4 )
-                    rowB = ( a.diffuse, b.diffuse, c.diffuse, emptyVec4 )
-                    rowC = ( a.position, b.position, c.position, emptyVec3 )
-                in
-                    lightsToMatrices size speed rowA rowB rowC
-            a::b::c::d::_ ->
-                let
-                    rowA = ( a.ambient, b.ambient, c.ambient, d.ambient )
-                    rowB = ( a.diffuse, b.diffuse, c.diffuse, d.diffuse )
-                    rowC = ( a.position, b.position, c.position, d.position )
-                in
-                    lightsToMatrices size speed rowA rowB rowC
-            _ ->
-                { ambient = Mat4.identity
-                , diffuse = Mat4.identity
-                , position = Mat4.identity
-                , speed = speed
-                }
+        srcLights
+            |> List.foldl
+                foldingF
+                ( { emptyRecords
+                  | speed = speed
+                  }
+                , 0 )
+            |> Tuple.first
+            |> toMatrices
+            |> transposeResults
 
-lightsToMatrices
-    : (Int, Int)
-    -> Speed
-    -> ( Vec4, Vec4, Vec4, Vec4 )
-    -> ( Vec4, Vec4, Vec4, Vec4 )
-    ->  ( Vec3, Vec3, Vec3, Vec3 )
-    ->
-    { ambient : Mat4
-    , diffuse : Mat4
-    , position : Mat4
-    , speed : Speed
-    }
-lightsToMatrices (w, h) speed ( aa, ba, ca, da ) ( ad, bd, cd, dd ) ( ap, bp, cp, dp ) =
-    { ambient = Mat4.fromRecord
-        { m11 = Vec4.getX aa, m12 = Vec4.getY aa, m13 = Vec4.getZ aa, m14 = Vec4.getW aa
-        , m21 = Vec4.getX ba, m22 = Vec4.getY ba, m23 = Vec4.getZ ba, m24 = Vec4.getW ba
-        , m31 = Vec4.getX ca, m32 = Vec4.getY ca, m33 = Vec4.getZ ca, m34 = Vec4.getW ca
-        , m41 = Vec4.getX da, m42 = Vec4.getY da, m43 = Vec4.getZ da, m44 = Vec4.getW da
-        } |> Mat4.transpose
-    , diffuse = Mat4.fromRecord
-        { m11 = Vec4.getX ad, m12 = Vec4.getY ad, m13 = Vec4.getZ ad, m14 = Vec4.getW ad
-        , m21 = Vec4.getX bd, m22 = Vec4.getY bd, m23 = Vec4.getZ bd, m24 = Vec4.getW bd
-        , m31 = Vec4.getX cd, m32 = Vec4.getY cd, m33 = Vec4.getZ cd, m34 = Vec4.getW cd
-        , m41 = Vec4.getX dd, m42 = Vec4.getY dd, m43 = Vec4.getZ dd, m44 = Vec4.getW dd
-        } |> Mat4.transpose
-    , position = Mat4.fromRecord
-        { m11 = Vec3.getX ap, m12 = Vec3.getY ap, m13 = Vec3.getZ ap, m14 = 0
-        , m21 = Vec3.getX bp, m22 = Vec3.getY bp, m23 = Vec3.getZ bp, m24 = 0
-        , m31 = Vec3.getX cp, m32 = Vec3.getY cp, m33 = Vec3.getZ cp, m34 = 0
-        , m41 = Vec3.getX dp, m42 = Vec3.getY dp, m43 = Vec3.getZ dp, m44 = 0
-        } |> Mat4.transpose
-    , speed = speed
-    }
 
+-- fillWithLight
+--     : SLight
+--     -> Int
+--     -> { ambient : { m11: Float, ... }
+--        , diffuse : { m11: Float, ... }
+--        , position : { m11: Float, ... }
+--        , speed : Speed
+--        }
+--     -> { ambient : Mat4, diffuse : Mat4, position : Mat4, speed : Speed }
+fillWithLight light lightIndex recs =
+    if lightIndex < 4 then
+        let
+            prevAmbient = recs.ambient
+            prevDiffuse = recs.diffuse
+            prevPosition = recs.position
+        in
+            case lightIndex of
+                0 ->
+                    { recs
+                    | ambient =
+                        case light.ambient.rgba of
+                            r::g::b::a::_ ->
+                                { prevAmbient
+                                | m11 = r, m12 = g, m13 = b, m14 = a
+                                }
+                            _ -> prevAmbient
+                    , diffuse =
+                        case light.diffuse.rgba of
+                            r::g::b::a::_ ->
+                                { prevDiffuse
+                                | m11 = r, m12 = g, m13 = b, m14 = a
+                                }
+                            _ -> prevDiffuse
+                    , position =
+                        case light.position of
+                            x::y::z::_ ->
+                                { prevPosition
+                                | m11 = x, m12 = y, m13 = z, m14 = 0
+                                }
+                            _ ->
+                                prevPosition
+                    }
+                1 ->
+                    { recs
+                    | ambient =
+                        case light.ambient.rgba of
+                            r::g::b::a::_ ->
+                                { prevAmbient
+                                | m21 = r, m22 = g, m23 = b, m24 = a
+                                }
+                            _ -> prevAmbient
+                    , diffuse =
+                        case light.diffuse.rgba of
+                            r::g::b::a::_ ->
+                                { prevDiffuse
+                                | m21 = r, m22 = g, m23 = b, m24 = a
+                                }
+                            _ -> prevDiffuse
+                    , position =
+                        case light.position of
+                            x::y::z::_ ->
+                                { prevPosition
+                                | m21 = x, m22 = y, m23 = z, m24 = 0
+                                }
+                            _ ->
+                                prevPosition
+                    }
+                2 ->
+                    { recs
+                    | ambient =
+                        case light.ambient.rgba of
+                            r::g::b::a::_ ->
+                                { prevAmbient
+                                | m31 = r, m32 = g, m33 = b, m34 = a
+                                }
+                            _ -> prevAmbient
+                    , diffuse =
+                        case light.diffuse.rgba of
+                            r::g::b::a::_ ->
+                                { prevDiffuse
+                                | m31 = r, m32 = g, m33 = b, m34 = a
+                                }
+                            _ -> prevDiffuse
+                    , position =
+                        case light.position of
+                            x::y::z::_ ->
+                                { prevPosition
+                                | m31 = x, m32 = y, m33 = z, m34 = 0
+                                }
+                            _ ->
+                                prevPosition
+                    }
+                3 ->
+                    { recs
+                    | ambient =
+                        case light.ambient.rgba of
+                            r::g::b::a::_ ->
+                                { prevAmbient
+                                | m41 = r, m42 = g, m43 = b, m44 = a
+                                }
+                            _ -> prevAmbient
+                    , diffuse =
+                        case light.diffuse.rgba of
+                            r::g::b::a::_ ->
+                                { prevDiffuse
+                                | m41 = r, m42 = g, m43 = b, m44 = a
+                                }
+                            _ -> prevDiffuse
+                    , position =
+                        case light.position of
+                            x::y::z::_ ->
+                                { prevPosition
+                                | m41 = x, m42 = y, m43 = z, m44 = 0
+                                }
+                            _ ->
+                                prevPosition
+                    }
+                _ -> recs
+    else recs
 
 
 vertexShader : WebGL.Shader Vertex Uniforms Varyings

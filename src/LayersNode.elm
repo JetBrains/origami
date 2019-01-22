@@ -1,5 +1,6 @@
 port module LayersNode exposing (..)
 
+import Browser
 import Dict as Dict exposing (Dict)
 import Array as Array exposing (Array)
 import Html
@@ -9,12 +10,12 @@ import Svg.Attributes as SA exposing (..)
 import Svg.Events as SE exposing (..)
 
 import WebGL.Blend as WGLB
-import Svg.Blend as SVGB
+import Html.Blend as HTMLB
 
 type Blend
     = None
     | WebGLBlend WGLB.Blend
-    | SVGBlend SVGB.Blend
+    | HtmlBlend HTMLB.Blend
 
 
 -- kinda Either, but for ports:
@@ -22,7 +23,7 @@ type Blend
 --    ( Nothing, Just String ) --> SVG Blend
 --    ( Nothing, Nothing ) --> None
 --    ( Just WebGLBlend, Just String ) --> ¯\_(ツ)_/¯
-type alias PortBlend = (Maybe WGLB.Blend, Maybe SVGB.PortBlend)
+type alias PortBlend = (Maybe WGLB.Blend, Maybe HTMLB.PortBlend)
 
 type alias Blends = Dict.Dict Int Blend
 
@@ -51,21 +52,21 @@ convertBlend blend =
     case blend of
         None -> ( Nothing, Nothing )
         WebGLBlend webglBlend -> ( Just webglBlend, Nothing )
-        SVGBlend svgBlend -> ( Nothing, Just (SVGB.encode svgBlend) )
+        HtmlBlend htmlBlend -> ( Nothing, Just (HTMLB.encode htmlBlend) )
 
 
 adaptBlend : PortBlend -> Blend
 adaptBlend portBlend =
     case portBlend of
         ( Just webGlBlend, Nothing ) -> WebGLBlend webGlBlend
-        ( Nothing, Just svgBlend ) -> SVGBlend (SVGB.decode svgBlend )
+        ( Nothing, Just htmlBlend ) -> HtmlBlend (HTMLB.decode htmlBlend )
         _ -> None
 
 
 decodeOne : String -> Blend
 decodeOne str =
     if (String.startsWith "_" str) then
-        SVGB.decode (String.dropLeft 1 str) |> SVGBlend
+        HTMLB.decode (String.dropLeft 1 str) |> HtmlBlend
     else
         case str of
             "" -> None
@@ -80,7 +81,7 @@ encodeOne blend =
     case blend of
         None -> "-"
         WebGLBlend webglBlend -> WGLB.encodeOne webglBlend
-        SVGBlend svgBlend -> "_" ++ SVGB.encode svgBlend
+        HtmlBlend htmlBlend -> "_" ++ HTMLB.encode htmlBlend
 
 
 decodeAll : String -> List Blend
@@ -97,17 +98,17 @@ encodeAll blends =
 
 move : Int -> Int -> Svg.Attribute Msg
 move x y =
-    transform ("translate(" ++ toString x ++ ", " ++ toString y ++ ")")
+    transform ("translate(" ++ String.fromInt x ++ ", " ++ String.fromInt y ++ ")")
 
 
 renderBlendFrom : Blends -> Int -> Int -> Svg Msg
 renderBlendFrom blends count idx =
     g
         [ SA.style "alignment-baseline: hanging;"
-        , class ("layer layer-" ++ toString idx)
+        , class ("layer layer-" ++ String.fromInt idx)
         , move 0 ((count - idx - 1) * 90)
         ]
-        [ text_ [ fill "black" ] [ text ("Layer " ++ toString idx) ]
+        [ text_ [ fill "black" ] [ text ("Layer " ++ String.fromInt idx) ]
         , blends
             |> Dict.get idx
             |> Maybe.withDefault None
@@ -134,10 +135,10 @@ renderBlend idx blend =
                     [ webglBlend.alphaEq |> renderEq "alpha"
                     (\eq -> ChangeBlend idx (WebGLBlend { webglBlend | alphaEq = eq })) ]
                 ]
-        SVGBlend svgBlend ->
+        HtmlBlend htmlBlend ->
             g
                 [ class "blend", move 0 10 ]
-                [ text_ [] [ text ("SVG:" ++ SVGB.encode svgBlend) ] ]
+                [ text_ [] [ text ("SVG:" ++ HTMLB.encode htmlBlend) ] ]
         None ->
             g
                 [ class "blend", move 0 10 ]
@@ -192,32 +193,38 @@ getFill : WGLB.Blend -> String
 getFill { color } =
     color
         |> Maybe.withDefault { r = 0, g = 0, b = 0, a = 0 }
-        |> (\c -> "rgba(" ++ toString c.r ++ "," ++ toString c.g ++ ","
-                          ++ toString c.b ++ "," ++ toString c.a ++ ")")
+        |> (\c -> "rgba(" ++ String.fromFloat c.r ++ "," ++ String.fromFloat c.g ++ ","
+                          ++ String.fromFloat c.b ++ "," ++ String.fromFloat c.a ++ ")")
 
 
 init : ( Model, Cmd Msg )
 init =
-    { layerCount =  0
-    , size = ( 100, 100 )
-    , blends = Dict.empty
-    , colors = Dict.empty
-    } ! []
+    (
+        { layerCount =  0
+        , size = ( 100, 100 )
+        , blends = Dict.empty
+        , colors = Dict.empty
+        }
+    , Cmd.none
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ChangeBlend layerId newBlend ->
-            let model_
-                = { model
-                  | blends = model.blends |> Dict.insert layerId newBlend
-                  }
+            let
+                model_
+                    = { model
+                    | blends = model.blends |> Dict.insert layerId newBlend
+                    }
             in
-                model_ !
+                ( model_
+                , Cmd.batch
                     [ sendNewBlend { layer = layerId, blend = convertBlend newBlend }
                     , sendNewCodeFrom model_.blends
                     ]
+                )
         ApplyAllBlends blends ->
             let newBlends =
                     decodeAll blends
@@ -231,18 +238,23 @@ update msg model =
                 sendOneBlend (layerId, newBlend) =
                     sendNewBlend { layer = layerId, blend = convertBlend newBlend }
             in
-                model_ !
-                    ((newBlends |> List.map sendOneBlend)
-                    ++ [ sendNewCodeFrom model_.blends ])
+                ( model_
+                , Cmd.batch
+                    ((newBlends |> List.map sendOneBlend) ++ [ sendNewCodeFrom model_.blends ])
+                )
         ApplyColors colors ->
-            { model | colors = colors
-            }
-            ! (let colors_ =
-                Dict.map
-                    (\layerId colors ->
-                        sendNewColors { layer = layerId, colors = colors }
-                    ) colors
-              in colors_ |> Dict.values)
+            ( { model
+              | colors = colors
+              }
+            , Cmd.batch <|
+                let
+                    colors_ =
+                        Dict.map
+                            (\layerId layerColors ->
+                                sendNewColors { layer = layerId, colors = layerColors }
+                            ) colors
+                in colors_ |> Dict.values
+            )
             -- ! ( colors
             --         |> Dict.map
             --             (\layerId colors ->
@@ -251,19 +263,22 @@ update msg model =
             --         |> Dict.values
             --   )
         ChangeLayerCount newCount ->
-            { model
-            | layerCount = newCount
-            , blends =
-                List.range 0 (model.layerCount - 1)
-                    |> List.map (\idx ->
-                           ( idx
-                           , model.blends
-                                |> Dict.get idx
-                                |> Maybe.withDefault None
-                           )
-                       )
-                    |> Dict.fromList
-            } ! []
+            (
+                { model
+                | layerCount = newCount
+                , blends =
+                    List.range 0 (model.layerCount - 1)
+                        |> List.map (\idx ->
+                            ( idx
+                            , model.blends
+                                    |> Dict.get idx
+                                    |> Maybe.withDefault None
+                            )
+                        )
+                        |> Dict.fromList
+                }
+            , Cmd.none
+            )
         SetBlendType layerId blendType ->
             let
                 curBlend = Dict.get layerId model.blends |> Maybe.withDefault None
@@ -271,20 +286,21 @@ update msg model =
                     "webgl" -> case curBlend of
                                    WebGLBlend _ -> curBlend
                                    _ -> WebGLBlend WGLB.default
-                    "svg" -> case curBlend of
-                                   SVGBlend _ -> curBlend
-                                   _ -> SVGBlend SVGB.default
+                    "html" -> case curBlend of
+                                   HtmlBlend _ -> curBlend
+                                   _ -> HtmlBlend HTMLB.default
                     _ -> None
                 model_ =
                     { model
                     | blends = model.blends |> Dict.insert layerId newBlend
                     }
             in
-                model_ !
+                ( model_, Cmd.batch
                     [ sendNewBlend { layer = layerId, blend = convertBlend newBlend }
                     , sendNewCodeFrom model_.blends
                     ]
-        Resize newSize -> { model | size = newSize } ! []
+                )
+        Resize newSize -> ( { model | size = newSize }, Cmd.none )
 
 
 queueBlends : List (Int, Blend) -> List (Cmd Msg)
@@ -328,14 +344,14 @@ subscriptions model =
 view : Model -> Html.Html Msg
 view { layerCount, size, blends } =
     svg
-        (case size of ( w, h ) -> [ width (toString w), height (toString h) ])
+        (case size of ( w, h ) -> [ width (String.fromInt w), height (String.fromInt h) ])
         (List.range 0 (layerCount - 1) |> List.map (renderBlendFrom blends layerCount) )
 
 
-main : Program Never Model Msg
+main : Program {} Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , view = view
         , subscriptions = subscriptions
         , update = update

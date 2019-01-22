@@ -4,20 +4,14 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "css-loader": "^2.0.0",
-    "dat.gui": "^0.7.3",
-    "elm-webpack-loader": "^4.5.0",
+    "css-loader": "^2.1.0",
+    "dat.gui": "^0.7.5",
+    "elm-webpack-loader": "^5.0.0",
     "flat-surface-shader": "github:shamansir/flat-surface-shader",
     "jszip": "^3.1.5",
     "jszip-utils": "0.0.2",
-    "webpack": "^4.27.1",
-    "webpack-dev-server": "^3.1.10",
-    "cryptiles": "^4.1.3",
-    "hoek": "^6.1.2",
-    "fresh": "^0.5.2",
-    "debug": "^4.1.0",
-    "mime": "^2.4.0",
-    "negotiator": "^0.6.1"
+    "webpack": "^4.28.1",
+    "webpack-dev-server": "^3.1.14"
   },
   "devDependencies": {
     "elm-svg-loader": "^1.0.2",
@@ -25,12 +19,11 @@
     "raw-loader": "^1.0.0",
     "style-loader": "^0.23.1",
     "uglify-js": "^3.4.9",
-    "webpack-cli": "^3.1.2"
+    "webpack-cli": "^3.2.1"
   },
   "scripts": {
     "start": "./node_modules/.bin/webpack-dev-server --mode=development",
     "start:prod": "./node_modules/.bin/simplehttpserver -p 8080 .",
-    "postinstall": "./node_modules/.bin/elm-package install -y",
     "build:elm": "elm-make ./src/Main.elm --output=build/Main.js",
     "build:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/Main.js --output ./build/Main.min.js",
     "build": "./node_modules/.bin/webpack --config ./webpack.config.js --output ./app.js --mode=production",

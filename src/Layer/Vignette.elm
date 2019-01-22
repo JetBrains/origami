@@ -6,7 +6,7 @@ module Layer.Vignette exposing
     )
 
 import Math.Vector4 as Vec4 exposing (vec4, Vec4)
-import Math.Vector3 as Vec3 exposing (Vec3, fromTuple, vec3)
+import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import WebGL
 import WebGL.Settings exposing (Setting)
 
@@ -23,14 +23,14 @@ type alias Model =
 
 
 type alias Mesh = WebGL.Mesh Vertex
-type alias Color = ( Float, Float, Float )
+type alias Color = { r: Float, g: Float, b: Float }
 
 
 
 init : Model
 init =
     { opacity = 1.0
-    , color = ( 0.671875, 0.289, 0.5898 )
+    , color = { r = 0.671875, g = 0.289, b = 0.5898 }
     }
 
 
@@ -56,18 +56,19 @@ type alias Vertex =
 
 mesh : Color -> Mesh
 mesh color =
-    WebGL.triangles
-        [ (
-            Vertex (vec3 1 1 0) (fromTuple color)
-          , Vertex (vec3 -1 1 0) (fromTuple color)
-          , Vertex (vec3 -1 -1 0) (fromTuple color)
-          )
-         ,(
-            Vertex (vec3 -1 -1 0) (fromTuple color)
-          , Vertex (vec3 1 1 0) (fromTuple color)
-          , Vertex (vec3 1 -1 0) (fromTuple color)
-          )
-        ]
+    let
+        colorVec = colorToVec3 color
+    in
+        WebGL.triangles
+            [ ( Vertex (vec3 1 1 0) colorVec
+              , Vertex (vec3 -1 1 0) colorVec
+              , Vertex (vec3 -1 -1 0) colorVec
+              )
+            , ( Vertex (vec3 -1 -1 0) colorVec
+              , Vertex (vec3 1 1 0) colorVec
+              , Vertex (vec3 1 -1 0) colorVec
+              )
+            ]
 
 
 
@@ -85,7 +86,7 @@ type alias Uniforms =
 uniforms : Viewport {} -> Model -> Uniforms
 uniforms v { opacity, color } =
     let
-        ( r, g, b ) = color
+        { r, g, b } = color
     in
     -- { perspective = Mat4.mul v.perspective v.camera }
        { rotation = v.rotation
@@ -101,6 +102,11 @@ uniforms v { opacity, color } =
        , uResolution = vec3 2340.0 1280.0 0
 
        }
+
+
+colorToVec3 : Color -> Vec3
+colorToVec3 { r, g, b } =
+    vec3 r g b
 
 
 vertexShader : WebGL.Shader Vertex Uniforms { vColor : Vec4 }
@@ -153,6 +159,6 @@ fragmentShader =
           // gl_FragColor = vec4(uColor, vignette());
              gl_FragColor.a = mix(gl_FragColor.a , uOpacity, pow(smoothstep(0.0, 0.7, vignette()), 2.0));
 
- 
+
         }
     |]

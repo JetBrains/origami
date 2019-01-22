@@ -15,10 +15,11 @@ const FileSaver = require('jszip/vendor/FileSaver');
 
 // initialize Elm Application
 const App = require('./src/Main.elm');
+console.log(App);
 //const mountNode = document.getElementById('elm-target');
 const mountNode = document.getElementById('js-animation');
 // The third value on embed are the initial values for incomming ports into Elm
-const app = App.Main.embed(mountNode);
+const app = App.Elm.Main.init({ node: mountNode });
 
 const startGui = require('./gui.js');
 const buildFSS = require('./fss.js');
@@ -196,7 +197,7 @@ const savePng = (hiddenLink, { size, coverSize, product, background }) => {
         trgContext.fillStyle = background;
         trgContext.fillRect(0, 0, width, height);
         trgContext.drawImage(srcCanvas, 0, 0);
-        drawToCanvas.html(document.querySelector('.svg-layers'), trgCanvas, width, height, () => {
+        drawToCanvas.html(document.querySelector('.html-layers'), trgCanvas, width, height, () => {
 
             // FIXME: a temporary hack to draw a logo on the canvas,
             // use product image itself instead
@@ -309,8 +310,8 @@ setTimeout(() => {
                     { app.ports.changeFssRenderMode.send({ layer: index, value: renderMode }) }
                 , changeWGLBlend : (index, blend) =>
                     { app.ports.changeWGLBlend.send({ layer: index, value: blend }) }
-                , changeSVGBlend : (index, blend) =>
-                    { app.ports.changeSVGBlend.send({ layer: index, value: blend }) }
+                , changeHtmlBlend : (index, blend) =>
+                    { app.ports.changeHtmlBlend.send({ layer: index, value: blend }) }
                 , changeProduct : (id) =>
                     { app.ports.changeProduct.send(id) }
                 , setCustomSize : (value) => {

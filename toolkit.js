@@ -151,7 +151,7 @@ Rpd.noderenderer('jb/layers', 'svg', {
                     if (blend && blend[0]) {
                         elmsfeuer.ports.changeWGLBlend.send({ layer, blend : blend[0] });
                     } else if (blend && blend[1]) {
-                        elmsfeuer.ports.changeSVGBlend.send({ layer, blend : blend[1] });
+                        elmsfeuer.ports.changeHtmlBlend.send({ layer, blend : blend[1] });
                     }
                 });
             }

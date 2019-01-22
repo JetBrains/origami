@@ -234,7 +234,7 @@ intFromHex_ ( ch1, ch2 ) =
 
 intToHex_ : Int -> String
 intToHex_ i =
-    String.fromList [ intToHex (i // 16), intToHex (rem i 16) ]
+    String.fromList [ intToHex (i // 16), intToHex (remainderBy i 16) ]
 
 
 decodeEq : String -> Maybe Equation
@@ -252,12 +252,12 @@ decodeColor : String -> Maybe Color
 decodeColor src =
     case src |> String.toList of
         [ r1, r2, g1, g2, b1, b2, a1, a2 ] ->
-            case ( intFromHex_ ( r1, r2 )
-                 , intFromHex_ ( g1, g2 )
-                 , intFromHex_ ( b1, b2 )
-                 , intFromHex_ ( a1, a2 )
-                 ) of
-                ( Just r, Just g, Just b, Just a ) ->
+            case [ ( r1, r2 )
+                 , ( g1, g2 )
+                 , ( b1, b2 )
+                 , ( a1, a2 )
+                 ] |> List.map intFromHex_ of
+                [ Just r, Just g, Just b, Just a ] ->
                     Just
                         { r = toFloat r / 255
                         , g = toFloat g / 255
@@ -338,7 +338,7 @@ encodeHumanOne ({ delim, space } as spec) { color, colorEq, alphaEq } =
 
 encodeHumanColor : HumanEncodeSpec -> Color -> String
 encodeHumanColor { delim, space } { r, g, b, a } =
-    case [ toString r, toString g, toString b, toString a ] of
+    case [ r, g, b, a ] |> List.map String.fromFloat of
         [ rStr, gStr, bStr, aStr ] ->
             "rgba(" ++ rStr ++ "," ++ gStr ++ "," ++ bStr ++ "," ++ aStr ++ ")"
         _ -> "[?]"

@@ -8,7 +8,6 @@ import Html.Events exposing (onInput)
 import Html exposing (Html, text, div, input, br)
 import Html.Attributes as A exposing (width, height, style, type_, min, max, step)
 
-
 import Layer.Lorenz exposing (Model)
 
 
@@ -24,61 +23,61 @@ controls numVertices theta model =
                 , onInput (\iStr ->
                     Configure { model
                               | numVertices = String.toInt iStr
-                                  |> Result.withDefault numVertices
+                                  |> Maybe.withDefault numVertices
                               }
                     )
                 ]
                 [ ]
-        , text ("vertices : " ++ toString numVertices)
+        , text ("vertices : " ++ String.fromInt numVertices)
         , br [] []
         , input [ type_ "range", A.min "0", A.max "1", A.step "0.01"
                 , onInput (\fStr ->
                     Rotate (String.toFloat fStr
-                            |> Result.withDefault theta)) ]
+                            |> Maybe.withDefault theta)) ]
                 [ ]
-        , text ("theta : " ++ toString theta)
+        , text ("theta : " ++ String.fromFloat theta)
         , br [] []
         , input [ type_ "range", A.min "0", A.max "100", A.step "0.1"
                 , onInput (\fStr ->
                     Configure { model
                               | sigma = String.toFloat fStr
-                                  |> Result.withDefault model.sigma
+                                  |> Maybe.withDefault model.sigma
                               }
                     )
                 ]
                 [ ]
-        , text ("sigma : " ++ toString model.sigma)
+        , text ("sigma : " ++ String.fromFloat model.sigma)
         , br [] []
         , input [ type_ "range", A.min "0", A.max "15", A.step "0.01"
                 , onInput (\fStr ->
                     Configure { model
                               | beta = String.toFloat fStr
-                                   |> Result.withDefault model.beta
+                                   |> Maybe.withDefault model.beta
                               }
                     )
                 ]
                 [ ]
-        , text ("beta : " ++ toString model.beta)
+        , text ("beta : " ++ String.fromFloat model.beta)
         , br [] []
         , input [ type_ "range", A.min "0", A.max "100", A.step "0.5"
                 , onInput (\fStr ->
                     Configure { model
                               | rho = String.toFloat fStr
-                                  |> Result.withDefault model.rho
+                                  |> Maybe.withDefault model.rho
                               }
                     )
                 ]
                 [ ]
-        , text ("rho : " ++ toString model.rho)
+        , text ("rho : " ++ String.fromFloat model.rho)
         , br [] []
         , input [ type_ "range", A.min "0", A.max "1", A.step "0.001"
                 , onInput (\fStr ->
                     Configure { model
                               | step = String.toFloat fStr
-                                  |> Result.withDefault model.step
+                                  |> Maybe.withDefault model.step
                               }
                     )
                 ]
                 [ ]
-        , text ("step : " ++ toString model.step)
+        , text ("step : " ++ String.fromFloat model.step)
         ]

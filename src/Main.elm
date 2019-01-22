@@ -1,16 +1,19 @@
 port module Main exposing (main)
 
+import Browser
+
 import Array exposing (Array)
-import AnimationFrame
-import Time exposing (Time)
-import Window
-import Mouse exposing (clicks, moves, downs, ups, Position)
 import Task exposing (Task)
+
+import Browser.Dom as Browser
+import Browser.Events as Browser
 
 import Html exposing (Html, text, div, span, input)
 import Html.Attributes as H
     exposing (class, width, height, style, class, type_, min, max, value, id)
-import Html.Events exposing (on, onInput, onMouseUp, onClick)
+-- import Html.Events exposing (on, onInput, onMouseUp, onClick)
+import Html.Events as Events exposing (onInput)
+import Json.Decode as D
 
 import WebGL exposing (Mesh, Option)
 import WebGL.Settings.Blend as B
@@ -19,9 +22,10 @@ import WebGL.Settings.DepthTest as DepthTest
 
 import Model exposing (..)
 import Gui.Gui as Gui
+import Gui.Mouse exposing (Position)
 import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
-import Svg.Blend as SVGBlend
+import Html.Blend as HtmlBlend
 import Controls
 import ImportExport as IE
 import Product exposing (Product)
@@ -33,6 +37,7 @@ import Layer.Voronoi as Voronoi
 import Layer.FSS as FSS
 import Layer.Template as Template
 import Layer.Cover as Cover
+import Layer.Canvas as Canvas
 import Layer.Vignette as Vignette
 
 
@@ -41,15 +46,13 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Production
+initialMode = Development
 
 
 init : ( Model, Cmd Msg )
 init =
     ( Model.init initialMode (initialLayers initialMode) createLayer
-    , Cmd.batch
-        [ Task.perform Resize Window.size
-        ]
+    , resizeToViewport
     )
 
 
@@ -87,9 +90,7 @@ update msg model =
 
         ChangeMode mode ->
             ( Model.init mode (initialLayers mode) createLayer
-            , Cmd.batch
-                [ Task.perform Resize Window.size
-                ]
+            , resizeToViewport
             )
 
         GuiMessage guiMsg ->
@@ -174,7 +175,7 @@ update msg model =
             , Cmd.none
             )
 
-        Resize { width, height } ->
+        Resize (ViewportSize width height) ->
             ( { model
               | size = adaptSize ( width, height )
               , origin = getOrigin ( width, height )
@@ -182,7 +183,7 @@ update msg model =
             , Cmd.none -- updateAndRebuildFssWith
             )
 
-        ResizeFromPreset { width, height } ->
+        ResizeFromPreset (ViewportSize width height) ->
             let
                 newModel =
                     { model
@@ -270,11 +271,11 @@ update msg model =
 
         Configure index layerModel ->
             ( model |> updateLayer index
-                (\layer layerModel ->
+                (\layer curLayerModel ->
                     case layer of
                         WebGLLayer webglLayer webglBlend ->
                             WebGLLayer
-                            (case ( webglLayer, layerModel ) of
+                            (case ( webglLayer, curLayerModel ) of
                                 ( LorenzLayer _, LorenzModel lorenzModel ) ->
                                     LorenzLayer (lorenzModel |> Lorenz.build)
                                 ( FractalLayer _, FractalModel fractalModel ) ->
@@ -315,7 +316,7 @@ update msg model =
             , Cmd.none
             )
 
-        ChangeSVGBlend index newBlend ->
+        ChangeHtmlBlend index newBlend ->
             ( model |> updateLayerBlend index
                 (\_ -> Nothing)
                 (\_ -> Just newBlend)
@@ -337,17 +338,17 @@ update msg model =
                 |> updateAndRebuildFssWith index
                     (\fssModel -> { fssModel | faces = faces })
 
-        AlterFaces index ( newFacesX, newFacesY ) ->
+        AlterFaces index change ->
             model
                 |> updateAndRebuildFssWith index
                     (\fss ->
                         let
-                            ( currentFacesX, currentFacesY ) = fss.faces
+                            current = fss.faces
                         in
                             { fss | faces =
-                                ( Maybe.withDefault currentFacesX newFacesX
-                                , Maybe.withDefault currentFacesY newFacesY
-                                )
+                                FSS.Faces
+                                    ( change.xChange |> Maybe.withDefault current.x )
+                                    ( change.yChange |> Maybe.withDefault current.y )
                             }
                     )
 
@@ -412,35 +413,33 @@ update msg model =
             --         )
             -- , Cmd.none
 
-        AlterAmplitude index ( newAmplitudeX, newAmplitudeY, newAmplitudeZ ) ->
+        AlterAmplitude index change ->
             model
                 |> updateAndRebuildFssWith index
                     (\fss ->
                         let
-                            ( currentAmplitudeX, currentAmplitudeY, currentAmplitudeZ )
-                                = fss.amplitude
+                            current = fss.amplitude
                         in
                             { fss | amplitude =
-                                ( Maybe.withDefault currentAmplitudeX newAmplitudeX
-                                , Maybe.withDefault currentAmplitudeY newAmplitudeY
-                                , Maybe.withDefault currentAmplitudeZ newAmplitudeZ
-                                )
+                                FSS.Amplitude
+                                    ( change.xChange |> Maybe.withDefault current.amplitudeX )
+                                    ( change.yChange |> Maybe.withDefault current.amplitudeY )
+                                    ( change.zChange |> Maybe.withDefault current.amplitudeZ )
                             }
                     )
 
 
-        ShiftColor index ( newHue, newSaturation, newBrightness ) ->
+        ShiftColor index shift ->
             ( model |> updateFss index
                 (\fss ->
                     let
-                        ( currentHue, currentSaturation, currentBrightness )
-                            = fss.colorShift
+                        current = fss.colorShift
                     in
                         { fss | colorShift =
-                            ( Maybe.withDefault currentHue newHue
-                            , Maybe.withDefault currentSaturation newSaturation
-                            , Maybe.withDefault currentBrightness newBrightness
-                            )
+                            FSS.ColorShift
+                                ( shift.hueShift        |> Maybe.withDefault current.hue        )
+                                ( shift.saturationShift |> Maybe.withDefault current.saturation )
+                                ( shift.brightnessShift |> Maybe.withDefault current.brightness )
                         }
                 )
             , Cmd.none
@@ -550,24 +549,10 @@ getBlendForPort layer =
         WebGLLayer _ webglBlend -> Just webglBlend
         _ -> Nothing
     , case layer of
-        SVGLayer _ svgBlend ->
-            SVGBlend.encode svgBlend |> Just
+        HtmlLayer _ htmlBlend ->
+            HtmlBlend.encode htmlBlend |> Just
         _ -> Nothing
     )
-
-
-encodeLayerKind : LayerKind -> String
-encodeLayerKind kind =
-    case kind of
-        Fss -> "fss"
-        MirroredFss -> "fss-mirror"
-        Lorenz -> "lorenz"
-        Template -> "template"
-        Voronoi -> "voronoi"
-        Fractal -> "fractal"
-        Cover -> "cover"
-        Vignette -> "vignette"
-        Empty -> "empty"
 
 
 -- decodeLayerKind : String -> Maybe LayerKind
@@ -579,7 +564,7 @@ encodeLayerKind kind =
 --         "voronoi" -> Just Voronoi
 --         "fractal" -> Just Fractal
 --         "text" -> Just Text
---         "svg" -> Just SvgImage
+--         "html" -> Just SvgImage
 --         "vignette" -> Just Vignette
 --         _ -> Nothing
 
@@ -624,9 +609,9 @@ createLayer kind layerModel =
             -- WGLBlend.Blend Nothing (0, 1, 7) (0, 1, 7) |> VignetteLayer Vignette.init
             -- VignetteLayer Vignette.init WGLBlend.default
         ( Cover, _ ) ->
-            SVGLayer
+            HtmlLayer
             CoverLayer
-            SVGBlend.default
+            HtmlBlend.default
         _ ->
             Model.emptyLayer
 
@@ -640,16 +625,16 @@ timeShiftRange : Float
 timeShiftRange = 500.0
 
 
-adaptTimeShift : String -> Time
+adaptTimeShift : String -> TimeDelta
 adaptTimeShift v =
     let floatV = String.toFloat v
-         |> Result.withDefault 0.0
+         |> Maybe.withDefault 0.0
     in (floatV - 50.0) / 100.0 * timeShiftRange
 
 
-extractTimeShift : Time -> String
+extractTimeShift : TimeDelta -> String
 extractTimeShift v =
-    (v / timeShiftRange * 100.0) + 50.0 |> toString
+    (v / timeShiftRange * 100.0) + 50.0 |> String.fromFloat
 
 
 updateLayerDef
@@ -703,10 +688,10 @@ updateLayerWithItsModel index f model =
 updateLayerBlend
     : Int
     -> (WGLBlend.Blend -> Maybe WGLBlend.Blend)
-    -> (SVGBlend.Blend -> Maybe SVGBlend.Blend)
+    -> (HtmlBlend.Blend -> Maybe HtmlBlend.Blend)
     -> Model
     -> Model
-updateLayerBlend index ifWebgl ifSvg model =
+updateLayerBlend index ifWebgl ifHtml model =
     model |> updateLayerDef index
         (\layerDef ->
             { layerDef
@@ -715,10 +700,10 @@ updateLayerBlend index ifWebgl ifSvg model =
                     ifWebgl webglBlend
                         |> Maybe.withDefault webglBlend
                         |> WebGLLayer webglLayer
-                SVGLayer svgLayer svgBlend ->
-                    ifSvg svgBlend
-                        |> Maybe.withDefault svgBlend
-                        |> SVGLayer svgLayer
+                HtmlLayer htmlLayer htmlBlend ->
+                    ifHtml htmlBlend
+                        |> Maybe.withDefault htmlBlend
+                        |> HtmlLayer htmlLayer
             })
 
 
@@ -729,26 +714,39 @@ tellGui f model =
         |> Maybe.withDefault (always NoOp)
 
 
+
+decodeMousePosition : D.Decoder Position
+decodeMousePosition =
+    D.map2 Position
+        (D.at [ "offsetX" ] D.int)
+        (D.at [ "offsetY" ] D.int)
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ bang (\_ -> Bang)
-        , AnimationFrame.diffs Animate
-        , Window.resizes Resize
+        , Browser.onAnimationFrameDelta Animate
+        , Browser.onResize <| \w h -> Resize (ViewportSize w h)
         -- , clicks (\pos ->
         --     toLocal model.size pos
         --         |> Maybe.map (\pos -> Pause)
         --         |> Maybe.withDefault NoOp
         --   )
-        , moves (\{ x, y } ->
-            toLocal model.size (x, y)
-                |> Maybe.map (\localPos -> Locate localPos)
-                |> Maybe.withDefault NoOp
-          )
+        , Sub.map (\{ x, y } ->
+                toLocal model.size (x, y)
+                    |> Maybe.map (\localPos -> Locate localPos)
+                    |> Maybe.withDefault NoOp
+            )
+            <| Browser.onMouseMove
+            <| decodeMousePosition
         --, downs <| Gui.downs >> GuiMessage
-        , downs <| tellGui Gui.downs model
-        -- , ups <| Gui.ups >> GuiMessage
-        , ups <| tellGui Gui.ups model
+        , Sub.map (tellGui Gui.downs model)
+            <| Browser.onMouseDown
+            <| decodeMousePosition
+        , Sub.map (tellGui Gui.ups model)
+            <| Browser.onMouseUp
+            <| decodeMousePosition
         , rotate Rotate
         , changeProduct (\productStr -> Product.decode productStr |> ChangeProduct)
         , changeFssRenderMode (\{value, layer} ->
@@ -756,15 +754,13 @@ subscriptions model =
         , changeFacesX (\{value, layer} ->
             case model |> getLayerModel layer of
                 Just (FssModel { faces }) ->
-                    case faces of
-                        ( _, facesY ) -> ChangeFaces layer ( value, facesY )
+                    ChangeFaces layer { x = value, y = faces.y }
                 _ -> NoOp
           )
         , changeFacesY (\{value, layer} ->
             case model |> getLayerModel layer of
                 Just (FssModel { faces }) ->
-                    case faces of
-                        ( facesX, _ ) -> ChangeFaces layer ( facesX, value )
+                    ChangeFaces layer { x = faces.x, y = value }
                 _ -> NoOp
           )
         , changeLightSpeed (\{value, layer} -> ChangeLightSpeed layer value)
@@ -781,12 +777,12 @@ subscriptions model =
                         if (w > 0 && h > 0) then (w, h)
                         else model.size
                 in
-                    Window.Size newW newH |> ResizeFromPreset)
+                    ViewportSize newW newH |> ResizeFromPreset)
         , changeWGLBlend (\{ layer, value } ->
             ChangeWGLBlend layer value
           )
-        , changeSVGBlend (\{ layer, value } ->
-            ChangeSVGBlend layer <| SVGBlend.decode value
+        , changeHtmlBlend (\{ layer, value } ->
+            ChangeHtmlBlend layer <| HtmlBlend.decode value
           )
         , configureLorenz (\{ layer, value } ->
             Configure layer (LorenzModel value)
@@ -843,13 +839,13 @@ isWebGLLayer : Layer -> Bool
 isWebGLLayer layer =
     case layer of
         WebGLLayer _ _ -> True
-        SVGLayer _ _ -> False
+        HtmlLayer _ _ -> False
 
-isSvgLayer : Layer -> Bool
-isSvgLayer layer =
+isHtmlLayer : Layer -> Bool
+isHtmlLayer layer =
     case layer of
         WebGLLayer _ _ -> False
-        SVGLayer _ _ -> True
+        HtmlLayer _ _ -> True
 
 
 mergeWebGLLayers : Model -> List WebGL.Entity
@@ -859,7 +855,7 @@ mergeWebGLLayers model =
         model.layers
             |> List.filter (.layer >> isWebGLLayer)
             |> List.filter .on
-            |> List.indexedMap (,)
+            |> List.indexedMap Tuple.pair
             -- |> List.concatMap (uncurry >> layerToEntities model viewport)
             |> List.concatMap
                     (\(index, layer) ->
@@ -870,7 +866,7 @@ mergeWebGLLayers model =
 mergeHtmlLayers : Model -> List (Html Msg)
 mergeHtmlLayers model =
     model.layers
-        |> List.filter (.layer >> isSvgLayer)
+        |> List.filter (.layer >> isHtmlLayer)
         |> List.filter .on
         |> List.indexedMap (layerToHtml model)
 
@@ -878,10 +874,12 @@ mergeHtmlLayers model =
 layerToHtml : Model -> Int -> LayerDef -> Html Msg
 layerToHtml model index { layer } =
     case layer of
-        SVGLayer svgLayer svgBlend ->
-            case svgLayer of
+        HtmlLayer htmlLayer htmlBlend ->
+            case htmlLayer of
                 CoverLayer ->
-                    Cover.view model.mode model.product model.size model.origin svgBlend
+                    Cover.view model.mode model.product model.size model.origin htmlBlend
+                CanvasLayer ->
+                    Canvas.view
                 NoContent -> div [] []
         _ -> div [] []
 
@@ -937,7 +935,7 @@ layerToEntities model viewport index layerDef =
                     in
                         [ FSS.makeEntity
                             model.now
-                            model.mouse
+                            (case model.mouse of ( x, y ) -> { x = x, y = y })
                             (model.product |> Product.getId)
                             index
                             viewport
@@ -951,12 +949,12 @@ layerToEntities model viewport index layerDef =
                         -- TODO: store clip position in the layer
                         fssModel1 =
                             { fssModel
-                            | clip = Just (0.0, FSS.defaultMirror)
+                            | clip = Just { x = 0.0, y = FSS.defaultMirror }
                             , mirror = True
                             }
                         fssModel2 =
                             { fssModel
-                            | clip = Just ( FSS.defaultMirror, 1.0 )
+                            | clip = Just { x = FSS.defaultMirror, y = 1.0 }
                             }
                     in
                         layerToEntities model viewport index
@@ -979,6 +977,13 @@ layerToEntities model viewport index layerDef =
         _ -> []
 
 
+resizeToViewport =
+    Task.perform
+        (\{ viewport } -> Resize
+            <| ViewportSize (floor viewport.width) (floor viewport.height))
+        Browser.getViewport
+
+
 getViewportState : Model -> Viewport.State
 getViewportState { paused, size, origin, theta } =
     { paused = paused, size = size, origin = origin, theta = theta }
@@ -992,7 +997,7 @@ view model =
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-        [ mergeHtmlLayers model |> div [ H.class "svg-layers" ]
+        [ mergeHtmlLayers model |> div [ H.class "html-layers" ]
         , if model.controlsVisible
             then ( div
                 [ H.class "overlay-panel import-export-panel hide-on-space" ]
@@ -1005,8 +1010,8 @@ view model =
                     , H.min "0"
                     , H.max "100"
                     , extractTimeShift model.timeShift |> H.value
-                    , onInput (\v -> adaptTimeShift v |> TimeTravel)
-                    , onMouseUp BackToNow
+                    , Events.onInput (\v -> adaptTimeShift v |> TimeTravel)
+                    , Events.onMouseUp BackToNow
                     ]
                     []
                 , span [ H.class "label future"] [text "future"]
@@ -1014,10 +1019,12 @@ view model =
                 -- , input [ type_ "button", id "import-button", value "Import" ] [ text "Import" ]
                 -- , input [ type_ "button", onClick Export, value "Export" ] [ text "Export" ]
                 , input
-                    [ type_ "button", class "export_html5", onClick ExportZip, value "warp in html5" ]
+                    [ type_ "button", class "export_html5"
+                    , Events.onClick ExportZip, value "warp in html5" ]
                     [ text "Export to html5.zip" ]
                 , input
-                    [ type_ "button", class "export_png", onClick SavePng, value "blast to png" ]
+                    [ type_ "button", class "export_png"
+                    , Events.onClick SavePng, value "blast to png" ]
                     [ text "Export to png" ]
                 , div [ H.class "spacebar_info" ] [ text "spacebar to hide controls, click to pause" ]
                 ]
@@ -1032,8 +1039,7 @@ view model =
                 [ H.class "webgl-layers"
                 , width (Tuple.first model.size)
                 , height (Tuple.second model.size)
-                , style
-                    [ ( "display", "block" )
+                , style "display" "block"
                     --, ( "background-color", "#161616" )
 --                    ,   ( "transform", "translate("
 --                        ++ (Tuple.first model.origin |> toString)
@@ -1041,10 +1047,9 @@ view model =
 --                        ++ (Tuple.second model.origin |> toString)
 --                        ++ "px)"
 --                        )
-                    ]
-                , onClick TriggerPause
+                , Events.onClick TriggerPause
                 ]
-        -- , mergeHtmlLayers model |> div [ H.class "svg-layers"]
+        -- , mergeHtmlLayers model |> div [ H.class "html-layers"]
         , model.gui
             |> Maybe.map Gui.view
             |> Maybe.map (Html.map GuiMessage)
@@ -1053,10 +1058,10 @@ view model =
         ]
 
 
-main : Program Never Model Msg
+main : Program {} Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = always init
         , view = view
         , subscriptions = subscriptions
         , update = update
@@ -1131,7 +1136,7 @@ port changeWGLBlend :
       }
     -> msg) -> Sub msg
 
-port changeSVGBlend :
+port changeHtmlBlend :
     ( { layer : Int
       , value : String
       }
