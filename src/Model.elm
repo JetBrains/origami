@@ -160,6 +160,28 @@ type Layer
     | HtmlLayer HtmlLayer_ HtmlBlend.Blend
 
 
+type Factor
+    = Single
+    | Double
+
+
+type SizePreset
+    = ProductCard Factor
+    | ProductSplash Factor
+    | Newsletter Factor
+    | Twitter
+    | Facebook
+    | Baidu Int Int
+    | Ad Int Int
+    | Instagram
+    | LinkedIn
+    | WebpagePreview
+    | BlogHeader Factor
+    | BlogFooter Factor
+    | LandingPage
+    | Wallpaper Int Int
+
+
 -- `change` is needed since we store a sample layer model
 -- to use for any layer in the main model
 type alias LayerDef =
@@ -284,90 +306,144 @@ emptyLayer =
     HtmlLayer NoContent HtmlBlend.default
 
 
-sizePresets : UiMode -> ( Dict.Dict String ( Int, Int ), Shape )
-sizePresets mode =
+
+getSizePresets : UiMode -> List SizePreset
+getSizePresets mode =
     case mode of
-        Production ->
-            -- WALLPAPER_SIZES
-            ( Dict.fromList
-                [ ( "2560x1440", ( 2560, 1440 ) )
-                , ( "1920x1200", ( 1920, 1200 ) )
-                , ( "1920x1080", ( 1920, 1080 ) )
-                , ( "1680x1050", ( 1680, 1050 ) )
-                , ( "1536x864", ( 1536, 864 ) )
-                , ( "1440x900", ( 1440, 900 ) )
-                , ( "1366x768", ( 1366, 768 ) )
-                ]
-            , ( 4, 2 )
-            )
+        Release ->
+            [ ProductCard Single
+            , ProductCard Double
+            , ProductSplash Single
+            , ProductSplash Double
+            , Newsletter Single
+            , Newsletter Double
+            , Twitter
+            , Facebook
+            , WebpagePreview
+            , BlogHeader Single
+            , BlogHeader Double
+            , BlogFooter Single
+            , BlogFooter Double
+            , LandingPage
+            ]
         Ads ->
-            -- ADS SIZES
-            ( Dict.fromList
-                [( "120x600", ( 120, 600 ) )
-                ,( "125x125", ( 125, 125 ) )
-                ,( "130x100", ( 130, 100 ) )
-                ,( "180x150", ( 180, 150 ) )
-                ,( "200x125", ( 200, 125 ) )
-                ,( "200x200", ( 200, 200 ) )
-                ,( "220x250", ( 220, 250 ) )
-                ,( "250x250", ( 250, 250 ) )
-                ,( "260x200", ( 260, 200 ) )
-                ,( "300x250", ( 300, 250 ) )
-                ,( "320x100", ( 320, 100 ) )
-                ,( "320x50", ( 320, 50 ) )
-                ,( "336x280", ( 336, 280 ) )
-                ,( "468x60", ( 468, 60 ) )
-                ,( "160x600", ( 160, 600 ) )
-                ,( "300x600", ( 300, 600 ) )
-                ,( "728x90", ( 728, 90 ) )
-                ,( "800x320", ( 800, 320 ) )
-                ,( "970x250", ( 970, 250 ) )
-                ,( "970x90", ( 970, 90 ) )
-                ,( "960x90 baidu", ( 960, 90 ) )
-                ,( "728x90 baidu", ( 728, 90 ) )
-                ,( "468x60 baidu", ( 468, 60 ) )
-                ,( "200x200 baidu", ( 200, 200 ) )
-                ,( "960x60 baidu", ( 960, 60 ) )
-                ,( "640x60 baidu", ( 640, 60 ) )
-                ,( "580x90 baidu", ( 580, 90 ) )
-                ,( "460x60 baidu", ( 460, 60 ) )
-                ,( "300x250 baidu", ( 300, 250 ) )
-                ,( "336x280 baidu", ( 336, 280 ) )
-                ,( "1200x628 fb", ( 1200, 628 ) )
-                ,( "800x418 tw", ( 800, 418 ) )
-                ,( "1080x1080 in", ( 1080, 1080 ) )
-                ,( "1200x627 ln", ( 1200, 627 ) )
+            (
+                [ ( 120, 600 )
+                , ( 125, 125 )
+                , ( 130, 100 )
+                , ( 180, 150 )
+                , ( 200, 125 )
+                , ( 200, 200 )
+                , ( 220, 250 )
+                , ( 250, 250 )
+                , ( 260, 200 )
+                , ( 300, 250 )
+                , ( 320, 100 )
+                , ( 320, 50 )
+                , ( 336, 280 )
+                , ( 468, 60 )
+                , ( 160, 60 )
+                , ( 300, 600 )
+                , ( 728, 90 )
+                , ( 800, 320 )
+                , ( 300, 600 )
+                , ( 970, 250 )
+                , ( 970, 90 )
+                ] |> List.map (\(w, h) -> Ad w h)
+            ) ++ (
+                [ ( 960, 60 )
+                , ( 728, 90 )
+                , ( 468, 60 )
+                , ( 200, 200 )
+                , ( 960, 60 )
+                , ( 640, 60 )
+                , ( 580, 90 )
+                , ( 460, 60 )
+                , ( 300, 250 )
+                , ( 336, 280 )
+                ] |> List.map (\(w, h) -> Baidu w h)
+            ) ++ (
+                [ Facebook
+                , Twitter
+                , Instagram
+                , LinkedIn
                 ]
-            , ( 4, 2 )
             )
+        TronUi tronMode -> getSizePresets tronMode
         _ ->
-            -- RELEASE_SIZES // TODO: Multiply for creating @2x @3x
-            ( Dict.fromList
-                [ ( "480x297 prodcard", ( 480, 297 ) ) -- product card
-                , ( "960x594 prodcard@2x", ( 960, 594 ) ) -- @2x product card
-                , ( "640x400 spl", ( 640, 400 ) ) -- product splash background
-                , ( "1280x800 spl@2x", ( 1280, 800 ) ) -- @2x splash background
-                , ( "650x170 nwlt", ( 650, 170 ) ) -- newsletter
-                , ( "1300x340 nwlt@2x", ( 1300, 340 ) ) -- @2x newsletter
-                , ( "800x418 tw", ( 800, 418 ) ) -- Twitter
-                , ( "1200x628 fb", ( 1200, 628 ) ) -- Facebook
-                , ( "1280x800 wprev", ( 1280, 800 ) ) -- Webpage Preview
-                , ( "800x400 blog", ( 800, 400 ) ) -- Blog
-                , ( "1600x800 blog@2x", ( 1600, 800 ) ) -- @2x Blog
-                , ( "800x155 bfoot", ( 800, 155 ) ) -- Blog footer
-                , ( "1600x310 bfoot", ( 1600, 310 ) ) -- @2x Blog footer
-                , ( "2850x1200 landg", ( 2850, 1200 ) ) -- Landing page
-                -- , ( "browser", ( 0, 0 ) )
-                ]
-            , ( 4, 4 )
-            )
+            [ ( 2560, 1440 )
+            , ( 1920, 1200 )
+            , ( 1920, 1080 )
+            , ( 1680, 1050 )
+            , ( 1536, 864)
+            , ( 1440, 900 )
+            , ( 1366, 768 )
+            ] |> List.map (\(w, h) -> Wallpaper w h)
+
+
+getSize : SizePreset -> ( Int, Int )
+getSize preset =
+    let
+        applyFactor factor ( w, h ) =
+            case factor of
+                Single -> ( w, h )
+                Double -> ( w * 2, h * 2 )
+    in
+        case preset of
+            ProductCard factor -> ( 480, 297 ) |> applyFactor factor
+            ProductSplash factor -> ( 640, 400 ) |> applyFactor factor
+            Newsletter factor -> ( 650, 170 ) |> applyFactor factor
+            Twitter -> ( 800, 418 )
+            Facebook -> ( 1200, 628 )
+            WebpagePreview -> ( 1200, 800 )
+            BlogHeader factor -> ( 800, 400 ) |> applyFactor factor
+            BlogFooter factor -> ( 800, 155 ) |> applyFactor factor
+            LandingPage -> ( 2850, 1200 )
+            Instagram -> ( 1080, 1080 )
+            LinkedIn -> ( 1200, 627 )
+            Baidu w h -> ( w, h )
+            Ad w h -> ( w, h )
+            Wallpaper w h -> ( w, h )
+
+
+getLabel : SizePreset -> String
+getLabel preset =
+    let
+        sizeStr = getSize preset |> \(w, h) -> String.fromInt w ++ "x" ++ String.fromInt h
+        factorStr factor =
+            case factor of
+                Single -> ""
+                Double -> "@2x"
+    in
+        sizeStr ++ case preset of
+            ProductCard factor -> " prodcard" ++ factorStr factor
+            ProductSplash factor -> " spl" ++ factorStr factor
+            Newsletter factor -> " nwlt" ++ factorStr factor
+            Twitter -> " tw"
+            Facebook -> " fb"
+            WebpagePreview -> " wprev"
+            BlogHeader factor -> " blog" ++ factorStr factor
+            BlogFooter factor -> " bfoot" ++ factorStr factor
+            LandingPage -> " landg"
+            Instagram -> " in"
+            LinkedIn -> " ln"
+            Baidu w h -> " baidu"
+            Ad w h -> ""
+            Wallpaper w h -> ""
 
 
 gui : Model -> Gui.Model Msg
 gui from =
     let
         ( currentSizePresets, sizePresetsShape ) =
-            sizePresets from.mode
+            ( getSizePresets from.mode
+                |> List.map (\preset -> ( getLabel preset, getSize preset ))
+                |> Dict.fromList
+            , case from.mode of
+                Release -> ( 4, 4 )
+                Ads -> ( 8, 4 )
+                _ -> ( 4, 2 )
+            )
         products =
             [ "jetbrains"
             , "idea"
