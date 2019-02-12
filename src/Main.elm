@@ -46,7 +46,7 @@ sizeCoef = 1.0
 
 
 initialMode : UiMode
-initialMode = Development
+initialMode = Production
 
 
 init : ( Model, Cmd Msg )
@@ -527,14 +527,12 @@ rebuildAllFssLayersWith model =
             case layerDef.model of
                 FssModel fssModel -> Just fssModel
                 _ -> Nothing
-        encodedModel = IE.encodePortModel model
         rebuildPotentialFss index fssModel =
             requestFssRebuild
                 { layer = index
-                , model = encodedModel
+                , model = IE.encodePortModel model
                 , value = IE.encodeFss fssModel model.product
                 }
-
     in
         ( model
         , List.filterMap isLayerFss model.layers
@@ -1166,7 +1164,7 @@ port export_ : String -> Cmd msg
 
 port exportZip_ : String -> Cmd msg
 
-port triggerSavePng : SizeUpdate -> Cmd msg
+port triggerSavePng : SizeUpdate -> Cmd msg -- FIXME: Remove, use Browser.DOM task instead
 
 port requestRandomize : PortModel -> Cmd msg
 

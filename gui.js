@@ -20,8 +20,8 @@ const getSizesSet = (mode) => {
     'dev' : C.WALLPAPER_SIZES,
     'ads' : C.ADS_SIZES } [mode];
   predefinedSizes['monitor'] = [
-    window.screen.width * window.devicePixelRatio,
-    window.screen.height * window.devicePixelRatio
+    window.screen.width /** window.devicePixelRatio*/,
+    window.screen.height /** window.devicePixelRatio*/
   ];
   return predefinedSizes;
 }

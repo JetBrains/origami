@@ -4,6 +4,7 @@ const deepClone = require('./deep-clone.js')
 const App = require('./src/Main.elm');
 
 const import_ = (app, importedState) => {
+
     document.body.style.backgroundColor = importedState.background;
 
     const parsedState = importedState;
@@ -38,6 +39,10 @@ window.runGenScene = function() {
     var app = App.Elm.Main.init({ node: node });
 
     //console.log('runGenScene', window.jsGenScene, app);
+
+    app.ports.requestFitToWindow.subscribe((_) => {
+        app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
+    });    
 
     import_(app, window.jsGenScene);
 }
