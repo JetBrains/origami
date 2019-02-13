@@ -85,7 +85,10 @@ update msg model =
 
         Bang ->
             ( model
-            , model |> IE.encodePortModel |> startGui
+            , startGui
+                ( model |> IE.encodePortModel
+                , makeConstants
+                )
             )
 
         ChangeMode mode ->
@@ -1150,7 +1153,7 @@ type alias SizeUpdate =
     , background: String
     }
 
-port startGui : PortModel -> Cmd msg
+port startGui : ( PortModel, Constants ) -> Cmd msg
 
 port requestFssRebuild :
     { layer: LayerIndex

@@ -281,7 +281,7 @@ setTimeout(() => {
         }, toSend, null)({})();
     });
 
-    app.ports.startGui.subscribe((model) => {
+    app.ports.startGui.subscribe(([ model, constants ]) => {
         const altGui = document.getElementById('grid-gui');
         if (altGui) altGui.focus();
         document.body.style.backgroundColor = model.background;

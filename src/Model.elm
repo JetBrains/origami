@@ -20,6 +20,8 @@ module Model exposing
     , PortLayerDef
     , PortBlend
     , Msg(..)
+    , Constants
+    , makeConstants
     , gui
     )
 
@@ -370,7 +372,7 @@ getSizePresets mode =
                 ]
             )
         TronUi tronMode -> getSizePresets tronMode
-        _ ->
+        _ -> -- return Wallpaper size preset for eveything else
             [ ( 2560, 1440 )
             , ( 1920, 1200 )
             , ( 1920, 1080 )
@@ -430,6 +432,42 @@ getLabel preset =
             Baidu w h -> " baidu"
             Ad w h -> ""
             Wallpaper w h -> ""
+
+
+type alias Constants =
+    -- { sizes : Dict.Dict ModeStr (Dict.Dict SizeLabel SizePair)
+    { sizes : List { mode: String, sizes : List { label: String, width: Int, height: Int } }
+    , products : List { product : String, label: String }
+    }
+
+
+makeConstants : Constants
+makeConstants =
+    let
+        getModeLabel mode =
+            case mode of
+                Release -> "release"
+                Production -> "prod"
+                Development -> "dev"
+                Ads -> "ads"
+                TronUi tronMode -> "tron-" ++ getModeLabel tronMode
+        sizePresetsConstants mode =
+            getSizePresets mode
+                |> List.map (\preset ->
+                        case getSize preset of
+                            ( w, h ) ->
+                                { label = getLabel preset, width = w, height = h }
+                    )
+    in
+        { sizes =
+            [ Production, Release, Development, Ads ]
+                |> List.map (\mode ->
+                      { mode = getModeLabel mode
+                      , sizes = sizePresetsConstants mode
+                      }
+                   )
+        , products = []
+        }
 
 
 gui : Model -> Gui.Model Msg

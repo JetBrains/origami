@@ -40,9 +40,9 @@ window.runGenScene = function() {
 
     //console.log('runGenScene', window.jsGenScene, app);
 
-    app.ports.requestFitToWindow.subscribe((_) => {
-        app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
-    });    
+    // app.ports.requestFitToWindow.subscribe((_) => {
+    //     app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
+    // });
 
     import_(app, window.jsGenScene);
 }
