@@ -14,9 +14,14 @@ const update = (gui) => () => {
 }
 
 const getSizeSet = (mode, constants) => {
+  console.log(constants);
   const modeValues = constants['sizes'].filter(s => s.mode == mode);
   if (modeValues.length < 1) return [];
-  return modeValues[0]['values'];
+  let sizeSet = {};
+  modeValues[0]['values'].forEach(value => {
+    sizeSet[value.label] = value;
+  })
+  return sizeSet;
 }
 
 const Config = function(layers, defaults, constants, funcs, randomize) {
@@ -82,7 +87,8 @@ const Config = function(layers, defaults, constants, funcs, randomize) {
       }
     });
 
-    this.customSize = sizePresetSet['browser'];
+    //this.customSize = sizePresetSet['browser'];
+    this.sizePreset = null;
 
     //this.savePng = funcs.savePng;
     this.saveBatch = () => funcs.saveBatch(Object.values(sizePresetSet));
@@ -289,7 +295,7 @@ function start(document, model, constants, funcs) {
         randomize(funcs.applyRandomizer, model, update(gui)));
     const product = gui.add(config, 'product', C.PRODUCT_TO_ID);
     const omega = gui.add(config, 'omega').name('vertigo ').min(-1.0).max(1.0).step(0.1);
-    const customSize = gui.add(config, 'customSize', sizePresetSet).name('size');
+    const customSize = gui.add(config, 'sizePreset', sizePresetSet).name('size');
     // gui.add(config, 'savePng').name('save png');
     if (mode !== 'prod') gui.add(config, 'saveBatch').name('save batch');
     gui.add(config, 'randomize').name('i feel lucky');

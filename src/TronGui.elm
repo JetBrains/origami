@@ -14,6 +14,7 @@ import Html.Blend as HtmlBlend
 import Product as Product
 import Model exposing (..)
 
+
 gui : Model -> Gui.Model Msg
 gui from =
     let
@@ -91,9 +92,9 @@ gui from =
                 "window" -> RequestFitToWindow
                 "browser" -> RequestFitToWindow
                 _ ->
-                    currentSizePresets
+                    currentSizePresets -- FIXME: use proper size sets
                         |> Dict.get label
-                        |> Maybe.map (\(w, h) -> ResizeFromPreset <| ViewportSize w h)
+                        |> Maybe.map (\(w, h) -> Resize <| UseViewport <| ViewportSize w h)
                         |> Maybe.withDefault RequestFitToWindow
         chooseWebGlBlend layerIndex index label =
             NoOp

@@ -23,9 +23,10 @@ module Model exposing
     , Msg(..)
     , Constants
     , makeConstants
+    , ResizeRule(..)
     , getSizePresets
     , getPresetLabel, getPresetSize
-    , encodePreset, decodePreset
+    , SizePresetCode, encodePreset, decodePreset
     )
 
 
@@ -61,13 +62,17 @@ type alias CreateLayer = LayerKind -> LayerModel -> Layer
 type alias CreateGui = Model -> Gui.Model Msg
 
 
+type ResizeRule
+    = FromPreset SizePreset
+    | UseViewport ViewportSize
+
+
 type Msg
     = Bang
     | ChangeMode UiMode
     | Animate TimeDelta
     | GuiMessage (Gui.Msg Msg)
-    | Resize ViewportSize
-    | ResizeFromPreset ViewportSize
+    | Resize ResizeRule
     | RequestFitToWindow
     | Locate Pos
     | Rotate Float
@@ -250,6 +255,22 @@ type alias PortLayerDef =
     , isOn : Bool
     , name : String
     , model : String
+    }
+
+
+type alias SizePresetCode = String
+
+
+type alias Constants =
+    { sizes : List
+        { mode: String
+        , values : List
+            { label: String
+            , width: Int, height: Int
+            , code: SizePresetCode
+            }
+        }
+    , products : List { product : String, label: String }
     }
 
 
@@ -436,7 +457,7 @@ getPresetLabel preset =
             Wallpaper w h -> ""
 
 
-encodePreset : SizePreset -> String
+encodePreset : SizePreset -> SizePresetCode
 encodePreset preset =
    let
         sizeStr w h = String.fromInt w ++ ":" ++ String.fromInt h
@@ -462,7 +483,7 @@ encodePreset preset =
             Wallpaper w h -> "WP:_:" ++ sizeStr w h
 
 
-decodePreset : String -> Maybe SizePreset
+decodePreset : SizePresetCode -> Maybe SizePreset
 decodePreset presetStr =
     let
         parts = String.split ":" presetStr
@@ -503,21 +524,6 @@ decodePreset presetStr =
     in
         Array.get 0 parts
             |> Maybe.andThen decodeByCode
-
-
-
-type alias Constants =
-    -- { sizes : Dict.Dict ModeStr (Dict.Dict SizeLabel SizePair)
-    { sizes : List
-        { mode: String
-        , values : List
-            { label: String
-            , width: Int, height: Int
-            , code: String
-            }
-        }
-    , products : List { product : String, label: String }
-    }
 
 
 makeConstants : Constants

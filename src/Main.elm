@@ -179,16 +179,20 @@ update msg model =
             , Cmd.none
             )
 
-        Resize (ViewportSize width height) ->
-            ( { model
-              | size = adaptSize ( width, height )
-              , origin = getOrigin ( width, height )
-              }
-            , Cmd.none -- updateAndRebuildFssWith
-            )
+        -- Resize (ViewportSize width height) ->
+        --     ( { model
+        --       | size = adaptSize ( width, height )
+        --       , origin = getOrigin ( width, height )
+        --       }
+        --     , Cmd.none -- updateAndRebuildFssWith
+        --     )
 
-        ResizeFromPreset (ViewportSize width height) ->
+        Resize rule ->
             let
+                ( width, height ) =
+                    case rule of
+                        FromPreset preset -> getPresetSize preset
+                        UseViewport (ViewportSize w h) -> ( w, h )
                 newModel =
                     { model
                     | size = adaptSize ( width, height )
@@ -729,7 +733,7 @@ subscriptions model =
     Sub.batch
         [ bang (\_ -> Bang)
         , Browser.onAnimationFrameDelta Animate
-        , Browser.onResize <| \w h -> Resize (ViewportSize w h)
+        , Browser.onResize <| \w h -> Resize <| UseViewport <| ViewportSize w h
         -- , clicks (\pos ->
         --     toLocal model.size pos
         --         |> Maybe.map (\pos -> Pause)
@@ -772,14 +776,21 @@ subscriptions model =
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , changeIris (\{value, layer} -> ChangeIris layer value)
         , changeMode (\modeStr -> ChangeMode <| IE.decodeMode modeStr)
-        , setCustomSize
-            (\(w, h) ->
-                let
-                    (newW, newH) =
-                        if (w > 0 && h > 0) then (w, h)
-                        else model.size
-                in
-                    ViewportSize newW newH |> ResizeFromPreset)
+        , changeSizePreset
+            (\{ presetCode, viewport } ->
+                case viewport of
+                    ( vw, vh ) ->
+                        presetCode
+                            |> Maybe.andThen decodePreset
+                            |> Maybe.map (Resize << FromPreset)
+                            |> Maybe.withDefault (Resize <| UseViewport <| ViewportSize vw vh )
+            )
+                -- let
+                --     (newW, newH) =
+                --         if (w > 0 && h > 0) then (w, h)
+                --         else model.size
+                -- in
+                --     ViewportSize newW newH |> ResizeFromPreset)
         , changeWGLBlend (\{ layer, value } ->
             ChangeWGLBlend layer value
           )
@@ -981,8 +992,10 @@ layerToEntities model viewport index layerDef =
 
 resizeToViewport =
     Task.perform
-        (\{ viewport } -> Resize
-            <| ViewportSize (floor viewport.width) (floor viewport.height))
+        (\{ viewport } ->
+            Resize
+                <| UseViewport
+                <| ViewportSize (floor viewport.width) (floor viewport.height))
         Browser.getViewport
 
 
@@ -1126,7 +1139,11 @@ port shiftColor : ({ value: FSS.ColorShiftPatch, layer: LayerIndex } -> msg) -> 
 
 port changeOpacity : ({ value: FSS.Opacity, layer: LayerIndex } -> msg) -> Sub msg
 
-port setCustomSize : ((Int, Int) -> msg) -> Sub msg
+port changeSizePreset :
+    ({ presetCode: Maybe SizePresetCode
+     , viewport: (Int, Int)
+     } -> msg)
+    -> Sub msg
 
 port applyRandomizer : (PortModel -> msg) -> Sub msg
 
