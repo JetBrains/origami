@@ -296,6 +296,7 @@ setTimeout(() => {
             startGui(
                 document,
                 model,
+                constants,
                 { changeLightSpeed : index => value =>
                     { app.ports.changeLightSpeed.send({ layer: index, value: Math.round(value) }) }
                 , changeVignette : index => value =>

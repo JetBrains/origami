@@ -23,6 +23,7 @@ import WebGL.Settings.DepthTest as DepthTest
 import Model exposing (..)
 import Gui.Gui as Gui
 import Gui.Mouse exposing (Position)
+import TronGui as Gui
 import Viewport exposing (Viewport)
 import WebGL.Blend as WGLBlend
 import Html.Blend as HtmlBlend
@@ -51,7 +52,7 @@ initialMode = Production
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model.init initialMode (initialLayers initialMode) createLayer
+    ( Model.init initialMode (initialLayers initialMode) createLayer Gui.gui
     , resizeToViewport
     )
 
@@ -92,7 +93,7 @@ update msg model =
             )
 
         ChangeMode mode ->
-            ( Model.init mode (initialLayers mode) createLayer
+            ( Model.init mode (initialLayers mode) createLayer Gui.gui
             , resizeToViewport
             )
 
@@ -147,7 +148,7 @@ update msg model =
 
         Import encodedModel ->
             encodedModel
-                |> IE.decodeModel model.mode createLayer
+                |> IE.decodeModel model.mode createLayer Gui.gui
                 |> Maybe.withDefault model
                 |> rebuildAllFssLayersWith
 

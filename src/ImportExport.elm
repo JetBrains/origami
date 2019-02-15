@@ -27,6 +27,7 @@ import Layer.FSS as FSS
 import Product exposing (..)
 
 import Model as M
+import TronGui as GUI
 
 
 encodeIntPair : ( Int, Int ) -> E.Value
@@ -225,7 +226,7 @@ decodePortModel createLayer portModel =
     in
         { decodedModel
         | gui = case mode of
-            M.TronUi _ -> M.gui decodedModel |> Just
+            M.TronUi _ -> GUI.gui decodedModel |> Just
             _ -> Nothing
         }
 
@@ -439,12 +440,12 @@ layerModelDecoder kind =
             D.succeed M.NoModel
 
 
-modelDecoder : M.UiMode -> M.CreateLayer -> D.Decoder M.Model
-modelDecoder mode createLayer =
+modelDecoder : M.UiMode -> M.CreateLayer -> M.CreateGui -> D.Decoder M.Model
+modelDecoder mode createLayer createGui =
     let
         createModel background theta omega layers size origin mouse now productStr =
             let
-                initialModel = M.init mode [] createLayer
+                initialModel = M.init mode [] createLayer createGui
                 product = Product.decode productStr
             in
                 { initialModel
@@ -472,9 +473,9 @@ modelDecoder mode createLayer =
             |> D.andMap (D.field "product" D.string)
 
 
-decodeModel : M.UiMode -> M.CreateLayer -> String -> Maybe M.Model
-decodeModel mode createLayer modelStr =
-    D.decodeString (modelDecoder mode createLayer) modelStr
+decodeModel : M.UiMode -> M.CreateLayer -> M.CreateGui -> String -> Maybe M.Model
+decodeModel mode createLayer createGui modelStr =
+    D.decodeString (modelDecoder mode createLayer createGui) modelStr
         -- |> Debug.log "Decode Result: "
         |> Result.toMaybe
 
