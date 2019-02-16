@@ -33,6 +33,7 @@ import Controls
 import ImportExport as IE
 import Product exposing (Product)
 import Product as Product
+import Navigation as Nav
 
 import Layer.Lorenz as Lorenz
 import Layer.Fractal as Fractal
@@ -54,9 +55,27 @@ initialMode = Production
 
 init : {} -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model.init initialMode (initialLayers initialMode) createLayer Gui.gui
-    , resizeToViewport
-    )
+    let
+        model = Model.init
+                    initialMode
+                    (initialLayers initialMode)
+                    createLayer
+                    Gui.gui
+                |> Nav.applyUrl url
+        newFragment =
+                model |> Nav.prepareUrlFragment
+    in
+        ( model
+        , case url.fragment of
+            Just curFragment ->
+                if newFragment /= curFragment then
+                    Cmd.batch
+                        [ resizeToViewport
+                        , Nav.pushUrl key newFragment
+                        ]
+                else resizeToViewport
+            Nothing -> resizeToViewport
+        )
 
 
 initialLayers : UiMode -> List ( LayerKind, String, LayerModel )
@@ -1089,8 +1108,8 @@ main =
         , view = document
         , subscriptions = subscriptions
         , update = update
-        , onUrlChange = always NoOp
-        , onUrlRequest = always NoOp
+        , onUrlChange = Nav.onUrlChange
+        , onUrlRequest = Nav.onUrlRequest
         }
 
 
