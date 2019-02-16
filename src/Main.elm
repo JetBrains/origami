@@ -776,7 +776,7 @@ subscriptions model =
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , changeIris (\{value, layer} -> ChangeIris layer value)
         , changeMode (\modeStr -> ChangeMode <| IE.decodeMode modeStr)
-        , changeSizePreset
+        , resize
             (\{ presetCode, viewport } ->
                 case viewport of
                     ( vw, vh ) ->
@@ -1083,6 +1083,17 @@ main =
         }
 
 
+-- application :
+--     { init : flags -> Url -> Key -> ( model, Cmd msg )
+--     , view : model -> Document msg
+--     , update : msg -> model -> ( model, Cmd msg )
+--     , subscriptions : model -> Sub msg
+--     , onUrlRequest : UrlRequest -> msg
+--     , onUrlChange : Url -> msg
+--     }
+--     -> Program flags model msg
+
+
 -- INCOMING PORTS
 
 port bang : (() -> msg) -> Sub msg
@@ -1139,7 +1150,7 @@ port shiftColor : ({ value: FSS.ColorShiftPatch, layer: LayerIndex } -> msg) -> 
 
 port changeOpacity : ({ value: FSS.Opacity, layer: LayerIndex } -> msg) -> Sub msg
 
-port changeSizePreset :
+port resize :
     ({ presetCode: Maybe SizePresetCode
      , viewport: (Int, Int)
      } -> msg)

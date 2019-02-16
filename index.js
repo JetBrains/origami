@@ -249,7 +249,9 @@ setTimeout(() => {
     hiddenLink.download = 'jetbrains-art-v2.png';
 
     app.ports.requestFitToWindow.subscribe((_) => {
-        app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
+        app.ports.resize.send(
+            { presetCode: null, viewport: [ window.innerWidth, window.innerHeight ]}
+        );
     });
 
     app.ports.presetSizeChanged.subscribe((update) => {
@@ -315,15 +317,12 @@ setTimeout(() => {
                     { app.ports.changeHtmlBlend.send({ layer: index, value: blend }) }
                 , changeProduct : (id) =>
                     { app.ports.changeProduct.send(id) }
-                , setCustomSize : (value) => {
-                    const size = value.split(',');
-                    const width = parseInt(size[0]);
-                    const height = parseInt(size[1]);
-                    if (width > 0 && height > 0) {
-                        app.ports.setCustomSize.send([ width, height ]);
-                    } else {
-                        app.ports.setCustomSize.send([ window.innerWidth, window.innerHeight ]);
-                    }
+                , resize : (value) => {
+                    console.log('resize', value);
+                    app.ports.resize.send(
+                        { presetCode: (value != 'browser') ? value : null,
+                          viewport: [ window.innerWidth, window.innerHeight ]
+                        });
                 }
                 , savePng : () =>
                     { app.ports.savePng.send(null); }
@@ -335,6 +334,7 @@ setTimeout(() => {
                         if (sizeIndex < sizes.length) {
                             const [ width, height ] = sizes[sizeIndex];
                             // console.log('sending', width, height);
+                            // FIXME:
                             app.ports.setCustomSize.send([ width, height ]);
                             sizeIndex = sizeIndex + 1;
                             setTimeout(nextPng, batchPause);
