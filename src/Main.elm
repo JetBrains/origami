@@ -1,6 +1,8 @@
 port module Main exposing (main)
 
 import Browser
+import Url exposing (..)
+import Browser.Navigation as Nav
 
 import Array exposing (Array)
 import Task exposing (Task)
@@ -50,8 +52,8 @@ initialMode : UiMode
 initialMode = Production
 
 
-init : ( Model, Cmd Msg )
-init =
+init : {} -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
     ( Model.init initialMode (initialLayers initialMode) createLayer Gui.gui
     , resizeToViewport
     )
@@ -1073,13 +1075,22 @@ view model =
         ]
 
 
+document : Model -> Browser.Document Msg
+document model =
+    { title = "Elmsfeuer"
+    , body = [ view model ]
+    }
+
+
 main : Program {} Model Msg
 main =
-    Browser.element
-        { init = always init
-        , view = view
+    Browser.application
+        { init = init
+        , view = document
         , subscriptions = subscriptions
         , update = update
+        , onUrlChange = always NoOp
+        , onUrlRequest = always NoOp
         }
 
 
