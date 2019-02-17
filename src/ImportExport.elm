@@ -6,8 +6,6 @@ module ImportExport exposing
     , decodePortModel
     , encodeFss
     , fromFssPortModel
-    , encodeMode
-    , decodeMode
     )
 
 import Array
@@ -167,7 +165,7 @@ encodeModel_ : M.Model -> E.Value
 encodeModel_ model =
     E.object
         [ ( "background", E.string model.background )
-        , ( "mode", E.string <| encodeMode model.mode )
+        , ( "mode", E.string <| M.encodeMode model.mode )
         , ( "theta", E.float model.theta )
         , ( "omega", E.float model.omega )
         , ( "layers", E.list encodeLayerDef model.layers )
@@ -192,7 +190,7 @@ encodeModel model = model |> encodeModel_ |> E.encode 2
 encodePortModel : M.Model -> M.PortModel
 encodePortModel model =
     { background = model.background
-    , mode = encodeMode model.mode
+    , mode = M.encodeMode model.mode
     , now = model.now
     , theta = model.theta
     , omega = model.omega
@@ -208,7 +206,7 @@ encodePortModel model =
 decodePortModel : M.CreateLayer -> M.PortModel -> M.Model
 decodePortModel createLayer portModel =
     let
-        mode = decodeMode portModel.mode
+        mode = M.decodeMode portModel.mode
         initialModel = M.initEmpty mode
         decodedModel =
             { initialModel
@@ -512,27 +510,3 @@ fromFssPortModel pm =
     , mirror = pm.mirror
     --, palette = product |> getPalette
     }
-
-
-encodeMode : M.UiMode -> String
-encodeMode mode =
-    case mode of
-        M.Development -> "dev"
-        M.Production -> "prod"
-        M.Release -> "release"
-        M.Ads -> "ads"
-        M.TronUi innerMode -> "tron-" ++ encodeMode innerMode
-
-
-decodeMode : String -> M.UiMode
-decodeMode mode =
-    if String.startsWith "tron-" mode
-    then M.TronUi <| decodeMode <| String.dropLeft 5 mode
-    else
-        case mode of
-            "dev" -> M.Development
-            "prod" -> M.Production
-            "release" -> M.Release
-            "ads" -> M.Ads
-            "tron" -> M.TronUi M.Production
-            _ -> M.Production

@@ -2,7 +2,7 @@ module Model exposing
     ( init
     , initEmpty
     , Model
-    , UiMode(..)
+    , UiMode(..), encodeMode, decodeMode
     , Layer(..)
     , emptyLayer
     , LayerIndex
@@ -23,7 +23,7 @@ module Model exposing
     , Msg(..)
     , Constants
     , makeConstants
-    , ResizeRule(..)
+    , SizeRule(..), encodeSizeRule, decodeSizeRule
     , getSizePresets
     , getPresetLabel, getPresetSize
     , SizePresetCode, encodePreset, decodePreset
@@ -62,9 +62,10 @@ type alias CreateLayer = LayerKind -> LayerModel -> Layer
 type alias CreateGui = Model -> Gui.Model Msg
 
 
-type ResizeRule
+type SizeRule
     = FromPreset SizePreset
     | UseViewport ViewportSize
+    | Custom Int Int
 
 
 type Msg
@@ -72,7 +73,7 @@ type Msg
     | ChangeMode UiMode
     | Animate TimeDelta
     | GuiMessage (Gui.Msg Msg)
-    | Resize ResizeRule
+    | Resize SizeRule
     | RequestFitToWindow
     | Locate Pos
     | Rotate Float
@@ -558,3 +559,37 @@ makeConstants =
         }
 
 
+encodeMode : UiMode -> String
+encodeMode mode =
+    case mode of
+        Development -> "dev"
+        Production -> "prod"
+        Release -> "release"
+        Ads -> "ads"
+        TronUi innerMode -> "tron-" ++ encodeMode innerMode
+
+
+decodeMode : String -> UiMode
+decodeMode mode =
+    if String.startsWith "tron-" mode
+    then TronUi <| decodeMode <| String.dropLeft 5 mode
+    else
+        case mode of
+            "dev" -> Development
+            "prod" -> Production
+            "release" -> Release
+            "ads" -> Ads
+            "tron" -> TronUi Production
+            _ -> Production
+
+
+encodeSizeRule : SizeRule -> String
+encodeSizeRule rule =
+    case rule of
+        Custom w h -> "custom:" ++ String.fromInt w ++ "x" ++ String.fromInt h
+        FromPreset preset -> "preset:" ++ encodePreset preset
+        UseViewport (ViewportSize w h) -> "viewport:" ++ String.fromInt w ++ "x" ++ String.fromInt h
+
+
+decodeSizeRule : String -> SizeRule
+decodeSizeRule str = Custom 0 0

@@ -21,9 +21,9 @@ applyUrl url model =
 
 prepareUrlFragment : Model -> String
 prepareUrlFragment model =
-    let
-        _ = Debug.log "prepareUrlFragment" ""
-    in ""
+    "#" ++ encodeMode model.mode ++ "/"
+        ++ encodeSizeRule (case model.size of (w, h) -> Custom w h)
+        |> Debug.log "prepareUrlFragment"
 
 
 onUrlChange : Url -> Msg

@@ -66,15 +66,18 @@ init flags url key =
                 model |> Nav.prepareUrlFragment
     in
         ( model
-        , case url.fragment of
+         -- FIXME: `resizeToViewport` only when size wasn't specified in Url
+        , Cmd.batch <| case url.fragment of
             Just curFragment ->
                 if newFragment /= curFragment then
-                    Cmd.batch
-                        [ resizeToViewport
-                        , Nav.pushUrl key newFragment
-                        ]
-                else resizeToViewport
-            Nothing -> resizeToViewport
+                    [ resizeToViewport
+                    , Nav.pushUrl key newFragment
+                    ]
+                else [ resizeToViewport ]
+            Nothing ->
+                [ resizeToViewport
+                , Nav.pushUrl key newFragment
+                ]
         )
 
 
@@ -214,6 +217,7 @@ update msg model =
                     case rule of
                         FromPreset preset -> getPresetSize preset
                         UseViewport (ViewportSize w h) -> ( w, h )
+                        Custom w h -> ( w, h )
                 newModel =
                     { model
                     | size = adaptSize ( width, height )
@@ -796,7 +800,7 @@ subscriptions model =
         , changeOpacity (\{value, layer} -> ChangeOpacity layer value)
         , changeVignette (\{value, layer} -> ChangeVignette layer value)
         , changeIris (\{value, layer} -> ChangeIris layer value)
-        , changeMode (\modeStr -> ChangeMode <| IE.decodeMode modeStr)
+        , changeMode (\modeStr -> ChangeMode <| decodeMode modeStr)
         , resize
             (\{ presetCode, viewport } ->
                 case viewport of
