@@ -254,7 +254,7 @@ setTimeout(() => {
         );
     });
 
-    app.ports.presetSizeChanged.subscribe((update) => {
+    app.ports.onResize.subscribe((update) => {
         if (savingBatch) {
             // console.log('saving ', size);
             savePng(hiddenLink, update);

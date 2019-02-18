@@ -24,8 +24,8 @@ module Model exposing
     , Constants
     , makeConstants
     , SizeRule(..), encodeSizeRule, decodeSizeRule
+    , getPresetLabel, getPresetSize, getRuleSize, getRuleSizeOrZeroes
     , getSizePresets
-    , getPresetLabel, getPresetSize
     , SizePresetCode, encodePreset, decodePreset
     )
 
@@ -66,6 +66,7 @@ type SizeRule
     = FromPreset SizePreset
     | UseViewport ViewportSize
     | Custom Int Int
+    | Dimensionless
 
 
 type Msg
@@ -212,7 +213,7 @@ type alias Model =
     , theta : Float
     , omega : Float
     , layers : List LayerDef
-    , size : Size
+    , size : SizeRule
     , origin : Pos
     , mouse : Pos
     , now : TimeNow
@@ -242,6 +243,7 @@ type alias PortModel =
     , now : Float
     , origin : (Int, Int)
     , size : (Int, Int)
+    , sizeRule : Maybe String
     , theta : Float
     , omega : Float
     , product : String
@@ -316,7 +318,7 @@ initEmpty mode =
     , theta = 0.1
     , omega = 0.0
     , layers = []
-    , size = ( 1200, 1200 )
+    , size = Dimensionless
     , origin = ( 0, 0 )
     , mouse = ( 0, 0 )
     , now = 0.0
@@ -404,6 +406,20 @@ getSizePresets mode =
             , ( 1440, 900 )
             , ( 1366, 768 )
             ] |> List.map (\(w, h) -> Wallpaper w h)
+
+
+getRuleSize : SizeRule -> Maybe ( Int, Int )
+getRuleSize rule =
+    case rule of
+        FromPreset preset -> Just <| getPresetSize preset
+        UseViewport (ViewportSize w h) -> Just (w, h)
+        Custom w h -> Just (w, h)
+        Dimensionless -> Nothing
+
+
+getRuleSizeOrZeroes : SizeRule -> ( Int, Int )
+getRuleSizeOrZeroes rule =
+    getRuleSize rule |> Maybe.withDefault (0, 0)
 
 
 getPresetSize : SizePreset -> ( Int, Int )
@@ -589,6 +605,7 @@ encodeSizeRule rule =
         Custom w h -> "custom:" ++ String.fromInt w ++ "x" ++ String.fromInt h
         FromPreset preset -> "preset:" ++ encodePreset preset
         UseViewport (ViewportSize w h) -> "viewport:" ++ String.fromInt w ++ "x" ++ String.fromInt h
+        Dimensionless -> "dimensionless"
 
 
 decodeSizeRule : String -> SizeRule

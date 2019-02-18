@@ -213,19 +213,15 @@ update msg model =
 
         Resize rule ->
             let
-                ( width, height ) =
-                    case rule of
-                        FromPreset preset -> getPresetSize preset
-                        UseViewport (ViewportSize w h) -> ( w, h )
-                        Custom w h -> ( w, h )
+                ( width, height ) = getRuleSizeOrZeroes model.size
                 newModel =
                     { model
-                    | size = adaptSize ( width, height )
+                    | size = rule
                     , origin = getOrigin ( width, height )
                     }
             in
                 ( newModel
-                , newModel |> getSizeUpdate |> presetSizeChanged
+                , newModel |> getSizeUpdate |> onResize
                 )
 
         RequestFitToWindow ->
@@ -503,7 +499,7 @@ update msg model =
 
 getSizeUpdate : Model -> SizeUpdate
 getSizeUpdate model =
-    { size = model.size
+    { size = encodeSizeRule model.size
     , product = Product.encode model.product
     , coverSize = Product.getCoverTextSize model.product
     , background = model.background
@@ -760,12 +756,14 @@ subscriptions model =
         , Browser.onAnimationFrameDelta Animate
         , Browser.onResize <| \w h -> Resize <| UseViewport <| ViewportSize w h
         -- , clicks (\pos ->
-        --     toLocal model.size pos
+        --     fits model.size pos
         --         |> Maybe.map (\pos -> Pause)
         --         |> Maybe.withDefault NoOp
         --   )
         , Sub.map (\{ x, y } ->
-                toLocal model.size (x, y)
+                (x, y)
+                    -- |> fits (getRuleSizeOrZeroes model.size)
+                    |> ensurePositive
                     |> Maybe.map (\localPos -> Locate localPos)
                     |> Maybe.withDefault NoOp
             )
@@ -859,11 +857,16 @@ getOrigin (width, height) =
     )
 
 
-toLocal : (Int, Int) -> Pos -> Maybe Pos
-toLocal (width, height) (x, y) =
-        if (x <= width) && (y <= height)
-        then Just (x, y) else Nothing
+ensureFits : (Int, Int) -> Pos -> Maybe Pos
+ensureFits (width, height) (x, y) =
+    if (x <= width) && (y <= height)
+    then Just (x, y) else Nothing
 
+
+ensurePositive : Pos -> Maybe Pos
+ensurePositive (x, y) =
+    if (x > 0) && (y > 0)
+    then Just (x, y) else Nothing
 
 
 mapControls : Model -> Controls.Msg -> Msg
@@ -915,7 +918,12 @@ layerToHtml model index { layer } =
         HtmlLayer htmlLayer htmlBlend ->
             case htmlLayer of
                 CoverLayer ->
-                    Cover.view model.mode model.product model.size model.origin htmlBlend
+                    Cover.view
+                        model.mode
+                        model.product
+                        (getRuleSizeOrZeroes model.size)
+                        model.origin
+                        htmlBlend
                 CanvasLayer ->
                     Canvas.view
                 NoContent -> div [] []
@@ -1026,7 +1034,11 @@ resizeToViewport =
 
 getViewportState : Model -> Viewport.State
 getViewportState { paused, size, origin, theta } =
-    { paused = paused, size = size, origin = origin, theta = theta }
+    { paused = paused
+    , size = getRuleSizeOrZeroes size
+    , origin = origin
+    , theta = theta
+    }
 
 
 view : Model -> Html Msg
@@ -1076,19 +1088,20 @@ view model =
                 , WebGL.clearColor 0.0 0.0 0.0 1.0
                 -- , WebGL.depth 0.5
                 ]
-                [ H.class "webgl-layers"
-                , width (Tuple.first model.size)
-                , height (Tuple.second model.size)
-                , style "display" "block"
+                ( let ( w, h ) = getRuleSizeOrZeroes model.size in
+                    [ H.class "webgl-layers"
+                    , width w, height h
+                    , style "display" "block"
                     --, ( "background-color", "#161616" )
---                    ,   ( "transform", "translate("
---                        ++ (Tuple.first model.origin |> toString)
---                        ++ "px, "
---                        ++ (Tuple.second model.origin |> toString)
---                        ++ "px)"
---                        )
-                , Events.onClick TriggerPause
-                ]
+                    --, ( "transform", "translate("
+                    --                        ++ (Tuple.first model.origin |> toString)
+                    --                        ++ "px, "
+                    --                        ++ (Tuple.second model.origin |> toString)
+                    --                        ++ "px)"
+                    --   )
+                    , Events.onClick TriggerPause
+                    ]
+                )
         -- , mergeHtmlLayers model |> div [ H.class "html-layers"]
         , model.gui
             |> Maybe.map Gui.view
@@ -1210,7 +1223,7 @@ port changeHtmlBlend :
 -- OUTGOING PORTS
 
 type alias SizeUpdate =
-    { size: Size
+    { size: String
     , product: String
     , coverSize: Size
     , background: String
@@ -1224,7 +1237,7 @@ port requestFssRebuild :
     , value: FSS.PortModel
     } -> Cmd msg
 
-port presetSizeChanged : SizeUpdate -> Cmd msg
+port onResize : SizeUpdate -> Cmd msg
 
 port export_ : String -> Cmd msg
 

@@ -171,7 +171,10 @@ encodeModel_ model =
         , ( "layers", E.list encodeLayerDef model.layers )
         -- , ( "layers", E.list (List.filterMap
         --         (\layer -> Maybe.map encodeLayer layer) model.layers) )
-        , ( "size", encodeIntPair model.size )
+        -- for b/w compatibility, we also encode size as numbers, but sizeRule is what should matter
+        -- when it is defined/known on import
+        , ( "size", encodeIntPair <| M.getRuleSizeOrZeroes model.size )
+        , ( "sizeRule", E.string <| M.encodeSizeRule model.size )
         , ( "origin", encodeIntPair model.origin )
         , ( "mouse", encodeIntPair model.mouse )
         , ( "now", E.float model.now )
@@ -195,7 +198,8 @@ encodePortModel model =
     , theta = model.theta
     , omega = model.omega
     , layers = List.map encodePortLayer model.layers
-    , size = model.size
+    , size = M.getRuleSize model.size |> Maybe.withDefault ( -1, -1 )
+    , sizeRule = M.encodeSizeRule model.size |> Just
     , origin = model.origin
     , mouse = model.mouse
     , palette = model.product |> getPalette
@@ -216,7 +220,11 @@ decodePortModel createLayer portModel =
             , theta = portModel.theta
             , omega = portModel.omega
             , layers = List.map (decodePortLayer createLayer) portModel.layers
-            , size = Debug.log "decodeSize" <| portModel.size
+            , size =
+                Debug.log "decodeSize" <| case portModel.sizeRule of
+                    Just sizeRuleStr -> M.decodeSizeRule sizeRuleStr
+                    Nothing -> case portModel.size of
+                        ( w, h ) -> M.Custom w h
             , origin = portModel.origin
             , mouse = portModel.mouse
             , product = portModel.product |> Product.decode
@@ -441,7 +449,17 @@ layerModelDecoder kind =
 modelDecoder : M.UiMode -> M.CreateLayer -> M.CreateGui -> D.Decoder M.Model
 modelDecoder mode createLayer createGui =
     let
-        createModel background theta omega layers size origin mouse now productStr =
+        createModel
+            background
+            theta
+            omega
+            layers
+            maybeSize
+            maybeSizeRule
+            origin
+            mouse
+            now
+            productStr =
             let
                 initialModel = M.init mode [] createLayer createGui
                 product = Product.decode productStr
@@ -451,7 +469,11 @@ modelDecoder mode createLayer createGui =
                 , theta = theta
                 , omega = omega
                 , layers = layers
-                , size = size
+                , size = case maybeSizeRule of
+                    Just sizeRuleStr -> M.decodeSizeRule sizeRuleStr
+                    Nothing -> case maybeSize of
+                        Just (w, h) -> M.Custom w h
+                        Nothing -> M.Dimensionless
                 , origin = origin
                 , mouse = mouse
                 , now = now
@@ -464,7 +486,8 @@ modelDecoder mode createLayer createGui =
             |> D.andMap (D.field "theta" D.float)
             |> D.andMap (D.field "omega" D.float)
             |> D.andMap (D.field "layers" (layerDefDecoder createLayer |> D.list))
-            |> D.andMap (D.field "size" intPairDecoder)
+            |> D.andMap (D.maybe (D.field "size" intPairDecoder))
+            |> D.andMap (D.maybe (D.field "sizeRule" D.string))
             |> D.andMap (D.field "origin" intPairDecoder)
             |> D.andMap (D.field "mouse" intPairDecoder)
             |> D.andMap (D.field "now" D.float)

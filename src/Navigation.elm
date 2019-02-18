@@ -22,7 +22,7 @@ applyUrl url model =
 prepareUrlFragment : Model -> String
 prepareUrlFragment model =
     "#" ++ encodeMode model.mode ++ "/"
-        ++ encodeSizeRule (case model.size of (w, h) -> Custom w h)
+        ++ encodeSizeRule model.size
         |> Debug.log "prepareUrlFragment"
 
 
