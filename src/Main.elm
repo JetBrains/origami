@@ -74,13 +74,15 @@ init flags url key =
             _ ->
                 let
                     newFragment = model |> Nav.prepareUrlFragment
+                        |> Debug.log "newFragment"
                 in
-                    case url.fragment of
-                        Just curFragment ->
-                            if newFragment /= curFragment then
-                                Nav.pushUrl key <| Debug.log "pushFragment" newFragment
-                            else Cmd.none
-                        Nothing -> Cmd.none
+                    Cmd.none
+                    -- case url.fragment of
+                    --     Just curFragment ->
+                    --         if newFragment /= curFragment then
+                    --             Nav.pushUrl key <| Debug.log "pushFragment" ("#" ++ newFragment)
+                    --         else Cmd.none
+                    --     Nothing -> Cmd.none
         )
 
 
@@ -1084,27 +1086,31 @@ view model =
                 , div [ H.class "spacebar_info" ] [ text "spacebar to hide controls, click to pause" ]
                 ]
             ) else div [] []
-        , mergeWebGLLayers model |>
-            WebGL.toHtmlWith
-                [ WebGL.antialias
-                , WebGL.alpha True
-                , WebGL.clearColor 0.0 0.0 0.0 1.0
-                -- , WebGL.depth 0.5
-                ]
-                ( let ( w, h ) = getRuleSizeOrZeroes model.size in
-                    [ H.class "webgl-layers"
-                    , width w, height h
-                    , style "display" "block"
-                    --, ( "background-color", "#161616" )
-                    --, ( "transform", "translate("
-                    --                        ++ (Tuple.first model.origin |> toString)
-                    --                        ++ "px, "
-                    --                        ++ (Tuple.second model.origin |> toString)
-                    --                        ++ "px)"
-                    --   )
-                    , Events.onClick TriggerPause
-                    ]
-                )
+        --, case Debug.log "ruleSize" <| getRuleSize <| Debug.log "rule" model.size of
+        , case getRuleSize model.size of
+            Just ( w, h ) ->
+                if ( w > 0 ) && ( h > 0) then
+                    mergeWebGLLayers model |>
+                        WebGL.toHtmlWith
+                            [ WebGL.antialias
+                            , WebGL.alpha True
+                            , WebGL.clearColor 0.0 0.0 0.0 1.0
+                            -- , WebGL.depth 0.5
+                            ]
+                            [ H.class "webgl-layers"
+                            , width w, height h
+                            , style "display" "block"
+                            --, ( "background-color", "#161616" )
+                            --, ( "transform", "translate("
+                            --                        ++ (Tuple.first model.origin |> toString)
+                            --                        ++ "px, "
+                            --                        ++ (Tuple.second model.origin |> toString)
+                            --                        ++ "px)"
+                            --   )
+                            , Events.onClick TriggerPause
+                            ]
+                else div [] []
+            Nothing -> div [] []
         -- , mergeHtmlLayers model |> div [ H.class "html-layers"]
         , model.gui
             |> Maybe.map Gui.view
