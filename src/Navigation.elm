@@ -16,7 +16,10 @@ applyUrl : Url -> Model -> Model
 applyUrl url model =
     let
         _ = Debug.log "applyUrl" url
-    in model
+    in case url.fragment of
+        Just fragment -> model
+        Nothing ->
+            { model | size = Dimensionless }
 
 
 prepareUrlFragment : Model -> String

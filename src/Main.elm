@@ -62,22 +62,25 @@ init flags url key =
                     createLayer
                     Gui.gui
                 |> Nav.applyUrl url
-        newFragment =
-                model |> Nav.prepareUrlFragment
     in
         ( model
-         -- FIXME: `resizeToViewport` only when size wasn't specified in Url
-        , Cmd.batch <| case url.fragment of
-            Just curFragment ->
-                if newFragment /= curFragment then
-                    [ resizeToViewport
-                    , Nav.pushUrl key newFragment
-                    ]
-                else [ resizeToViewport ]
-            Nothing ->
-                [ resizeToViewport
-                , Nav.pushUrl key newFragment
-                ]
+        , case model.size of
+            Dimensionless ->
+                resizeToViewport
+                -- Cmd.batch
+                --     [ resizeToViewport
+                --     , Nav.pushUrl key "#viewport"
+                --     ]
+            _ ->
+                let
+                    newFragment = model |> Nav.prepareUrlFragment
+                in
+                    case url.fragment of
+                        Just curFragment ->
+                            if newFragment /= curFragment then
+                                Nav.pushUrl key <| Debug.log "pushFragment" newFragment
+                            else Cmd.none
+                        Nothing -> Cmd.none
         )
 
 
