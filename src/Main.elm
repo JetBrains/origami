@@ -126,6 +126,21 @@ update msg model =
             , resizeToViewport
             )
 
+        ChangeModeAndResize mode rule ->
+            let
+                ( width, height ) = getRuleSizeOrZeroes rule
+                newModel =
+                    Model.init mode (initialLayers mode) createLayer Gui.gui
+                newModelWithSize =
+                    { model
+                    | size = rule
+                    , origin = getOrigin ( width, height )
+                    }
+            in
+                ( newModelWithSize
+                , newModelWithSize |> getSizeUpdate |> onResize
+                )
+
         GuiMessage guiMsg ->
             case model.gui of
                 Just gui ->
@@ -218,7 +233,7 @@ update msg model =
 
         Resize rule ->
             let
-                ( width, height ) = getRuleSizeOrZeroes model.size
+                ( width, height ) = getRuleSizeOrZeroes rule
                 newModel =
                     { model
                     | size = rule
