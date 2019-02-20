@@ -18,12 +18,13 @@ require('flat-surface-shader/source/Math');
 //}
 
 function buildFSS(model, fss, source) {
+    console.log(model.size, fss.faces);
     var palette = model.palette;
 
     var scene = new FSS.Scene();
 
     var geometry = new FSS.Plane(model.size[0], model.size[1],
-                                 fss.faces[0], fss.faces[1]);
+                                 fss.faces.x, fss.faces.y);
     //var material = new FSS.Material('#00ffff', '#ffff00');
     var material = new FSS.Material(palette[0], palette[1]);
     var mesh = new FSS.Mesh(geometry, material);

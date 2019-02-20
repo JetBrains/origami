@@ -43,10 +43,9 @@ encodeIntPair ( v1, v2 ) =
 
 encodeXY : (a -> E.Value) -> { x: a, y: a } -> E.Value
 encodeXY f { x, y } =
-    E.list
-        f
-        [ x
-        , y
+    E.object
+        [ ( "x", f x )
+        , ( "y", f y )
         ]
 
 

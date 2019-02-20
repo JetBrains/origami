@@ -469,6 +469,7 @@ uniforms
 uniforms now mouse productId v model meshSize ( lights, speed ) layerIndex =
     let
         adaptedLights = lights |> adaptLights meshSize speed
+        --(meshWidth, meshHeight) = Debug.log "meshSize" meshSize
         (meshWidth, meshHeight) = meshSize
         width = Vec2.getX v.size
         height = Vec2.getY v.size
