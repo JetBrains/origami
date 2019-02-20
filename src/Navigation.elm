@@ -58,9 +58,7 @@ fragmentToMessage fragment =
 
 applyUrl : Url -> Model -> Model
 applyUrl url model =
-    let
-        _ = Debug.log "applyUrl" url
-    in case url.fragment of
+    case url.fragment of
         Just fragment -> model |> applyFragment fragment
         Nothing ->
             { model | size = Dimensionless }
@@ -74,19 +72,13 @@ prepareUrlFragment model =
 
 onUrlChange : Url -> Msg
 onUrlChange url =
-    let
-        _ = Debug.log "onUrlChange" url
-    in
-        case url.fragment of
-            Just fragment -> fragmentToMessage fragment
-            Nothing -> NoOp
+    case url.fragment of
+        Just fragment -> fragmentToMessage fragment
+        Nothing -> NoOp
 
 
 onUrlRequest : Browser.UrlRequest -> Msg
-onUrlRequest req =
-    let
-        _ = Debug.log "onUrlRequest" req
-    in NoOp
+onUrlRequest req = NoOp
 
 
 decodeFragment : String -> FragmentData

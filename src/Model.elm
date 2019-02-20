@@ -615,9 +615,9 @@ tryDecodingMode mode =
 encodeSizeRule : SizeRule -> String
 encodeSizeRule rule =
     case rule of
-        Custom w h -> "custom/" ++ String.fromInt w ++ ":" ++ String.fromInt h
-        FromPreset preset -> "preset/" ++ encodePreset preset
-        UseViewport (ViewportSize w h) -> "viewport/" ++ String.fromInt w ++ ":" ++ String.fromInt h
+        Custom w h -> "custom|" ++ String.fromInt w ++ ":" ++ String.fromInt h
+        FromPreset preset -> "preset|" ++ encodePreset preset
+        UseViewport (ViewportSize w h) -> "viewport|" ++ String.fromInt w ++ ":" ++ String.fromInt h
         Dimensionless -> "dimensionless"
 
 
@@ -631,7 +631,7 @@ decodeSizeRule str =
                         ( Just w, Just h ) -> f w h
                         _ -> f defaultWidth defaultHeight
                 _ -> f defaultWidth defaultHeight
-    in case String.split "/" str of
+    in case String.split "|" str of
         "custom"::w_and_h::_ ->
             decodeSize Custom w_and_h -1 -1
         "preset"::presetStr::_ ->

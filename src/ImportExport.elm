@@ -221,7 +221,7 @@ decodePortModel createLayer portModel =
             , omega = portModel.omega
             , layers = List.map (decodePortLayer createLayer) portModel.layers
             , size =
-                Debug.log "decodeSize" <| case portModel.sizeRule of
+                case portModel.sizeRule of
                     Just sizeRuleStr -> M.decodeSizeRule sizeRuleStr
                     Nothing -> case portModel.size of
                         ( w, h ) -> M.Custom w h

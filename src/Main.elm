@@ -54,7 +54,7 @@ initialMode = Production
 
 
 init : {} -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init flags url key =
+init flags url _ =
     let
         model = Model.init
                     initialMode
@@ -67,22 +67,8 @@ init flags url key =
         , case model.size of
             Dimensionless ->
                 resizeToViewport
-                -- Cmd.batch
-                --     [ resizeToViewport
-                --     , Nav.pushUrl key "#viewport"
-                --     ]
             _ ->
-                let
-                    newFragment = model |> Nav.prepareUrlFragment
-                        |> Debug.log "newFragment"
-                in
-                    Cmd.none
-                    -- case url.fragment of
-                    --     Just curFragment ->
-                    --         if newFragment /= curFragment then
-                    --             Nav.pushUrl key <| Debug.log "pushFragment" ("#" ++ newFragment)
-                    --         else Cmd.none
-                    --     Nothing -> Cmd.none
+                rebuildAllFssLayersWith model
         )
 
 
@@ -138,7 +124,12 @@ update msg model =
                     }
             in
                 ( newModelWithSize
-                , newModelWithSize |> getSizeUpdate |> onResize
+                , Cmd.batch
+                    [ newModelWithSize |> getSizeUpdate |> onResize
+                    , if rule /= Dimensionless
+                        then rebuildAllFssLayersWith newModelWithSize
+                        else resizeToViewport
+                    ]
                 )
 
         GuiMessage guiMsg ->
@@ -191,10 +182,15 @@ update msg model =
             )
 
         Import encodedModel ->
-            encodedModel
-                |> IE.decodeModel model.mode createLayer Gui.gui
-                |> Maybe.withDefault model
-                |> rebuildAllFssLayersWith
+            let
+                decodedModel =
+                    encodedModel
+                        |> IE.decodeModel model.mode createLayer Gui.gui
+                        |> Maybe.withDefault model
+            in
+                ( decodedModel
+                , rebuildAllFssLayersWith decodedModel
+                )
 
         Export ->
             ( model
@@ -234,14 +230,17 @@ update msg model =
         Resize rule ->
             let
                 ( width, height ) = getRuleSizeOrZeroes rule
-                newModel =
+                newModelWithSize =
                     { model
                     | size = rule
                     , origin = getOrigin ( width, height )
                     }
             in
-                ( newModel
-                , newModel |> getSizeUpdate |> onResize
+                ( newModelWithSize
+                , Cmd.batch
+                    [ newModelWithSize |> getSizeUpdate |> onResize
+                    , rebuildAllFssLayersWith newModelWithSize
+                    ]
                 )
 
         RequestFitToWindow ->
@@ -315,8 +314,8 @@ update msg model =
             )
 
         ChangeProduct product ->
-            { model | product = product }
-            |> rebuildAllFssLayersWith
+            let modelWithProduct = { model | product = product }
+            in ( modelWithProduct, rebuildAllFssLayersWith model )
 
         Configure index layerModel ->
             ( model |> updateLayer index
@@ -511,8 +510,8 @@ update msg model =
             )
 
         ApplyRandomizer portModel ->
-            (IE.decodePortModel createLayer portModel)
-                |> rebuildAllFssLayersWith
+            let decodedPortModel = IE.decodePortModel createLayer portModel
+            in ( decodedPortModel, rebuildAllFssLayersWith decodedPortModel )
 
         NoOp -> ( model, Cmd.none )
 
@@ -569,7 +568,7 @@ updateAndRebuildFssWith index f curModel =
         )
 
 
-rebuildAllFssLayersWith : Model -> ( Model, Cmd Msg )
+rebuildAllFssLayersWith : Model -> Cmd Msg
 rebuildAllFssLayersWith model =
     let
         isLayerFss layerDef =
@@ -583,11 +582,9 @@ rebuildAllFssLayersWith model =
                 , value = IE.encodeFss fssModel model.product
                 }
     in
-        ( model
-        , List.filterMap isLayerFss model.layers
+        List.filterMap isLayerFss model.layers
           |> List.indexedMap rebuildPotentialFss
           |> Cmd.batch
-        )
 
 
 getBlendForPort : Layer -> PortBlend
@@ -911,7 +908,10 @@ isHtmlLayer layer =
 
 mergeWebGLLayers : Model -> List WebGL.Entity
 mergeWebGLLayers model =
-    let viewport = getViewportState model |> Viewport.find
+    let
+        viewport =
+            getViewportState model
+                |> Viewport.find
     in
         model.layers
             |> List.filter (.layer >> isWebGLLayer)
@@ -1102,30 +1102,23 @@ view model =
                 ]
             ) else div [] []
         --, case Debug.log "ruleSize" <| getRuleSize <| Debug.log "rule" model.size of
-        , case getRuleSize model.size of
-            Just ( w, h ) ->
-                if ( w > 0 ) && ( h > 0) then
-                    mergeWebGLLayers model |>
-                        WebGL.toHtmlWith
-                            [ WebGL.antialias
-                            , WebGL.alpha True
-                            , WebGL.clearColor 0.0 0.0 0.0 1.0
-                            -- , WebGL.depth 0.5
-                            ]
-                            [ H.class "webgl-layers"
-                            , width w, height h
-                            , style "display" "block"
-                            --, ( "background-color", "#161616" )
-                            --, ( "transform", "translate("
-                            --                        ++ (Tuple.first model.origin |> toString)
-                            --                        ++ "px, "
-                            --                        ++ (Tuple.second model.origin |> toString)
-                            --                        ++ "px)"
-                            --   )
-                            , Events.onClick TriggerPause
-                            ]
-                else div [] []
-            Nothing -> div [] []
+        , let
+            ( w, h ) =
+                getRuleSize model.size |> Maybe.withDefault ( -1, -1 )
+            visible = w > 0 && h > 0
+        in
+            mergeWebGLLayers model |>
+                WebGL.toHtmlWith
+                    [ WebGL.antialias
+                    , WebGL.alpha True
+                    , WebGL.clearColor 0.0 0.0 0.0 1.0
+                    -- , WebGL.depth 0.5
+                    ]
+                    [ H.class "webgl-layers"
+                    , width w, height h
+                    , style "display" (if visible then "block" else "none")
+                    , Events.onClick TriggerPause
+                    ]
         -- , mergeHtmlLayers model |> div [ H.class "html-layers"]
         , model.gui
             |> Maybe.map Gui.view
