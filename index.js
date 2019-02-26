@@ -225,26 +225,6 @@ prepareImportExport();
 // document.addEventListener('DOMContentLoaded', () => {
 setTimeout(() => {
 
-    const url_string = window.location.href;
-    const url = new URL(url_string);
-    let mode = '';
-    if (window.location.hash) {
-        mode = window.location.hash.substring(1);
-    }
-
-    if (mode) {
-        app.ports.changeMode.send(mode);
-    }
-
-    // if ("onhashchange" in window) {
-    //     window.onhashchange = function () {
-    //         const mode = window.location.hash.substring(1);
-    //         if (mode) {
-    //             app.ports.changeMode.send(mode);
-    //         }
-    //    }
-    // }
-
     const hiddenLink = document.createElement('a');
     hiddenLink.download = 'jetbrains-art-v2.png';
 
@@ -254,7 +234,7 @@ setTimeout(() => {
         );
     });
 
-    app.ports.onResize.subscribe((update) => {
+    app.ports.pushUpdate.subscribe((update) => {
         if (savingBatch) {
             // console.log('saving ', size);
             savePng(hiddenLink, update);

@@ -60,8 +60,7 @@ applyUrl : Url -> Model -> Model
 applyUrl url model =
     case url.fragment of
         Just fragment -> model |> applyFragment fragment
-        Nothing ->
-            { model | size = Dimensionless }
+        Nothing -> model
 
 
 prepareUrlFragment : Model -> Fragment
@@ -83,7 +82,7 @@ onUrlRequest req = NoOp
 
 decodeFragment : String -> FragmentData
 decodeFragment str =
-    case String.split "/" str of
+    Debug.log "apply size" <| case String.split "/" str of
         modeStr::ruleStr::_ -> ModeAndSizeRule (decodeMode modeStr) (decodeSizeRule ruleStr)
         modeOrRule::_ ->
             case tryDecodingMode modeOrRule of

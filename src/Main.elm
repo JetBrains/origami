@@ -108,9 +108,15 @@ update msg model =
             )
 
         ChangeMode mode ->
-            ( Model.init mode (initialLayers mode) createLayer Gui.gui
-            , resizeToViewport
-            )
+            let
+                newModel = Model.init mode (initialLayers mode) createLayer Gui.gui
+            in
+                ( newModel
+                , Cmd.batch
+                    [ newModel |> getPushUpdate |> pushUpdate
+                    , resizeToViewport
+                    ]
+                )
 
         ChangeModeAndResize mode rule ->
             let
@@ -125,7 +131,7 @@ update msg model =
             in
                 ( newModelWithSize
                 , Cmd.batch
-                    [ newModelWithSize |> getSizeUpdate |> onResize
+                    [ newModelWithSize |> getPushUpdate |> pushUpdate
                     , if rule /= Dimensionless
                         then rebuildAllFssLayersWith newModelWithSize
                         else resizeToViewport
@@ -238,7 +244,7 @@ update msg model =
             in
                 ( newModelWithSize
                 , Cmd.batch
-                    [ newModelWithSize |> getSizeUpdate |> onResize
+                    [ newModelWithSize |> getPushUpdate |> pushUpdate
                     , rebuildAllFssLayersWith newModelWithSize
                     ]
                 )
@@ -501,7 +507,7 @@ update msg model =
 
         SavePng ->
             ( model
-            , model |> getSizeUpdate |> triggerSavePng
+            , model |> getPushUpdate |> triggerSavePng
             )
 
         Randomize ->
@@ -516,12 +522,14 @@ update msg model =
         NoOp -> ( model, Cmd.none )
 
 
-getSizeUpdate : Model -> SizeUpdate
-getSizeUpdate model =
+getPushUpdate : Model -> PushUpdate
+getPushUpdate model =
     { size = encodeSizeRule model.size
     , product = Product.encode model.product
     , coverSize = Product.getCoverTextSize model.product
     , background = model.background
+    , sizeConstant = -1
+    , mode = encodeMode model.mode
     }
 
 
@@ -1239,11 +1247,13 @@ port changeHtmlBlend :
 
 -- OUTGOING PORTS
 
-type alias SizeUpdate =
+type alias PushUpdate =
     { size: String
     , product: String
     , coverSize: Size
     , background: String
+    , sizeConstant: Int
+    , mode: String
     }
 
 port startGui : ( PortModel, Constants ) -> Cmd msg
@@ -1254,13 +1264,13 @@ port requestFssRebuild :
     , value: FSS.PortModel
     } -> Cmd msg
 
-port onResize : SizeUpdate -> Cmd msg
+port pushUpdate : PushUpdate -> Cmd msg
 
 port export_ : String -> Cmd msg
 
 port exportZip_ : String -> Cmd msg
 
-port triggerSavePng : SizeUpdate -> Cmd msg -- FIXME: Remove, use Browser.DOM task instead
+port triggerSavePng : PushUpdate -> Cmd msg -- FIXME: Remove, use Browser.DOM task instead
 
 port requestRandomize : PortModel -> Cmd msg
 
