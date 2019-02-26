@@ -339,6 +339,10 @@ function start(document, model, constants, funcs) {
         }
       });
 
+    switchMode = (mode) => {
+
+    };
+
 
     // const textBlend = gui.add(config, 'textBlend', HTML_BLENDS);
     // textBlend.onFinishChange((value) => {
@@ -356,6 +360,8 @@ function start(document, model, constants, funcs) {
     // layers.map((layer, index) => {
     //     gui.addFolder()
     // });
+
+    return { config, update };
 }
 
 module.exports = start;

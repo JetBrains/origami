@@ -275,7 +275,7 @@ setTimeout(() => {
 
         if (!model.mode || (model.mode.substring(0, 4) != 'tron')) {
 
-            startGui(
+            const { config, update } = startGui(
                 document,
                 model,
                 constants,
@@ -296,7 +296,7 @@ setTimeout(() => {
                 , changeHtmlBlend : (index, blend) =>
                     { app.ports.changeHtmlBlend.send({ layer: index, value: blend }) }
                 , changeProduct : (id) =>
-                    { app.ports.changeProduct.send(id) }
+                    { console.log('change product to', id); app.ports.changeProduct.send(id) }
                 , resize : (value) => {
                     console.log('resize', value);
                     app.ports.resize.send(
@@ -345,6 +345,13 @@ setTimeout(() => {
                 , applyRandomizer : value =>
                     { app.ports.applyRandomizer.send(prepareModelForImport(value)); }
                 });
+
+            app.ports.pushUpdate.subscribe((data) => {
+                // console.log('push update received', data);
+                config.product = data.product;
+                // TODO: apply the mode change in GUI and so change the size selection
+                update();
+            });
 
         }
 

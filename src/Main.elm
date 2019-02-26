@@ -10,7 +10,7 @@ import Task exposing (Task)
 import Browser.Dom as Browser
 import Browser.Events as Browser
 
-import Html exposing (Html, text, div, span, input)
+import Html exposing (Html, text, div, span, input, canvas)
 import Html.Attributes as H
     exposing (class, width, height, style, class, type_, min, max, value, id)
 -- import Html.Events exposing (on, onInput, onMouseUp, onClick)
@@ -524,7 +524,8 @@ update msg model =
 
 getPushUpdate : Model -> PushUpdate
 getPushUpdate model =
-    { size = encodeSizeRule model.size
+    { size = getRuleSize model.size |> Maybe.withDefault ( -1, -1 )
+    , sizeRule = encodeSizeRule model.size
     , product = Product.encode model.product
     , coverSize = Product.getCoverTextSize model.product
     , background = model.background
@@ -1077,7 +1078,8 @@ view model =
         --     (config |>
         --           Controls.controls numVertices theta)
            --:: WebGL.toHtmlWith
-        [ mergeHtmlLayers model |> div [ H.class "html-layers" ]
+        [ canvas [ H.id "js-save-buffer" ] [ ]
+        , mergeHtmlLayers model |> div [ H.class "html-layers" ]
         , if model.controlsVisible
             then ( div
                 [ H.class "overlay-panel import-export-panel hide-on-space" ]
@@ -1248,7 +1250,8 @@ port changeHtmlBlend :
 -- OUTGOING PORTS
 
 type alias PushUpdate =
-    { size: String
+    { size: ( Int, Int )
+    , sizeRule : String
     , product: String
     , coverSize: Size
     , background: String

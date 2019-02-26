@@ -82,7 +82,7 @@ onUrlRequest req = NoOp
 
 decodeFragment : String -> FragmentData
 decodeFragment str =
-    Debug.log "apply size" <| case String.split "/" str of
+    case String.split "/" str of
         modeStr::ruleStr::_ -> ModeAndSizeRule (decodeMode modeStr) (decodeSizeRule ruleStr)
         modeOrRule::_ ->
             case tryDecodingMode modeOrRule of

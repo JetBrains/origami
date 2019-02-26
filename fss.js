@@ -18,7 +18,6 @@ require('flat-surface-shader/source/Math');
 //}
 
 function buildFSS(model, fss, source) {
-    console.log(model.size, fss.faces);
     var palette = model.palette;
 
     var scene = new FSS.Scene();
