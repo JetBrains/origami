@@ -34,9 +34,9 @@ const import_ = (app, importedState) => {
     app.ports.import_.send(JSON.stringify(toSend));
 }
 
-window.runGenScene = function() {
-    var node = document.getElementById("app");
-    var app = App.Elm.Main.init({ node: node });
+const runGenScene = () => {
+    const node = document.getElementById("app");
+    const app = App.Elm.Main.init({ node: node });
 
     //console.log('runGenScene', window.jsGenScene, app);
 
@@ -48,3 +48,5 @@ window.runGenScene = function() {
 
     import_(app, window.jsGenScene);
 }
+
+runGenScene();

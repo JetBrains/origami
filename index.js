@@ -15,7 +15,6 @@ const FileSaver = require('jszip/vendor/FileSaver');
 
 // initialize Elm Application
 const App = require('./src/Main.elm');
-console.log(App);
 //const mountNode = document.getElementById('elm-target');
 const mountNode = document.getElementById('js-animation');
 // The third value on embed are the initial values for incomming ports into Elm

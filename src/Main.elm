@@ -1085,7 +1085,7 @@ view model =
                 [ H.class "overlay-panel import-export-panel hide-on-space" ]
                 [
                   div [  H.class "timeline_holder" ] [
-                  span [ H.class "label past"] [text "past"]
+                  span [ H.class "label past"] [ text "past" ]
                 , input
                     [ type_ "range"
                     , class "timeline"
