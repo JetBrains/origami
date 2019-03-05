@@ -25,3 +25,4 @@ player.min.js
 /npm-debug.log
 .vscode/
 ./deploy
+deploy
