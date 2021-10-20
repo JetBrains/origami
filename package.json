@@ -8,7 +8,7 @@
     "dat.gui": "^0.7.6",
     "elm-webpack-loader": "^5.0.0",
     "flat-surface-shader": "github:shamansir/flat-surface-shader",
-    "jszip": "^3.2.1",
+    "jszip": "^3.7.0",
     "jszip-utils": "0.0.2",
     "webpack": "^4.35.2",
     "webpack-dev-server": "^3.7.2",
