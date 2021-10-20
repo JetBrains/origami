@@ -175,16 +175,20 @@ getLogoPath : Product -> Maybe String
 getLogoPath product =
     (case product of
         Unknown -> Nothing
-        knownProduct -> Just (encode knownProduct))
-            |> Maybe.map (\fileName -> fileName ++ ".svg")
+        knownProduct ->
+            Just <| encode knownProduct
+    )
+        |> Maybe.map (\fileName -> fileName ++ ".svg")
 
 
 getTextLinePath : Product -> Maybe String
 getTextLinePath product =
     (case product of
         Unknown -> Nothing
-        knownProduct -> Just (encode knownProduct))
-            |> Maybe.map (\fileName -> fileName ++ "-text.svg")
+        knownProduct ->
+            Just <| encode knownProduct
+    )
+        |> Maybe.map (\fileName -> fileName ++ "-text.svg")
 
 
 getCoverTextSize : Product -> ( Int, Int )

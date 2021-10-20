@@ -350,9 +350,11 @@ update msg model =
                                     TemplateLayer (templateModel |> Template.build)
                                 ( VignetteLayer, VignetteModel vignetteModel ) ->
                                     VignetteLayer
-                                _ -> webglLayer)
+                                _ -> webglLayer
+                            )
                             webglBlend
-                        _ -> layer)
+                        _ -> layer
+                )
             , Cmd.none
             )
 
@@ -735,7 +737,8 @@ updateLayerWithItsModel index f model =
                     { layerDef
                     | layer = newLayer
                     , model = newModel
-                    })
+                    }
+        )
 
 
 updateLayerBlend
@@ -757,7 +760,8 @@ updateLayerBlend index ifWebgl ifHtml model =
                     ifHtml htmlBlend
                         |> Maybe.withDefault htmlBlend
                         |> HtmlLayer htmlLayer
-            })
+            }
+        )
 
 
 tellGui : (Gui.Model Msg -> a -> Gui.Msg Msg) -> Model -> a -> Msg
@@ -963,7 +967,7 @@ layerToEntities : Model -> Viewport {} -> Int -> LayerDef -> List WebGL.Entity
 layerToEntities model viewport index layerDef =
     case layerDef.layer of
         WebGLLayer webglLayer blend ->
-            case ( webglLayer, layerDef.model ) of
+            ( case ( webglLayer, layerDef.model ) of
                 ( LorenzLayer mesh, _ ) ->
                     [ Lorenz.makeEntity
                         viewport
@@ -1010,7 +1014,9 @@ layerToEntities model viewport index layerDef =
                     in
                         [ FSS.makeEntity
                             model.now
-                            (case model.mouse of ( x, y ) -> { x = x, y = y })
+                            (case model.mouse of
+                                ( x, y ) -> { x = x, y = y }
+                            )
                             (model.product |> Product.getId)
                             index
                             viewport
@@ -1018,7 +1024,7 @@ layerToEntities model viewport index layerDef =
                             maybeBorrowedSerialized
                             [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                             maybeBorrowedMesh -- seems this mesh is already built with "Triangles", so there's no sense in reusing it
-                    ]
+                        ]
                 ( MirroredFssLayer serialized mesh, FssModel fssModel ) ->
                     let
                         -- TODO: store clip position in the layer
@@ -1049,6 +1055,7 @@ layerToEntities model viewport index layerDef =
                         [ DepthTest.default, WGLBlend.produce blend, sampleAlphaToCoverage ]
                     ]
                 _ -> []
+            )
         _ -> []
 
 
@@ -1057,7 +1064,8 @@ resizeToViewport =
         (\{ viewport } ->
             Resize
                 <| UseViewport
-                <| ViewportSize (floor viewport.width) (floor viewport.height))
+                <| ViewportSize (floor viewport.width) (floor viewport.height)
+        )
         Browser.getViewport
 
 
