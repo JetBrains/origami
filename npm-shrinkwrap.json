@@ -2091,9 +2091,9 @@
             }
         },
         "follow-redirects": {
-            "version": "1.14.3",
-            "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.14.3.tgz",
-            "integrity": "sha512-3MkHxknWMUtb23apkgz/83fDoe+y+qr0TdgacGIA7bew+QLBo3vdgEN2xEsuXNivpFy4CyDhBBZnNZOtalmenw=="
+            "version": "1.14.8",
+            "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.14.8.tgz",
+            "integrity": "sha512-1x0S9UVJHsQprFcEC/qnNzBLcIxsjAV905f/UkQxbclCsoTWlacCNOpQa/anodLl2uaEKFhfWOvM2Qg77+15zA=="
         },
         "for-in": {
             "version": "1.0.2",
@@ -3415,6 +3415,11 @@
                 "snapdragon": "^0.8.1",
                 "to-regex": "^3.0.1"
             }
+        },
+        "natives": {
+            "version": "1.1.6",
+            "resolved": "https://registry.npmjs.org/natives/-/natives-1.1.6.tgz",
+            "integrity": "sha512-6+TDFewD4yxY14ptjKaS63GVdtKiES1pTPyxn9Jb0rBqPMZ7VcCiooEhPNsr+mqHtMGxa/5c/HhcC4uPEUw/nA=="
         },
         "negotiator": {
             "version": "0.6.2",
@@ -5458,6 +5463,14 @@
                         "inherits": "~2.0.0",
                         "mkdirp": "0.5",
                         "rimraf": "2"
+                    }
+                },
+                "graceful-fs": {
+                    "version": "3.0.12",
+                    "resolved": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-3.0.12.tgz",
+                    "integrity": "sha512-J55gaCS4iTTJfTXIxSVw3EMQckcqkpdRv3IR7gu6sq0+tbC363Zx6KH/SEwXASK9JRbhyZmVjJEVJIOxYsB3Qg==",
+                    "requires": {
+                        "natives": "^1.1.3"
                     }
                 }
             }
