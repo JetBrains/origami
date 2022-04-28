@@ -367,9 +367,9 @@
             "integrity": "sha1-WWZ/QfrdTyDMvCu5a41Pf3jsA2c="
         },
         "async": {
-            "version": "2.6.3",
-            "resolved": "https://registry.npmjs.org/async/-/async-2.6.3.tgz",
-            "integrity": "sha512-zflvls11DCy+dQWzTW2dzuilv8Z5X/pjfmZOWba6TNIVDm+2UDaJmXSOXlasHKfNBs8oo3M0aT50fDEWfKZjXg==",
+            "version": "2.6.4",
+            "resolved": "https://registry.npmjs.org/async/-/async-2.6.4.tgz",
+            "integrity": "sha512-mzo5dfJYwAn29PeiJ0zvwTo04zj8HDJj0Mn8TD7sno7q12prdbnasKJHhkm2c1LgrhlJ0teaea8860oxi51mGA==",
             "requires": {
                 "lodash": "^4.17.14"
             }
@@ -3416,6 +3416,11 @@
                 "to-regex": "^3.0.1"
             }
         },
+        "natives": {
+            "version": "1.1.6",
+            "resolved": "https://registry.npmjs.org/natives/-/natives-1.1.6.tgz",
+            "integrity": "sha512-6+TDFewD4yxY14ptjKaS63GVdtKiES1pTPyxn9Jb0rBqPMZ7VcCiooEhPNsr+mqHtMGxa/5c/HhcC4uPEUw/nA=="
+        },
         "negotiator": {
             "version": "0.6.2",
             "resolved": "https://registry.npmjs.org/negotiator/-/negotiator-0.6.2.tgz",
@@ -5458,6 +5463,14 @@
                         "inherits": "~2.0.0",
                         "mkdirp": "0.5",
                         "rimraf": "2"
+                    }
+                },
+                "graceful-fs": {
+                    "version": "3.0.12",
+                    "resolved": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-3.0.12.tgz",
+                    "integrity": "sha512-J55gaCS4iTTJfTXIxSVw3EMQckcqkpdRv3IR7gu6sq0+tbC363Zx6KH/SEwXASK9JRbhyZmVjJEVJIOxYsB3Qg==",
+                    "requires": {
+                        "natives": "^1.1.3"
                     }
                 }
             }
