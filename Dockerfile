@@ -1,10 +1,12 @@
-FROM node:8
+FROM node:current-alpine
 
 RUN mkdir /app
 
 WORKDIR /app
 
 COPY . /app
+
+RUN apk add binutils && wget -qO - "https://github.com/elm/compiler/releases/download/0.19.1/binaries-for-linux.tar.gz" | tar -zxC /usr/local/bin/ && strip /usr/local/bin/elm && apk del binutils
 
 RUN npm install
 
