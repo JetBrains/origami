@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY . /app
 
-RUN apk add binutils && wget -qO - "https://github.com/elm/compiler/releases/download/0.19.1/binaries-for-linux.tar.gz" | tar -zxC /usr/local/bin/ && strip /usr/local/bin/elm && apk del binutils
+RUN apk add binutils && wget -qO - "https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz" | tar -zxC /usr/local/bin/ && strip /usr/local/bin/elm && apk del binutils
 
 RUN npm install
 
