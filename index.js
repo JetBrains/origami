@@ -272,7 +272,7 @@ setTimeout(() => {
             layer.model = JSON.parse(layer.model) || {};
         });
 
-        if (!model.mode || (model.mode.substring(0, 4) != 'tron')) {
+        if (!model.mode || (model.mode.substring(0, 4) != 'tron') && (window.location.hash !== '#nogui')) {
 
             const { config, update } = startGui(
                 document,
@@ -380,13 +380,23 @@ setTimeout(() => {
 
     let panelsHidden = false;
 
+    const hidePanels = function() {
+        const overlayPanels = document.querySelectorAll('.hide-on-space');
+        for (let i = 0; i < overlayPanels.length; i++) {
+            overlayPanels[i].style.display = panelsHidden ? 'block' : 'none';
+        }
+        panelsHidden = !panelsHidden;
+    }
+
+    if (window.location.hash === '#nogui') {
+        app.ports.hideControls.send(null);
+        hidePanels();
+    }
+
+
     document.addEventListener('keydown', (event) => {
         if (event.keyCode == 32) {
-            const overlayPanels = document.querySelectorAll('.hide-on-space');
-            for (let i = 0; i < overlayPanels.length; i++) {
-                overlayPanels[i].style.display = panelsHidden ? 'block' : 'none';
-            }
-            panelsHidden = !panelsHidden;
+            hidePanels();
         }
       });
 
