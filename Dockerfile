@@ -2,7 +2,9 @@ FROM node:14-buster
 
 RUN mkdir /app
 
-RUN apt-get update && apt-get install -y binutils sudo && wget -qO - "https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz" | gzip -d > /usr/local/bin/elm && strip /usr/local/bin/elm
+RUN apt-get update && apt-get install -y binutils sudo && wget -qO - "https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz" | gzip -d > /usr/local/bin/elm
+#RUN apt-get update && apt-get install -y binutils sudo && wget -qO - "https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz" | gzip -d > /usr/local/bin/elm && strip /usr/local/bin/elm
+#RUN apt-get update && apt-get install -y binutils sudo
 
 RUN useradd -m docker && echo "docker:docker" | chpasswd && adduser docker sudo
 
@@ -22,8 +24,7 @@ COPY . /app
 
 RUN npm install
 
-# RUN sudo npm run build && sudo npm run build:player
-RUN npm run build
+RUN sudo npm run build && sudo npm run build:player
 
 
 FROM nginx:1.15
