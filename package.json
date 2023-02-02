@@ -27,10 +27,10 @@
   "scripts": {
     "start": "./node_modules/.bin/webpack-dev-server --mode=development",
     "start:prod": "./node_modules/.bin/simplehttpserver -p 8080 .",
-    "build:elm": "elm-make ./src/Main.elm --output=build/Main.js",
+    "build:elm": "elm-make ./src/Main.elm --output=./build/Main.js",
     "build:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/Main.js --output ./build/Main.min.js",
     "build": "./node_modules/.bin/webpack --config ./webpack.config.js --output ./app.js --mode=production",
-    "build:fss:elm": "elm-make ./src/MainFSS.elm --output=build/MainFSS.js",
+    "build:fss:elm": "elm-make ./src/MainFSS.elm --output=./build/MainFSS.js",
     "build:fss:uglify": "./node_modules/uglify-js/bin/uglifyjs ./build/MainFSS.js --output ./build/MainFSS.min.js",
     "build:fss": "npm run build:fss:elm && npm run build:fss:uglify",
     "build:player": "./node_modules/.bin/webpack --config ./player.webpack.config.js",
