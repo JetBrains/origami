@@ -20,7 +20,8 @@ RUN sudo chown docker:docker /app
 
 WORKDIR /app
 
-COPY . /app
+COPY /src/ /app
+COPY package*.json /app/
 
 RUN npm install
 

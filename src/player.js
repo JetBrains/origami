@@ -1,7 +1,7 @@
 const buildFSS = require('./fss.js');
 const isFss = require('./is-fss.js');
 const deepClone = require('./deep-clone.js')
-const App = require('./src/Main.elm');
+const App = require('./elm_src/Main.elm');
 
 const import_ = (app, importedState) => {
 

@@ -3,7 +3,7 @@
 
 // include styles
 require('./index.css');
-require('./src/Gui/Gui.css');
+require('./elm_src/Gui/Gui.css');
 
 const deepClone = require('./deep-clone.js');
 const randomize = require('./randomize.js');
@@ -14,7 +14,7 @@ const JSZipUtils = require('jszip-utils');
 const FileSaver = require('jszip/vendor/FileSaver');
 
 // initialize Elm Application
-const App = require('./src/Main.elm');
+const App = require('./elm_src/Main.elm');
 //const mountNode = document.getElementById('elm-target');
 const mountNode = document.getElementById('js-animation');
 // The third value on embed are the initial values for incomming ports into Elm

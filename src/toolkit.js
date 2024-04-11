@@ -2,7 +2,7 @@ var d3 = require('d3');
 //var Kefir = require('Kefir');
 
 window.Kefir = require('kefir');
-window.Rpd = require('./node_modules/rpd/src/rpd.js');
+window.Rpd = require('./node_modules/rpd/elm_src/rpd.js');
 // console.log(Rpd);
 
 var SVG_XMLNS = "http://www.w3.org/2000/svg";

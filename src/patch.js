@@ -1,18 +1,18 @@
 window.Kefir = require('kefir');
 window.d3 = require('d3-selection');
 
-require('./node_modules/rpd/src/render/svg.css');
-require('./node_modules/rpd/src/render/shared.js');
-require('./node_modules/rpd/src/render/svg.js');
+require('./node_modules/rpd/elm_src/render/svg.css');
+require('./node_modules/rpd/elm_src/render/shared.js');
+require('./node_modules/rpd/elm_src/render/svg.js');
 
-require('./node_modules/rpd/src/style/ableton/svg.css');
-require('./node_modules/rpd/src/style/ableton/svg.js');
+require('./node_modules/rpd/elm_src/style/ableton/svg.css');
+require('./node_modules/rpd/elm_src/style/ableton/svg.js');
 
-window.RpdUtils = require('./node_modules/rpd/src/toolkit/util/shared.js');
-require('./node_modules/rpd/src/toolkit/util/toolkit.js');
-require('./node_modules/rpd/src/toolkit/util/svg.js');
+window.RpdUtils = require('./node_modules/rpd/elm_src/toolkit/util/shared.js');
+require('./node_modules/rpd/elm_src/toolkit/util/toolkit.js');
+require('./node_modules/rpd/elm_src/toolkit/util/svg.js');
 
-window.Rpd = require('./node_modules/rpd/src/rpd.js');
+window.Rpd = require('./node_modules/rpd/elm_src/rpd.js');
 
 const DEFAULT_FACES_BY_X = 12;
 const DEFAULT_FACES_BY_Y = 1;
